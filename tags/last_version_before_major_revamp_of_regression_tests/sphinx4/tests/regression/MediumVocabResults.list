@@ -1,0 +1,11 @@
+# this is the ordered set of medium vocabulary tests
+rm1_flatunigram
+rm1_unigram
+rm1_unigram_quick
+rm1_bigram
+rm1_trigram
+rm1_fst
+rm1onrm1_flatunigram
+rm1onrm1_unigram
+rm1onrm1_bigram
+rm1onrm1_trigram
