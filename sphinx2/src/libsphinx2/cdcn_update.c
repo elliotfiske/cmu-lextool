@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1989-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,9 +44,6 @@
  * ====================================================================
  *
  */
-#include <stdlib.h>
-#include <math.h>
-#include "cdcn.h"
 
 /*************************************************************************
  *
@@ -48,20 +56,26 @@
  *
  *************************************************************************/
 
-float
-cdcn_update (float *z,		/* The observed cepstrum vectors */
-	     int num_frames,	/* Number of frames in utterance */
-	     CDCN_type *cdcn_variables)
+#include <stdlib.h>
+#include <math.h>
+#include "cdcn.h"
+
+float cdcn_update (z, num_frames, cdcn_variables)
+float	*z;		/* The observed cepstrum vectors */
+int	num_frames;	/* Number of frames in utterance */
+CDCN_type *cdcn_variables;
+
 {	
-    float       distortion;
+    float	initialize (),
+		max_q (),
+		distortion;
+    int		converged ();
+
+    void
+        correction();
+
     float	*noise, *tilt, *codebook, *prob, *variance, *corrbook;
     int 	num_codes;
-    /* Multidimensional arrays, gar gar gar */
-    static float initialize (float *, int, float *, float *, float,
-			     float *, float *, float *, int);
-    static void correction(float *, float *, float *, float *, int);
-    static float max_q (float *, float *, float *, float *, float *,
-			float *, int, float *, int);
 
     /*
      * If error, dont bother
@@ -98,11 +112,12 @@ cdcn_update (float *z,		/* The observed cepstrum vectors */
      * Perform one iteration of the estimation of n and q
      */ 
     distortion = max_q (variance, prob, noise, tilt, codebook, corrbook, 
-			num_codes, z, num_frames);
+		num_codes, z, num_frames);
 
     correction (tilt, noise, codebook, corrbook, num_codes);  
     return (distortion);
 }
+
 
 /*************************************************************************
  *
@@ -115,16 +130,13 @@ cdcn_update (float *z,		/* The observed cepstrum vectors */
  *
  *************************************************************************/
 
-static float
-initialize (float data[][NUM_COEFF+1],	/* The observation cepstrum vectors */
-	    int	num_frames,		/* Number of frames in utterance */
-	    float *noise,		/* Cepstrum vector for the noise */
-	    float tilt[],
-	    float speech_threshold,	/* Threshold for speech and noise */
-	    float codebook[][NUM_COEFF+1],
-	    float *prob,
-	    float var[][NUM_COEFF+1],
-	    int ncodes)
+float initialize (data,num_frames,noise,tilt,speech_threshold,codebook,prob,var,ncodes)
+float	data[][NUM_COEFF+1],	/* The observation cepstrum vectors */
+	*noise,		/* Cepstrum vector for the noise */
+	speech_threshold, /* Threshold for speech and noise */
+	tilt[],prob[],var[][NUM_COEFF+1],codebook[][NUM_COEFF+1];
+int	num_frames,	/* Number of frames in utterance */
+        ncodes;
 {
     float	noise_ceiling,	/* Threshold to separate speech and noise */
 		min,		/* Minimum log-energy in utterance */
@@ -193,6 +205,7 @@ initialize (float data[][NUM_COEFF+1],	/* The observation cepstrum vectors */
     return (speech_power);
 }
 
+
 /*************************************************************************
  *
  * Subroutine correction computes the correction cepstrum vectors for a 
@@ -204,12 +217,12 @@ initialize (float data[][NUM_COEFF+1],	/* The observation cepstrum vectors */
  *
  *************************************************************************/
 
-static
-void correction(float *tilt, 	/* The spectral tilt cepstrum vector */
-		float *noise, 	/* The noise cepstrum vector */
-		float *codebook,/* The codebook */
-		float *corrbook,/* The correction cepstrum vectors */
-		int num_codes)  /* The number of codewords in the codebook */
+void correction (tilt, noise, codebook, corrbook, num_codes)
+float	*tilt, 		/* The spectral tilt cepstrum vector */
+	*noise, 	/* The noise cepstrum vector */
+	*codebook,	/* The codebook */
+	*corrbook;	/* The correction cepstrum vectors */
+int	num_codes;	/* The number of codewords in the codebook */
 {
     float aux[N + 1];	/* auxiliary vector for FFTs */
     double exp();
@@ -239,6 +252,7 @@ void correction(float *tilt, 	/* The spectral tilt cepstrum vector */
     }
 } 
 
+
 /*************************************************************************
  *
  * max_q reestimates the tilt cepstrum vector that maximizes the likelihood.
@@ -248,17 +262,19 @@ void correction(float *tilt, 	/* The spectral tilt cepstrum vector */
  *
  *************************************************************************/
 
-static
-float max_q (float *variance,   /* Speech cepstral variances of the modes */
-	     float *prob,       /* Ratio of a-priori probabilities of the codes 
-				   and the mod of their variances*/
-	     float *noise,      /* Cepstrum vector for the noise */
-	     float *tilt,       /* Spectral tilt cepstrum */
-	     float *codebook,   /* The cepstrum codebook */
-	     float *corrbook,   /* The correction factor's codebook */
-	     int  num_codes,    /* Number of codewords in codebook */
-	     float *z,          /* The input cepstrum */
-	     int num_frames)    /* Number of frames in utterance */
+
+float max_q (variance, prob, noise, tilt, codebook, corrbook, num_codes, 
+z, num_frames)
+float    *variance,   /* Speech cepstral variances of the modes */
+    *prob,         /* Ratio of a-priori probabilities of the codes 
+                                         and the mod of their variances*/
+    *noise,        /* Cepstrum vector for the noise */
+    *tilt,         /* Spectral tilt cepstrum */
+    *codebook,     /* The cepstrum codebook */
+    *corrbook,     /* The correction factor's codebook */
+    *z;            /* The input cepstrum */
+int  num_codes,    /* Number of codewords in codebook */
+    num_frames;    /* Number of frames in utterance */
 {
     float    newtilt[NUM_COEFF + 1],  /* The new tilt vector */
         newnoise[NUM_COEFF + 1], /* The new noise vector */
@@ -364,4 +380,5 @@ float max_q (float *variance,   /* Speech cepstral variances of the modes */
      */
     return (loglikelihood);
 }
+
 

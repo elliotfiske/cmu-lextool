@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1979-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  *  nxtarg -- strip off arguments from a string
  *
@@ -64,25 +76,18 @@
  *  Originally	from klg (Ken Greer); IUS/SUS UNIX.
  */
 
-#include <stdlib.h>
-#include "strfuncs.h"
+char _argbreak;
+char *skipto();
 
-#ifndef NULL
-#define NULL (void *)0
-#endif
-
-static char _argbreak;
-
-char *
-nxtarg (char **q, char const *brk)
+char *nxtarg (q,brk)
+char **q,*brk;
 {
-	register char *front;
-	register char *back;
+	register char *front,*back;
 	front = *q;			/* start of string */
 	/* leading blanks and tabs */
 	while (*front && (*front == ' ' || *front == '\t')) front++;
 	/* find break character at end */
-	if (brk == NULL)  brk = " ";
+	if (brk == 0)  brk = " ";
 	back = skipto (front,brk);
 	_argbreak = *back;
 	*q = (*back ? back+1 : back);	/* next arg start loc */

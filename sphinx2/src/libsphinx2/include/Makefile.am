@@ -1,24 +1,20 @@
-noinst_HEADERS = \
+EXTRA_DIST = \
 	basic_types.h \
-	byteorder.h \
-	c.h \
 	cache_lm.h \
-	cepio.h \
 	cviterbi4.h \
+	dict.h \
 	hmm_tied_r.h \
-	kb.h \
-	linklist.h \
-	logmsg.h \
+	kb_exports.h \
 	lm.h \
+	lm_3g.h \
+	lmclass.h \
 	magic.h \
 	msd.h \
-	pconf.h \
+	new_fe.h \
+	new_fe_sp.h \
 	phone.h \
 	sc_vq_internal.h \
-	scvq.h \
 	search.h \
 	search_const.h \
 	smmap4f.h \
-	str2words.h \
-	strfuncs.h \
 	time_align.h

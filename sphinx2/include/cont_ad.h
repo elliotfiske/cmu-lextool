@@ -1,35 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * cont_ad.h -- Continuous A/D listening and silence filtering module.
  * 
@@ -97,6 +65,7 @@
 
 
 #include <stdio.h>
+#include <ad.h>
 
 /*
  * Data structure for maintaining speech (non-silence) segments not yet consumed by the
@@ -125,10 +94,6 @@ typedef struct {
     int32 read_ts;	/* Timestamp (total no. of raw A/D samples read, silence+speech)
 			   at the end of the most recent cont_ad_read call */
     int32 siglvl;	/* Max signal level for most recently read data (0-16; #bits) */
-
-    int32 sps;		/* Samples/sec; moved from ad->sps to break dependence on
-			   ad by N. Roy.*/
-
     int32 spf;		/* Samples/frame; audio level is analyzed within frames */
     int32 adbufsize;	/* Buffer size (#samples) */
     int32 prev_sample;	/* For pre-emphasis filter */
@@ -141,7 +106,6 @@ typedef struct {
     int32 *pow_hist;	/* Histogram of frame power, moving window, decayed */
     char *frm_pow;	/* Frame power */
 
-    int32 auto_thresh;  /* Do automatic threshold adjustment or not */
     int32 delta_sil;	/* Max silence power/frame ABOVE noise level */
     int32 delta_speech;	/* Min speech power/frame ABOVE noise level */
     int32 min_noise;	/* noise lower than this we ignore */
@@ -193,16 +157,6 @@ cont_ad_t *cont_ad_init (ad_rec_t *ad,	/* In: The A/D source object to be filter
  */
 int32 cont_ad_calib (cont_ad_t *cont);	/* In: object pointer returned by cont_ad_init */
 
-/*
- * If the application has not passed an audio device into the silence filter
- * at initialisation,  this routine can be used to calibrate the filter. The
- * buf (of length max samples) should contain audio data for calibration. This
- * data is assumed to be completely consumed. More than one call may be
- * necessary to fully calibrate. 
- * Return value: 0 if successful, <0 on failure, >0 if calibration not
- * complete.
- */
-int32 cont_ad_calib_loop (cont_ad_t *r, int16 *buf, int32 max); 
 
 /*
  * Read A/D data pre-filtered to remove silence segments.
@@ -290,14 +244,6 @@ int32 cont_ad_attach (cont_ad_t *c, ad_rec_t *a, int32 (*func)(ad_rec_t *, int16
 
 
 void cont_ad_set_logfp (FILE *fp);	/* File containing detailed logs (if non-NULL) */
-
-/*
- * Set the silence and speech thresholds. For this to have any effect, the
- * auto_thresh field of the continuous listening module should be set to
- * FALSE.
- */
-
-int32 cont_set_thresh(cont_ad_t *r, int32 silence, int32 speech);
 
 
 #endif

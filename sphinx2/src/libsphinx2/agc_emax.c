@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1995-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * agc_emax.c - Estimated Max AGC
  * 
@@ -54,17 +66,20 @@
  * 		Added functions agcemax_set and agcemax_get.
  */
 
+
 #include <stdio.h>
 #include <string.h>
 #include <err.h>
 
-#include "s2types.h"
+#include <s2types.h>
+
 
 static float max = 10.0;	/* Estimated C0 max used for AGC in current utterance */
 static float obs_max = -1000.0;	/* Observed C0 max in current utterance (before update) */
 static int obs_frame = 0;	/* Whether any data was observed after prev update */
 static int obs_utt = 0;		/* Whether any utterances have been observed */
 static float obs_max_sum = 0.0;
+
 
 int32 agcemax_set (double m)
 {
@@ -73,15 +88,17 @@ int32 agcemax_set (double m)
     return 0;
 }
 
+
 double agcemax_get ( void )
 {
     return ((double) max);
 }
 
+
 /* AGC_EMAX_PROC - do the agc
  *------------------------------------------------------------*
  */
-int agc_emax_proc (float *ocep, float const *icep, int veclen)
+int agc_emax_proc (float *ocep, float *icep, int veclen)
 {
     if (icep[0] > obs_max) {
 	obs_max = icep[0];
@@ -103,6 +120,7 @@ int agc_emax_proc (float *ocep, float const *icep, int veclen)
     
     return 1;
 }
+
 
 /* Update estimated max for next utterance */
 void agc_emax_update ( void )

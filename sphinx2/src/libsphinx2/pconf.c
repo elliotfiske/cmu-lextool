@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1988-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /* PCONF.C
  * HISTORY
  * 07-Jan-90  Jeff Rosenfeld (jdr) at Carnegie-Mellon University
@@ -54,26 +66,31 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdlib.h>
+#include <malloc.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <pconf.h>
 
-#include "s2types.h"
-#include "c.h"
-#include "pconf.h"
-#include "strfuncs.h"
+#define	TRUE	1
+#define	FALSE	0
 
-static int SetVal(Config_t *cp, char const *str);
-static void SPrintVal(Config_t *cp, char *str);
+extern double atof();
+extern char *salloc();
+
+static SetVal();
+static SPrintVal();
 
 
 /* PCONF
  *------------------------------------------------------------*
  */
-int
-pconf (int argc, char *argv[], config_t *config_p,
-       char **display, char **geometry,
-       char * (*GetDefault)(char const *, char const *))
+extern
+pconf (argc, argv, config_p, display, geometry, GetDefault)
+int32 argc;
+char *argv[];
+Config_t *config_p;
+char **display, **geometry;
+char *(*GetDefault)();
 {
     int32 i, parsed;
     int32 bad_usage = FALSE;
@@ -81,17 +98,15 @@ pconf (int argc, char *argv[], config_t *config_p,
     Config_t *cp;
 
     if (GetDefault) {
-	for (cp = (Config_t *) config_p; cp->arg_type != NOTYPE; cp++) {
-	    if ((str_p = GetDefault (argv[0], cp->LongName))) {
+	for (cp = config_p; cp->arg_type != NOTYPE; cp++) {
+	    if (str_p = GetDefault (argv[0], cp->LongName)) {
 		bad_usage |= SetVal (cp, str_p);
 	    }
 	}
     }
 
     for (i = 1; i < argc; i++) {
-	for (parsed = FALSE, cp = (Config_t *) config_p;
-	     cp->arg_type != NOTYPE; cp++) {
-	    /* FIXME: do we *really* need our own strcasecmp? */
+	for (parsed = FALSE, cp = config_p; cp->arg_type != NOTYPE; cp++) {
 	    if (mystrcasecmp (argv[i], cp->swtch) == 0) {
 		parsed = TRUE;
 		if (++i < argc)
@@ -113,7 +128,7 @@ pconf (int argc, char *argv[], config_t *config_p,
 	}
 	if ((mystrcasecmp ("-?", argv[i]) == 0) ||
 	    (mystrcasecmp ("-help", argv[i]) == 0))
-	    pusage (argv[0], (Config_t *) config_p);
+	    pusage (argv[0], config_p);
 	bad_usage = TRUE;
     }
     return (bad_usage);
@@ -122,11 +137,14 @@ pconf (int argc, char *argv[], config_t *config_p,
 /* PPCONF
  *------------------------------------------------------------*
  */
-int
-ppconf (int argc, char *argv[], config_t *config_p,
-	char **display, char **geometry,
-	char * (*GetDefault)(char const *, char const *),
-	char last)
+extern
+ppconf (argc, argv, config_p, display, geometry, GetDefault, last)
+int32 argc;
+char *argv[];
+Config_t *config_p;
+char **display, **geometry;
+char *(*GetDefault)();
+char last;
 {
     int32 i, parsed;
     int32 bad_usage = FALSE;
@@ -134,8 +152,8 @@ ppconf (int argc, char *argv[], config_t *config_p,
     Config_t *cp;
 
     if (GetDefault) {
-	for (cp = (Config_t *)config_p; cp->arg_type != NOTYPE; cp++) {
-		if ((str_p = GetDefault (argv[0], cp->LongName))) {
+	for (cp = config_p; cp->arg_type != NOTYPE; cp++) {
+		if (str_p = GetDefault (argv[0], cp->LongName)) {
 		    bad_usage |= SetVal (cp, str_p);
 	    }
 	}
@@ -145,8 +163,7 @@ ppconf (int argc, char *argv[], config_t *config_p,
 	/* argument has been processed already */
 	if (argv[i][0] == '\0') continue;
 
-	for (parsed = FALSE, cp = (Config_t *)config_p;
-	     cp->arg_type != NOTYPE; cp++) {
+	for (parsed = FALSE, cp = config_p; cp->arg_type != NOTYPE; cp++) {
 	    if (mystrcasecmp (argv[i], cp->swtch) == 0) {
 		parsed = TRUE;
 		/* remove this switch from consideration */
@@ -173,7 +190,7 @@ ppconf (int argc, char *argv[], config_t *config_p,
 
 	if ((mystrcasecmp ("-?", argv[i]) == 0) ||
 	    (mystrcasecmp ("-help", argv[i]) == 0))
-	    pusage (argv[0], (Config_t *) config_p);
+	    pusage (argv[0], config_p);
 	printf ("%s: Unrecognized argument, %s\n", argv[0], argv[i]);
 	bad_usage = TRUE;
     }
@@ -183,8 +200,9 @@ ppconf (int argc, char *argv[], config_t *config_p,
 /* PUSAGE
  *------------------------------------------------------------*
  */
-void
-pusage (char *prog, Config_t *cp)
+pusage (prog, cp)
+char *prog;
+Config_t *cp;
 {
     char valstr[256];
 
@@ -198,8 +216,10 @@ pusage (char *prog, Config_t *cp)
 }
 
 /* env_scan: substitutes environment values into a string */
-static char *
-env_scan(char const *str)
+static
+char *
+env_scan(str)
+ register char *str;
 {
     extern char *getenv();
     char buf[1024];		/* buffer for temp use */
@@ -228,8 +248,10 @@ env_scan(char const *str)
     return salloc(buf);
 }
 
-static int
-SetVal (Config_t *cp, char const *str)
+static
+SetVal (cp, str)
+register Config_t *cp;
+char *str;
 {
     switch (cp->arg_type) {
     case CHAR:
@@ -300,9 +322,10 @@ SetVal (Config_t *cp, char const *str)
     return (0);
 }
 
-/* FIXME: potential buffer overruns? */
-static void
-SPrintVal (Config_t *cp, char *str)
+static
+SPrintVal (cp, str)
+register Config_t *cp;
+char *str;
 {
     switch (cp->arg_type) {
     case CHAR:
@@ -353,13 +376,15 @@ SPrintVal (Config_t *cp, char *str)
 /*
  * fpconf
  */
-int
-fpconf (FILE *config_fp, Config_t config_p[],
-	char **display, char **geometry,
-	char * (*GetDefault)(char const *, char const *))
+extern
+fpconf (config_fp, config_p, display, geometry, GetDefault)
+FILE *config_fp;
+Config_t config_p[];
+char **display, **geometry;
+char *(*GetDefault)();
 {
-    int parsed, read_mode = NAME, inchar;
-    int bad_usage = FALSE;
+    int32 parsed, read_mode = NAME, inchar;
+    int32 bad_usage = FALSE;
     Config_t *cp;
     char name[MAX_NAME_LEN+1], value[MAX_VALUE_LEN+1], name_fm[12],
 	value_fm[12];

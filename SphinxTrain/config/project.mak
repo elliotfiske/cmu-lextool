@@ -1,4 +1,4 @@
-# ====================================================-*-mode:Makefile-*-
+# ====================================================================
 # Copyright (c) 2000 Carnegie Mellon University.  All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -18,7 +18,12 @@
 #    prior written permission. To obtain permission, contact 
 #    sphinx@cs.cmu.edu.
 #
-# 4. Redistributions of any form whatsoever must retain the following
+# 4. Products derived from this software may not be called "Sphinx"
+#    nor may "Sphinx" appear in their names without prior written
+#    permission of Carnegie Mellon University. To obtain permission,
+#    contact sphinx@cs.cmu.edu.
+#
+# 5. Redistributions of any form whatsoever must retain the following
 #    acknowledgment:
 #    "This product includes software developed by Carnegie
 #    Mellon University (http://www.speech.cs.cmu.edu/)."
@@ -43,6 +48,6 @@
 
 PROJECT_NAME = Sphinx acoustic training scripts
 PROJECT_PREFIX = SphinxTrain
-PROJECT_VERSION = 0.9.1
-PROJECT_DATE = July 2001
-PROJECT_STATE = beta
+PROJECT_VERSION = 0.1
+PROJECT_DATE = Sep 2000
+PROJECT_STATE = current

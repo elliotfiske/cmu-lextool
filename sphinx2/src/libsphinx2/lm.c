@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1997-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * lm.c -- Interpolation of various language models.
  *
@@ -42,30 +54,24 @@
  * 		Started, based on earlier FBS6 version.
  */
 
+
 /* Currently, interpolation of dynamic cache LM and static trigram LM */
+
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <CM_macros.h>
+#include <log.h>
+#include <lm_3g.h>
+#include <cache_lm.h>
+#include <err.h>
+#include <kb_exports.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "list.h"
-#include "hash.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "lm.h"
-#include "cache_lm.h"
-#include "search_const.h"
-#include "msd.h"
-#include "dict.h"
-#include "kb.h"
-#include "err.h"
-#include "log.h"
 
 static cache_lm_t *clm = NULL;
+
 
 int32 lm_tg_score (int32 w1, int32 w2, int32 w3)
 {
@@ -89,6 +95,7 @@ int32 lm_tg_score (int32 w1, int32 w2, int32 w3)
     return (cscr > tscr) ? cscr : tscr;
 }
 
+
 int32 lm_bg_score (int32 w1, int32 w2)
 {
     int32 cscr, tscr, remwt;
@@ -111,10 +118,12 @@ int32 lm_bg_score (int32 w1, int32 w2)
     return (cscr > tscr) ? cscr : tscr;
 }
 
+
 int32 lm_ug_score (int32 w)
 {
     return (lm3g_ug_score (w));
 }
+
 
 void lm_cache_lm_init ( void )
 {
@@ -124,6 +133,7 @@ void lm_cache_lm_init ( void )
     /* Hack!!  Hardwired parameters to cache_lm_init */
     clm = cache_lm_init (0.0001, 0.001, 0.04, 100, 0.07);
 }
+
 
 void lm_cache_lm_add_ug (int32 w)
 {
@@ -144,6 +154,7 @@ void lm_cache_lm_add_ug (int32 w)
     cache_lm_add_ug (clm, w);
 }
 
+
 void lm_cache_lm_add_bg (int32 w1, int32 w2)
 {
     if (! clm)
@@ -155,12 +166,14 @@ void lm_cache_lm_add_bg (int32 w1, int32 w2)
     cache_lm_add_bg (clm, w1, w2);
 }
 
+
 void lm_cache_lm_dump (char *file)
 {
     if (! clm)
 	return;
     cache_lm_dump (clm, file);
 }
+
 
 void lm_cache_lm_load (char *file)
 {

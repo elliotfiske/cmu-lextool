@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -46,6 +57,7 @@
  * 		Created.
  */
 
+
 /*
  * This is a simple, tty-based example of a SphinxII client that uses continuous listening
  * with silence filtering to automatically segment a continuous stream of audio input
@@ -57,43 +69,44 @@
  *   - Uses fbs8 audio library; can be replaced with an equivalent custom library.
  */
 
+
 #include <stdio.h>
-#include <signal.h>
-#include <setjmp.h>
 #include <string.h>
 
-#include "s2types.h"
-#include "err.h"
-#include "ad.h"
-#include "cont_ad.h"
-#include "fbs.h"
+#include <err.h>
+#include <ad.h>
+#include <cont_ad.h>
+#include <fbs.h>
 
-#ifdef WIN32
-#include <time.h>
-#else
+#if (! WIN32)
 #include <sys/types.h>
 #include <sys/time.h>
+#else
+#include <time.h>
 #endif
 
 #define SAMPLE_RATE   16000
 
 static ad_rec_t *ad;
 
+
 /* Sleep for specified msec */
 static void sleep_msec (int32 ms)
 {
-#ifdef WIN32
-    Sleep(ms);
-#else
+#if (! WIN32)
     /* ------------------- Unix ------------------ */
     struct timeval tmo;
+    int32 status;
     
     tmo.tv_sec = 0;
     tmo.tv_usec = ms*1000;
     
     select(0, NULL, NULL, NULL, &tmo);
+#else
+    Sleep(ms);
 #endif
 }
+
 
 /*
  * Main utterance processing loop:
@@ -121,7 +134,7 @@ static void utterance_loop()
 
     for (;;) {
 	/* Indicate listening for next utterance */
-        printf ("READY....\n"); fflush (stdout); fflush (stderr);
+	printf ("\nREADY....\n"); fflush (stdout);
 	
 	/* Await data for next utterance */
 	while ((k = cont_ad_read (cont, adbuf, 4096)) == 0)
@@ -202,17 +215,9 @@ static void utterance_loop()
     cont_ad_close (cont);
 }
 
-static jmp_buf jbuf;
-static void sighandler(int signo)
-{
-    longjmp(jbuf, 1);
-}
 
-int main (int argc, char *argv[])
+main (int32 argc, char *argv[])
 {
-    /* Make sure we exit cleanly (needed for profiling among other things) */
-    signal(SIGINT, &sighandler);
-
     fbs_init (argc, argv);
     
     if ((ad = ad_open_sps (SAMPLE_RATE)) == NULL)
@@ -220,12 +225,8 @@ int main (int argc, char *argv[])
 
     E_INFO("%s COMPILED ON: %s, AT: %s\n\n", argv[0], __DATE__, __TIME__);
 
-    if (setjmp(jbuf) == 0) {
-	utterance_loop ();
-    }
-
+    utterance_loop ();
+    
     fbs_end ();
     ad_close (ad);
-
-    return 0;
 }

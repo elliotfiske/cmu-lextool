@@ -18,7 +18,12 @@
 #    prior written permission. To obtain permission, contact 
 #    sphinx@cs.cmu.edu.
 #
-# 4. Redistributions of any form whatsoever must retain the following
+# 4. Products derived from this software may not be called "Sphinx"
+#    nor may "Sphinx" appear in their names without prior written
+#    permission of Carnegie Mellon University. To obtain permission,
+#    contact sphinx@cs.cmu.edu.
+#
+# 5. Redistributions of any form whatsoever must retain the following
 #    acknowledgment:
 #    "This product includes software developed by Carnegie
 #    Mellon University (http://www.speech.cs.cmu.edu/)."
@@ -44,13 +49,9 @@ TOP=../..
 DIRNAME=scripts_pl/01.vector_quantize
 BUILD_DIRS = 
 ALL_DIRS=
-PERLSCRIPTS = agg_seg.pl kmeans.pl slave.VQ.pl
-SCRIPTS = $(PERLSCRIPTS:%=$(SCRIPTDIR)/$(DIRNAME)/%)
-FILES = Makefile $(PERLSCRIPTS)
+FILES = Makefile agg_seg.pl kmeans.pl slave.VQ.pl
 
-ALL = $(SCRIPTS)
-
-LOCAL_CLEAN = $(SCRIPTS)
+ALL = 
 
 include $(TOP)/config/common_make_rules
 

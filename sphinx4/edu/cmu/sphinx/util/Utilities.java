@@ -1,15 +1,10 @@
-/*
- * Copyright 1999-2002 Carnegie Mellon University.  
- * Portions Copyright 2002 Sun Microsystems, Inc.  
- * Portions Copyright 2002 Mitsubishi Electronic Research Laboratories.
- * All Rights Reserved.  Use is subject to license terms.
+/**
+ * Copyright 2001 Sun Microsystems, Inc.
  * 
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL 
  * WARRANTIES.
- *
  */
-
 package edu.cmu.sphinx.util;
 
 import java.io.PrintWriter;
@@ -18,7 +13,6 @@ import java.io.PrintWriter;
  * Provides a set of generic utilities
  */
 public class Utilities {
-    private final static boolean TRACKING_OBJECTS = false;
 
     // Unconstructable.
     private Utilities() {}
@@ -79,20 +73,6 @@ public class Utilities {
 	pw.println(string);
     }
 
-
-    /**
-     * utility method for tracking object counts
-     *
-     * @param name the name of the object
-     * @param count the count of objects
-     */
-    public static void objectTracker(String name, int count) {
-	if (TRACKING_OBJECTS) {
-	    if (count % 1000 == 0) {
-		System.out.println("OT: " + name + " " + count);
-	    }
-	}
-    }
 }
 
   

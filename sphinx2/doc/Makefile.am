@@ -1,7 +1,1 @@
-docdir = $(prefix)/share/sphinx2/doc
-
-doc_DATA = @docdata@
-
-EXTRA_DIST = @docdata@
-
-
+EXTRA_DIST = README.bin  README.lib  sphinx2.html

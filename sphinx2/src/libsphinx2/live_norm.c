@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * live_norm.c - feature normalization for live system
  * 
@@ -73,9 +85,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "err.h"
+#include <err.h>
 
-#include "s2types.h"
+
+#include <s2types.h>
 
 static int   veclen;		/* the feature vector length */
 static float *cur_mean = NULL;	/* the mean subtracted from input frames */
@@ -84,6 +97,7 @@ static int   nframe;		/* the total number of input frames */
 
 #define CMN_WIN_HWM	800	/* #frames after which window shifted */
 #define CMN_WIN		500
+
 
 int32 cepmean_set (float *vec)
 {
@@ -107,7 +121,8 @@ int32 cepmean_get (float *vec)
     return 0;
 }
 
-void mean_norm_init(int32 vlen)
+void mean_norm_init(vlen)
+int32	vlen;
 {
     veclen   = vlen;
     cur_mean = (float *) calloc(veclen, sizeof(float));
@@ -117,8 +132,7 @@ void mean_norm_init(int32 vlen)
     E_INFO("mean[0]= %.2f, mean[1..%d]= 0.0\n", cur_mean[0], veclen-1);
 }
 
-static void
-mean_norm_shiftwin ( void )
+void mean_norm_shiftwin ( void )
 {
     int32 i;
     double sf;
@@ -136,7 +150,8 @@ mean_norm_shiftwin ( void )
     }
 }
 
-void mean_norm_acc_sub(float *vec)
+void mean_norm_acc_sub(vec)
+float	*vec;
 {
     int32 i;
 
@@ -151,7 +166,7 @@ void mean_norm_acc_sub(float *vec)
 	mean_norm_shiftwin();
 }
 
-void mean_norm_update(void)
+void mean_norm_update()
 {
     int32 i;
     double sf;
@@ -159,10 +174,10 @@ void mean_norm_update(void)
     if (nframe <= 0)
 	return;
     
-    E_INFO("mean_norm_update: from < ");
+    printf("mean_norm_update: from < ");
     for (i = 0; i < veclen; i++)
-	E_INFO("%5.2f ", cur_mean[i]);
-    E_INFO(">\n");
+	printf("%5.2f ", cur_mean[i]);
+    printf(">\n");
 
     sf = (1.0/nframe);
     for (i = 0; i < veclen; i++)
@@ -176,8 +191,8 @@ void mean_norm_update(void)
 	nframe = CMN_WIN;
     }
 
-    E_INFO("mean_norm_update: to   < ");
+    printf("mean_norm_update: to   < ");
     for (i = 0; i < veclen; i++)
-	E_INFO("%5.2f ", cur_mean[i]);
-    E_INFO(">\n");
+	printf("%5.2f ", cur_mean[i]);
+    printf(">\n");
 }

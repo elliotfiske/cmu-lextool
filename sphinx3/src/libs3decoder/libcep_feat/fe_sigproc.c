@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
@@ -316,7 +281,6 @@ void fe_mel_spec(fe_t *FE, double *spec, double *mfspec)
 void fe_mel_cep(fe_t *FE, double *mfspec, double *mfcep)
 {
     int32 i,j;
-    /*    static int first_run=1;  */  /* unreferenced variable */
     int32 period;
     float beta;
 
@@ -538,14 +502,8 @@ void fe_parse_melfb_params(param_t *P, melfb_t *MEL)
 
     if (P->FFT_SIZE != 0) 
 	MEL->fft_size = P->FFT_SIZE;
-    else {
-      if (MEL->sampling_rate == BB_SAMPLING_RATE)
-	MEL->fft_size = DEFAULT_BB_FFT_SIZE;
-      if (MEL->sampling_rate == NB_SAMPLING_RATE)
-	MEL->fft_size = DEFAULT_NB_FFT_SIZE;
     else 
 	MEL->fft_size = DEFAULT_FFT_SIZE;
-    }
  
     if (P->NUM_CEPSTRA != 0) 
 	MEL->num_cepstra = P->NUM_CEPSTRA;
@@ -570,7 +528,7 @@ void fe_parse_melfb_params(param_t *P, melfb_t *MEL)
       MEL->upper_filt_freq = P->UPPER_FILT_FREQ;
     else{
       if (MEL->sampling_rate == BB_SAMPLING_RATE)
-	MEL->upper_filt_freq = (float) DEFAULT_BB_UPPER_FILT_FREQ; /* RAH, typecast */
+	MEL->upper_filt_freq = (float)DEFAULT_BB_UPPER_FILT_FREQ;
       else if (MEL->sampling_rate == NB_SAMPLING_RATE)
 	MEL->upper_filt_freq = DEFAULT_NB_UPPER_FILT_FREQ;
       else {
@@ -585,7 +543,7 @@ void fe_parse_melfb_params(param_t *P, melfb_t *MEL)
       MEL->lower_filt_freq = P->LOWER_FILT_FREQ;
     else {
       if (MEL->sampling_rate == BB_SAMPLING_RATE)
-	MEL->lower_filt_freq = (float) DEFAULT_BB_LOWER_FILT_FREQ; /*RAH, typecast  */
+	MEL->lower_filt_freq = (float)DEFAULT_BB_LOWER_FILT_FREQ;
       else if (MEL->sampling_rate == NB_SAMPLING_RATE)
 	MEL->lower_filt_freq = DEFAULT_NB_LOWER_FILT_FREQ;
       else {

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -37,25 +48,34 @@
  * time_align.h
  */
 
+
+#include <basic_types.h>
+#include <search_const.h>
+
 void time_align_set_beam_width(double bw);
 
-int time_align_init(void);
+int
+    time_align_init();
 
-void time_align_set_input(float *c,
-			  float *d,
-			  float *d_80,
-			  float *p,
-			  float *dd,
-			  int n_f);
+void
+    time_align_set_input(float *c,
+			 float *d,
+			 float *d_80,
+			 float *p,
+			 float *dd,
+			 int n_f);
 
-int time_align_word_sequence(char const * utt,
-			     char const *left_word,
+int
+    time_align_word_sequence(
+			     char *left_word,
 			     char *word_seq,
-			     char const *right_word);
-
-int time_align_seg_output(unsigned short **seg,
+			     char *right_word
+			     );
+int
+    time_align_seg_output(
+			  unsigned short **seg,
 			  int *seg_cnt);
-char *time_align_best_word_string(void);
+char *time_align_best_word_string();
 
 #define NONE	-1
 #define NO_ID	-1
@@ -84,8 +104,8 @@ char *time_align_best_word_string(void);
 
 typedef struct compound_word_struct {
     int   word_id;		/* dictionary word id of the compound word */
-    char const *word_str;	/* dictionary word string of the compound word */
-    char const *match_str;	/* string to match against the input word sequence */
+    char *word_str;		/* dictionary word string of the compound word */
+    char *match_str;		/* string to match against the input word sequence */
     int   word_cnt;		/* number of words in the match_str component */
 } COMPOUND_WORD_T;
 
@@ -109,7 +129,7 @@ typedef struct {
 } BACK_POINTER_T;
 
 typedef struct {
-    char const *name;		/* a string representation of the word/phone associated w/ the
+    char *name;			/* a string representation of the word/phone associated w/ the
 				   time segment */
     int id;			/* integer representation of the word/phone/state segment */
     int start;			/* the frame when the word/phone was entered */

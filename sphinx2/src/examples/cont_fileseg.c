@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -42,19 +53,20 @@
  * 		Created.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
 
-#include "s2types.h"
-#include "ad.h"
-#include "cont_ad.h"
-#include "err.h"
+#include <cont_ad.h>
+#include <err.h>
+
 
 static FILE *infp;	/* File being segmented */
 static int32 swap;
+
 
 /*
  * Need to provide cont_ad_init with a read function to read the input file.
@@ -75,17 +87,18 @@ static int32 file_ad_read (ad_rec_t *r, int16 *buf, int32 max)
     return ((k > 0) ? k : -1);
 }
 
+
 static void usagemsg (char *pgm)
 {
     E_FATAL("Usage: %s <sampling-rate> <utt-end-sil(sec)> <in-file> [-byteswap] [-debug]\n", pgm);
 }
+
 
 /*
  * Read specified input file, segment it into utterances wherever a silence segment of
  * a given minimum duration is encountered.  Filter out long silences.
  * Utterances are written to files named 00000000.raw, 00000001.raw, 00000002.raw, etc.
  */
-int
 main (int32 argc, char **argv)
 {
     cont_ad_t *cont;
@@ -206,5 +219,4 @@ main (int32 argc, char **argv)
     fflush (stdout);
 
     cont_ad_close (cont);
-    return 0;
 }

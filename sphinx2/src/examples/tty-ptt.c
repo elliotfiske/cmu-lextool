@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -34,7 +45,7 @@
  *
  */
 /*
- * tty-ptt.c -- An example SphinxII client using the standard client libraries.
+ * demo1.c -- An example SphinxII client using the standard fbs8 client libraries.
  * 
  * HISTORY
  *
@@ -45,37 +56,40 @@
  * 		Created.
  */
 
+
 /*
- * This is a simple, tty-based example of a SphinxII client.  The user marks 
- * the beginning and end of each utterance by hitting the return (<CR>) key.
- * (On Windows NT systems, the user only marks the beginning; the system 
- * automatically stops listening after LISTENTIME seconds.)
+ * This is a simple, tty-based example of a SphinxII client.  The suer marks the
+ * beginning and end of each utterance by hitting the return (<CR>) key.  (On
+ * Windows NT systems, the user only marks the beginning; the system automatically
+ * stops listening after LISTENTIME seconds.)
  * 
  * Remarks:
  *   - Single-threaded implementation for portability.
- *   - Uses audio library; can be replaced with an equivalent custom library.
+ *   - Uses fbs8 audio library; can be replaced with an equivalent custom library.
  */
+
 
 #include <stdio.h>
 #include <string.h>
 
-#ifdef WIN32
-#include <time.h>
-#else
+#if (! WIN32)
 #include <sys/types.h>
 #include <sys/time.h>
+#else
+#include <time.h>
 #endif
 
-#include "s2types.h"
-#include "err.h"
-#include "ad.h"
-#include "fbs.h"
+#include <err.h>
+#include <ad.h>
+#include <fbs.h>
+
 
 #define LISTENTIME		5.0
 #define SAMPLE_RATE             16000
 
 static int32 last_fr;		/* Last frame for which partial result was reported */
 static ad_rec_t *ad;
+
 
 /* Function for reporting partial recognition result */
 static void update_result ( void )
@@ -93,12 +107,11 @@ static void update_result ( void )
     }
 }
 
+
 /* Determine if the user has indicated end of utterance (keyboard hit at end of utt) */
 static int32 speaking (int32 ns)
 {
-#ifdef WIN32
-    return (ns > (LISTENTIME*DEFAULT_SAMPLES_PER_SEC)) ? 0 : 1;
-#else
+#if (! WIN32)
     /* ------------------- Unix ------------------ */
     /* Check for a keyboard hit, BUT NON-BLOCKING */
     fd_set readfds;
@@ -127,12 +140,15 @@ static int32 speaking (int32 ns)
     }
     
     return (status);
+#else
+    return (ns > (LISTENTIME*DEFAULT_SAMPLES_PER_SEC)) ? 0 : 1;
 #endif
 }
 
+
 static void ui_ready ( void )
 {
-#ifdef WIN32
+#if (WIN32)
     printf ("\nSystem will listen for ~ %.1f sec of speech\n", LISTENTIME);
     printf ("Hit <cr> before speaking: ");
 #else
@@ -140,6 +156,7 @@ static void ui_ready ( void )
 #endif
     fflush (stdout);
 }
+
 
 /* Main utterance processing loop: decode each utt */
 static void utterance_loop()
@@ -226,7 +243,7 @@ static void utterance_loop()
     }
 }
 
-int
+
 main (int32 argc, char *argv[])
 {
     fbs_init (argc, argv);
@@ -240,5 +257,4 @@ main (int32 argc, char *argv[])
     
     ad_close (ad);
     fbs_end ();
-    return 0;
 }

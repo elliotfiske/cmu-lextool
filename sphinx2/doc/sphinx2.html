@@ -1,29 +1,34 @@
 <HTML>
 <HEAD>
-<TITLE> Sphinx-II User Guide </TITLE>
+<TITLE> Sphinx-II FBS8 User Guide </TITLE>
+<!-- Changed by: Ravishankar Mosur, 25-Oct-1997 -->
 </HEAD>
 <BODY BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#0000B0">
 <!--  BGCOLOR="#FFFFFF" TEXT="#000000" LINK="#0000FF" VLINK="#0000B0" -->
 
-<H1 align=center> Sphinx-II User Guide </H1>
-
 <center>
-<p>
-<a href="http://www.speech.cs.cmu.edu/sphinx/">CMU Sphinx Group</a><p>
-Original by Mosur Ravishankar (Ravi)<br>
-Maintained by Kevin A. Lenzo (<a href="mailto:lenzo@cs.cmu.edu">lenzo@cs.cmu.edu</a>)<p>
+
+<h1>Carnegie Mellon Sphinx Speech Group</h1><P>
+<a href="http://www.speech.cs.cmu.edu/sphinx/">Sphinx</a> |
+<a href="http://www.speech.cs.cmu.edu/">Speech at Carnegie Mellon</a> 
+</center>
+<HR>
+
+<H1 align=center> Sphinx-II FBS8 User Guide </H1>
+<P align=center>Mosur Ravishankar (Ravi)<br>
 School of Computer Science<br>
 Carnegie Mellon University<br>
-<strong>Copyright (c) 1997-2001 Carnegie Mellon University.</strong>
+Pittsburgh, PA 15213<br>
+04 June 1997<br>
+e-mail: <A HREF="mailto:rkm@cs.cmu.edu">rkm@cs.cmu.edu</A><br><br>
+<strong>Copyright (c) 1997 Carnegie Mellon University.  ALL RIGHTS RESERVED.</strong>
+</P>
 <HR>
-This document is not complete, but should be helpful during construction.<br>
-Last updated 2001-03-29.
-<HR>
-</center>
 
-<H2 align=center> <U>Introduction</U> </H2>
 
-Sphinx2 is a decoding engine for the Sphinx-II speech recognition system developed at
+<H2 align=center> Introduction </H2>
+
+FBS8 is a decoding engine for the Sphinx-II speech recognition system developed at
 Carnegie Mellon University.  It can be used to build small, medium or large
 vocabulary applications.  It's main features are:
 <UL>
@@ -35,7 +40,7 @@ vocabulary applications.  It's main features are:
 </UL>
 
 <P>
-Sphinx2 consists of a set of libraries that include core speech recognition functions as
+FBS8 consists of a set of libraries that include core speech recognition functions as
 well as auxiliary ones such as low-level audio capture.  The libraries are written in
 C and have been compiled on several Unix platforms (DEC Alpha, Sun Sparc, HPs) and
 Pentium/PentiumPro PCs running WindowsNT or Windows95.  A number of demo applications
@@ -43,7 +48,7 @@ based on this recognition engine are also provided.
 
 <P>
 Several features specifically intended for developing real applications have been
-included in Sphinx2.  For example, many aspects of the decoder can be reconfigured at
+included in FBS8.  For example, many aspects of the decoder can be reconfigured at
 run time.  New language models can be loaded or switched dynamically.  Similarly, new
 words and pronunciations can be added.  The audio input data can be automatically
 logged to files for any future analysis.
@@ -51,21 +56,28 @@ logged to files for any future analysis.
 <P>
 The rest of this document is structured as follows:
 <UL>
-<LI><A HREF="#sec_Sphinx2_sw">Sphinx2 Software</A>
-<LI><A HREF="#sec_models">The Recognition Engine</A>
+<LI><A HREF="#sec_outline">Components of Sphinx-II</A>
+  <UL>
+  <LI><A HREF="#sec_fbs8_sw">FBS8 Software</A>
+  <LI><A HREF="#sec_database">Databases for Running FBS8 Applications</A>
+    <UL>
+    <LI><A HREF="#sec_data_cmu">Databases Accessible Within CMU-SCS</A>
+    <LI><A HREF="#sec_data_external">Databases for External Distribution</A>
+    </UL>
+  </UL>
+<LI><A HREF="#sec_engine">The Recognition Engine</A>
 <LI><A HREF="#sec_api">The Application Programming Interface</A>
   <UL>
   <LI><A HREF="#sec_ad">Low-Level Audio Access</A>
   <LI><A HREF="#sec_cont_ad">Continuous Listening and Silence Filtering</A>
-  <LI><A HREF="#sec_fbs">Speech-to-text Decoding</A>
-  <LI><A HREF="#sec_allphone_api">Allphone Decoding</A>
+  <LI><A HREF="#sec_fbs">Speech Decoding</A>
   </UL>
 <LI><A HREF="#sec_demos">Application Examples</A>
-<LI><A HREF="#sec_Sphinx2_compile">Compiling the Libraries and Demos</A>
-<LI><A HREF="#sec_allphone">Allphone Mode</A>
+<LI><A HREF="#sec_fbs8_compile">Compiling the Libraries and Demos</A>
 <LI><A HREF="#sec_timealign">Forced Time-Alignment Mode</A>
 <LI><A HREF="#sec_cmdline">Arguments Reference</A>
   <UL>
+  <LI><A HREF="#sec_cmdline_inputdb">Input Model Databases</A>
   <LI><A HREF="#sec_cmdline_searchconfig">Decoder Configuration</A>
   <LI><A HREF="#sec_cmdline_beam">Beam Widths</A>
   <LI><A HREF="#sec_cmdline_langwt">Language Weights/Penalties</A>
@@ -83,16 +95,45 @@ The rest of this document is structured as follows:
 <HR>
 
 
-<H3><A NAME="sec_Sphinx2_software"><U>Sphinx2 Software</U></A></H3>
 
-The Sphinx2 software is available on 
-<a href="http://www.sourceforge.net/projects/cmusphinx/">SourceForge</a>.
-<br>
-<i>Note: This section is under construction.</i>
+<H2 align=center><A NAME="sec_outline">Components of Sphinx-II</A></H2>
 
-<H3><A NAME="sec_models"><U>Models for Running Sphinx2 Applications</U></A></H3>
+<H3><A NAME="sec_fbs8_sw">FBS8 Software</A></H3>
 
-In order to run Sphinx2 applications, several model files are needed.  Applications
+The complete distribution of the FBS8 decoder has several components:
+<UL>
+<LI><A HREF="../include/"><strong><code>include/</code></strong></A> directory of header
+files.  The relevant ones are:
+  <UL>
+  <LI> <A HREF="../include/fbs.h"><strong><code>include/fbs.h</code></strong></A>
+	defines the core speech recognition functions,
+  <LI> <A HREF="../include/ad.h"><strong><code>include/ad.h</code></strong></A>
+	encapsulates the low-level audio API,
+  <LI> <A HREF="../include/cont_ad.h"><strong><code>include/cont_ad.h</code></strong></A>
+	defines a silence-filtering module for separating speech from silence in a
+        raw audio stream.
+  </UL>
+<LI><A HREF="../src/"><strong><code>src/</code></strong></A> directory containing
+various FBS8 libraries and utilities.
+<LI><A HREF="../lib/"><strong><code>lib/</code></strong></A> directory for compiled
+library binaries.
+<LI><A HREF="../bin/"><strong><code>bin/</code></strong></A> directory for compiled
+executables of demo examples.
+<LI><A HREF="../examples/"><strong><code>examples/</code></strong></A> directory
+containing sources for the demo examples.  A special case is
+<A HREF="../examples/batch/"><strong><code>examples/batch/</code></strong></A>,
+a batch-mode recognizer for processing pre-recorded data.
+<LI><A HREF="../Makefile"><strong><code>Makefile</code></strong></A> (Unix
+platforms only) for compiling the libraries and demo applications.
+</UL>
+
+<P><HR width=50%>
+
+
+
+<H3><A NAME="sec_database">Databases for Running FBS8 Applications</A></H3>
+
+In order to run FBS8 applications, several database files are needed.  Applications
 must configure these for the decoder through several <A HREF="#sec_cmdline">arguments</A>
 that are described later in this document.  The decoder must be initialized with
 the following databases:
@@ -126,7 +167,7 @@ must be consistent with the acoustic model being used.
 <P>
 
 <LI><strong><em>Language Model(s)</em></strong> :
-Sphinx2 accepts <em>word trigram</em> language model (LM) files.  One can load multiple
+FBS8 accepts <em>word trigram</em> language model (LM) files.  One can load multiple
 LMs into the decoder during initialization.  (At least one must be loaded.)
 An application can even create LM files dynamically at run time and load them
 on-the-fly.  However, only one LM can be active at a time.  The active vocabulary
@@ -136,7 +177,7 @@ dictionary and the currently active LM.
 <P>
 
 Large LMs load very slowly.  The delay can be avoided by providing LM <em>dump</em>
-files along with the original LMs.  The Sphinx2 decoder automatically creates LM dump
+files along with the original LMs.  The FBS8 decoder automatically creates LM dump
 files for large LMs (see Section <A HREF="#sec_lmdump">Building LM
 Dump Files</A>).
 </UL>
@@ -146,14 +187,94 @@ only accessible within CMU-SCS.
 
 <P><br>
 
-<H2 align=center><A NAME="sec_engine"><U>The Recognition Engine</U></A></H2>
+
+
+<H4><A NAME="sec_data_cmu">Databases Accessible Within CMU-SCS</A></H4>
+
+The databases within CMU-SCS are widely scattered.  However, a large subset of them
+can be accessed by the CMU-SCS speech group (via NFS) from
+<A HREF="file:/net/alf20/usr/rkm/SHARED/"><strong><code>/net/alf20/usr/rkm/SHARED</code></strong></A>.
+This directory contains several kinds of databases in separate subdirectories.
+The primary ones are the following:
+<UL>
+<LI><A HREF="file:/net/alf20/usr/rkm/SHARED/ctl/"><strong><code>ctl</code></strong></A>
+contains various batch control files pointing to WSJ sentences from the Nov93/Nov94
+evaluations and corresponding correct transcripts.
+<LI><A HREF="file:/net/alf20/usr/rkm/SHARED/dict/"><strong><code>dict</code></strong></A>
+has several dictionaries for different applications and corresponding senone
+mapping files for some.
+<LI><A HREF="file:/net/alf20/usr/rkm/SHARED/lm/"><strong><code>lm</code></strong></A>
+contains LMs for different applications and DARPA evaluation tasks.  In some cases
+only LM dump files may be available.
+<LI><A HREF="file:/net/alf20/usr/rkm/SHARED/hmm/"><strong><code>hmm</code></strong></A>
+contains different versions of semi-continuous acoustic models.
+<LI><A HREF="file:/net/alf20/usr/rkm/SHARED/sendump/"><strong><code>sendump</code></strong></A>
+has 8-bit senone dump files corresponding to some of the 32-bit acoustic models in
+the <A HREF="file:/net/alf20/usr/rkm/SHARED/hmm/"><strong><code>hmm</code></strong></A>
+directory.
+</UL>
+
+<P><br>
+
+
+
+<H4><A NAME="sec_data_external">Databases for External Distribution</A></H4>
+
+A number of standard acoustic models, pronunciation dictionaries and associated
+mapping information, and LMs are provided with the standard FBS8 distribution.
+The distribution also contains scripts to run the example applications described
+in <A HREF="#sec_demos">Application Examples</A> below.
+
+<P>
+Dictionaries and language models are provided for two different <em>tasks</em>:
+ATIS (Air Travel Information Service) and Vmail (e-mail composition using voice).
+Two sets of acoustic models are provided: 3000-senone gender-independent models,
+and more sophisticated 10000-senone gender-dependent or independent ones.
+
+<P>
+The main data directory
+(<A HREF="file:/c:/speech/"><strong><code>c:\speech</code></strong></A>, on the
+PC WindowsNT platforms at CMU) contains the following subdirectories:
+<UL>
+<LI><strong><code>atis</code></strong>:  Includes the pronunciation dictionary
+and associated LM for the ATIS task.  It also contains command line arguments
+files (see the <A HREF="#sec_cmdline_outputspec">-argfile</A> argument below) for
+running various demos using these models.
+
+<LI><strong><code>vmail</code></strong>:  Includes a similar pronunciation
+dictionary and language model for the Vmail task.  Again, it contains command
+line arguments files for running various the demos using these model databases.
+
+<LI><strong><code>wsj-10k</code></strong>:  Contains the 10000-senone acoustic
+models and corresponding senone-mapping files that can be used for either task.
+
+<LI><strong><code>wsj-3k</code></strong>:  Contains the 3000-senone acoustic
+model and senone-mapping files.
+
+<LI><strong><code>bin</code></strong>:  Contains a copy of the binary executables
+for the demos and scripts for running them.  (The scripts refer to the command
+line argument files in the <strong><code>vmail</code></strong> and
+<strong><code>atis</code></strong> directories.)  
+
+<LI><strong><code>batch_test</code></strong>:  Test results from batch-mode
+decoding of a few pre-recorded sentences.
+</UL>
+The <strong><code>bin</code></strong> directory also contains the executable
+for the Vmail demo.  However, sources for this demo are not included in the FBS8
+distribution.
+
+<P><HR>
+
+
+
+<H2 align=center><A NAME="sec_engine">The Recognition Engine</A></H2>
 
 The core speech decoder operates on finite-length segments of speech or
 <em>utterances</em>, one utterance at a time.  An utterance can be upto some tens of
 seconds long.  (Though most human-computer interactions would probably proceed in
 short phrases or sentences.)
 
-<H3><U>Basic Recognition</U></H3>
+<H3>Multiple Passes</H3>
 
 Each utterance is decoded using upto three <em>passes</em>, two of which are optional:
 <UL>
@@ -179,7 +300,7 @@ thesis poscript file</A>.
 
 <P><HR width=50%>
 
-<H3><U>Configuring the Active Language Model and Vocabulary</U></H3>
+<H3>Configuring the Active Language Model and Vocabulary</H3>
 
 Several language models can be loaded into the recognizer, but exactly one is active
 during the recognition of any utterance.  Language models are identified by a string
@@ -202,35 +323,14 @@ as unigrams.  (<em>This is a HACK.  There ought to be a mechanism for adding a w
 to a specified language model.</em>)
 </UL>
 
-
-<P><HR width=50%>
-
-<H3><U>Forced Alignment and Allphone Recognition Modes</U></H3>
-
-The recognizer can be run to <em>time-align</em> given transcripts to input
-speech, producing time segmentations for the input transcripts, as well as identifying
-silence regions.  Time-alignment is only available in batch mode.  It is covered in
-more detail below.
-<P></P>
-
-Sphinx2 can also be used in <em>allphone</em> mode to produce a purely phonetic
-recognition instead of the normal word recognition.  The allphone recognition API is
-available to user-written applications as well.  However, the input can only be from
-pre-recorded files.
-<P></P>
-
-<b>Note</b>: The recognition engine is configured in one of <em>normal</em>,
-<em>forced-alignment</em>, or <em>allphone</em> modes during initialization.  It
-cannot be dynamically switched between these modes later.
-
 <P><HR>
 
 
 
-<H2 align=center><A NAME="sec_api"><U>The Application Programming Interface</U></A></H2>
+<H2 align=center><A NAME="sec_api">The Application Programming Interface</A></H2>
 
 There are three main groups of functions or application programming interface
-(API) available with Sphinx2: raw audio access, continuous listening/silence
+(API) available with FBS8: raw audio access, continuous listening/silence
 filtering, and the core decoder itself.
 
 <P>
@@ -241,7 +341,7 @@ data originating at any source at all---standard audio devices, pre-recorded fil
 data from a remote location over a network, etc.  Since most applications
 ultimately need to access common audio devices and to perform some form of silence
 filtering to detect speech/no-speech conditions, the two additional modules are
-provided with Sphinx2 as a convenience.
+provided with FBS8 as a convenience.
 
 <P>
 
@@ -255,13 +355,13 @@ respectively.)
 
 
 
-<H3><A NAME="sec_ad"><U>Low-Level Audio Access</U></A></H3>
+<H3><A NAME="sec_ad">Low-Level Audio Access</A></H3>
 
 No two platforms provide the same interface to audio devices.  To accommodate this
 diversity, the platform-dependent code is encapsulated within a generic interface
 for low-level audio recording and playback.  The following functions are for recording.
 Complete details can be found in
-<strong><code>include/ad.h</code></strong>.
+<A HREF="../include/ad.h"><strong><code>include/ad.h</code></strong></A>.
 <TABLE>
 
 <TR>
@@ -317,8 +417,8 @@ Closes the audio device associated with the specified audio handle.
 
 </TABLE>
 
-See <strong><code>examples/adrec.c</code></strong>
-and <strong><code>examples/adpow.c</code></strong>
+See <A HREF="../examples/adrec.c"><strong><code>examples/adrec.c</code></strong></A>
+and <A HREF="../examples/adpow.c"><strong><code>examples/adpow.c</code></strong></A>
 for two examples demonstrating the use of the above functions.
 
 <P>
@@ -386,24 +486,26 @@ Finally, the audio library includes a function
 16-bit linear PCM samples.
 <P>
 
-See <strong><code>examples/adplay.c</code></strong>
+See <A HREF="../examples/adplay.c"><strong><code>examples/adplay.c</code></strong></A>
 for an example that plays back audio samples from a given input file.
 
 <P>
 
 The implementation of the audio API for various platforms is contained in
-analog-to-digital library for the given architecture.
+<A HREF="../src/libad/"><strong><code>src/libad</code></strong></A>.  It uses
+utility functions in
+<A HREF="../src/libcommon/"><strong><code>src/libcommon</code></strong></A>.
 
 <P><HR width=50%>
 
 
 
-<H3><A NAME="sec_cont_ad"><U>Continuous Listening and Silence Filtering</U></A></H3>
+<H3><A NAME="sec_cont_ad">Continuous Listening and Silence Filtering</A></H3>
 
-As mentioned earlier, Sphinx2 can only decode utterances that are limited to less than
+As mentioned earlier, FBS8 can only decode utterances that are limited to less than
 about 30 sec at a time.  However, one often wants to leave the audio recording
 running continuously and automatically determine utterance boundaries based on
-pauses in the input speech.  The continuous listening module in Sphinx2 provides the
+pauses in the input speech.  The continuous listening module in FBS8 provides the
 mechanisms for this purpose.
 
 <P>
@@ -420,7 +522,7 @@ is provided to inform the application about silence regions that have been dropp
 <P>
 
 The complete continuous listening API is defined in
-<strong><code>include/cont_ad.h</code></strong></A>
+<A HREF="../include/cont_ad.h"><strong><code>include/cont_ad.h</code></strong></A>
 and is summarized below:
 
 <TABLE>
@@ -554,16 +656,18 @@ that recording is on during calibration and normal operation.
 
 <P>
 
-See <strong><code>examples/cont_adseg.c</code></strong>
+See <A HREF="../examples/cont_adseg.c"><strong><code>examples/cont_adseg.c</code></strong></A>
 for an example that uses the continuous listening module to segment live audio input
 into separate utterances.  Similarly,
-<strong><code>examples/cont_fileseg.c</code></strong>
+<A HREF="../examples/cont_fileseg.c"><strong><code>examples/cont_fileseg.c</code></strong></A>
 segments a given pre-recorded file containing audio data into utterances.
+Their compiled versions are under the
+<A HREF="../bin/"><strong><code>bin</code></strong></A> directory.
 
 <P>
 
 The implementation of continuous listening is in
-<strong><code>src/libfe/cont_ad.c</code></strong>.
+<A HREF="../src/libfe/cont_ad.c"><strong><code>src/libfe/cont_ad.c</code></strong></A>.
 Applications that use this module are required to link with
 <strong><code>libfe</code></strong> and <strong><code>libcommon</code></strong>
 (and <strong><code>libad</code></strong> if necessary).
@@ -573,13 +677,13 @@ Applications that use this module are required to link with
 
 
 
-<H3><A NAME="sec_fbs"><U>Speech-to-Text Decoding</U></A></H3>
+<H3><A NAME="sec_fbs">Speech Decoding</A></H3>
 
 There are several aspects to speech decoding: initialization, basic speech
 decoding, dynamic management of domains (LMs), logging and book-keeping, etc.
-This section briefly describes the related Sphinx2 API functions.  The complete
+This section briefly describes the related FBS8 API functions.  The complete
 specification can be found in
-<strong><code>include/fbs.h</code></strong>.
+<A HREF="../include/fbs.h"><strong><code>include/fbs.h</code></strong></A>.
 
 <P>
 
@@ -618,7 +722,7 @@ Cleans up the internals of the decoder before the application exits.
 
 
 
-Sphinx2 applications can use the following functions to decode speech into text,
+FBS8 applications can use the following functions to decode speech into text,
 one utterance at a time:
 <TABLE>
 
@@ -725,7 +829,7 @@ terminates the current utterance.  No further recognition results can be obtaine
 </TD>
 <TD VALIGN=TOP>
 Returns N-best hypotheses for the utterance (see further details in
-<strong><code>include/fbs.h</code></strong>).
+<A HREF="../include/fbs.h"><strong><code>include/fbs.h</code></strong></A>).
 </TD>
 </TR>
 
@@ -751,7 +855,7 @@ The application code fragment for decoding one utterance typically looks as foll
     uttproc_result (...., blocking);
 </pre>
 See demo applications in
-<strong><code>examples</code></strong> for several
+<A HREF="../examples/"><strong><code>examples</code></strong></A> for several
 variations:
 
 <P><br>
@@ -849,87 +953,74 @@ Useful for locating the logged A/D data and cepstrum files, for example.
 
 </TABLE>
 
-
-<P><HR width=50%>
-
-
-
-<H3><A NAME="sec_allphone_api"><U>Allphone Decoding</U></A></H3>
-
-The API for allphone decoding includes a single function that supports recognition
-from pre-recorded files:
-<TABLE>
-
-<TR>
-<TD nowrap VALIGN=TOP>
-<LI><strong><code>uttproc_allphone_cepfile</code></strong>:
-</TD>
-<TD VALIGN=TOP>
-Performs allphone recognition on the given file and returns the resulting phone
-segmentation.
-</TD>
-</TR>
-
-</TABLE>
-
-
 <P><HR>
 
 
 
-<H2 align=center><A NAME="sec_demos"><U>Application Examples</U></A></H2>
+<H2 align=center><A NAME="sec_demos">Application Examples</A></H2>
 
 Two simple speech decoding applications, implemented with a tty-based interface as
 well as with a Windows interface, are included in directory
-<strong><code>examples</code></strong>:
+<A HREF="../examples/"><strong><code>examples</code></strong></A>:
 <UL>
-<LI><strong><code>sphinx2-ptt</code></strong>:
+<LI><A HREF="../examples/demo1-tty/"><strong><code>demo1-tty</code></strong></A>:
 demonstrates an application in which the user explicitly indicates the start and
 end of each utterance using the &lt<code>RETURN</code>&gt keyboard key.
 (On WindowsNT/Windows95 systems, the ending &lt<code>RETURN</code>&gt is not
 used.  Instead, the utterance is terminated after a fixed duration.)
-<p>
-<LI><strong><code>sphinx2-continuous</code></strong>:
+<LI><A HREF="../examples/demo2-tty/"><strong><code>demo2-tty</code></strong></A>:
 demonstrates the interaction of continuous listening and decoding.  An endless
 audio input stream is automatically segmented into utterances using the continuous
 listening module, and the utterances are decoded.  The timestamps returned by the
 continuous listening module are used to locate gaps in speech data of at least 1 sec,
 thus marking the utterance boundaries.
+<LI><A HREF="../examples/demo1-nt/"><strong><code>demo1-nt</code></strong></A>:
+This is just a WindowsNT/Windows95 version of <strong><code>demo1-tty</code></strong>,
+with a Windows GUI instead of the keyboard/tty interface.
+<LI><A HREF="../examples/demo2-nt/"><strong><code>demo2-nt</code></strong></A>:
+This is just a WindowsNT/Windows95 version of <strong><code>demo2-tty</code></strong>,
+with a Windows GUI instead of the keyboard/tty interface.  (This version takes a few
+minutes to initialize, with no feedback, so please be patient!)
 </UL>
 
-<P><HR>
+<P>
 
-
-
-<H2 align=center><A NAME="sec_Sphinx2_compile"><U>Compiling the Libraries and Demos</U></A></H2>
-
-To compile Sphinx2 libraries on Unix platforms:
-<UL>
-<LI> Unpack the distribution
-<LI> Run <code>sh autogen.sh</code> if necessary
-<LI> Run <code>./configure</code>
-<LI> <code>make</code>
-<LI> <code>make test</code>
-<LI> <code>make install</code>
-</UL>
-
-<P><HR>
-
-
-<H2 align=center><A NAME="sec_allphone"><U>Allphone Mode</U></A></H2>
-
-Sphinx2 runs in allphone mode if the <b><code>-allphone</code></b> flag is
-<b><code>TRUE</code></b> during the initialization.  In this mode, no
-language model should be provided; i.e., the <strong><code>-lmfn</code></strong>
-and <strong><code>-lmctlfn</code></strong> arguments should be omitted.
+The compiled versions of these applications can be found under the
+<A HREF="../bin/"><strong><code>bin</code></strong></A> directory.  It also
+contains some example scripts to run the applications with the appropriate command
+line arguments.  However, these scripts can only be run from within CMU-SCS.  For
+running the demos in the externally distributed system, see
+<A HREF="#sec_data_external">Databases for External Distribution</A>
+above.
 
 <P><HR>
 
 
 
-<H2 align=center><A NAME="sec_timealign"><U>Forced Time-Alignment Mode</U></A></H2>
+<H2 align=center><A NAME="sec_fbs8_compile">Compiling the Libraries and Demos</A></H2>
 
-Sphinx2 (in batch mode) can be used for aligning transcripts to speech, in order to
+To compile FBS8 libraries on Unix platforms:
+<OL>
+<LI> Copy the software to some directory (e.g., "fbs8")
+<LI> Define the environment variables:
+  <UL>
+  <LI> setenv MACHINE alpha (or sun4, linux, etc. as appropriate)
+  <LI> setenv S2_ROOT full-pathname-of-fbs8-root-directory (e.g., /usr/rkm/fbs8)
+  </UL>
+<LI> Create the directories $S2_ROOT/lib/$MACHINE and $S2_ROOT/bin/$MACHINE, if not
+already present
+<LI> cd $S2_ROOT
+<LI> make common
+</OL>
+On PCs running Windows NT, you need to "cd" to every library directory and run "nmake".
+
+<P><HR>
+
+
+
+<H2 align=center><A NAME="sec_timealign">Forced Time-Alignment Mode</A></H2>
+
+FBS8 (in batch mode) can be used for aligning transcripts to speech, in order to
 obtain time-segmentations at the word, phone, or state levels.  In this mode, no
 language model should be provided; i.e., the <strong><code>-lmfn</code></strong>
 and <strong><code>-lmctlfn</code></strong> arguments should be omitted.  The
@@ -951,20 +1042,20 @@ are written to stdout (the log file).
 
 
 
-<H2 align=center><A NAME="sec_cmdline"><U>Arguments Reference</U></A></H2>
+<H2 align=center><A NAME="sec_cmdline">Arguments Reference</A></H2>
 
-The core Sphinx2 decoding engine accepts a long list of arguments during
+The core FBS8 decoding engine accepts a long list of arguments during
 initialization.  These are the arguments to the library function
 <strong><code>fbs_init(int argc, char *argv[])</code></strong> defined in
-<strong><code>include/fbs.h</code></strong>.
-(Applications built around the Sphinx2 libraries, of course, can have additional
+<A HREF="../include/fbs.h"><strong><code>include/fbs.h</code></strong></A>.
+(Applications built around the FBS8 libraries, of course, can have additional
 arguments.)  Many arguments, such as the input model databases, must be
 specified by the user.  We cover the more important ones below (the remaining
 have reasonable default values):
 
 <P>
 
-<H3><A NAME="sec_cmdline_inputdb"><U>Input Model Databases</U></A></H3>
+<H3><A NAME="sec_cmdline_inputdb">Input Model Databases</A></H3>
 
 <TABLE border>
 
@@ -1101,7 +1192,7 @@ None.
 
 
 
-<H3><A NAME="sec_cmdline_searchconfig"><U>Decoder Configuration</U></A></H3>
+<H3><A NAME="sec_cmdline_searchconfig">Decoder Configuration</A></H3>
 
 <TABLE border>
 
@@ -1122,39 +1213,13 @@ Batch-mode control file listing utterance files (without their file-extension)
 to decode.  <strong><code>-ctloffset</code></strong> is the number of initial
 utterances in the file to be skipped, and <strong><code>-ctlcount</code></strong>
 the number to be processed (after the skip, if any).
-<strong><code>-ctlfn</code></strong> must not be specified for live-mode or
-application-driven operation.
+<strong><code>-ctlfn</code></strong> must be <strong><code>FALSE</code></strong>
+for live-mode operation.
 </TD>
 <TD VALIGN=TOP>
 None<br>
 0<br>
 All<br>
-</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>
-<strong><code>-datadir</code></strong><br>
-</TD>
-<TD VALIGN=TOP>
-If the control file (-ctlfn argument) entries are relative pathnames, an optional
-directory prefix for them may be specified using this argument.
-</TD>
-<TD VALIGN=TOP>
-None
-</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>
-<strong><code>-allphone</code></strong><br>
-</TD>
-<TD VALIGN=TOP>
-Should be <strong><code>TRUE</code></strong> to configure the recognition engine for
-allphone mode operation.
-</TD>
-<TD VALIGN=TOP>
-<strong><code>FALSE</code></strong>
 </TD>
 </TR>
 
@@ -1332,7 +1397,7 @@ Word lattice entries to be allocated.  Longer sentences need larger lattices.
 
 
 
-<H3><A NAME="sec_cmdline_beam"><U>Beam Widths</U></A></H3>
+<H3><A NAME="sec_cmdline_beam">Beam Widths</A></H3>
 
 <TABLE border>
 
@@ -1433,7 +1498,7 @@ frame.
 
 
 
-<H3><A NAME="sec_cmdline_langwt"><U>Language Weights/Penalties</U></A></H3>
+<H3><A NAME="sec_cmdline_langwt">Language Weights/Penalties</A></H3>
 
 <TABLE border>
 
@@ -1510,7 +1575,7 @@ Unigram probability (logprob) for OOV words from
 
 
 
-<H3><A NAME="sec_cmdline_outputspec"><U>Output Specifications</U></A></H3>
+<H3><A NAME="sec_cmdline_outputspec">Output Specifications</A></H3>
 
 <TABLE border>
 
@@ -1678,7 +1743,7 @@ Recursive <strong><code>-argfile</code></strong> specifications are not allowed.
 
 <P><br>
 
-<H3><A NAME="sec_cmdline_list"><U>Alphabetical List of Arguments</U></A></H3>
+<H3><A NAME="sec_cmdline_list">Alphabetical List of Arguments</A></H3>
 
 <TABLE>
 <TR>
@@ -1752,10 +1817,6 @@ Recursive <strong><code>-argfile</code></strong> specifications are not allowed.
 <TR>
 <TD nowrap VALIGN=TOP><LI><A HREF="#sec_cmdline_searchconfig">ctloffset</A>:</TD>
 <TD VALIGN=TOP>No. of initial utterances to be skipped from control file.</TD>
-</TR>
-<TR>
-<TD nowrap VALIGN=TOP><LI><A HREF="#sec_cmdline_searchconfig">datadir</A>:</TD>
-<TD VALIGN=TOP>Directory prefix for control file entries.</TD>
 </TR>
 <TR>
 <TD nowrap VALIGN=TOP><LI><A HREF="#sec_cmdline_inputdb">dictfn</A>:</TD>
@@ -1951,9 +2012,9 @@ Recursive <strong><code>-argfile</code></strong> specifications are not allowed.
 
 
 
-<H2 align=center><A NAME="sec_faq"><U>Frequently Asked Questions</U></A></H2>
+<H2 align=center><A NAME="sec_faq">Frequently Asked Questions</A></H2>
 
-<H3><A NAME="sec_speed"><U>Speeding up Decoding</U></A></H3>
+<H3><A NAME="sec_speed">Speeding up Decoding</A></H3>
 
 There are several ways to speed up decoding:
 <UL>
@@ -1999,16 +2060,19 @@ vocabulary for each utterance.  (Remember that the active vocabulary is the
 
 
 
-<H3><A NAME="sec_lmdump"><U>Building LM Dump Files</U></A></H3>
+<H3><A NAME="sec_lmdump">Building LM Dump Files</A></H3>
 
 LM files are usually ASCII files.  If they are large, it is time consuming to read
 them into the decoder.  A binary "dump" file is much faster to read and more compact.
 
 <P>
 LM dump files can be created by either a standalone program
-<strong><code>examples/lm3g2dmp.c</code></strong>
+<A HREF="../src/misc/lm3g2dmp.c"><strong><code>src/misc/lm3g2dmp.c</code></strong></A>
 or the decoder.  The standalone version can be compiled from the
-<strong><code>examples</code></strong></A> directory.
+<A HREF="../src/misc/"><strong><code>src/misc</code></strong></A>
+directory, using the
+<A HREF="../src/misc/Makefile"><strong><code>src/misc/Makefile</code></strong></A>
+in there.
 
 The program takes two arguments, the LM source file and a directory in which the
 dump file is to be created.  It reads the header from the original LM file to determine
@@ -2035,7 +2099,7 @@ internally defined number of bigrams and trigrams.
 
 
 
-<H3><A NAME="sec_sendump"><U>Building 8-Bit Senone Dump Files</U></A></H3>
+<H3><A NAME="sec_sendump">Building 8-Bit Senone Dump Files</A></H3>
 
 The Sphinx-II senonic acoustic model files contain 32-bit data.  (These are in the
 directory specified by the
@@ -2052,7 +2116,7 @@ the <strong><code>-8bsen</code></strong> flag set to
 The decoder can be killed after it creates the 32-bit senone dump file, which happens
 during the initialization and is announced in the log output.
 
-<LI> Run: <strong><code>/afs/cs/project/plus-2/s2/Sphinx2/bin/alpha/pdf32to8b 32bit-file 8bit-file</code></strong><BR>
+<LI> Run: <strong><code>/afs/cs/project/plus-2/s2/fbs8/bin/alpha/pdf32to8b 32bit-file 8bit-file</code></strong><BR>
 to create the 8-bit senone dump file.
 That is, the first argument to <strong><code>pdf32to8b</code></strong>
 is the temporary 32-bit dump file created above, and the second argument is the

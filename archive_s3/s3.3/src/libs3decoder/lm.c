@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * lm.c -- Disk-based backoff word trigram LM module.
  *
@@ -44,9 +9,6 @@
  * **********************************************
  * 
  * HISTORY
- * 
- * 20.Apr.2001  RAH (rhoughton@mediasite.com, ricky.houghton@cs.cmu.edu)
- *              Adding lm_free() to free allocated memory
  * 
  * 30-Dec-2000  Rita Singh (rsingh@cs.cmu.edu) at Carnegie Mellon University
  *		Removed language weight application to wip. To maintain
@@ -76,7 +38,6 @@
 
 
 static char *darpa_hdr = "Darpa Trigram LM";
-static int LM_IN_MEMORY = 0;	/* RAH, 5.8.01 Allow this as an option to sphinx */
 
 
 #if 0
@@ -333,28 +294,6 @@ static lm_t *lm_read_dump (char *file, float64 lw, float64 wip, float64 uw)
     E_INFO("%8d unigrams\n", lm->n_ug);
 
     /* Space for in-memory bigrams/trigrams info; FOR NOW, DISK-BASED LM OPTION ONLY!! */
-
-    /* RAH, 5.1.01 - Let's try reading the whole damn thing in here   */
-    if (LM_IN_MEMORY) {
-      lm->bg = (bg_t *) ckd_calloc (lm->n_bg+1,sizeof(bg_t));
-      lm->tg = (tg_t *) ckd_calloc (lm->n_tg+1,sizeof(tg_t));
-
-      if (lm->n_bg > 0) {       /* Read bigrams; remember sentinel at the end */
-	lm->bgoff = ftell (lm->fp);
-	fread (lm->bg, lm->n_bg+1,sizeof(bg_t),lm->fp);
-	E_INFO("Read %8d bigrams [in memory]\n", lm->n_bg);
-	
-	lm->membg = (membg_t *) ckd_calloc (lm->n_ug, sizeof(membg_t));
-      }
-      
-      if (lm->n_tg > 0) {       /* Read trigrams */
-	lm->tgoff = ftell (lm->fp);
-	fread (lm->tg,lm->n_tg,sizeof(tg_t),lm->fp);
-	E_INFO("Read %8d trigrams [in memory]\n", lm->n_tg);
-	
-	lm->tginfo = (tginfo_t **) ckd_calloc (lm->n_ug, sizeof(tginfo_t *));
-      }
-    } else {
     lm->bg = NULL;
     lm->tg = NULL;
 
@@ -363,6 +302,7 @@ static lm_t *lm_read_dump (char *file, float64 lw, float64 wip, float64 uw)
 	lm->bgoff = ftell (lm->fp);
 	fseek (lm->fp, (lm->n_bg+1) * sizeof(bg_t), SEEK_CUR);
 	E_INFO("%8d bigrams [on disk]\n", lm->n_bg);
+
 	lm->membg = (membg_t *) ckd_calloc (lm->n_ug, sizeof(membg_t));
     }
     
@@ -373,7 +313,6 @@ static lm_t *lm_read_dump (char *file, float64 lw, float64 wip, float64 uw)
 	E_INFO("%8d trigrams [on disk]\n", lm->n_tg);
 
 	lm->tginfo = (tginfo_t **) ckd_calloc (lm->n_ug, sizeof(tginfo_t *));
-    }
     }
     
     if (lm->n_bg > 0) {
@@ -515,10 +454,6 @@ lm_t *lm_read (char *file, float64 lw, float64 wip, float64 uw)
 	E_FATAL("uw = %e\n", uw);
     
     E_INFO ("LM read('%s', lw= %.2f, wip= %d, uw= %.2f)\n", file, lw, logs3(wip), uw);
-    if (cmd_ln_int32 ("-lminmemory")) 
-      LM_IN_MEMORY = 1;    
-    else
-      LM_IN_MEMORY = 0;
     
     /* For now, only dump files can be read; they are created offline */
     lm = lm_read_dump (file, lw, wip, uw);
@@ -545,9 +480,6 @@ void lm_cache_reset (lm_t *lm)
     
     n_bgfree = n_tgfree = 0;
     
-  if (LM_IN_MEMORY)		/* RAH We are going to short circuit this if we are running with the lm in memory */
-    return;
-  
     if ((lm->n_bg > 0) && (! lm->bg)) {	/* Disk-based; free "stale" bigrams */
 	for (i = 0; i < lm->n_ug; i++) {
 	    if (lm->membg[i].bg && (! lm->membg[i].used)) {
@@ -666,9 +598,6 @@ static void load_bg (lm_t *lm, s3lmwid_t lw1)
     b = lm->ug[lw1].firstbg;		/* Absolute first bg index for ug lw1 */
     n = lm->ug[lw1+1].firstbg - b;	/* Not including guard/sentinel */
     
-  if (LM_IN_MEMORY)		/* RAH, if LM_IN_MEMORY, then we don't need to go get it. */
-    bg = lm->membg[lw1].bg = &lm->bg[b];
-  else {
     bg = lm->membg[lw1].bg = (bg_t *) ckd_calloc (n+1, sizeof(bg_t));
     
     if (fseek (lm->fp, lm->bgoff + b*sizeof(bg_t), SEEK_SET) < 0)
@@ -685,7 +614,7 @@ static void load_bg (lm_t *lm, s3lmwid_t lw1)
 	    SWAP_INT16(&(bg[i].firsttg));
 	}
     }
-  }
+    
     lm->n_bg_fill++;
     lm->n_bg_inmem += n;
 }
@@ -813,9 +742,7 @@ int32 lm_bg_score (lm_t *lm, s3lmwid_t w1, s3lmwid_t w2)
 
 static void load_tg (lm_t *lm, s3lmwid_t lw1, s3lmwid_t lw2)
 {
-    int32 i, n, b;
-    int32 t = -1; /* Let's make sure that if t isn't initialized after the
-					    * "if" statement below, it makes things go bad */
+    int32 i, n, b, t;
     bg_t *bg;
     tg_t *tg;
     tginfo_t *tginfo;
@@ -858,21 +785,8 @@ static void load_tg (lm_t *lm, s3lmwid_t lw1, s3lmwid_t lw2)
 	tginfo->bowt = 0;
 	n = tginfo->n_tg = 0;
     }
-
-    /* "t" has not been assigned any meanigful value, so if you use it
-     * beyond this point, make sure it's been properly assigned.
-     */   
-//	assert (t != -1);
-
+    
     /* At this point, n = #trigrams for lw1,lw2.  Read them in */
-
-    if (LM_IN_MEMORY) {
-		/* RAH, already have this in memory */
-      if (n > 0){
-	assert(t != -1);
-	tg = tginfo->tg = &lm->tg[t];
-      }
-    } else {
     if (n > 0) {
 	tg = tginfo->tg = (tg_t *) ckd_calloc (n, sizeof(tg_t));
 	if (fseek (lm->fp, lm->tgoff + t*sizeof(tg_t), SEEK_SET) < 0)
@@ -887,7 +801,7 @@ static void load_tg (lm_t *lm, s3lmwid_t lw1, s3lmwid_t lw2)
 	    }
 	}
     }
-    }
+    
     lm->n_tg_fill++;
     lm->n_tg_inmem += n;
 }
@@ -1035,25 +949,6 @@ s3lmwid_t lm_wid (lm_t *lm, char *word)
     return BAD_S3LMWID;
 }
 
-void lm_free (lm_t *lm)
-{
-  int i;
-
-  for (i=0;i<lm->n_ug;i++) 
-    ckd_free ((void *) lm->wordstr[i]);	/*  */
-  ckd_free ((void *) lm->membg);
-  ckd_free ((void *) lm->wordstr);
-  ckd_free ((void *) lm->tgcache);
-  ckd_free ((void *) lm->tg_segbase);
-  ckd_free ((void *) lm->tgprob);
-  ckd_free ((void *) lm->tgbowt);
-  ckd_free ((void *) lm->bgprob);
-  ckd_free ((void *) lm->tginfo);
-  ckd_free ((void *) lm->ug);  
-  ckd_free ((void *) lm);
-  
-}
-
 
 #if (_LM_TEST_)
 static int32 sentence_lmscore (lm_t *lm, char *line)
@@ -1106,8 +1001,7 @@ main (int32 argc, char *argv[])
     logs3_init (1.0001);
     lm = lm_read (argv[1], 9.5, 0.2);
 
-    if (1) {			/* Short cut this so we can test for memory leaks */
-      for (;;) {
+    for (;;) {
 	printf ("> ");
 	if (fgets (line, sizeof(line), stdin) == NULL)
 	    break;
@@ -1118,9 +1012,6 @@ main (int32 argc, char *argv[])
 	if (line[k-1] == '\n')
 	    line[k-1] = '\0';
 	printf ("LMScr(%s) = %d\n", line, score);
-      }
-    } /*  */
-    lm_free(lm);
-    exit (0);
+    }
 }
 #endif

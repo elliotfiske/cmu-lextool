@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * tmat.c
  *
@@ -45,9 +10,6 @@
  * 
  * HISTORY
  * 
- * 20.Apr.2001  RAH (rhoughton@mediasite.com, ricky.houghton@cs.cmu.edu)
- *              Added tmat_free to free allocated memory 
- *
  * 29-Feb-2000	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
  * 		Added tmat_chk_1skip(), and made tmat_chk_uppertri() public.
  * 
@@ -223,43 +185,21 @@ tmat_t *tmat_init (char *file_name, float64 tpfloor)
     return t;
 }
 
-/* 
- *  RAH, Free memory allocated in tmat_init ()
- */
-void tmat_free (tmat_t *t)
-{
-  if (t) {
-    if (t->tp)
-      ckd_free_3d ((void ***) t->tp);
-    ckd_free ((void *) t);
-  }
-}
-
 
 #if _TMAT_TEST_
-/* RAH, April 26th, 2001, opened file tmat_test.out and added tmat_free(t) call, there are no memory leaks here */
 main (int32 argc, char *argv[])
 {
     tmat_t *t;
     float64 flr;
-    FILE *fp;
     
     if (argc < 3)
 	E_FATAL("Usage: %s tmat floor\n", argv[0]);
     if (sscanf (argv[2], "%lf", &flr) != 1)
 	E_FATAL("Usage: %s tmat floor\n", argv[0]);
 
-    fp = fopen ("tmat_test.out","wt");
-    if (! fp) {
-      fprintf (stderr,"Unable to topen tmat_test.out for writing\n");
-      exit (-1);
-    }
-
     logs3_init ((float64) 1.0001);
     
     t = tmat_init (argv[1], flr);
-
-    tmat_dump (t,fp);
-    tmat_free (t);
+    tmat_dump (t);
 }
 #endif

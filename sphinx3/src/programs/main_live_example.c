@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /********************************************************************
  * Example program to show usage of the live mode routines
  * The decoder is initialized with live_initialize_decoder()
@@ -46,7 +11,6 @@
 #include <libutil/libutil.h>
 #include <stdio.h>
 #include "live.h"
-#include "cmd_ln_args.h"
 #include "ad.h"
 
 #define MAXSAMPLES 	10000
@@ -138,17 +102,13 @@ static void utterance_loop()
 int main (int argc, char *argv[])
 {
   short samps[MAXSAMPLES];
-  int  i, /*j,*/ buflen, endutt, blksize, nhypwds, nsamp;
+    int  i, buflen, endutt, blksize, nhypwds, nsamp;
     char   *argsfile, *ctlfile, *indir;
     char   filename[512], cepfile[512];
     partialhyp_t *parthyp;
     FILE *fp, *sfp;
 
-    if (argc != 2) {
-      argsfile = NULL;
-      parse_args_file(argsfile);
-      E_FATAL("\nUSAGE: %s <argsfile>\n", argv[0]);
-    }
+
     argsfile = argv[1];
     live_initialize_decoder(argsfile);
 

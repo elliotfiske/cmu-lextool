@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /************************************************
  * CMU ARPA Speech Project
  *
@@ -59,7 +24,6 @@
 
 
 #include "kb.h"
-#include "logs3.h"		/* RAH, added to resolve log3_free */
 
 void kb_init (kb_t *kb)
 {
@@ -76,9 +40,6 @@ void kb_init (kb_t *kb)
     bitvec_t lc_active;
     char *str;
     
-    /* Initialize the kb structure to zero, just in case */
-    memset(kb, 0, sizeof(*kb));
-
     kb->kbcore = kbcore_init (cmd_ln_float32 ("-logbase"),
 			      "s3_1x39",    /* Hack!! Hardwired constant 
 						for -feat argument */
@@ -276,40 +237,3 @@ void kb_lextree_active_swap (kb_t *kb)
     }
 }
 
-/* RAH 4.15.01 Lots of memory is allocated, but never freed, this function will clean up.
- * First pass will get the low hanging fruit.*/
-void kb_free (kb_t *kb)
-{
-  vithist_t *vithist = kb->vithist;
-
-  if (kb->sen_active)
-    ckd_free ((void *)kb->sen_active);
-  if (kb->ssid_active) 
-    ckd_free ((void *)kb->ssid_active);
-  if (kb->comssid_active)
-    ckd_free ((void *)kb->comssid_active);
-  if (kb->fillertree) 
-    ckd_free ((void *)kb->fillertree);
-  if (kb->hmm_hist) 
-    ckd_free ((void *)kb->hmm_hist);
-  
-
-  /* vithist */
-  if (vithist) {
-    ckd_free ((void *) vithist->entry);
-    ckd_free ((void *) vithist->frame_start);
-    ckd_free ((void *) vithist->bestscore);
-    ckd_free ((void *) vithist->bestvh);
-    ckd_free ((void *) vithist->lms2vh_root);    
-    ckd_free ((void *) kb->vithist);
-  }
-
-
-  kbcore_free (kb->kbcore);
-
-  if (kb->feat) {
-    ckd_free ((void *)kb->feat[0][0]);
-    ckd_free_2d ((void **)kb->feat);
-  }
-    
-}

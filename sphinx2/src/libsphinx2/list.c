@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1992-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /* LIST.C
  *
  * HISTORY
@@ -44,33 +56,36 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <sys/types.h>
-
-#include "s2types.h"
-#include "list.h"
+#include <list.h>
 
 #define ERR_ARG		1
 #define ERR_MALLOC	2
 
 static int32 exception();
 
+
 /* NEW_LIST
  *-----------------------------------------------------------*
  * DESCRIPTION
  *	Currently all we do is a calloc
  */
-list_t *new_list (void)
+list_t *new_list ()
 {
     return (list_t *) calloc (1, sizeof(list_t));
 }
+
 
 /* LIST_ADD
  *------------------------------------------------------------*
  * DESCRIPTION
  */
-int
-list_add (list_t *list, caddr_t sym, int32 idx)
+int32
+list_add (list, sym, idx)
+register list_t *list;
+caddr_t sym;
+int32 idx;
 {
-    static char const  *rname = "list_add";
+    static char        *rname = "list_add";
 
     if (list == 0)
 	return (exception (rname, "list", ERR_ARG));
@@ -103,9 +118,11 @@ list_add (list_t *list, caddr_t sym, int32 idx)
  * DESCRIPTION
  */
 caddr_t
-list_lookup (list_t const *list, int32 idx)
+list_lookup (list, idx)
+register list_t *list;
+register int32 idx;
 {
-    static char const *rname = "list_lookup";
+    static char *rname = "list_lookup";
 
     if ((list == 0) || (idx >= list->size) || (idx < 0))
 	return ((caddr_t) exception (rname, "idx", ERR_ARG));
@@ -113,19 +130,24 @@ list_lookup (list_t const *list, int32 idx)
     return (list->list[idx]);
 }
 
-void list_insert (list_t *list, caddr_t sym)
+void list_insert (list, sym)
 /*-------------------*
  * Add sym to list at the in_use position and increment in_use.
  */
+list_t *list;
+caddr_t sym;
 {
     list_add (list, sym, list->in_use);
     list->in_use++;
 }
 
-void list_unique_insert (list_t *list, caddr_t sym)
+
+void list_unique_insert (list, sym)
 /*-------------------*
  * Add sym to list at the in_use position and increment in_use.
  */
+list_t *list;
+caddr_t sym;
 {
     int32 i;
 
@@ -137,6 +159,7 @@ void list_unique_insert (list_t *list, caddr_t sym)
     list->in_use++;
 }
 
+
 /* LIST_FREE
  *------------------------------------------------------------*
  * DESCRIPTION
@@ -144,10 +167,10 @@ void list_unique_insert (list_t *list, caddr_t sym)
  * NB.
  *	This routine doesn't free the objects.
  */
-int
-list_free (list_t *list)
+list_free (list)
+list_t *list;
 {
-    static char const *rname = "listFree";
+    static char *rname = "listFree";
 
     if (list == 0)
 	return (exception (rname, "", ERR_ARG));
@@ -156,11 +179,11 @@ list_free (list_t *list)
     list->list = 0;
     list->size = 0;
     list->in_use = 0;
-    return 0;
 }
 
-int32
-list_index (list_t const *list, caddr_t sym)
+list_index (list, sym)
+list_t *list;
+caddr_t sym;
 {
     int32 i;
 
@@ -168,11 +191,12 @@ list_index (list_t const *list, caddr_t sym)
       if (sym == list->list[i])
 	return (i);
 
-    fprintf (stderr, "listIndex: failed on %ld\n", (unsigned long) sym);
+    fprintf (stderr, "listIndex: failed on %d\n", sym);
     exit (-1);
 }
 
-int32 listLength (list_t const *list)
+int32 listLength (list)
+list_t *list;
 {
     return list->in_use;
 }
@@ -181,9 +205,12 @@ int32 listLength (list_t const *list)
  *------------------------------------------------------------*
  */
 static int32
-exception (char *rname, char *s, int32 exc)
+exception (rname, s, exception)
+char *rname;
+char *s;
+int32 exception;
 {
-    switch (exc) {
+    switch (exception) {
 	case ERR_ARG:
 	    fprintf (stderr, "%s: Bad Argument [%s]\n", rname, s);
 	    exit (-1);
@@ -194,18 +221,21 @@ exception (char *rname, char *s, int32 exc)
 	    break;
 	default:
 	    fprintf (stderr, "%s: [%s] Unknown Exception[%d]\n", rname, s,
-		     exc);
+		     exception);
     }
-    return -1;
 }
 
-void listWrite (FILE *fs, list_t const *list)
+void listWrite (fs, list)
+FILE *fs;
+list_t *list;
 {
     fwrite (&list->in_use, sizeof (int32), 1, fs);
     fwrite (list->list, sizeof (caddr_t), list->in_use, fs);
 }
 
-void listRead (FILE *fs, list_t *list)
+void listRead (fs, list)
+FILE *fs;
+list_t *list;
 {
     if (list == 0) {
 	fprintf (stderr, "listRead: bad argument\n");

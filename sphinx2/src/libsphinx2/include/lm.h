@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1997-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * lm.h - Wrapper for all language models under one integrated look (ideally!).
  *
@@ -42,8 +54,13 @@
  * 		Started.
  */
 
+
 #ifndef _LM_H_
 #define _LM_H_
+
+
+#include <lm_3g.h>
+#include <cache_lm.h>
 
 /* LM scores, given sequences of dictionary base wid */
 int32	lm_tg_score (int32 w1, int32 w2, int32 w3);
@@ -53,11 +70,13 @@ int32	lm_ug_score (int32 w);
 /* One-time initialization of cache LM */
 void lm_cache_lm_init ( void );
 
+
 /*
  * Add a unigram (dictionary word id w) to cache LM (if doesn't exceed ugprob thresh).
  * The LM (and decoder) must be quiescent during this operation.
  */
 void lm_cache_lm_add_ug (int32 w);
+
 
 /*
  * Add a bigram (dictionary word id w1,w2) to cache LM.
@@ -67,5 +86,6 @@ void lm_cache_lm_add_bg (int32 w1, int32 w2);
 
 void lm_cache_lm_dump (char *file);
 void lm_cache_lm_load (char *file);
+
 
 #endif

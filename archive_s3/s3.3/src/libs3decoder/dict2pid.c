@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * dict2pid.c -- Triphones for dictionary
  * 
@@ -237,7 +202,6 @@ static s3ssid_t ssidlist2comsseq (glist_t g, mdef_t *mdef, dict2pid_t *dict2pid,
 }
 
 
-/* RAH 4.16.01 This code has several leaks that must be fixed */
 dict2pid_t *dict2pid_build (mdef_t *mdef, dict_t *dict)
 {
     dict2pid_t *dict2pid;
@@ -274,7 +238,6 @@ dict2pid_t *dict2pid_build (mdef_t *mdef, dict_t *dict)
 	    E_FATAL("Pronunciation-length(%s)= %d\n", dict_wordstr(dict, w), pronlen);
 	n += pronlen;
     }
-
     internal = (s3ssid_t *) ckd_calloc (n, sizeof(s3ssid_t));
     
     /* Temporary */
@@ -495,7 +458,7 @@ void dict2pid_dump (FILE *fp, dict2pid_t *d2p, mdef_t *mdef, dict_t *dict)
 			     mdef_ciphone_str (mdef, (s3cipid_t)b),
 			     mdef_ciphone_str (mdef, (s3cipid_t)r),
 			     mdef_ciphone_str (mdef, (s3cipid_t)l),
-			     d2p->ldiph_lc[b][r][l]); /* RAH, ldiph_lc is returning an int32, %d expects an int16 */
+			     d2p->ldiph_lc[b][r][l]);
 	    }
 	}
     }
@@ -508,7 +471,7 @@ void dict2pid_dump (FILE *fp, dict2pid_t *d2p, mdef_t *mdef, dict_t *dict)
 		fprintf (fp, "%6s %6s %5d\n",
 			 mdef_ciphone_str (mdef, (s3cipid_t)b),
 			 mdef_ciphone_str (mdef, (s3cipid_t)l),
-			 d2p->single_lc[b][l]);	/* RAH, single_lc is returning an int32, %d expects an int16 */
+			 d2p->single_lc[b][l]);
 	}
     }
     fprintf (fp, "#\n");

@@ -110,7 +110,7 @@ rm -f $logfile
 $FBS \
 	-ctlfn /net/alf20/usr/rkm/SHARED/ctl/si_dt_20-$sex.ctl \
 	-ctlcount 50		\
-	-agcmax FALSE		\
+	-agcmax TRUE		\
 	-fwdflat TRUE		\
 	-bestpath TRUE		\
 # language weights, other LM parameters ------------- \

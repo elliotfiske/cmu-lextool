@@ -18,7 +18,12 @@
 #    prior written permission. To obtain permission, contact 
 #    sphinx@cs.cmu.edu.
 #
-# 4. Redistributions of any form whatsoever must retain the following
+# 4. Products derived from this software may not be called "Sphinx"
+#    nor may "Sphinx" appear in their names without prior written
+#    permission of Carnegie Mellon University. To obtain permission,
+#    contact sphinx@cs.cmu.edu.
+#
+# 5. Redistributions of any form whatsoever must retain the following
 #    acknowledgment:
 #    "This product includes software developed by Carnegie
 #    Mellon University (http://www.speech.cs.cmu.edu/)."
@@ -42,31 +47,16 @@
 # ====================================================================
 TOP=.
 DIRNAME=.
-BUILD_DIRS = bin scripts_pl include src 
-ALL_DIRS=config etc lib doc $(BUILD_DIRS)
-CONFIG=config.guess config.sub configure configure.in \
-       install-sh missing mkinstalldirs
-FILES = Makefile README COPYING $(CONFIG)
-DISTCLEAN_FILES = config/config config/system.mak \
-	config.cache config.status config.log
+BUILD_DIRS = bin scripts_pl src doc
+ALL_DIRS=config $(BUILD_DIRS)
+FILES = Makefile README COPYING
 
-ALL = 
+ALL = $(BUILD_DIRS)
 
 # Try and see if config hasn't been created
-config_dummy := $(shell test -f config/config || ( echo '*** '; echo '*** Running configure to make default config file ***'; echo '*** '; ./configure; )  >&2)
+config_dummy := $(shell test -f config/config || { echo '*** '; echo '*** Making default config file ***'; echo '*** '; cat config/config-dist >config/config }  >&2)
 
 include $(TOP)/config/common_make_rules
-
-config/config: config/config.in config.status
-	./config.status
-
-configure: configure.in
-	autoconf
-
-distclean: clean
-	@ echo make distclean in top-level directory
-	@ $(RM) $(DISTCLEAN_FILES)
-	@ $(RM) -rf $(BINDIR) $(LIBDIR)
 
 backup: time-stamp
 	@ $(RM) -f $(TOP)/FileList
@@ -77,20 +67,14 @@ backup: time-stamp
 	@ $(RM) -f $(TOP)/.file-list-all
 	@ ls -l $(PROJECT_PREFIX)-$(PROJECT_VERSION)-$(PROJECT_STATE).tar.gz
 
-tags:
-	@ $(RM) -f $(TOP)/FileList
-	@ $(MAKE) file-list
-	etags `cat FileList | grep "\.[ch]$$"`
-
 time-stamp :
 	@ echo $(PROJECT_NAME) >.time-stamp
 	@ echo $(PROJECT_PREFIX) >>.time-stamp
 	@ echo $(PROJECT_VERSION) >>.time-stamp
 	@ echo $(PROJECT_DATE) >>.time-stamp
 	@ echo $(PROJECT_STATE) >>.time-stamp
-	@ echo $(LOGNAME) >>.time-stamp
-	@ hostname >>.time-stamp
 	@ date >>.time-stamp
 
 test:
 	@ $(MAKE) --no-print-directory -C testsuite test
+

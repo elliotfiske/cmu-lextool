@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1989-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,20 +44,22 @@
  * ====================================================================
  *
  */
-#include <math.h>
-#include "cdcn.h"
-
 /************************************************************************
  *   Dummy routine to convert from suitcase to sane varibles
  ***************************************************************************/
 
-void cdcn_norm (float z[NUM_COEFF+1], /* The input cepstrum */
-		CDCN_type *cdcn_variables)
+#include <math.h>
+#include "cdcn.h"
+
+
+
+void cdcn_norm (z, cdcn_variables)
+float     z[NUM_COEFF+1];                /* The input cepstrum */
+CDCN_type *cdcn_variables;
 {
-    /* Multidimensional arrays, yuck. */
-    static void actual_cdcn_norm();
     float *variance, *prob, *tilt, *noise, *codebook, *corrbook;
     int num_codes;
+    void  actual_cdcn_norm();
 
     /*
      * If error, dont bother
@@ -77,6 +90,7 @@ void cdcn_norm (float z[NUM_COEFF+1], /* The input cepstrum */
     return;
 }
 
+
 /*************************************************************************
  *
  * cdcn_norm finds the cepstrum vector for a single noisy vector that minimizes
@@ -85,15 +99,18 @@ void cdcn_norm (float z[NUM_COEFF+1], /* The input cepstrum */
  *
  *************************************************************************/
 
-static void
-actual_cdcn_norm(float variance[][NUM_COEFF+1], /* Speech cepstral variances of modes */
-		 float *prob,  /* Ratio of a-prori mode probs. to mod variance */
-		 float *tilt,  /* Spectral tilt cepstrum */
-		 float *noise, /* Noise estimate */
-		 float means[][NUM_COEFF+1], /* The cepstrum codebook */
-		 float corrbook[][NUM_COEFF+1], /* The correction factor's codebook */
-		 int num_codes, /* Number of codewords in codebook */
-		 float z[NUM_COEFF+1]) /* The input cepstrum */
+void actual_cdcn_norm(variance, prob, tilt, noise, means, corrbook, 
+                                     num_codes, z)
+float   variance[][NUM_COEFF+1],  /* Speech cepstral variances of modes */
+        *prob,             /* Ratio of a-prori mode probs. to mod variance */
+        *tilt,             /* Spectral tilt cepstrum */
+	*noise,            /* Noise estimate */
+        means[][NUM_COEFF+1],         /* The cepstrum codebook */
+        corrbook[][NUM_COEFF+1],         /* The correction factor's codebook */
+        z[NUM_COEFF+1];                /* The input cepstrum */
+int        num_codes;      /* Number of codewords in codebook */
+
+
 {
     float       distance,  /* distance value */
                 den,       /* Denominator for reestimation */
@@ -101,6 +118,7 @@ actual_cdcn_norm(float variance[][NUM_COEFF+1], /* Speech cepstral variances of 
                 difference;     /* stores z - x - q - r */
     int         j,              /* Index coefficients within frame */
                 k;              /* Index codewords in codebook */
+
 
     float x[NUM_COEFF+1];
 
@@ -148,3 +166,5 @@ actual_cdcn_norm(float variance[][NUM_COEFF+1], /* Speech cepstral variances of 
      * z[] itself carries the cleaned speech now
      */
 }
+
+

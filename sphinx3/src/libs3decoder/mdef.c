@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * mdef.c -- HMM model definition: base (CI) phones and triphones
  *
@@ -45,8 +10,6 @@
  * 
  * HISTORY
  * 
- * 19.Apr-2001  Ricky Houghton, added code for free allocated memory
- *
  * 14-Oct-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon
  * 		Added mdef_sseq2sen_active().
  * 
@@ -135,7 +98,7 @@ static void ciphone_add (mdef_t *m, char *ci, s3pid_t p)
 {
     assert (p < m->n_ciphone);
 
-    m->ciphone[p].name = (char *) ckd_salloc (ci); /* freed in mdef_free */
+    m->ciphone[p].name = (char *) ckd_salloc (ci);
     if (hash_enter (m->ciphone_ht, m->ciphone[p].name, p) != p)
 	E_FATAL("hash_enter(%s) failed; duplicate CIphone?\n", m->ciphone[p].name);
 }
@@ -179,10 +142,10 @@ static void triphone_add (mdef_t *m,
 	if ((lcptr = find_ph_lc (m->wpos_ci_lclist[wpos][(int)ci], lc)) 
 	    == NULL)
 	{
-	lcptr = (ph_lc_t *) ckd_calloc (1, sizeof(ph_lc_t)); /* freed at mdef_free, I believe */
+	    lcptr = (ph_lc_t *) ckd_calloc (1, sizeof(ph_lc_t));
 	    lcptr->lc = lc;
 	    lcptr->next = m->wpos_ci_lclist[wpos][(int)ci];
-	    m->wpos_ci_lclist[wpos][(int)ci] = lcptr; /* This is what needs to be freed */
+	    m->wpos_ci_lclist[wpos][(int)ci] = lcptr;
 	}
 	if ((rcptr = find_ph_rc (lcptr->rclist, rc)) != NULL) {
 	    char buf[4096];
@@ -191,7 +154,7 @@ static void triphone_add (mdef_t *m,
 	    E_FATAL("Duplicate triphone: %s\n", buf);
 	}
 	
-      rcptr = (ph_rc_t *) ckd_calloc (1, sizeof(ph_rc_t)); /* freed in mdef_free, I believe */
+	rcptr = (ph_rc_t *) ckd_calloc (1, sizeof(ph_rc_t));
 	rcptr->rc = rc;
 	rcptr->pid = p;
 	rcptr->next = lcptr->rclist;
@@ -257,7 +220,7 @@ s3pid_t mdef_phone_id (mdef_t *m,
     assert ((rc >= 0) && (rc < m->n_ciphone));
     assert ((wpos >= 0) && (wpos < N_WORD_POSN));
 
-    if (((lcptr = find_ph_lc (m->wpos_ci_lclist[wpos][(int)ci], lc)) == NULL) ||
+    if (((lcptr = find_ph_lc (m->wpos_ci_lclist[wpos][(int)ci], lc)) == NULL)||
 	((rcptr = find_ph_rc (lcptr->rclist, rc)) == NULL)) {
 	/* Not found; backoff to silence context if non-silence filler context */
 	if (NOT_S3CIPID(m->sil))
@@ -543,8 +506,7 @@ static void sseq_compress (mdef_t *m)
     }
     
     /* Generate compacted sseq table */
-    sseq = (s3senid_t **) ckd_calloc_2d (n_sseq, m->n_emit_state, sizeof(s3senid_t));/* freed in mdef_free() */
-    
+    sseq = (s3senid_t **) ckd_calloc_2d (n_sseq, m->n_emit_state, sizeof(s3senid_t));
     g = hash_tolist (h, &j);
     assert (j == n_sseq);
     
@@ -593,7 +555,7 @@ mdef_t *mdef_init (char *mdeffile)
 
     E_INFO("Reading model definition: %s\n", mdeffile);
 
-    m = (mdef_t *) ckd_calloc (1, sizeof(mdef_t)); /* freed in mdef_free */
+    m = (mdef_t *) ckd_calloc (1, sizeof(mdef_t));
     
     if ((fp = fopen(mdeffile, "r")) == NULL)
         E_FATAL_SYSTEM("fopen(%s,r) failed\n", mdeffile);
@@ -654,23 +616,20 @@ mdef_t *mdef_init (char *mdeffile)
 
     /* Initialize ciphone info */
     m->n_ciphone = n_ci;
-    m->ciphone_ht = hash_new (n_ci, 1);	/* With case-insensitive string names */ /* freed in mdef_free */
-    m->ciphone = (ciphone_t *) ckd_calloc (n_ci, sizeof(ciphone_t)); /* freed in mdef_free */
-    /* RAH, let's null the pointers so that we can reliably deallocate them */
-    /*    for (i=0;i<m->n_ciphone;i++) { */ /*  */
-    /*m->ciphone[i].name = NULL; */ /*  */
-    /*} */ /*  */
+    m->ciphone_ht = hash_new (n_ci, 1);	/* With case-insensitive string names */
+    m->ciphone = (ciphone_t *) ckd_calloc (n_ci, sizeof(ciphone_t));
 
     /* Initialize phones info (ciphones + triphones) */
     m->n_phone = n_ci + n_tri;
-    m->phone = (phone_t *) ckd_calloc (m->n_phone, sizeof(phone_t)); /* freed in mdef_free */
+    m->phone = (phone_t *) ckd_calloc (m->n_phone, sizeof(phone_t));
 
     /* Allocate space for state->senone map for each phone */
-    senmap = (s3senid_t **) ckd_calloc_2d (m->n_phone, m->n_emit_state, sizeof(s3senid_t));/* freed in mdef_free */
+    senmap = (s3senid_t **) ckd_calloc_2d (m->n_phone, m->n_emit_state, sizeof(s3senid_t));
     m->sseq = senmap;	/* TEMPORARY; until it is compressed into just the unique ones */
     
     /* Allocate initial space for <ci,lc,rc,wpos> -> pid mapping */
-    m->wpos_ci_lclist = (ph_lc_t ***) ckd_calloc_2d (N_WORD_POSN, m->n_ciphone, sizeof(ph_lc_t *)); /* freed in mdef_free */
+    m->wpos_ci_lclist = (ph_lc_t ***) ckd_calloc_2d (N_WORD_POSN, m->n_ciphone,
+						     sizeof(ph_lc_t *));
 
     /*
      * Read base phones and triphones.  They'll simply be assigned a running sequence
@@ -699,10 +658,8 @@ mdef_t *mdef_init (char *mdeffile)
     if (m->n_ciphone * m->n_emit_state != m->n_ci_sen)
 	E_FATAL("#CI-senones(%d) != #CI-phone(%d) x #emitting-states(%d)\n",
 		m->n_ci_sen, m->n_ciphone, m->n_emit_state);
-    m->cd2cisen = (s3senid_t *) ckd_calloc (m->n_sen, sizeof(s3senid_t)); /* freed in mdef_free */
-
-    m->sen2cimap = (s3cipid_t *) ckd_calloc (m->n_sen, sizeof(s3cipid_t)); /* freed in mdef_free */
-
+    m->cd2cisen = (s3senid_t *) ckd_calloc (m->n_sen, sizeof(s3senid_t));
+    m->sen2cimap = (s3cipid_t *) ckd_calloc (m->n_sen, sizeof(s3cipid_t));
     for (s = 0; s < m->n_sen; s++)
 	m->sen2cimap[s] = BAD_S3CIPID;
     for (s = 0; s < m->n_ci_sen; s++) {		/* CI senones */
@@ -723,10 +680,8 @@ mdef_t *mdef_init (char *mdeffile)
      * HACK!!  For handling holes in senone-CIphone mappings.  Does not work if holes
      * are present at the beginning or end of senones for a given CIphone.
      */
-    cdsen_start = (int32 *) ckd_calloc (m->n_ciphone, sizeof(int32)); /* freed locally */
-
-    cdsen_end = (int32 *) ckd_calloc (m->n_ciphone, sizeof(int32)); /* freed locally */
-
+    cdsen_start = (int32 *) ckd_calloc (m->n_ciphone, sizeof(int32));
+    cdsen_end = (int32 *) ckd_calloc (m->n_ciphone, sizeof(int32));
     for (s = m->n_ci_sen; s < m->n_sen; s++) {
 	if (NOT_S3CIPID(m->sen2cimap[s]))
 	    continue;
@@ -752,7 +707,7 @@ mdef_t *mdef_init (char *mdeffile)
     }
 
     /* Build #CD-senones for each CIphone */
-    m->ciphone2n_cd_sen = (int32 *) ckd_calloc (m->n_ciphone, sizeof(int32));/* freed mdef_free */
+    m->ciphone2n_cd_sen = (int32 *) ckd_calloc (m->n_ciphone, sizeof(int32));
     n = 0;
     for (p = 0; p < m->n_ciphone; p++) {
 	if (cdsen_start[p] > 0) {
@@ -790,90 +745,4 @@ void mdef_sseq2sen_active (mdef_t *mdef, int32 *sseq, int32 *sen)
 		sen[sp[i]] = 1;
 	}
     }
-}
-
-/* RAH 4.23.01, Need to step down the ->next list to see if there are
-   any more things to free
- */
-
-
-
-/* RAH 4.19.01, Attempt to free memory that was allocated within this module
-   I have not verified that all the memory has been freed. I've taken only a 
-   reasonable effort for now.
-   RAH 4.24.01 - verified that all memory is released.
- */
-void mdef_free_recursive_lc (ph_lc_t *lc)
-{
-  if (lc == NULL) return;
-
-  if (lc->rclist) 
-    mdef_free_recursive_rc (lc->rclist);
-
-  if (lc->next) 
-    mdef_free_recursive_lc (lc->next);
-
-  ckd_free ((void *) lc);
-}
-
-void mdef_free_recursive_rc (ph_rc_t *rc)
-{
-  if (rc == NULL) return;
-
-    if (rc->next) 
-      mdef_free_recursive_rc (rc->next);
-
-    ckd_free ((void *) rc);
-}
-
-
-/* RAH, Free memory that was allocated in mdef_init 
-   Rational purify shows that no leaks exist
- */
-   
-void mdef_free (mdef_t *m)
-{
-  int i,j;
-
-  if (m) { 
-    if (m->ciphone2n_cd_sen)
-      ckd_free    ((void *)m->ciphone2n_cd_sen);
-    if (m->sen2cimap)
-      ckd_free    ((void *)m->sen2cimap);
-    if (m->cd2cisen)
-      ckd_free    ((void *)m->cd2cisen);
-
-    /* RAH, go down the ->next list and delete all the pieces */
-    for (i=0;i<N_WORD_POSN;i++)
-      for (j=0;j<m->n_ciphone;j++) 
-	if (m->wpos_ci_lclist[i][j]) {
-	  mdef_free_recursive_lc (m->wpos_ci_lclist[i][j]->next);
-	  mdef_free_recursive_rc (m->wpos_ci_lclist[i][j]->rclist);
-	}
-    
-    for (i=0;i<N_WORD_POSN;i++)
-      for (j=0;j<m->n_ciphone;j++) 
-	if (m->wpos_ci_lclist[i][j])  
-	  ckd_free ((void *) m->wpos_ci_lclist[i][j]);
-
-    
-    if (m->wpos_ci_lclist)
-      ckd_free_2d ((void *)m->wpos_ci_lclist);
-    if (m->sseq) 
-      ckd_free_2d ((void *)m->sseq);
-    /* Free phone context */
-    if (m->phone) 
-      ckd_free    ((void *)m->phone);    
-    if (m->ciphone_ht)
-      hash_free (m->ciphone_ht);
-
-    for (i=0;i<m->n_ciphone;i++) {
-      if (m->ciphone[i].name) 
-	ckd_free    ((void *)m->ciphone[i].name);
-    }
-    if (m->ciphone) 
-      ckd_free    ((void *)m->ciphone);
-    
-    ckd_free    ((void *)m);
-  }
 }

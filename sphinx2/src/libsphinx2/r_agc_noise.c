@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1993-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,51 +44,22 @@
  * ====================================================================
  *
  */
-#include <stdio.h>
 
-#include "s2types.h"
-#include "c.h"
+#include <c.h>
 
 static float agc_thresh = 0.2;
 
-static int32
-find_peak (int32 const *buf, int32 cnt)
+real_agc_noise (cep, fcnt, cf_cnt)
+float *cep;		/* The cepstrum data */
+register int32 fcnt;	/* Number of cepstrum frame availiable */
+register int32 cf_cnt;	/* Number of coeff's per frame */
 {
-   int32	i, max, maxi, maxcnt;
-   int32 hyst;	/* histeriesus band */
-
-   maxcnt = 0;
-   for (i = 0; i < cnt; i++)
-	if (maxcnt < buf[i])
-	    maxcnt = buf[i];
-
-   /*
-    * Peak must exceed 20% of the max count.
-    */
-   hyst = 0.20 * maxcnt;
-   max = 0;
-   maxi = 0;
-   for (i = 0; i < cnt; i++) {
-  	if (buf[i] > max) {
-	   max = buf[i];
-	   maxi = i;
-	}
-	if (buf[i] < (max - hyst))
-	    break;
-   }
-   return (maxi);
-}
-
-void
-real_agc_noise(float *cep,		/* The cepstrum data */
-	       register int32 fcnt,	/* Number of cepstrum frame availiable */
-	       register int32 cf_cnt)	/* Number of coeff's per frame */
-{
+    static char        *rname = "agc_noise";
     register float     *p;		   /* Data pointer */
     register float 	min_energy;        /* Minimum log-energy */
     register float 	noise_level;       /* Average noise_level */
-    register int32      i;                 /* frame index */
-    register int32      noise_frames;      /* Number of noise frames */
+    register  	        i;                 /* frame index */
+    register            noise_frames;      /* Number of noise frames */
 
     /* Determine minimum log-energy in utterance */
     min_energy = *cep;
@@ -105,23 +87,24 @@ real_agc_noise(float *cep,		/* The cepstrum data */
       *p -= noise_level;
 }
 
-void
-agc_set_threshold (float threshold)
+agc_set_threshold (threshold)
+float threshold;
 {
     agc_thresh = threshold;
 }
 
-float
-histo_noise_level(float const *cep,	/* The cepstrum data */
-		  register int32 fcnt,	/* Number of cepstrum frame availiable */
-		  register int32 cf_cnt)/* Number of coeff's per frame */
+float histo_noise_level (cep, fcnt, cf_cnt)
+float *cep;		/* The cepstrum data */
+register int32 fcnt;	/* Number of cepstrum frame availiable */
+register int32 cf_cnt;	/* Number of coeff's per frame */
 {
-    register float const *p;		   /* Data pointer */
+    register float     *p;		   /* Data pointer */
     register float 	min_energy;        /* Minimum log-energy */
     register float 	max_energy;        /* Maximum log-energy */
     float		dr;		   /* Dynamic range */
     float	 	noise_level;       /* Average noise_level */
-    register int32      i;                 /* frame index */
+    register  	        i;                 /* frame index */
+    register            noise_frames;      /* Number of noise frames */
     int32		histo[101];
     int32		idx;
 
@@ -162,7 +145,6 @@ histo_noise_level(float const *cep,	/* The cepstrum data */
     return (noise_level);
 }
 
-int32
 delete_background (float *cep, int32 fcnt, int32 cf_cnt, double thresh)
 {
     int32	i, j;
@@ -210,14 +192,46 @@ delete_background (float *cep, int32 fcnt, int32 cf_cnt, double thresh)
     return (j);
 }
 
-void
-agc_max(float *cep,		/* The cepstrum data */
-	register int32 fcnt,	/* Number of cepstrum frame availiable */
-	register int32 cf_cnt)	/* Number of coeff's per frame */
+find_peak (buf, cnt)
+int32 *buf;
+int32 cnt;
 {
+   int32	i, max, maxi, maxcnt;
+   int32 hyst;	/* histeriesus band */
+
+   maxcnt = 0;
+   for (i = 0; i < cnt; i++)
+	if (maxcnt < buf[i])
+	    maxcnt = buf[i];
+
+   /*
+    * Peak must exceed 20% of the max count.
+    */
+   hyst = 0.20 * maxcnt;
+   max = 0;
+   maxi = 0;
+   for (i = 0; i < cnt; i++) {
+  	if (buf[i] > max) {
+	   max = buf[i];
+	   maxi = i;
+	}
+	if (buf[i] < (max - hyst))
+	    break;
+   }
+   return (maxi);
+}
+
+agc_max (cep, fcnt, cf_cnt)
+float *cep;		/* The cepstrum data */
+register int32 fcnt;	/* Number of cepstrum frame availiable */
+register int32 cf_cnt;	/* Number of coeff's per frame */
+{
+    static char        *rname = "agc_max";
     register float     *p;		   /* Data pointer */
     register float 	max_energy;        /* Minimum log-energy */
-    register int32      i;                 /* frame index */
+    register float 	noise_level;       /* Average noise_level */
+    register  	        i;                 /* frame index */
+    register            noise_frames;      /* Number of noise frames */
 
     /* Determine max log-energy in utterance */
     max_energy = *cep;
@@ -245,7 +259,8 @@ static float noise_level = -100.0;       /* Average noise_level */
 static int32 noise_frm_cnt = 0;
 static int32 noise_frames_discarded = 0;
 
-int32 histo_add_c0 (float c0)
+int32 histo_add_c0 (c0)
+float c0;		/* c0 */
 {
     int32		idx;
 
@@ -272,7 +287,8 @@ int32 histo_add_c0 (float c0)
     }
 }
 
-void compute_noise_level (void)
+
+void compute_noise_level ()
 {
     int32		idx;
     int32		i;

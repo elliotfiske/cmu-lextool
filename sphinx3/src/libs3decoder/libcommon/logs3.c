@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * logs3.c -- log(base-S3) module.
  *
@@ -56,13 +21,6 @@
 #include "logs3.h"
 #include "s3types.h"
 
-/* RAH, 5.9.2001, Add a means of controlling whether the add table is
-   used or the value is simply computed Note, if the add tables are
-   not to be used, they are still generated. I'll remove this portion
-   later, for now I want to make that there are no problems 
-*/
-static int USE_LOG3_ADD_TABLE = 1;	
-static float64 F = 0;		/* Set this global variable so we don't have to keep computing it in logs3_add() */
 
 /*
  * In evaluating HMM models, probability values are often kept in log domain,
@@ -93,10 +51,7 @@ int32 logs3_init (float64 base)
     int32 i, k;
     float64 d, t, f;
 
-
-    USE_LOG3_ADD_TABLE = cmd_ln_int32 ("-log3table");
-
-    E_INFO("Initializing logbase: %e (add table: %d)\n", base,USE_LOG3_ADD_TABLE);
+    E_INFO("Initializing logbase: %e\n", base);
 
     if (base <= 1.0)
 	E_FATAL("Illegal logbase: %e; must be > 1.0\n", base);
@@ -123,7 +78,6 @@ int32 logs3_init (float64 base)
 
     d = 1.0;
     f = 1.0/B;
-    F = 1.0/B;			/* RAH 5.9.01, set this global variable so that we don't have to compute it in logs3_add() */
 
     /* Figure out size of add-table requried */
     for (i = 0;; i++) {
@@ -177,18 +131,8 @@ int32 logs3_add (int32 logp, int32 logq)
 	d = logq - logp;
 	r = logq;
     }
-    /* RAH 5.9.01 If we allow the computation of values of d beyond
-       the add_tbl_size, speed degrades quickly, for that reason,
-       limit the calculations to the same range as the table. This
-       seems wrong. Must think more about it */
     if (d < add_tbl_size)
-      {
-      if (USE_LOG3_ADD_TABLE) 
 	r += add_tbl[d];
-      else
-	/* Do we need to be checking to see if the value is too large? small? */
-	r += 0.5 + (float64) (log(1.0 + pow(F,d)) * invlogB); /* RAH, 5.9.01 - compute instead of looking it up */
-      }
 
     return r;
 }
@@ -244,12 +188,6 @@ int32 log10_to_logs3 (float64 log10p)
 	E_FATAL("logs3 module not initialized\n");
     
     return ((int32) (log10p * invlog10B));
-}
-
-void logs_free ()
-{
-  if (add_tbl) 
-    ckd_free ((void *) add_tbl);
 }
 
 

@@ -18,7 +18,12 @@
 #    prior written permission. To obtain permission, contact 
 #    sphinx@cs.cmu.edu.
 #
-# 4. Redistributions of any form whatsoever must retain the following
+# 4. Products derived from this software may not be called "Sphinx"
+#    nor may "Sphinx" appear in their names without prior written
+#    permission of Carnegie Mellon University. To obtain permission,
+#    contact sphinx@cs.cmu.edu.
+#
+# 5. Redistributions of any form whatsoever must retain the following
 #    acknowledgment:
 #    "This product includes software developed by Carnegie
 #    Mellon University (http://www.speech.cs.cmu.edu/)."
@@ -42,24 +47,12 @@
 # ====================================================================
 TOP=..
 DIRNAME=scripts_pl
-BUILD_DIRS = 00.verify 01.vector_quantize 02.ci_schmm 03.makeuntiedmdef \
-             04.cd_schmm_untied 05.buildtrees \
-             06.prunetree 07.cd-schmm 08.deleted-interpolation \
-             09.make_s2_models mc
+BUILD_DIRS = 00.verify 01.vector_quantize 02.ci_schmm 04.cd_schmm_untied \
+             05.buildtrees 
 ALL_DIRS= $(BUILD_DIRS)
-FESTIVAL_SCRIPTS = make_dict.festival
-TMPSCRIPTS=setup_SphinxTrain maketopology make_feats
-FILES = Makefile RunAll.pl $(TMPSCRIPTS) \
-        $(FESTIVAL_SCRIPTS)
+FILES = Makefile RunAll.pl sphinx_train.cfg
 
-ALL = make_dict
+ALL = 
 
 include $(TOP)/config/common_make_rules
 
-LOCAL_CLEAN = make_dict
-
-make_dict: make_dict.festival
-	@ echo "#!/bin/sh" > $@
-	@ echo "\"true\"; exec "$(FESTIVAL)' --script $$0 $$*' >>$@
-	@ cat $< >>$@
-	@ chmod +x $@

@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /***********************************************
  * CMU ARPA Speech Project
  *
@@ -63,19 +28,6 @@ static arg_t arg[] = {
       NULL,
       "Feature type: Must be s3_1x39 / s2_4x / cep_dcep[,%d] / cep[,%d] / %d,%d,...,%d" },
 #endif
-    { "-lminmemory",
-      ARG_INT32,
-      "0",
-      "Load language model into memory (default: use disk cache for lm"},
-    { "-log3table",
-      ARG_INT32,
-      "1",
-      "Determines whether to use the log3 table or to compute the values at run time."},
-    { "-vqeval",
-      ARG_INT32,
-      "3",
-      "How many vectors should be analyzed by VQ when building the shortlist. It speeds up the decoder, but at a cost."},
-
     { "-cmn",
       ARG_STRING,
       "current",
@@ -279,36 +231,18 @@ static arg_t arg[] = {
       ARG_INT32,
       "8000",
       "Sampling rate (only 8K and 16K currently supported)" },
-    { "-nfilt",
-      ARG_INT32,
-      "31",
-      "Number of mel filters" },
-    { "-lowerf",
-      ARG_FLOAT32,
-      "200",
-      "Lower edge of filters" },
-    { "-upperf",
-      ARG_FLOAT32,
-      "3500",
-      "Upper edge of filters" },
     
     { NULL, ARG_INT32, NULL, NULL }
 };
 
-static char **liveargs = NULL;		/* RAH, make global so we can free it later */
-
 void  parse_args_file(char *live_args)
 {
-  /*    static char **liveargs; */	/* RAH, 4.17.01 */
+    static char **liveargs;
     static int32 nliveargs;
     int32 nargs, maxarglen;
     char  *argline, *targ; 
     FILE *fp;
 
-    if (live_args == NULL) {
-      cmd_ln_print_help(stderr, arg);
-      return;
-    }
     if ((fp = fopen(live_args,"r")) == NULL)
 	E_FATAL("Unable to open arguments file %s for reading\n",live_args);
 
@@ -318,11 +252,11 @@ void  parse_args_file(char *live_args)
     while (fgets(argline,10000,fp) != NULL){
         if ((targ = strtok(argline," \t\n")) == NULL)
             continue; /* Empty line in argfile */
-      if ((int32) strlen(targ) > maxarglen) maxarglen = strlen(targ);
+	if (strlen(targ) > (unsigned int)maxarglen) maxarglen = strlen(targ);
 	nargs++; 
 
         while ((targ = strtok(NULL," \t\n")) != NULL){
-	if ((int32) strlen(targ) > maxarglen) maxarglen = strlen(targ);
+	    if (strlen(targ) > (unsigned int)maxarglen) maxarglen = strlen(targ);
 	    nargs++; 
 	}
     }
@@ -349,11 +283,4 @@ void  parse_args_file(char *live_args)
     cmd_ln_parse(arg, nliveargs, liveargs);
 
     return;
-}
-
-/* RAH, 4.17.01, free memory that was allocated above */
-void parse_args_free()
-{
-  cmd_ln_free();		/* Free stuff allocated in cmd_ln_parse */
-  ckd_free_2d ((void **) liveargs);
 }

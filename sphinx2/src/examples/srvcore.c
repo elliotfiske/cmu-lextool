@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1995-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -53,47 +64,16 @@
  * 25-Apr-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
  * 		Created, based on Brian Milnes's earlier version.
  * $Log$
- * Revision 1.9  2001/12/11  00:24:48  lenzo
- * Acknowledgement in License.
+ * Revision 1.1  2000/01/28  22:08:41  lenzo
+ * Initial revision
  * 
- * Revision 1.8  2001/12/07 17:30:01  lenzo
- * Clean up and remove extra lines.
- *
- * Revision 1.7  2001/12/07 12:21:45  lenzo
- * Move some headers.
- *
- * Revision 1.6  2001/12/07 05:09:30  lenzo
- * License.xsxc
- *
- * Revision 1.5  2001/12/07 04:27:35  lenzo
- * License cleanup.  Remove conditions on the names.  Rationale: These
- * conditions don't belong in the license itself, but in other fora that
- * offer protection for recognizeable names such as "Carnegie Mellon
- * University" and "Sphinx."  These changes also reduce interoperability
- * issues with other licenses such as the Mozilla Public License and the
- * GPL.  This update changes the top-level license files and removes the
- * old license conditions from each of the files that contained it.
- * All files in this collection fall under the copyright of the top-level
- * LICENSE file.
- *
- * Revision 1.4  2001/12/07 00:15:32  lenzo
- * Solaris headers ifdef'd in.
- *
- * Revision 1.3  2001/02/13 18:50:35  lenzo
- * Adding some more comments for a Solaris port.
- *
- * Revision 1.2  2000/12/05 01:45:12  lenzo
- * Restructuring, hear rationalization, warning removal, ANSIfy
- *
- * Revision 1.1.1.1  2000/01/28 22:08:41  lenzo
- * Initial import of sphinx2
- *
- *
  */
+
 
 /*
  * This file tries to hide much of system-specific socket implementation details.
  */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,30 +81,22 @@
 #include <assert.h>
 #include <time.h>
 
-#ifndef WIN32
-
-#if defined(sun) && defined(__svr4__)
-/* H J Fox - added include of sys/ioctl.h and sys/filio.h for solaris */
-#include <sys/ioctl.h>
-#include <sys/filio.h>
-#include <netinet/in.h>
-#endif
-
+#if (! WIN32)
 #include <sys/types.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
-#include <unistd.h>
-
 #endif
 
 #include "srvcore.h"
 
+
 #define QUIT(x)		{fflush(stdout); fprintf x; exit(-1);}
-#ifdef NOERRLOG
-#define ERRLOG(x)	{}
-#else
+#if (! NOERRLOG)
 #define ERRLOG(x)	{fprintf x;}
+#else
+#define ERRLOG(x)	{}
 #endif
+
 
 static SOCKET listen_sd = INVALID_SOCKET;	/* Socket over which server listens for
 						   connection req */
@@ -135,7 +107,8 @@ static uint16 bindport;
 static FILE *fp = NULL;				/* Recvd pkts logfile */
 #define RECVLOGFILE	"RCV.LOG"
 
-#ifdef WIN32
+
+#if (WIN32)
 
 /*
  * Isn't there a built in perror for socket errors?
@@ -184,6 +157,7 @@ static void print_errno (char *hdr)
 
 #endif
 
+
 static char *prt_ctime ()
 {
     time_t cur_time;
@@ -191,6 +165,7 @@ static char *prt_ctime ()
     time (&cur_time);
     return (ctime(&cur_time));
 }
+
 
 int32 server_recv_noblock (SOCKET sd, char *buf, int32 len)
 {
@@ -213,6 +188,7 @@ int32 server_recv_noblock (SOCKET sd, char *buf, int32 len)
     }
 }
 
+
 int32 server_recv_block (SOCKET sd, char *buf, int32 len)
 {
     fd_set readfds;
@@ -225,6 +201,7 @@ int32 server_recv_block (SOCKET sd, char *buf, int32 len)
     }
     return (server_recv_noblock (sd, buf, len));
 }
+
 
 int32 server_send_block (SOCKET sd, char *buf, int32 len)
 {
@@ -247,7 +224,8 @@ int32 server_send_block (SOCKET sd, char *buf, int32 len)
     return len;
 }
 
-#ifdef WIN32
+
+#if (WIN32)
 /*
  * Initialize Windows sockets DLL.  Return 0 if successful, -1 otherwise.
  */
@@ -270,11 +248,13 @@ static int32 win32_init ( void )
     return 0;
 }
 
+
 static void win32_end ( void )
 {
     WSACleanup();
 }
 #endif
+
 
 /*
  * Initialize server; create socket on which to listen for connection request from
@@ -286,7 +266,7 @@ int32 server_initialize (int32 port)
     struct sockaddr_in address;
     int32 length;
     
-#ifdef WIN32
+#if (WIN32)
     if (win32_init () != 0) {
 	fflush (stdout);
 	fprintf (stderr, "%s(%d): win32_init failed\n", __FILE__, __LINE__);
@@ -297,7 +277,7 @@ int32 server_initialize (int32 port)
     /* Open a TCP socket */
     if ((listen_sd = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
 	print_errno ("create_socket");
-#ifdef WIN32
+#if (WIN32)
 	win32_end ();
 #endif
 	return -1;
@@ -323,7 +303,7 @@ int32 server_initialize (int32 port)
 	    print_errno ("Couldn't bind to any port");
 	    closesocket (listen_sd);
 	    listen_sd = INVALID_SOCKET;
-#ifdef WIN32
+#if (WIN32)
 	    win32_end ();
 #endif
 	    return -1;
@@ -336,7 +316,7 @@ int32 server_initialize (int32 port)
 	    print_errno ("Couldn't get socket name");
 	    closesocket (listen_sd);
 	    listen_sd = INVALID_SOCKET;
-#ifdef WIN32
+#if (WIN32)
 	    win32_end ();
 #endif
 	    return -1;
@@ -350,7 +330,7 @@ int32 server_initialize (int32 port)
 	print_errno ("listen_socket");
 	closesocket(listen_sd);
 	listen_sd = INVALID_SOCKET;
-#ifdef WIN32
+#if (WIN32)
 	win32_end ();
 #endif
 	return -1;
@@ -358,6 +338,7 @@ int32 server_initialize (int32 port)
     
     return 0;
 }
+
 
 /*
  * Close existing connection to client.
@@ -369,6 +350,7 @@ void server_close_conn (SOCKET sd)
     conn_sd = INVALID_SOCKET;
     ERRLOG((stderr, "%s(%d): Connection closed at %s\n", __FILE__, __LINE__, prt_ctime()));
 }
+
 
 /*
  * Await connection.  Return conn_sd if successful, INVALID_SOCKET otherwise.
@@ -411,6 +393,7 @@ SOCKET server_await_conn ( void )
     return conn_sd;
 }
 
+
 /*
  * Cleanup; ready to terminate program.
  */
@@ -419,12 +402,13 @@ void server_end ( void )
     closesocket (listen_sd);
     listen_sd = INVALID_SOCKET;
 
-#ifdef WIN32
+#if (WIN32)
     win32_end ();
 #endif
 
     ERRLOG((stderr, "%s(%d): Sockets closed\n", __FILE__, __LINE__));
 }
+
 
 void server_openlog ( void )
 {
@@ -433,12 +417,14 @@ void server_openlog ( void )
 		 __FILE__, __LINE__, RECVLOGFILE);
 }
 
+
 void server_closelog ( void )
 {
     if (fp)
 	fclose (fp);
     fp = NULL;
 }
+
 
 void server_writelog (char *buf, int32 len)
 {

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1989-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * HISTORY
  * 11-Jun-89 Fil Alleva
@@ -46,22 +58,19 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 
-#ifdef WIN32
-#include <fcntl.h>
-#else
+#if (! WIN32)
 #include <sys/file.h>
+#else
+#include <fcntl.h>
 #endif
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "strfuncs.h"
-#include "list.h"
-#include "hash.h"
-#include "phone.h"
-#include "c.h"
-#include "err.h"
+#include <CM_macros.h>
+
+#include <hash.h>
+#include <list.h>
+#include <phone.h>
+#include <c.h>
 
 static hash_t phones;
 static list_t phones_list;
@@ -75,15 +84,18 @@ static void  add_phone (char *phn, int32 id, int32 base_id, int32 type, int32 le
 static void  mk_phone_map ();
 static int32 parse_triphone(char *instr, char *ciph, char *lc, char *rc, char *pc);
 
-int
-phone_read (char *filename)
+extern char *salloc();
+
+phone_read (filename)
 /*------------------------------------------------------------*
  * read in the phone file filename
  *------------------------------------------------------------*/
+char *filename;
 {
     int32                 retval = 0;
     FILE               *fs = NULL;
     char                phone_str[1024];
+    char		*phone_ptr;
     int32		phone_id = 0;
     int32		base_id = 0;
     int32		field1;
@@ -165,19 +177,21 @@ phone_read (char *filename)
 
     mk_phone_map();
 
+finish:
     if (fs)
 	fclose (fs);
 
     return (retval);
 }
 
-int32
-phone_to_id (char const *phone_str, int verbose)
+phone_to_id (phone_str, verbose)
 /*------------------------------------------------------------*
  * return the phone id for phone_str
  *------------------------------------------------------------*/
+char *phone_str;
+int32 verbose;
 {
-    static char const *rname = "phone_to_id";
+    static char *rname = "phone_to_id";
     caddr_t  phone_id;
 
     if (hash_lookup (&phones, phone_str, &phone_id)) {
@@ -189,7 +203,7 @@ phone_to_id (char const *phone_str, int verbose)
     return ((int32) phone_id);
 }
 
-char const *phone_from_id (int32 phone_id)
+char *phone_from_id (int32 phone_id)
 /*------------------------------------------------------------*
  * return the string coresponding to phone_id if there is one
  *------------------------------------------------------------*/
@@ -197,43 +211,39 @@ char const *phone_from_id (int32 phone_id)
     return ((char *) list_lookup (&phones_list, phone_id));
 }
 
-int32
-phone_id_to_base_id (int32 phone_id)
+phone_id_to_base_id (phone_id)
 {
     return ((int32) list_lookup (&phone_base_map, phone_id));
 }
 
-int32
-phone_type (int32 phone_id)
+phone_type (phone_id)
+int32 phone_id;
 {
     return ((int32) list_lookup (&phone_type_map, phone_id));
 }
 
-int32
-phone_len (int32 phone_id)
+phone_len (phone_id)
+int32 phone_id;
 {
     return ((int32) list_lookup (&phone_model_len, phone_id));
 }
 
-int32
-phone_count (void)
+phone_count ()
 {
     return phones.inuse;
 }
 
-int32
-phoneCiCount (void)
+phoneCiCount ()
 {
     return numCiPhones;
 }
 
-int32
-phoneWdCount (void)
+phoneWdCount ()
 {
     return numWdPhones;
 }
 
-list_t *phoneList (void)
+list_t *phoneList ()
 {
     return &phones_list;
 }
@@ -242,28 +252,22 @@ list_t *phoneList (void)
  * Implement phonological rules
  */
 
-#ifdef VERBOSE_PHONE_MAP
-static char const *voc[] = {"IY","IH","EY","EH","AE","AH","AX", "IX","UW","UH",
-			    "OW","AO","AA","AW","AY","OY","AXR","ER","R"};
-static char const *ust[] = {"AX","IX","AXR"};
-#endif
+static char *voc[] = {"IY","IH","EY","EH","AE","AH","AX", "IX","UW","UH",
+	      "OW","AO","AA","AW","AY","OY","AXR","ER","R"};
+static char *ust[] = {"AX","IX","AXR"};
 
 int32 *PhoneMap = 0;
 
-static void mk_phone_map (void)
+static void mk_phone_map ()
 {
     int32 numPhones = phone_count();
-    int32 numPhoneMappings = 0; /* will be bogus without VERBOSE_PHONE_MAP! */
-    int32 pid;
-
-#ifdef VERBOSE_PHONE_MAP
-    int32 pid1, pid2;
     int32 numCiPhones = phoneCiCount();
+    int32 pid, pid1, pid2;
     int32 numVocPhones = sizeof(voc)/sizeof(char *);
     int32 numUstPhones = sizeof(ust)/sizeof(char *);
+    int32 numPhoneMappings = 0;
     int32 op_id, res_id;
     char op[32], res[32];
-#endif
 
     /* 
      * In case we get called twice.
@@ -275,8 +279,7 @@ static void mk_phone_map (void)
 
     for (pid = 0; pid < numPhones; pid++)
 	PhoneMap[pid] = pid;
-
-#ifdef VERBOSE_PHONE_MAP
+#if 0
     for (pid = 0; pid < numCiPhones; pid++) {
 	sprintf (op, "TD(%s,Y)e", phone_from_id(pid));
 	sprintf (res, "JH(%s,Y)e", phone_from_id(pid));
@@ -374,11 +377,11 @@ static void mk_phone_map (void)
 	    }
 	}
     }
-#endif /* VERBOSE_PHONE_MAP */
-    E_INFO ("Using %d phonological mappings\n", numPhoneMappings);
+#endif
+    printf ("Using %d phonological mappings\n", numPhoneMappings);
 }
 
-void phone_add_diphones (void)
+void phone_add_diphones ()
 /*------------------------*
  * DESCRIPTION - figure out what the word begin/end diphones of intrest are
  *	         and add them to the phone set.
@@ -390,6 +393,7 @@ void phone_add_diphones (void)
     int32	new_phone_id = phone_cnt;
     char	tp[64];
     char 	ci[32], lc[64], rc[64], pc[64];
+
 
     for (pid = 0; pid < phone_cnt; pid++) {
 	strcpy (tp, phone_from_id (pid));
@@ -443,11 +447,11 @@ static void add_phone (char *phn, int32 id, int32 base_id, int32 type, int32 len
 {
     char *diphn = (char *) salloc (phn);
 
-    hash_add (&phones, diphn, (caddr_t )id);
-    list_add (&phones_list, (caddr_t )diphn, id);
-    list_add (&phone_base_map, (caddr_t )base_id, id);
-    list_add (&phone_model_len, (caddr_t )len, id);
-    list_add (&phone_type_map, (caddr_t )type, id);
+    hash_add (&phones, diphn, id);
+    list_add (&phones_list, diphn, id);
+    list_add (&phone_base_map, base_id, id);
+    list_add (&phone_model_len, len, id);
+    list_add (&phone_type_map, type, id);
 }
 
 static int32 parse_triphone(char *instr, char *ciph, char *lc, char *rc, char *pc)
@@ -494,7 +498,8 @@ static int32 parse_triphone(char *instr, char *ciph, char *lc, char *rc, char *p
     return 4;    
 }
 
-int32 phone_map (int32 pid)
+int32 phone_map (pid)
+int32 pid;
 {
     return (PhoneMap[pid]);
 }

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1988-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /* HASH.C
  *------------------------------------------------------------*
  * SYNOPSIS
@@ -64,13 +76,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <ctype.h>
 #include <sys/types.h>
 
-#include "s2types.h"
-#include "list.h"
-#include "hash.h"
-#include "err.h"
+#include <hash.h>
+#include <list.h>
 
 #define ERR_ARG		1
 #define ERR_MALLOC	2
@@ -80,11 +89,9 @@ int32 rehash_count = 0;
 int32 hash_rebuild = 0;
 int32 hash_rebuild_ent = 0;
 
-static int exception (char const *rname, char const *s, int exc);
-static int32 hash_in(hash_t *ht, char const *sym, caddr_t val);
-static int32 next_prime(int32 p);
+static int32 exception();
+static int32 hash_in();
 
-extern int mystrcasecmp(char const *, char const *);
 
 /* HASH_ADD
  *------------------------------------------------------------*
@@ -95,12 +102,15 @@ extern int mystrcasecmp(char const *, char const *);
  * in a fatal error.
  */
 int32
-hash_add (hash_t *ht, char const *sym, caddr_t val)
+hash_add (ht, sym, val)
+register hash_t *ht;
+char *sym;
+caddr_t val;
 {
-    static char const *rname = "hash_add";
+    static char *rname = "hash_add";
 
     if ((ht == 0) || (sym == 0))
-	return exception (rname, "sym", ERR_ARG);
+	return (exception (rname, "sym", ERR_ARG));
 
 #ifdef DEBUG
     printf ("%s: %x %s %d\n", rname, ht, sym, val);
@@ -124,7 +134,7 @@ hash_add (hash_t *ht, char const *sym, caddr_t val)
 	ht->tab = (hent_t *) calloc ((size_t)ht->size, sizeof (hent_t));
 	
 	if (ht->tab == 0)
-	    return exception (rname, sym, ERR_MALLOC);
+	    return (exception (rname, sym, ERR_MALLOC));
 	/*
 	 * Create new hash table from the old one.
 	 */
@@ -142,7 +152,8 @@ hash_add (hash_t *ht, char const *sym, caddr_t val)
      * Hash 'sym' into ht
      */
     if (hash_in (ht, sym, val)) {
-	E_FATAL ("\n%s: Error: [%s] hash conflict\nThere are two entries in the dictionary for [%s]\nPlease change or remove one of them and re-run.\n\n", rname, sym, sym);
+	fprintf (stderr, "%s: Error '%s' hash conflict\n", rname, sym);
+	exit (-1);
     }
     return (0);
 }
@@ -154,20 +165,18 @@ hash_add (hash_t *ht, char const *sym, caddr_t val)
  * NB.
  *	This routine doesn't free the objects.
  */
-int
-hash_free (hash_t *ht)
+hash_free (ht)
+hash_t *ht;
 {
-    static char const *rname = "hash_free";
+    static char *rname = "hash_free";
 
     if (ht == 0)
-	exception (rname, "", ERR_ARG);
+	return (exception (rname, "", ERR_ARG));
 
     free (ht->tab);
     ht->tab = 0;
     ht->size = 0;
     ht->inuse = 0;
-
-    return 0;
 }
 
 /* HASH_LOOKUP
@@ -181,11 +190,13 @@ hash_free (hash_t *ht)
  * NOTE: CASE-INSENSITIVE!!
  */
 int32
-hash_lookup (hash_t *ht, char const *sym, caddr_t *val)
+hash_lookup (ht, sym, val)
+register hash_t *ht;
+register char *sym;
+register caddr_t *val;
 {
-    static char const *rname = "hash_lookup";
-    register char const *cp;
-    register char c;
+    static char *rname = "hash_lookup";
+    register char   *cp, c;
     register uint32    key;
     register int32    i;
 
@@ -195,19 +206,12 @@ hash_lookup (hash_t *ht, char const *sym, caddr_t *val)
     key = 0;
     i = -1;
     cp = sym;
-/* kal 18-Jul-2000 - replaced with patch from Jose Renau 
     do {
 	c = *cp++;
 	if ((c >= 'a') && (c <= 'z'))
 	    c -= 32;
 	key += c << (0xF & i--);
     } while (*cp);
-*/
-    do {
-      c = tolower(*cp++);
-      c -='a' & 0x0F;
-      key = (key<<3) ^ c;
-    } while(*cp);
 
     hash_count++;
 rehash:
@@ -236,6 +240,7 @@ rehash:
     goto rehash;
 }
 
+
 /* HASH_IN
  *------------------------------------------------------------*
  * DESRIPTION
@@ -245,9 +250,12 @@ rehash:
  * wise return 0.
  */
 static int32
-hash_in (hash_t *ht, char const *sym, caddr_t val)
+hash_in (ht, sym, val)
+hash_t *ht;
+char *sym;
+caddr_t val;
 {
-    static char const *rname = "hash_in";
+    static char *rname = "hash_in";
     caddr_t key;
 
     if ((ht == 0) || (sym == 0))
@@ -270,10 +278,13 @@ hash_in (hash_t *ht, char const *sym, caddr_t val)
 /* EXCEPTION
  *------------------------------------------------------------*
  */
-static int
-exception (char const *rname, char const *s, int exc)
+static int32
+exception (rname, s, exception)
+char *rname;
+char *s;
+int32 exception;
 {
-    switch (exc) {
+    switch (exception) {
 	case ERR_ARG:
 	    fprintf (stderr, "%s: Bad Argument [%s]\n", rname, s);
 	    exit (-1);
@@ -284,13 +295,12 @@ exception (char const *rname, char const *s, int exc)
 	    break;
 	default:
 	    fprintf (stderr, "%s: [%s] Unknown Exception[%d]\n", rname, s,
-		     exc);
+		     exception);
     }
-    return -1;
 }
 
-static int32
-next_prime (int32 p)
+int32 next_prime (p)
+register int32 p;
 {
         register int32 k;
 
@@ -305,10 +315,11 @@ again:
 	return p;
 }
 
-list_t *hash_to_list (hash_t *ht)
+list_t *hash_to_list (ht)
 /*------------------------------------------------------------*
  * convert the hash table 'ht' to a list_t and return it.
  */
+hash_t *ht;	/* The hash table */
 {
     int32 i;
     list_t* list;

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1995-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * cache_lm.c -- Dynamic cache language model based on Roni Rosenfeld's work.
  *
@@ -42,32 +54,25 @@
  * 		Started, based on earlier FBS6 version.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+#include <CM_macros.h>
+#include <log.h>
+#include <cache_lm.h>
+#include <kb_exports.h>
+#include <err.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "search_const.h"
-#include "msd.h"
-#include "log.h"
-#include "cache_lm.h"
-#include "linklist.h"
-#include "list.h"
-#include "hash.h"
-#include "dict.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "kb.h"
-#include "err.h"
+extern char *listelem_alloc();
+extern void listelem_free();
 
 static int32 log0;
 static int32 *log_count_tbl = NULL;
 #define LOG_COUNT_TBLSIZE	4096
 #define LOG_COUNT(x) (((x) >= LOG_COUNT_TBLSIZE) ? LOG((double)(x)) : log_count_tbl[(x)])
+
 
 /*
  * Cache LM initialize.
@@ -109,6 +114,7 @@ cache_lm_t *cache_lm_init (double ug_thresh,
     return lm;
 }
 
+
 void cache_lm_reset (cache_lm_t *lm)
 {
     clm_bg_t *bg, *nextbg;
@@ -129,6 +135,7 @@ void cache_lm_reset (cache_lm_t *lm)
     lm->log_remwt = LOG(1.0 - lm->min_uw - lm->bw);
 }
 
+
 void cache_lm_add_ug (cache_lm_t *lm, int32 w)
 {
     lm->clm_ug[w].count++;
@@ -142,6 +149,7 @@ void cache_lm_add_ug (cache_lm_t *lm, int32 w)
     lm->log_uw = LOG(lm->uw);
     lm->log_remwt = LOG(1.0 - lm->uw - lm->bw);
 }
+
 
 void cache_lm_add_bg (cache_lm_t *lm, int32 w1, int32 w2)
 {
@@ -162,6 +170,7 @@ void cache_lm_add_bg (cache_lm_t *lm, int32 w1, int32 w2)
     
     lm->clm_ug[w1].sum_w2count++;
 }
+
 
 /* NOTE: Some approximations in the way the relative language weights are applied */
 int32 cache_lm_score (cache_lm_t *lm, int32 w1, int32 w2, int32 *remwt)
@@ -195,6 +204,7 @@ int32 cache_lm_score (cache_lm_t *lm, int32 w1, int32 w2, int32 *remwt)
     return (clmscr);
 }
 
+
 void cache_lm_dump (cache_lm_t *lm, char *file)
 {
     FILE *fp;
@@ -226,6 +236,7 @@ void cache_lm_dump (cache_lm_t *lm, char *file)
 
     fclose (fp);
 }
+
 
 void cache_lm_load (cache_lm_t *lm, char *file)
 {

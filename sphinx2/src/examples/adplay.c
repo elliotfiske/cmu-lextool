@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * adplay.c -- Playback the given input file containing raw audio samples.
  * 
@@ -41,6 +53,7 @@
  * 27-Jun-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Created.
  */
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,8 +69,9 @@
 #include <fcntl.h>
 #endif
 
-#include "ad.h"
-#include "err.h"
+#include <ad.h>
+#include <err.h>
+
 
 /* Linked list of buffers of data to be played back */
 typedef struct buf_s {
@@ -66,10 +80,12 @@ typedef struct buf_s {
     struct buf_s *next;
 } buf_t;
 
+
 static void sw16 (unsigned int16 *data)
 {
     *data = ((*data >> 8) & 0x00ff) | ((*data << 8) & 0xff00);
 }
+
 
 static void playfile (char *file,
 		      int32 sps,	/* Sampling rate */
@@ -174,10 +190,12 @@ static void playfile (char *file,
     ad_close_play (ad);
 }
 
+
 static void usagemsg (char *pgm)
 {
     E_FATAL("Usage: %s <file(8/16khz,16bit)> [-r<samplingrate> -s<start-frame> -e<end-frame> -h<headersize(bytes)> -m<max-scaled-sample-value> -b(to byteswap)]\n", pgm);
 }
+
 
 main (int32 argc, char *argv[])
 {

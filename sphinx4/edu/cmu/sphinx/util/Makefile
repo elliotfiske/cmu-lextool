@@ -1,11 +1,11 @@
-# Copyright 1999-2002 Carnegie Mellon University.  
-# Portions Copyright 2002 Sun Microsystems, Inc.  
-# Portions Copyright 2002 Mitsubishi Electronic Research Laboratories.
+# Copyright 2001 Sun Microsystems, Inc.
 # All Rights Reserved.  Use is subject to license terms.
 # 
 # See the file "license.terms" for information on usage and
 # redistribution of this file, and for a DISCLAIMER OF ALL 
 # WARRANTIES.
+#
+# @(#)Makefile	1.5 01/08/07
 
 # Relative path to the top of the source tree
 TOP = ../../../..
@@ -24,6 +24,3 @@ include ${TOP}/build/Makefile.config
 CLASSES = ${FILES:%.java=${CLASS_DEST_DIR}/${PACKAGE_PATH}/%.class}
 
 all:: ${CLASSES} ${STUBS} ${DATA}
-
-ra: all
-	$(JAVA_CMD) edu.cmu.sphinx.util.ResultAnalyzer

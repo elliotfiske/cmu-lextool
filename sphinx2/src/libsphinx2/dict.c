@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1992-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,28 +44,26 @@
  * ====================================================================
  *
  */
+
 /* 
  * HISTORY
  * 
  * 05-Nov-98  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
- * 		dict_load now terminates program if input dictionary 
- *              contains errors.
+ * 		dict_load now terminates program if input dictionary contains errors.
  * 
  * 21-Nov-97  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
- * 		Bugfix: Noise dictionary was not being considered in figuring
- *              dictionary size.
+ * 		Bugfix: Noise dictionary was not being considered in figuring dictionary
+ * 		size.
  * 
  * 18-Nov-97  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
- * 		Added ability to modify pronunciation of an existing word in
- *              dictionary (in dict_add_word()).
+ * 		Added ability to modify pronunciation of an existing word in dictionary
+ * 		(in dict_add_word()).
  * 
  * 10-Aug-97  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
- *		Added check for word already existing in dictionary in 
- *              dict_add_word().
+ *		Added check for word already existing in dictionary in dict_add_word().
  * 
  * 27-May-97  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
- * 		Included Bob Brennan's personaldic handling (similar to 
- *              oovdic).
+ * 		Included Bob Brennan's personaldic handling (similar to oovdic).
  * 
  * 11-Apr-97  M K Ravishankar (rkm@cs.cmu.edu) at Carnegie-Mellon University
  *		Made changes to replace_dict_entry to handle the addition of
@@ -106,10 +115,10 @@
  *	
  */
 
-#ifdef WIN32
-#include <fcntl.h>
-#else
+#if (! WIN32)
 #include <sys/file.h>
+#else
+#include <fcntl.h>
 #endif
 
 #include <stdio.h>
@@ -117,49 +126,32 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <c.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "c.h"
-#include "list.h"
-#include "hash.h"
-#include "phone.h"
-#include "dict.h"
-#include "err.h"
-#include "assert.h"
-#include "search_const.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "msd.h"
-#include "hmm_tied_r.h"
-#include "kb.h"
+#include <CM_macros.h>
+
+#include <phone.h>
+#include <dict.h>
+#include <hash.h>
+#include <err.h>
+#include <assert.h>
 
 #ifdef DEBUG
-#define DFPRINTF(x)		fprintf x
+#define DFPRINTF		fprintf
 #else
-#define DFPRINTF(x)
+#define DFPRINTF
 #endif
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
-/* FIXME: put these in a header file */
-extern char *salloc(char const *);
-extern char *nxtarg(char const **, char const *);
+extern char *getenv();
+extern char *salloc();
+extern char *nxtarg();
 
 extern int32 use_noise_words;
 
-static void buildEntryTable (list_t *list, int32 ***table_p);
-static void buildExitTable (list_t *list, int32 ***table_p,
-			    int32 ***permuTab_p, int32 **sizeTab_p);
-static int32 addToLeftContextTable (char *diphone);
-static int32 addToRightContextTable (char *diphone);
-static void recordMissingTriphone (char *triphoneStr);
-static dict_entry_t * _new_dict_entry (char const *word_str,
-				       char const *pronoun_str, int32 use_context);
-static void _dict_list_add (dictT *dict, dict_entry_t *entry);
-static void dict_load (dictT *dict, char *filename, int32 *word_id,
-		       int32 use_context, int32 isa_phrase_dict);
+static dict_entry_t * _new_dict_entry ();
+static _dict_list_add ();
 
 static hash_t mtpHT;		/* Missing triphone hash table */
 static list_t *mtpList;
@@ -186,7 +178,11 @@ static int32 initial_dummy;	/* 1st placeholder for dynamic OOVs after initializa
 static int32 first_dummy;	/* 1st dummy available for dynamic OOVs at any time */
 static int32 last_dummy;	/* last dummy available for dynamic OOVs */
 
+extern char *kb_get_lm_start_sym();
+extern char *kb_get_lm_end_sym();
+
 #define MAX_PRONOUN_LEN 	100
+
 
 static int32 get_dict_size (char *file)
 {
@@ -203,23 +199,30 @@ static int32 get_dict_size (char *file)
     return n;
 }
 
-int32
-dict_read(dictT *dict,
-	  char *filename,	/* Main dict file */
-	  char *p_filename,	/* Phrase dict file */
-	  char *n_filename,	/* Noise dict file */
-	  int32 use_context)
+
+dict_read (
+	dictT *dict,
+	char *filename,			/* Main dict file */
+	char *p_filename,		/* Phrase dict file */
+	char *n_filename,		/* Noise dict file */
+	int32 use_context)
 /*------------------------------------------------------------*
  * read in the dict file filename
  *------------------------------------------------------------*/
 {
+    static char        *rname = "dict_read";
     int32               retval = 0;
+    FILE               *fs;
+    char                dict_str[1024];
+    char                pronoun_str[1024];
     int32		word_id = 0, i, j;
+    int32		phoneCount = phone_count();
     dict_entry_t       *entry;
-    int32 		max_new_oov;
-    char *oovdic;
-    char *personalDic;
+    int32 		w, max_new_oov;
+    char *oovdic, *kb_get_oovdic();
+    char *personalDic, *kb_get_personaldic();
     char *startsym_file;
+    extern char *kb_get_startsym_file();
     struct stat statbuf;
     
     /*
@@ -242,7 +245,6 @@ dict_read(dictT *dict,
 	j += max_new_oov;
     if ((startsym_file = kb_get_startsym_file()) != NULL)
 	j += get_dict_size (startsym_file);
-    /* FIXME: <unk> is no longer used, is this still correct? */
     j += 4;	/* </s>, <s>, <unk> and <sil> */
     dict->dict.size_hint = j;
     
@@ -281,7 +283,7 @@ dict_read(dictT *dict,
     /* Placeholders (dummy pronunciations) for new words that can be added at runtime */
     initial_dummy = first_dummy = word_id;
     if ((max_new_oov = kb_get_max_new_oov ()) > 0)
-	E_INFO ("%s(%d): Allocating %d placeholders for new OOVs\n",
+	printf ("%s(%d): Allocating %d placeholders for new OOVs\n",
 		__FILE__, __LINE__, max_new_oov);
     for (i = 0; i < max_new_oov; i++) {
 	char tmpstr[100], pronstr[100];
@@ -305,6 +307,7 @@ dict_read(dictT *dict,
     
     /*
      * Special case the start symbol and end symbol phrase markers.
+     * Special case the unknown word <UNK> as SIL.
      * Special case the silence word 'SIL'.
      */
     {
@@ -319,7 +322,7 @@ dict_read(dictT *dict,
 		if (! entry)
 		    E_FATAL("Failed to add </s>(SIL) to dictionary\n");
 	    } else {
-		E_INFO ("%s(%d): using special end silence for %s\n",
+		printf ("%s(%d): using special end silence for %s\n",
 			 __FILE__, __LINE__, kb_get_lm_end_sym());
 		entry = _new_dict_entry (kb_get_lm_end_sym(), "SILe", FALSE);
 	    }
@@ -333,11 +336,11 @@ dict_read(dictT *dict,
 	/* Add [multiple] start symbols to dictionary (LISTEN project) */
 	if ((startsym_file = kb_get_startsym_file()) != NULL) {
 	    FILE *ssfp;
-	    char line[1000], startsym[1000];
-	    char const *startsym_phone;
+	    char line[1000], startsym[1000], *startsym_phone;
 	    
-	    E_INFO ("%s(%d):  Reading start-syms file %s\n",
+	    printf ("%s(%d):  Reading start-syms file %s\n",
 		    __FILE__, __LINE__, startsym_file);
+	    fflush (stdout);
 	    
 	    startsym_phone = (phone_to_id ("SILb", FALSE) == NO_PHONE) ? "SIL" : "SILb";
 	    ssfp = CM_fopen (startsym_file, "r");
@@ -364,7 +367,7 @@ dict_read(dictT *dict,
 		if (! entry)
 		    E_FATAL("Failed to add <s>(SIL) to dictionary\n");
 	    } else {
-		E_INFO ("%s(%d): using special begin silence for %s\n",
+		printf ("%s(%d): using special begin silence for %s\n",
 			 __FILE__, __LINE__, kb_get_lm_start_sym());
 		entry = _new_dict_entry (kb_get_lm_start_sym(), "SILb", FALSE);
 		if (! entry)
@@ -377,6 +380,10 @@ dict_read(dictT *dict,
 	    word_id++;
 	}
 
+#if 0
+	/* Add <UNK> to dict if unknown words are modelled */
+#endif
+	
 	if (hash_lookup (&dict->dict, "SIL", &val)) {
 	    entry = _new_dict_entry ("SIL", "SIL", FALSE);
 	    if (! entry)
@@ -394,20 +401,22 @@ dict_read(dictT *dict,
 		   FALSE, /* use_context */
 		   FALSE  /* is a phrase dict */ );
     
-    E_INFO ("LEFT CONTEXT TABLES\n");
+    printf ("LEFT CONTEXT TABLES\n");
     buildEntryTable(&lcList, &lcFwdTable);
     buildExitTable(&lcList, &lcBwdTable, &lcBwdPermTable, &lcBwdSizeTable);
 
-    E_INFO ("RIGHT CONTEXT TABLES\n");
+    printf ("RIGHT CONTEXT TABLES\n");
     buildEntryTable(&rcList, &rcBwdTable);
     buildExitTable(&rcList, &rcFwdTable, &rcFwdPermTable, &rcFwdSizeTable);
 
-    E_INFO("%5d unique triphones were mapped to ci phones\n",
+    fprintf (stdout, "%5d unique triphones were mapped to ci phones\n",
 	     mtpHT.inuse);
+    fflush (stdout);
 
     mtpList = hash_to_list (&mtpHT);
     hash_free (&mtpHT);
     
+exit:
     return (retval);
 }
 
@@ -415,7 +424,6 @@ dict_read(dictT *dict,
 /*
  * Replace _ (underscores) in a compound word by spaces
  */
-void
 chk_compound_word (char *str)
 {
     for (; *str; str++)
@@ -424,32 +432,14 @@ chk_compound_word (char *str)
 }
 #endif
 
-void dict_free (dictT *dict)
+dict_load (dict, filename, word_id, use_context, isa_phrase_dict)
+dictT *dict;
+char *filename;
+int32 *word_id;
+int32 use_context;
+int32 isa_phrase_dict;
 {
-  int32 i;
-  int32 entry_count;
-  dict_entry_t * entry;
-
-  entry_count = dict->dict_entry_count;
-
-  for (i = 0; i < entry_count; i++) {
-    entry = dict_get_entry(dict, i);
-    free(entry->word);
-    free(entry->phone_ids);
-    free(entry->ci_phone_ids);
-    free(entry);
-  }
-
-  free(dict->ci_index);
-  hash_free(&dict->dict);
-  free(dict);
-}
-
-static void
-dict_load (dictT *dict, char *filename, int32 *word_id,
-	   int32 use_context, int32 isa_phrase_dict)
-{
-    static char const *rname = "dict_load";
+    static char	*rname = "dict_load";
     char         dict_str[1024];
     char         pronoun_str[1024];
     dict_entry_t *entry;
@@ -461,9 +451,9 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
 
     fscanf (fs, "%s\n", dict_str);
     if (strcmp(dict_str, "!") != 0) {
-	E_INFO("%s: first line of %s was %s, expecting '!'\n",
+	fprintf (stdout, "%s: first line of %s was %s, expecting '!'\n",
 		 rname, filename, dict_str);
-	E_INFO("%s: will assume first line contains a word\n",
+	fprintf (stdout, "%s: will assume first line contains a word\n",
 		 rname);
 	rewind (fs);
     }
@@ -520,12 +510,11 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
 		if (q) *q = '\0';
 
 		if (hash_lookup (&dict->dict, dict_str, &wid)) {
-		    E_FATAL("%s: Missing first pronunciation for [%s]\nThis means that e.g. [%s(2)] was found with no [%s]\nPlease correct the dictionary and re-run.\n",
-			      rname, dict_str, dict_str, dict_str);
-		    exit(1);
+		    fprintf (stdout, "%s: Missing first pronunciation for [%s]\n",
+			     rname, dict_str);
 		}
-	 	DFPRINTF((stdout, "Alternate transcription for [%s](wid = %d)\n",
-			  entry->word, (int32)wid));
+	 	DFPRINTF (stdout, "Alternate transcription for [%s](wid = %d)\n",
+		  	   entry->word, (int32)wid);
 		entry->wid = (int32)wid;
 		entry->fwid = (int32)wid;
 		{
@@ -543,10 +532,10 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
 		r += 1;
 		
 		if (hash_lookup (&dict->dict, r, &wid)) {
-		    E_INFO("%s: Missing first pronunciation for [%s]\n",
+		    fprintf (stdout, "%s: Missing first pronunciation for [%s]\n",
 			     rname, r);
 		}
-	 	E_INFO("phrase transcription for [%s](wid = %d)\n",
+	 	fprintf (stdout, "phrase transcription for [%s](wid = %d)\n",
 			   entry->word, (int32)wid);
 		entry->fwid = (int32)wid;
 	    }
@@ -584,7 +573,6 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
 	    memcpy (entry_copy, entry, sizeof (dict_entry_t));
 	    /*
 	     * Update the alt pronunciation index pointers
-	     */
 	    entry->alt = *word_id;
 	    entry_copy->alt = -1;
 	    /*
@@ -604,7 +592,8 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
 	    pid = phone_to_id (entry->word, TRUE);
 
 	    if (phone_type(pid) != PT_WWPHONE) {
-		E_FATAL ("%s: No with in word for for %s\n", rname, entry->word);
+		printf ("%s: No with in word for for %s\n", rname, entry->word);
+	        exit (-1);
 	    }
 
 	    entry_copy->phone_ids[1] = hmm_pid2sid(pid);
@@ -627,8 +616,9 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
 #endif
     }
   
-    E_INFO("%6d = words in file [%s]\n",
+    fprintf (stdout, "%6d = words in file [%s]\n",
 	     *word_id - start_wid, filename);
+    fflush (stdout);
     
     if (fs)
 	fclose (fs);
@@ -638,13 +628,17 @@ dict_load (dictT *dict, char *filename, int32 *word_id,
     }
 }
 
+
 caddr_t
-dictStrToWordId (dictT *dict, char const *dict_str, int verbose)
+dictStrToWordId (dict, dict_str, verbose)
 /*------------------------------------------------------------*
  * return the dict id for dict_str
  *------------------------------------------------------------*/
+dictT *dict;
+char  *dict_str;
+int32   verbose;
 {
-    static char const *rname = "dict_to_id";
+    static char *rname = "dict_to_id";
     caddr_t dict_id;
 
     if (hash_lookup (&dict->dict, dict_str, &dict_id)) {
@@ -656,12 +650,12 @@ dictStrToWordId (dictT *dict, char const *dict_str, int verbose)
     return (dict_id);
 }
 
-int32 dict_to_id (dictT *dict, char const *dict_str)
+dict_to_id (dictT *dict, char *dict_str)
 {
     return ((int32) dictStrToWordId (dict, dict_str, FALSE));
 }
 
-char const *dictid_to_str (dictT *dict, int32 id)
+char *dictid_to_str (dictT *dict, int32 id)
 {
     return (dict->dict_list[id]->word);
 }
@@ -669,8 +663,12 @@ char const *dictid_to_str (dictT *dict, int32 id)
 #define MAX_PRONOUN_LEN 100
 
 static dict_entry_t *
-_new_dict_entry (char const *word_str, char const *pronoun_str, int32 use_context)
+_new_dict_entry (word_str, pronoun_str, use_context)
+char *word_str;
+char *pronoun_str;
+int32 use_context;
 {
+    static char         *rname = "_new_dict_entry";
     dict_entry_t       *entry;
     char               *phone[MAX_PRONOUN_LEN];
     int32	        ciPhoneId[MAX_PRONOUN_LEN];
@@ -812,7 +810,7 @@ _new_dict_entry (char const *word_str, char const *pronoun_str, int32 use_contex
 	entry->phone_ids = (int32 *) calloc ((size_t)pronoun_len, sizeof (int32));
 	memcpy (entry->phone_ids, triphone_ids, pronoun_len * sizeof (int32));
     } else {
-    	E_WARN("%s has no pronounciation, will treat as dummy word\n",
+    	fprintf (stdout, "%s has no pronounciation, will treat as dummy word\n",
 		 word_str);
     }
 
@@ -827,8 +825,7 @@ _new_dict_entry (char const *word_str, char const *pronoun_str, int32 use_contex
  * Return 1 if successful, 0 if not.
  */
 static int32 replace_dict_entry (dictT *dict,
-				 dict_entry_t *entry, char const *word_str,
-				 char const *pronoun_str,
+				 dict_entry_t *entry, char *word_str, char *pronoun_str,
 				 int32 use_context, int32 new_entry)
 {
     char *phone[MAX_PRONOUN_LEN];
@@ -859,7 +856,7 @@ static int32 replace_dict_entry (dictT *dict,
 
     /* For the moment, no single phone new word... */
     if (pronoun_len < 2) {
-	E_ERROR("%s(%d): Pronunciation string too short\n", __FILE__, __LINE__);
+	printf ("%s(%d): Pronunciation string too short\n", __FILE__, __LINE__);
 	return (0);
     }
 
@@ -870,7 +867,7 @@ static int32 replace_dict_entry (dictT *dict,
 	    *p = '\0';
 	    if (hash_lookup (&dict->dict, word_str, &idx)) {
 		*p = '(';
-		E_ERROR("%s(%d): Base word missing for %s\n",
+		fprintf (stderr, "%s(%d): Base word missing for %s\n",
 			 __FILE__, __LINE__, word_str);
 		return 0;
 	    }
@@ -884,7 +881,7 @@ static int32 replace_dict_entry (dictT *dict,
     i = 0;
     sprintf (triphoneStr, "%s(%%s,%s)b", phone[i], phone[i+1]);
     if (hash_lookup (&lcHT, triphoneStr, &idx) < 0) {
-	E_ERROR("%s(%d): Unknown left diphone\n", __FILE__, __LINE__);
+	printf ("%s(%d): Unknown left diphone\n", __FILE__, __LINE__);
 	return (0);
     }
     triphone_ids[i] = (int32) idx;
@@ -899,7 +896,7 @@ static int32 replace_dict_entry (dictT *dict,
 
     sprintf (triphoneStr, "%s(%s,%%s)e", phone[i], phone[i-1]);
     if (hash_lookup (&rcHT, triphoneStr, &idx) < 0) {
-	E_ERROR("%s(%d): Unknown right diphone\n", __FILE__, __LINE__);
+	printf ("%s(%d): Unknown right diphone\n", __FILE__, __LINE__);
 	return (0);
     }
     triphone_ids[i] = (int32) idx;
@@ -937,7 +934,7 @@ static int32 replace_dict_entry (dictT *dict,
  * existing non-dummy word in the dictionary.
  * Return the word id of the entry updated if successful.  If any error, return -1.
  */
-int32 dict_add_word (dictT *dict, char const *word, char const *pron)
+int32 dict_add_word (dictT *dict, char *word, char *pron)
 {
     dict_entry_t *entry;
     int32 wid, new_entry;
@@ -946,7 +943,7 @@ int32 dict_add_word (dictT *dict, char const *word, char const *pron)
     new_entry = 0;
     if ((wid = kb_get_word_id(word)) < 0) {
 	if (first_dummy > last_dummy) {
-	    E_ERROR ("%s(%d): Dictionary full\n", __FILE__, __LINE__);
+	    printf ("%s(%d): Dictionary full\n", __FILE__, __LINE__);
 	    return -1;
 	}
 	wid = first_dummy++;
@@ -962,17 +959,21 @@ int32 dict_add_word (dictT *dict, char const *word, char const *pron)
     return (wid);
 }
 
-static void
-_dict_list_add (dictT *dict, dict_entry_t *entry)
+
+static
+_dict_list_add (dict, entry)
 /*------------------------------------------------------------*/
+dictT *dict;
+dict_entry_t *entry;
 {
     if (! dict->dict_list)
 	dict->dict_list = (dict_entry_t **)
 	    CM_calloc (dict->dict.size_hint, sizeof (dict_entry_t *));
 
     if (dict->dict_entry_count >= dict->dict.size_hint) {
-	E_FATAL("%s(%d): **ERROR** dict size (%d) exceeded\n",
+	fprintf (stderr, "%s(%d): **ERROR** dict size (%d) exceeded\n",
 		 __FILE__, __LINE__, dict->dict.size_hint);
+	exit(-1);
 #if 0
 	dict->dict.size_hint = dict->dict_entry_count + 16;
 	dict->dict_list = (dict_entry_t **)
@@ -983,26 +984,29 @@ _dict_list_add (dictT *dict, dict_entry_t *entry)
     dict->dict_list[dict->dict_entry_count++] = entry;
 }
 
+
 dict_entry_t *
-dict_get_entry (dictT *dict, int i)
+dict_get_entry (dict, i)
+dictT *dict;
+int32 i;
 {
     return ((i < dict->dict_entry_count) ?
 		dict->dict_list[i] : (dict_entry_t *) 0);
 }
 
-/* FIXME: could be extern inline */
-int32
-dict_count (dictT *dict)
+dict_count (dict)
+dictT *dict;
 {
     return dict->dict_entry_count;
 }
 
-dictT *dict_new (void)
+dictT *dict_new ()
 {
+    static char *rname = "dict_new";
+
     return (dictT *) CM_calloc (sizeof(dictT), 1);
 }
 
-static void
 recordMissingTriphone (char *triphoneStr)
 {
     caddr_t idx;
@@ -1014,13 +1018,15 @@ recordMissingTriphone (char *triphoneStr)
     }
 }
 
-list_t *dict_mtpList (void)
+list_t *dict_mtpList ()
 {
     return mtpList;
 }
 
-static int32
-addToContextTable (char *diphone, hash_t *table, list_t *list)
+addToContextTable (diphone, table, list)
+char *diphone;
+hash_t *table;
+list_t *list;
 {
     caddr_t idx;
     char *cp;
@@ -1034,38 +1040,41 @@ addToContextTable (char *diphone, hash_t *table, list_t *list)
     return ((int32) idx);
 }
 
-static int32
-addToLeftContextTable (char *diphone)
+addToLeftContextTable (diphone)
+char *diphone;
 {
     return addToContextTable (diphone, &lcHT, &lcList);
 }
 
-static int32
-addToRightContextTable (char *diphone)
+addToRightContextTable (diphone)
+char *diphone;
 {
     return addToContextTable (diphone, &rcHT, &rcList);
 }
 
-static int
-cmp (void const  *a, void const *b)
+cmp (a,b)
+int32 *a,*b;
 {
-    return (*(int32 const *)a - *(int32 const *)b);
+    return (*a - *b);
 }
 
 int32 *linkTable;
 
-static int
-cmpPT (void const *a, void const *b)
+cmpPT (a,b)
+int32 *a,*b;
 {
-    return (linkTable[*(int32 const *)a] - linkTable[*(int32 const *)b]);
+    return (linkTable[*a] - linkTable[*b]);
 }
 
-static void
-buildEntryTable (list_t *list, int32 ***table_p)
+buildEntryTable (list, table_p)
+list_t *list;
+int32 ***table_p;
 {
+    static char *rname = "buildEntryTable";
     int32 ciCount = phoneCiCount();
     int32 i, j;
     char triphoneStr[128];
+    int32 otherContext = 0;
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
@@ -1073,8 +1082,9 @@ buildEntryTable (list_t *list, int32 ***table_p)
 
     *table_p = (int32 **) CM_calloc (list->in_use, sizeof (int32 *));
     table = *table_p;
-    E_INFO("Entry Context table contains\n\t%6d entries\n", list->in_use);
-    E_INFO("\t%6d possible cross word triphones.\n", list->in_use * ciCount);
+    printf ("Entry Context table contains\n\t%6d entries\n", list->in_use);
+    printf ("\t%6d possible cross word triphones.\n", list->in_use * ciCount);
+    fflush (stdout);
 
     for (i = 0; i < list->in_use; i++) {
 	table[i] = (int32 *) CM_calloc (ciCount, sizeof(int32));
@@ -1110,16 +1120,21 @@ buildEntryTable (list_t *list, int32 ***table_p)
 	    table[i][j] = hmm_pid2sid(phone_map(table[i][j]));
 	}
     }
-    E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
+    printf ("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
 	     triphoneContext, silContext, noContext);
 }
 
-static void
-buildExitTable (list_t *list, int32 ***table_p, int32 ***permuTab_p, int32 **sizeTab_p)
+buildExitTable (list, table_p, permuTab_p, sizeTab_p)
+list_t *list;
+int32 ***table_p;
+int32 ***permuTab_p;
+int32 **sizeTab_p;
 {
+    static char *rname = "buildRcTable";
     int32 ciCount = phoneCiCount();
     int32 i, j, k;
     char triphoneStr[128];
+    int32 otherContext = 0;
     int32 silContext = 0;
     int32 triphoneContext = 0;
     int32 noContext = 0;
@@ -1136,8 +1151,9 @@ buildExitTable (list_t *list, int32 ***table_p, int32 ***permuTab_p, int32 **siz
     *sizeTab_p = (int32 *) CM_calloc (list->in_use, sizeof (int32 *));
     sizeTab = *sizeTab_p;
 
-    E_INFO("Exit Context table contains\n\t%6d entries\n", list->in_use);
-    E_INFO("\t%6d possible cross word triphones.\n", list->in_use * ciCount);
+    printf ("Exit Context table contains\n\t%6d entries\n", list->in_use);
+    printf ("\t%6d possible cross word triphones.\n", list->in_use * ciCount);
+    fflush (stdout);
 
     for (i = 0; i < list->in_use; i++) {
 	for (j = 0; j < ciCount; j++) {
@@ -1200,54 +1216,55 @@ buildExitTable (list_t *list, int32 ***table_p, int32 ***permuTab_p, int32 **siz
 	sizeTab[i] = k+1;
 	entries += k+1;
     }
-    E_INFO("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
+    printf ("\t%6d triphones\n\t%6d pseudo diphones\n\t%6d uniphones\n",
 	     triphoneContext, silContext, noContext);
-    E_INFO("\t%6d right context entries\n", entries);
-    E_INFO("\t%6d ave entries per exit context\n",
+    printf ("\t%6d right context entries\n", entries);
+    printf ("\t%6d ave entries per exit context\n",
 	    ((list->in_use == 0) ? 0 : entries/list->in_use));
 }
 
-int32 **dict_right_context_fwd (void)
+int32 **dict_right_context_fwd ()
 {
     return rcFwdTable;
 }
 
-int32 **dict_right_context_fwd_perm (void)
+int32 **dict_right_context_fwd_perm ()
 {
     return rcFwdPermTable;
 }
 
-int32 *dict_right_context_fwd_size (void)
+int32 *dict_right_context_fwd_size ()
 {
     return rcFwdSizeTable;
 }
 
-int32 **dict_left_context_fwd (void)
+int32 **dict_left_context_fwd ()
 {
     return lcFwdTable;
 }
 
-int32 **dict_right_context_bwd (void)
+int32 **dict_right_context_bwd ()
 {
     return rcBwdTable;
 }
 
-int32 **dict_left_context_bwd (void)
+int32 **dict_left_context_bwd ()
 {
     return lcBwdTable;
 }
 
-int32 **dict_left_context_bwd_perm (void)
+int32 **dict_left_context_bwd_perm ()
 {
     return lcBwdPermTable;
 }
 
-int32 *dict_left_context_bwd_size (void)
+int32 *dict_left_context_bwd_size ()
 {
     return lcBwdSizeTable;
 }
 
-int32 dict_get_num_main_words (dictT *dict)
+int32 dict_get_num_main_words (dict)
+    dictT *dict;
 {
     return ((int32) dictStrToWordId (dict, kb_get_lm_end_sym(), FALSE));
 }
@@ -1275,31 +1292,34 @@ int32 dict_is_new_word (int32 wid)
     return ((wid >= initial_dummy) && (wid <= last_dummy));
 }
 
+
 int32 dict_pron (dictT *dict, int32 w, int32 **pron)
 {
     *pron = dict->dict_list[w]->ci_phone_ids;
     return (dict->dict_list[w]->len);
 }
 
+
 int32 dict_next_alt (dictT *dict, int32 w)
 {
     return (dict->dict_list[w]->alt);
 }
 
+
 /* Write OOV words added at run time to the given file and return #words written */
-int32 dict_write_oovdict (dictT *dict, char const *file)
+int32 dict_write_oovdict (dictT *dict, char *file)
 {
     int32 w, p;
     FILE *fp;
 
     /* If no new words added at run time, no need to write a new file */
     if (initial_dummy == first_dummy) {
-	E_ERROR("%s(%d): No new word added; no OOV file written\n", __FILE__, __LINE__);
+	printf ("%s(%d): No new word added; no OOV file written\n", __FILE__, __LINE__);
 	return 0;
     }
 
     if ((fp = fopen(file, "w")) == NULL) {
-	E_ERROR("%s(%d): fopen(%s,w) failed\n", __FILE__, __LINE__, file);
+	printf ("%s(%d): fopen(%s,w) failed\n", __FILE__, __LINE__);
 	return -1;
     }
 

@@ -1,67 +1,27 @@
-#!/usr/bin/perl
-## ====================================================================
-##
-## Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
-## reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-##
-## 1. Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer. 
-##
-## 2. Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in
-##    the documentation and/or other materials provided with the
-##    distribution.
-##
-## 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
-##    endorse or promote products derived from this software without
-##    prior written permission. To obtain permission, contact 
-##    sphinx@cs.cmu.edu.
-##
-## 4. Redistributions of any form whatsoever must retain the following
-##    acknowledgment:
-##    "This product includes software developed by Carnegie
-##    Mellon University (http://www.speech.cs.cmu.edu/)."
-##
-## THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
-## ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-## THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-## PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
-## NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-## SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-## LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-## DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
-## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##
-## ====================================================================
-##
-## Author: Ricky Houghton (converted from scripts by Rita Singh)
-##
+#!/usr/local/bin/perl5
 
-my $index = 0;
+
+# RAH Force passage of config file, or look for it one directory up.
 if (lc($ARGV[0]) eq '-cfg') {
     $cfg_file = $ARGV[1];
-    $index = 2;
+    if (! -s $cfg_file) {
+	print ("-cfg specified, but unable to find file $ARGV[1]\n");
+	exit -3;
+    }
+    require $cfg_file;
 } else {
-    $cfg_file = "etc/sphinx_train.cfg";
+    $cfg_file = "./sphinx_train.cfg";
+    if (! -s "$cfg_file") {
+	print ("unable to find default configuration file, use -cfg file.cfg or create ./sphinx_train.cfg for default\n");
+	exit -3;
+    }
+    require ("./sphinx_train.cfg");
+    &ST_LogWarning ("-cfg not specified, using the default sphinx_train.cfg");
 }
-
-if (! -s "$cfg_file") {
-    print ("unable to find default configuration file, use -cfg file.cfg or create etc/sphinx_train.cfg for default\n");
-    exit -3;
-}
-
-require $cfg_file;
 
 $ret_value = 0;
 
-$| = 1;				# Turn on autoflushing
-&ST_Log ("MODULE: 00 verify training files\n");
+&ST_Log ("MODULE: 00 $0\n");
 
 # PHASE 1: Check to see if the phones in the dictionary are listed in the phonelist file
 # PHASE 2: Check to make sure there are not duplicate entries in the dictionary
@@ -71,7 +31,7 @@ $| = 1;				# Turn on autoflushing
     %dict_phone_hash = ();
     %dict_hash = ();
 
-    &ST_Log ("    Phase 1: DICT - Checking to see if the dict and filler dict agrees with the phonelist file\n");
+    &ST_Log ("\tPhase 1: DICT - Checking to see if the dict and filler dict agrees with the phonelist file\n");
     # This is rather ugly, but it's late and I'm just trying to get the pieces together
     # Clean it up later
 
@@ -120,7 +80,7 @@ $| = 1;				# Turn on autoflushing
     close PHONE;
     
     @keys = keys %dict_phone_hash;
-    &ST_Log ("        Found $counter words using $#keys phones\n");
+    &ST_Log ("\t\tFound $counter words using $#keys phones\n");
     
     $status = 'passed';
     for $key (sort (keys %dict_phone_hash)){
@@ -137,7 +97,7 @@ $| = 1;				# Turn on autoflushing
     &ST_HTML_Print ("\t\t<font color=\"$CFG_ERROR_COLOR\"> $status </font>\n") if ($status eq 'FAILED');
 #    &ST_Log("\t\t$status\n");
 
-    &ST_Log("    Phase 2: DICT - Checking to make sure there are not duplicate entries in the dictionary\n");
+    &ST_Log("\tPhase 2: DICT - Checking to make sure there are not duplicate entries in the dictionary\n");
     $duplicate_status = 'passed';
     for $key (keys %dict_hash) {
 	if ($dict_hash{$key} > 1) {
@@ -167,7 +127,7 @@ $| = 1;				# Turn on autoflushing
     # 3.) Check that each utterance specified in the .ctl file has a positive length
     #     Verify that the files listed are available and are not of size 0
 
-    &ST_Log("    Phase 3: CTL - Check general format; utterance length (must be positive); files exist\n");
+    &ST_Log("\tPhase 3: CTL - Check general format; utterance length (must be positive); files exist\n");
     $status = 'passed';
     $estimated_training_data = 0;
     for $ctl_line (@ctl_lines) {
@@ -217,7 +177,7 @@ $| = 1;				# Turn on autoflushing
 
     
     # 4) Check number of lines in the transcript and in ctl - they should be the same\n";
-    &ST_Log ("    Phase 4: CTL - Checking number of lines in the transcript should match lines in control file\n");
+    &ST_Log ("\tPhase 4: CTL - Checking number of lines in the transcript should match lines in control file\n");
     open TRN,"$CFG_TRANSCRIPTFILE" or die "Can not open Transcript file ($CFG_TRANSCRIPTFILE)";
     $number_transcript_lines = 0;
     while (<TRN>) {
@@ -232,7 +192,7 @@ $| = 1;				# Turn on autoflushing
 
     # 4a) Should already have estimates on the total training time, 
 
-    &ST_Log ("    Phase 4a: CTL - Determine amount of training data, see if n_tied_states seems reasonable.\n");
+    &ST_Log ("\tPhase 4a: CTL - Determine amount of training data, see if n_tied_states seems reasonable.\n");
     $status = 'passed';
     $total_training_data = 0;
     for $ctl_line (@ctl_lines) {
@@ -279,11 +239,11 @@ $| = 1;				# Turn on autoflushing
 
 
 {
-    &ST_Log("    Phase 5: TRANSCRIPT - Checking that all the words in the transcript are in the dictionary\n");
+    &ST_Log("\tPhase 5: TRANSCRIPT - Checking that all the words in the transcript are in the dictionary\n");
     open DICT,"$CFG_DICTIONARY" or die "Can not open the dictionary ($CFG_DICTIONARY)";
     @dict = <DICT>;
     close DICT;
-    &ST_Log("        Words in dictionary: $#dict\n");
+    &ST_Log("\t\tWords in dictionary: $#dict\n");
     
     for (@dict) {		# Create a hash of the dict entries
 	/(\S+)\s+(.*)$/;
@@ -293,7 +253,7 @@ $| = 1;				# Turn on autoflushing
     open DICT,"$CFG_FILLERDICT" or die "Can not open filler dict ($CFG_FILLERDICT)\n";
     @fill_dict = <DICT>;
     close DICT;
-    &ST_Log ("        Words in filler dictionary: $#fill_dict\n");
+    &ST_Log ("\t\tWords in filler dictionary: $#fill_dict\n");
     
     for (@fill_dict) {		# Create a hash of the dict entries
 	/(\S+)\s+(.*)$/;
@@ -326,9 +286,6 @@ $| = 1;				# Turn on autoflushing
     &ST_HTML_Print ("\t\t<font color=\"$CFG_WARNING_COLOR\"> $status </font>\n") if($status eq 'WARNING');
 
 }
-
-mkdir ($CFG_LOG_DIR,0755) unless -d $CFG_LOG_DIR;
-mkdir ("$CFG_BASE_DIR/bwaccumdir",0755) unless -d "$CFG_LOG_DIR/bwaccumdir";
 
     
 exit ($ret_value);

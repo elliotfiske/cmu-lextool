@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * dict.c -- Pronunciation dictionary.
  *
@@ -44,7 +9,6 @@
  * **********************************************
  * 
  * HISTORY
- * 19-Apr-01    Ricky Houghton, added code for freeing memory that is allocated internally.
  * 
  * 23-Apr-98	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
  * 		Made usage of mdef optional.  If no mdef is specified while loading
@@ -79,7 +43,7 @@ static s3cipid_t dict_ciphone_id (dict_t *d, char *str)
 	    
 	    if (id >= MAX_S3CIPID)
 		E_FATAL("Too many CIphones in dictionary; increase MAX_S3CIPID\n");
-	    d->ciphone_str[id] = (char *) ckd_salloc(str); /* Freed in dict_free()*/
+	    d->ciphone_str[id] = (char *) ckd_salloc(str);
 	    
 	    if (hash_enter (d->pht, d->ciphone_str[id], id) != id)
 		E_FATAL("hash_enter(local-phonetable, %s) failed\n", str);
@@ -114,7 +78,7 @@ s3wid_t dict_add_word (dict_t *d, char *word, s3cipid_t *p, int32 np)
     }
     
     wordp = d->word + d->n_word;
-    wordp->word = (char *) ckd_salloc (word); /* Freed in dict_free */
+    wordp->word = (char *) ckd_salloc (word);
     
     /* Associate word string with d->n_word in hash table */
     if (hash_enter (d->ht, wordp->word, d->n_word) != d->n_word) {
@@ -124,7 +88,7 @@ s3wid_t dict_add_word (dict_t *d, char *word, s3cipid_t *p, int32 np)
 
     /* Fill in word entry, and set defaults */
     if (p && (np > 0)) {
-	wordp->ciphone = (s3cipid_t *) ckd_malloc (np * sizeof(s3cipid_t)); /* Freed in dict_free */
+	wordp->ciphone = (s3cipid_t *) ckd_malloc (np * sizeof(s3cipid_t));
 	memcpy (wordp->ciphone, p, np*sizeof(s3cipid_t));
 	wordp->pronlen = np;
     } else {
@@ -166,7 +130,7 @@ static int32 dict_read (FILE *fp, dict_t *d)
     int32 i, maxwd;
     
     maxwd = 4092;
-    wptr = (char **) ckd_calloc (maxwd, sizeof(char *)); /* Freed below */
+    wptr = (char **) ckd_calloc (maxwd, sizeof(char *));
     
     lineno = 0;
     while (fgets (line, sizeof(line), fp) != NULL) {
@@ -214,7 +178,7 @@ static s3wid_t *dict_comp_head (dict_t *d)
     int32 w;
     s3wid_t *comp_head;
     
-    comp_head = (s3wid_t *) ckd_calloc (d->n_word, sizeof(s3wid_t)); /* freed in dict_free */
+    comp_head = (s3wid_t *) ckd_calloc (d->n_word, sizeof(s3wid_t));
     
     for (w = 0; w < d->n_word; w++)
 	comp_head[w] = BAD_S3WID;
@@ -266,7 +230,7 @@ static int32 dict_build_comp (dict_t *d,
 	
 	/* Allocate and fill in component word info */
 	wordp->n_comp = n;
-	wordp->comp = (s3wid_t *) ckd_calloc (n, sizeof(s3wid_t)); /* freed in dict_free */
+	wordp->comp = (s3wid_t *) ckd_calloc (n, sizeof(s3wid_t));
 	
 	/* Parse word string into components */
 	n = 0;
@@ -331,12 +295,12 @@ dict_t *dict_init (mdef_t *mdef, char *dictfile, char *fillerfile, char comp_sep
      * Allocate dict entries.  HACK!!  Allow some extra entries for words not in file.
      * Also check for type size restrictions.
      */
-    d = (dict_t *) ckd_calloc (1, sizeof(dict_t)); /* freed in dict_free() */
+    d = (dict_t *) ckd_calloc (1, sizeof(dict_t));
     d->max_words = (n+1024 < MAX_S3WID) ? n+1024 : MAX_S3WID;
     if (n >= MAX_S3WID)
 	E_FATAL("#Words in dictionaries (%d) exceeds limit (%d)\n", n, MAX_S3WID);
     
-    d->word = (dictword_t *) ckd_calloc (d->max_words, sizeof(dictword_t)); /* freed in dict_free() */
+    d->word = (dictword_t *) ckd_calloc (d->max_words, sizeof(dictword_t));
     d->n_word = 0;
     d->mdef = mdef;
     if (mdef) {
@@ -344,7 +308,7 @@ dict_t *dict_init (mdef_t *mdef, char *dictfile, char *fillerfile, char comp_sep
 	d->ciphone_str = NULL;
     } else {
 	d->pht = hash_new (DEFAULT_NUM_PHONE, 1 /* No case */);
-	d->ciphone_str = (char **) ckd_calloc (DEFAULT_NUM_PHONE, sizeof(char *)); /* freed in dict_free() */
+	d->ciphone_str = (char **) ckd_calloc (DEFAULT_NUM_PHONE, sizeof(char *));
     }
     d->n_ciphone = 0;
     
@@ -492,45 +456,6 @@ int32 dict_word2basestr (char *word)
     return -1;
 }
 
-/* RAH 4.19.01, try to free memory allocated by the calls above.
-   All testing I've done shows that this gets all the memory, however I've 
-   likely not tested all cases. 
- */
-void dict_free (dict_t *d)
-{
-  int i;
-  dictword_t *word;
-
-  if (d) { /* Clean up the dictionary stuff*/
-    /* First Step, free all memory allocated for each word */
-    for (i=0;i<d->n_word;i++) {
-      word = (dictword_t *) &(d->word[i]);
-      if (word->word) 
-	ckd_free ((void *)word->word);
-      if (word->ciphone) 
-      ckd_free ((void *)word->ciphone);
-      if (word->comp) 
-	ckd_free ((void *)word->comp);
-    }
-    
-    if (d->word) 
-      ckd_free ((void *)d->word);
-    for (i=0;i<d->n_ciphone;i++) {
-      if (d->ciphone_str[i]) 
-	ckd_free ((void *)d->ciphone_str[i]);
-    }
-    if (d->comp_head) 
-      ckd_free ((void *)d->comp_head);
-    if (d->ciphone_str)
-      ckd_free ((void *)d->ciphone_str);
-    if (d->pht)
-      hash_free (d->pht);
-    if (d->ht)
-      hash_free (d->ht);
-    ckd_free ((void *)d);
-  }
-}
-
 
 #if (_DICT_TEST_)
 main (int32 argc, char *argv[])
@@ -545,19 +470,9 @@ main (int32 argc, char *argv[])
 	E_FATAL("Usage: %s {mdeffile | NULL} dict [fillerdict]\n", argv[0]);
     
     m = (strcmp (argv[1], "NULL") != 0) ? mdef_init (argv[1]) : NULL;
-    /*  d = dict_init (m, argv[2], ((argc > 3) ? argv[3] : NULL), '_'); */ /*  */
-  d = dict_init (m, argv[2], ((argc > 3) ? argv[3] : NULL), ' '); */ /* RAH, remove compound word separator */
+    d = dict_init (m, argv[2], ((argc > 3) ? argv[3] : NULL), '_');
     
-#define _DICT_MEM_LEAK_TEST_ 0
-
-#if (_DICT_MEM_LEAK_TEST_)
-
-  if (0) { /* RAH For now, just exit so we can check for memory leaks */
-    strcpy (wd,"empty");
-    while ((strcmp(wd,"q") !=  0)) {	/* RAH, changed this from: for (;;) */
-#else
     for (;;) {
-#endif
 	printf ("word> ");
 	scanf ("%s", wd);
 	
@@ -573,11 +488,5 @@ main (int32 argc, char *argv[])
 	    }
 	}
     }
-}
-#if (_DICT_MEM_LEAK_TEST_)
-  mdef_free (m);		/* RAH, added freeing of memory */
-  dict_free (d);		/* RAH, added freeing of the memory*/
-  exit (0);
-#endif
 }
 #endif

@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * cont_mgau.c -- Mixture Gaussians for continuous HMM models.
  *
@@ -45,8 +10,6 @@
  *
  * HISTORY
  * 
- * 20.Apr.2001  RAH (rhoughton@mediasite.com, ricky.houghton@cs.cmu.edu)
- *              Added mgau_free to free memory allocated by mgau_init()
  * 15-Dec-1999	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Added mgau_var_nzvec_floor().
  * 
@@ -591,47 +554,4 @@ int32 mgau_eval (mgau_model_t *g, int32 m, int32 *active, float32 *x)
     }
     
     return score;
-}
-
-/* RAH, free memory allocated in mgau_init
-   I've not verified that this function catches all of the leaks, just most of them.
- */
-void mgau_free (mgau_model_t *g)
-{
-  //  int i,j;
-  if (g) {
-    /* Free memory allocated for the mean structure*/
-    //    for (i=0;i<g->n_mgau;i++) {
-    //      for (j=0;j<g->max_comp;j++) {
-    //	if (g->mgau[i].mean[j]) 
-    //	  ckd_free ((void *) g->mgau[i].mean[j]);
-    //      }
-    //    }
-    if (g->mgau[0].mean) 
-      ckd_free ((void *) g->mgau[0].mean);
-
-    /* Free memory allocated for the var structure*/
-//    for (i=0;i<g->n_mgau;i++) {
-//      for (j=0;j<g->max_comp;j++) {
-//	if (g->mgau[i].var[j]) 
-//	  ckd_free ((void *) g->mgau[i].var[j]);
-//      }
-//    }
-    if (g->mgau[0].var) 
-      ckd_free ((void *) g->mgau[0].var);
-    if (g->mgau[0].lrd) 
-      ckd_free ((void *) g->mgau[0].lrd);
-
-    /* Free memory allocated for the mixture weights*/
-//    for (i=0;i<g->n_mgau;i++) 
-//      if (g->mgau[i].mixw[0]) 
-//	ckd_free ((void *) g->mgau[i].mixw[0]);
-    
-    if (g->mgau[0].mixw) 
-      ckd_free ((void *) g->mgau[0].mixw);
-    
-    if (g->mgau)
-      ckd_free ((void *) g->mgau);
-    ckd_free ((void *) g);
-  }
 }

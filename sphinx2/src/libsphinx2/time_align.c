@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1994-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * time_align.c
  *
@@ -53,56 +65,9 @@
  *
  * Revision History
  * $Log$
- * Revision 1.13  2001/12/11  00:24:48  lenzo
- * Acknowledgement in License.
+ * Revision 1.1  2000/01/28  22:08:57  lenzo
+ * Initial revision
  * 
- * Revision 1.12  2001/12/07 17:30:02  lenzo
- * Clean up and remove extra lines.
- *
- * Revision 1.11  2001/12/07 05:09:30  lenzo
- * License.xsxc
- *
- * Revision 1.10  2001/12/07 04:27:35  lenzo
- * License cleanup.  Remove conditions on the names.  Rationale: These
- * conditions don't belong in the license itself, but in other fora that
- * offer protection for recognizeable names such as "Carnegie Mellon
- * University" and "Sphinx."  These changes also reduce interoperability
- * issues with other licenses such as the Mozilla Public License and the
- * GPL.  This update changes the top-level license files and removes the
- * old license conditions from each of the files that contained it.
- * All files in this collection fall under the copyright of the top-level
- * LICENSE file.
- *
- * Revision 1.9  2001/12/07 00:51:49  lenzo
- * Quiet warnings.
- *
- * Revision 1.8  2001/10/23 22:20:30  lenzo
- * Change error logging and reporting to the E_* macros that call common
- * functions.  This will obsolete logmsg.[ch] and they will be removed
- * or changed in future versions.
- *
- * Revision 1.7  2001/07/02 16:47:12  lenzo
- * Fixed triphone lookup fallback case.
- *
- * Revision 1.6  2001/02/13 19:51:38  lenzo
- * *** empty log message ***
- *
- * Revision 1.5  2001/01/25 19:36:29  lenzo
- * Fixing some memory leaks
- *
- * Revision 1.4  2000/12/12 23:01:42  lenzo
- * Rationalizing libs and names some more.  Split a/d and fe libs out.
- *
- * Revision 1.3  2000/12/05 01:45:12  lenzo
- * Restructuring, hear rationalization, warning removal, ANSIfy
- *
- * Revision 1.2  2000/03/29 14:30:28  awb
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2000/01/28 22:08:57  lenzo
- * Initial import of sphinx2
- *
- *
  * 
  * 02-Jan-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Added time_align_word flag to determine whether word segmentation is
@@ -201,27 +166,10 @@
 #include <stdarg.h>
 
 /* CMU Speech stuff */
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "strfuncs.h"
-#include "list.h"
-#include "hash.h"
-#include "search_const.h"
-#include "msd.h"
-#include "dict.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "lm.h"
-#include "kb.h"
-#include "phone.h"
-#include "log.h"
-#include "hmm_tied_r.h"
-#include "scvq.h"
-#include "s2params.h"
-#include "fbs.h"
-#include "search.h"
-#include "err.h"
+#include <kb_exports.h>
+#include <phone.h>
+#include <log.h>
+#include <CM_macros.h>
 
 /* This module stuff */
 #include "time_align.h"
@@ -231,12 +179,11 @@
 #define FALSE 0
 #endif
 
-int save_labs(SEGMENT_T *segs,
-	      int num_entries,
-	      const char *dirname,
-	      const char *filename,
-	      const char *extname,
-	      const char *labtype);
+char *phone_from_id (int32 phone_id);
+int32 phone_first_noise_phone_id();
+int32 phone_num_noise_phones();
+
+char *salloc(char *s);
 
 static float *cep_f = NULL;
 static float *dcep_f = NULL;
@@ -283,6 +230,9 @@ static SMD *Models;
 
 static int32 *distScores;
 
+int32 *search_get_dist_scores();
+int32 query_compute_all_senones();
+
 extern int32 *senone_active;
 extern char *senone_active_flag;
 extern int32 n_senone_active;
@@ -327,17 +277,16 @@ void time_align_set_beam_width(double bw)
     beam_width = 8 * LOG(bw);
 }
 
-int constituent_cnt(char const *compound_word)
+int constituent_cnt(char *compound_word)
 {
     char *uscore;
     int cnt;
-    char const *rem_word;
+    char *rem_word;
 
     rem_word = compound_word;
-    cnt = 1;
-    uscore = strchr(rem_word, '_');
-    while ((uscore = strchr(uscore+1, '_')))
-	cnt++;
+    for (cnt = 1, uscore = strchr(rem_word, '_');
+	 uscore = strchr(uscore+1, '_');
+	 cnt++);
 
     ++cnt;
 
@@ -359,24 +308,24 @@ char *head_word_of(int k)
     return head_word;
 }
 
-char *cvt_uscores_to_sp(char const *word)
+char *cvt_uscores_to_sp(char *word)
 {
     char *wrk = salloc(word);
     char *uscore;
 
     uscore = wrk;
 
-    while ((uscore = strchr(uscore+1, '_'))) {
+    while (uscore = strchr(uscore+1, '_')) {
 	*uscore = ' ';
     }
 
     return wrk;
 }
 
-int descending_order_by_len(const void *a, const void *b)
+int descending_order_by_len(void *a, void *b)
 {
-    const COMPOUND_WORD_T *a_wrd = a;
-    const COMPOUND_WORD_T *b_wrd = b;
+    COMPOUND_WORD_T *a_wrd = a;
+    COMPOUND_WORD_T *b_wrd = b;
 
     /* sort into descending order */
     if (a_wrd->word_cnt < b_wrd->word_cnt) {
@@ -389,19 +338,23 @@ int descending_order_by_len(const void *a, const void *b)
 	return 0;
 }
 
+
 COMPOUND_WORD_T *
-mk_compound_word_list(int *out_cnt)
+    mk_compound_word_list(int *out_cnt)
 {
-    int i, j;
+    int i, j, k, l;
     dict_entry_t	**dict_list = WordDict->dict_list;
+    dict_entry_t	*cmpnd_word;
     char		*word;
     char		*alt_marker;
     int			compound_word_cnt;
+    int			head_compound_word_cnt;	/* number of compound words excluding alternate prons */
     int			*compound_word_id;
     COMPOUND_WORD_T	*compound_word_list;
 
-    E_INFO("%s(%d): Scanning dictionary for compound words: ",
+    printf("%s(%d): Scanning dictionary for compound words: ",
 	   __FILE__, __LINE__);
+    fflush(stdout);
 
     for (i = 0, compound_word_cnt = 0; i < WordDict->dict_entry_count; i++) {
 	word = dict_list[i]->word;
@@ -453,8 +406,7 @@ mk_compound_word_list(int *out_cnt)
 	    constituent_cnt(compound_word_list[i].word_str);
     }
 
-    qsort(compound_word_list, compound_word_cnt, sizeof(COMPOUND_WORD_T),
-	  descending_order_by_len);
+    qsort(compound_word_list, compound_word_cnt, sizeof(COMPOUND_WORD_T), descending_order_by_len);
 
     free(compound_word_id);
     
@@ -467,9 +419,10 @@ static COMPOUND_WORD_T *compound_word_list;
 static int compound_word_cnt;
 
 int
-time_align_init(void)
+    time_align_init()
 {
-    static char const *rcsid = "$Id$";
+    int i;
+    char *rcsid = "$Id$";
 
 #if SHOW&SHOW_INVOKATION    
     printf("time_align_init() called\n");
@@ -486,9 +439,9 @@ time_align_init(void)
     start_word_id = kb_get_word_id("<s>");
     end_word_id   = kb_get_word_id("</s>");
 
-    sil_phone_id  = phone_to_id("SIL", FALSE);
-    silb_phone_id = phone_to_id("SILb", FALSE);
-    sile_phone_id = phone_to_id("SILe", FALSE);
+    sil_phone_id  = phone_to_id("SIL");
+    silb_phone_id = phone_to_id("SILb");
+    sile_phone_id = phone_to_id("SILe");
     
     state_bp_table = (BACK_POINTER_T *)CM_calloc(max_state_bp_table_size, sizeof(BACK_POINTER_T));
     printf("%s(%d): state_bp_table size %dK\n",
@@ -513,12 +466,12 @@ time_align_init(void)
  * data.
  */
 void
-time_align_set_input(float *c,
-		     float *d,
-		     float *d_80,
-		     float *p,
-		     float *dd,
-		     int n_f)
+    time_align_set_input(float *c,
+			 float *d,
+			 float *d_80,
+			 float *p,
+			 float *dd,
+			 int n_f)
 {
     cep_f = c;
     dcep_f = d;
@@ -537,15 +490,17 @@ time_align_set_input(float *c,
 }
 
 static int
-begin_triphone(int32 phone_id,
-	       int32 lc_phone_id,
-	       int32 rc_phone_id)
+    begin_triphone(
+		   int32 phone_id,
+		   int32 lc_phone_id,
+		   int32 rc_phone_id
+		   )
 {
     int32 out_phone_id;
     char phone_str[64];
-    char const *phone_name;
-    char const *lc_phone_name;
-    char const *rc_phone_name;
+    char *phone_name;
+    char *lc_phone_name;
+    char *rc_phone_name;
 
     assert(phone_id != NO_PHONE);
     assert(lc_phone_id != NO_PHONE);
@@ -556,13 +511,13 @@ begin_triphone(int32 phone_id,
     rc_phone_name = phone_from_id(rc_phone_id);
     
     sprintf(phone_str, "%s(%s,%s)b", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s(%s,%s)", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
 	printf("%s(%s,%s) approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
@@ -571,7 +526,7 @@ begin_triphone(int32 phone_id,
     }
 
     sprintf(phone_str, "%s(SIL,%s)b", phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
 	printf("%s(%s,%s) approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
@@ -580,7 +535,7 @@ begin_triphone(int32 phone_id,
     }
 
     sprintf(phone_str, "%s(SIL,%s)", phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
 	printf("%s(%s,%s) approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
@@ -589,7 +544,7 @@ begin_triphone(int32 phone_id,
     }
 
     sprintf(phone_str, "%s", phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
 	printf("%s(%s,%s) approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
@@ -597,23 +552,21 @@ begin_triphone(int32 phone_id,
 	return out_phone_id;
     }
 
-    fprintf (stderr, "%s(%d): **ERROR** %s(%s,%s) returned id NO_PHONE\n", 
-              __FILE__, __LINE__, phone_name, lc_phone_name, rc_phone_name);
-
     assert(FALSE); /* should never get here.  But if we do, there are some big problems */
-    return 0;
 }
 
 static int32
-single_phone_word_triphone(int32 phone_id,
-			   int32 lc_phone_id,
-			   int32 rc_phone_id)
+    single_phone_word_triphone(
+			       int32 phone_id,
+			       int32 lc_phone_id,
+			       int32 rc_phone_id
+			       )
 {
     int32 out_phone_id;
     char phone_str[64];
-    char const *phone_name;
-    char const *lc_phone_name;
-    char const *rc_phone_name;
+    char *phone_name;
+    char *lc_phone_name;
+    char *rc_phone_name;
 
     assert(phone_id != NO_PHONE);
     assert(lc_phone_id != NO_PHONE);
@@ -624,67 +577,66 @@ single_phone_word_triphone(int32 phone_id,
     rc_phone_name = phone_from_id(rc_phone_id);
     
     sprintf(phone_str, "%s(%s,%s)s", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE)
 	return out_phone_id;
 
     sprintf(phone_str, "%s(%s,%s)e", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE)
 	return out_phone_id;
 
     sprintf(phone_str, "%s(%s,%s)", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)s approxed as %s\n",
-	       phone_name, lc_phone_name, rc_phone_name, phone_str);
+	printf("%s(%s,%s)e approx'ed as %s\n",
+	       phone_name, lc_phone_name, rc_phone_name,
+	       phone_str);
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s(%s,SIL)e", phone_name, lc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)s approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s(%s,SIL)", phone_name, lc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)s approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s", phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)s approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
-    fprintf (stderr, "%s(%d): **ERROR** %s(%s,%s) returned id NO_PHONE\n", 
-              __FILE__, __LINE__, phone_name, lc_phone_name, rc_phone_name);
-
     assert(FALSE); /* should never get here.  But if we do, there are some big problems */
-    return 0;
 }
 
 static int32
-end_triphone(int32 phone_id,
-	     int32 lc_phone_id,
-	     int32 rc_phone_id)
+    end_triphone(
+		 int32 phone_id,
+		 int32 lc_phone_id,
+		 int32 rc_phone_id
+		 )
 {
     int32 out_phone_id;
     char phone_str[64];
-    char const *phone_name;
-    char const *lc_phone_name;
-    char const *rc_phone_name;
+    char *phone_name;
+    char *lc_phone_name;
+    char *rc_phone_name;
 
     assert(phone_id != NO_PHONE);
     assert(lc_phone_id != NO_PHONE);
@@ -695,62 +647,60 @@ end_triphone(int32 phone_id,
     rc_phone_name = phone_from_id(rc_phone_id);
     
     sprintf(phone_str, "%s(%s,%s)e", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE)
 	return out_phone_id;
 
     sprintf(phone_str, "%s(%s,%s)", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)e approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s(%s,SIL)e", phone_name, lc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)e approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s(%s,SIL)", phone_name, lc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)e approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
     sprintf(phone_str, "%s", phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)e approxed as %s\n",
+	printf("%s(%s,%s)e approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
-    fprintf (stderr, "%s(%d): **ERROR** %s(%s,%s) returned id NO_PHONE\n", 
-              __FILE__, __LINE__, phone_name, lc_phone_name, rc_phone_name);
-
     assert(FALSE); /* should never get here.  But if we do, there are some big problems */
-    return 0;
 }
 
 static int32
-triphone(int32 phone_id,
-	 int32 lc_phone_id,
-	 int32 rc_phone_id)
+    triphone(
+	     int32 phone_id,
+	     int32 lc_phone_id,
+	     int32 rc_phone_id
+	     )
 {
     char phone_str[64];
-    char const *phone_name;
-    char const *lc_phone_name;
-    char const *rc_phone_name;
+    char *phone_name;
+    char *lc_phone_name;
+    char *rc_phone_name;
     int32 out_phone_id;
 
     assert(phone_id != NO_PHONE);
@@ -760,34 +710,30 @@ triphone(int32 phone_id,
     phone_name    = phone_from_id(phone_id);
     lc_phone_name = phone_from_id(lc_phone_id);
     rc_phone_name = phone_from_id(rc_phone_id);
-
+    
     sprintf(phone_str, "%s(%s,%s)", phone_name, lc_phone_name, rc_phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
 	return out_phone_id;
     }
 
-    sprintf(phone_str, "%s", phone_name);
-    out_phone_id = phone_to_id(phone_str, FALSE);
+    sprintf(phone_str, "%s", phone_name, lc_phone_name, rc_phone_name);
+    out_phone_id = phone_to_id(phone_str);
     if (out_phone_id != NO_PHONE) {
-	printf("%s(%s,%s)e approxed as %s\n",
+	printf("%s(%s,%s) approx'ed as %s\n",
 	       phone_name, lc_phone_name, rc_phone_name,
 	       phone_str);
 	return out_phone_id;
     }
 
-    fprintf (stderr, "%s(%d): **ERROR** %s(%s,%s) returned id NO_PHONE\n", 
-              __FILE__, __LINE__, phone_name, lc_phone_name, rc_phone_name);
-
     assert(FALSE);	/* should never get here */
-    return 0;
 }
 
 static void
-add_triphone(short *amatrix, int32 *phone_id_map, int *word_id_map, char *boundary,
-	     int orig, int new, int32 triphone_id)
+    add_triphone(short *amatrix, int32 *phone_id_map, int *word_id_map, char *boundary,
+		 int orig, int new, int32 triphone_id)
 {
-    int i;
+    int i, j;
     short *orig_adjacency;
     short *new_adjacency;
 
@@ -808,12 +754,13 @@ add_triphone(short *amatrix, int32 *phone_id_map, int *word_id_map, char *bounda
     }
 }
 
-void
-prune_invalid_adjacencies(short *amatrix,
-			  int node_cnt,
-			  int *ci_map,
-			  int *lc_map,
-			  int *rc_map)
+void prune_invalid_adjacencies(
+			       short *amatrix,
+			       int node_cnt,
+			       int *ci_map,
+			       int *lc_map,
+			       int *rc_map
+			       )
 {
     int node;
     int neighbor;
@@ -856,11 +803,13 @@ prune_invalid_adjacencies(short *amatrix,
 }
 
 static int
-expand_phone_graph(short *amatrix,
-		   char  *boundary,
-		   int32 *phone_id_map,
-		   int   *word_id_map,
-		   int    in_node_cnt)
+    expand_phone_graph(
+		       short *amatrix,
+		       char  *boundary,
+		       int32 *phone_id_map,
+		       int   *word_id_map,
+		       int    in_node_cnt
+		       )
 {
     int32 *lc_phone_id;
     int    lc_cnt;
@@ -874,7 +823,7 @@ expand_phone_graph(short *amatrix,
     int     node;
     short    *amatrix_row;
     int32     phone_id;
-    int     i, j;
+    int     i, j, k;
     int     out_node_cnt;
     int     num_expanded;
     int32   triphone_id;
@@ -911,6 +860,7 @@ expand_phone_graph(short *amatrix,
     for (node = 2, amatrix_row = &amatrix[2 * MAX_NODES];
 	 node < in_node_cnt;
 	 node++, amatrix_row += MAX_NODES) {
+
 
 	memset(is_in_lc, 0, ci_cnt*sizeof(char));
 	memset(is_in_rc, 0, ci_cnt*sizeof(char));
@@ -1103,23 +1053,26 @@ expand_phone_graph(short *amatrix,
 }
 
 static int
-add_word(short  *amatrix,
-	 char   *boundary,
-	 int32  *phone_id_map,
-	 int32  *word_id_map,
+    add_word(
+	     short  *amatrix,
+	     char   *boundary,
+	     int32  *phone_id_map,
+	     int32  *word_id_map,
 
-	 int    *out_new_node,
-	 int    *out_word_cnt,
+	     int    *out_new_node,
+	     int    *out_word_cnt,
 
-	 char const *cur_word_str,
+	     char   *cur_word_str,
 
-	 int     *next_end,
-	 int     *next_end_cnt,
+	     int     *next_end,
+	     int     *next_end_cnt,
 
-	 int     *prior_end,
-	 int     *prior_end_cnt)
+	     int     *prior_end,
+	     int     *prior_end_cnt
+	     )
 {
-    int i, k; /* If we really need a variable named 'j' we can declare one */
+    int i, j, k;	/* j is not used, but you never know what time will drag
+			   across your doorstep */
     int32 cur_word_id;
     dict_entry_t *cur_word;
     int new_node = *out_new_node;
@@ -1186,7 +1139,6 @@ add_word(short  *amatrix,
 
     *out_new_node = new_node;
     *out_word_cnt = word_cnt;
-    return 0;
 }
 
 char *next_transcript_word(char **out_rem_word_seq)
@@ -1216,23 +1168,30 @@ char *next_transcript_word(char **out_rem_word_seq)
     return cur_word_str;
 }
 
+
 static int
-mk_phone_graph(short *amatrix,
-	       char  *boundary,
-	       int32 *phone_id_map,
-	       int *word_id_map,
-	       int *final_model,
-	       char const *left_word_str,
-	       char *word_seq,
-	       char const *right_word_str,
-	       int  *out_word_cnt)
+    mk_phone_graph(
+		   short *amatrix,
+		   char  *boundary,
+		   int32 *phone_id_map,
+		   int *word_id_map,
+		   int *final_model,
+		   char *left_word_str,
+		   char *word_seq,
+		   char *right_word_str,
+		   int  *out_word_cnt
+		   )
 {
-    int i, k, m;
+    int i, j, k, l, m;
+    int node;
     int left_word_id = kb_get_word_id(left_word_str);
     int right_word_id = kb_get_word_id(right_word_str);
+    int cur_word_id;
     dict_entry_t *left_word;
     dict_entry_t *right_word;
-    char const *cur_word_str;
+    dict_entry_t *cur_word;
+    char *sp;
+    char *cur_word_str;
     char *rem_word_seq;
     int new_node;
     int end_node[MAX_COMPOUND_LEN][MAX_NODES];
@@ -1243,6 +1202,7 @@ mk_phone_graph(short *amatrix,
     int *next_end;
     int *next_end_cnt;
     int word_cnt;
+    int fchar;
 
     if (left_word_id < 0) {
 	fprintf(stderr, "%s(%d): Cannot find left word %s in the dictionary\n",
@@ -1320,6 +1280,7 @@ mk_phone_graph(short *amatrix,
 			     next_end_cnt,
 			     prior_end,
 			     prior_end_cnt);
+
 
 		    /* add optional filler phone sequence after words just added */
 		    phone_id_map[new_node] = sil_phone_id;
@@ -1406,7 +1367,6 @@ mk_phone_graph(short *amatrix,
 static char *model_name[MAX_NODES];
 static int32 *saved_phone_id_map;
 
-void
 print_phone_graph(short *amatrix, int node_cnt, int32 *phone_id_map, int *word_id_map)
 {
 #if SHOW&SHOW_MODEL_DAG
@@ -1434,12 +1394,14 @@ print_phone_graph(short *amatrix, int node_cnt, int32 *phone_id_map, int *word_i
 }
 
 static void
-mk_model(short *amatrix,
-	 int node,
-	 int node_cnt,
-	 DYNMODEL_T *model,
-	 int32 *phone_id_map,
-	 int *out_next_cnt)
+    mk_model(
+	     short *amatrix,
+	     int node,
+	     int node_cnt,
+	     DYNMODEL_T *model,
+	     int32 *phone_id_map,
+	     int *out_next_cnt
+	     )
 {
     int i, j;
     int next_cnt;
@@ -1482,9 +1444,11 @@ mk_model(short *amatrix,
     *out_next_cnt = next_cnt;
 }
 	 
-DYNMODEL_T *mk_viterbi_decode_models(short *amatrix,
+DYNMODEL_T *mk_viterbi_decode_models(
+				     short *amatrix,
 				     int node_cnt,
-				     int32 *phone_id_map)
+				     int32 *phone_id_map
+				     )
 {
     DYNMODEL_T *model;
     int i;
@@ -1502,23 +1466,27 @@ DYNMODEL_T *mk_viterbi_decode_models(short *amatrix,
 }
 
 static DYNMODEL_T *
-mk_models(int32 **out_phone_id_map,	/* mapping from graph node to associated phone id */
-	  int32 **out_word_id_map,	/* mapping from graph node to associated word id */
-	  char  **out_boundary,		/* mapping from graph node to TRUE if graph node is
+    mk_models(
+	      int32 **out_phone_id_map,	/* mapping from graph node to associated phone id */
+	      int32 **out_word_id_map,	/* mapping from graph node to associated word id */
+	      char  **out_boundary,	/* mapping from graph node to TRUE if graph node is
 					   before a word boundary (i.e. an end node for a word) */
-	  int *out_model_cnt,	/* number of nodes in final graph */
-	  int *out_word_cnt,	/* number of words (incl. alts) in final graph */
-	  int *final_model,	/* final model in the dag */
-	  char const *left_word_str, /* the left context word */
-	  char *word_seq,            /* the sequence of words between the left context
-				        and right context words exclusive */
-	  char const *right_word_str)/* the right context word */
+	      int *out_model_cnt,	/* number of nodes in final graph */
+	      int *out_word_cnt,	/* number of words (incl. alts) in final graph */
+	      int *final_model,		/* final model in the dag */
+	      char *left_word_str,	/* the left context word */
+	      char *word_seq,		/* the sequence of words between the left context and right
+					   context words exclusive */
+	      char *right_word_str	/* the right context word */
+	      )
 {
     short *amatrix = NULL;	/* adjacency matrix for a graph of phone models */
     char  *boundary = NULL;	/* TRUE indicates word boundary to the right */
     int32 *phone_id_map = NULL;  /* the phone id's of the models in the graph */
     int32 *word_id_map = NULL;  /* the word id's associated w/ the models in the graph */
     int    word_cnt;
+
+    int   i, j, k;	/* every good routine needs i, j and k iteration variables */
 
     int   ci_node_cnt;
     int   node_cnt;
@@ -1561,11 +1529,14 @@ mk_models(int32 **out_phone_id_map,	/* mapping from graph node to associated pho
     return model;
 }
 
+
 static BACK_POINTER_T
-*ck_alloc(BACK_POINTER_T *bp_table,
-	  int entries_needed,
-	  int *in_out_max_entries,
-	  int size_increment)
+    *ck_alloc(
+	      BACK_POINTER_T *bp_table,
+	      int entries_needed,
+	      int *in_out_max_entries,
+	      int size_increment
+	      )
 {
     int max_entries = *in_out_max_entries;
 
@@ -1639,21 +1610,22 @@ int new_state_bp(int model_index, int exit_state, int prior_bp, int prior_score)
 }
 
 static void 
-evaluate_active_models_boundary(
-    int *active_models,	/* the models being actively
-			   searched */
-    int *n_active,	/* a pointer to the number of active
-			   models in the active_models list.
-			   The number may be increased as
-			   new start nodes are inserted */
-    int *bnd_models,	/* the set of models with phone boundary
-			   paths to be explored */
-    int bnd_cnt,	/* the number of such models */
-    int32 *phone_id_map,
-    int32 *word_id_map,
-    char  *boundary,
-    
-    int *in_out_best_score)
+    evaluate_active_models_boundary(
+				    int *active_models,	/* the models being actively
+							   searched */
+				    int *n_active,	/* a pointer to the number of active
+							   models in the active_models list.
+							   The number may be increased as
+							   new start nodes are inserted */
+				    int *bnd_models,	/* the set of models with phone boundary
+							   paths to be explored */
+				    int bnd_cnt,	/* the number of such models */
+				    int32 *phone_id_map,
+				    int32 *word_id_map,
+				    char  *boundary,
+
+				    int *in_out_best_score
+				    )
 {
     int i, j, k;
     int exit_score;
@@ -1757,11 +1729,13 @@ evaluate_active_models_boundary(
 #define T02	t12
 
 static void 
-evaluate_active_models_internal(int *phone_bnd_models,
-				int *bnd_cnt,
-				int *active_model_index,
-				int n_models,
-				int *in_out_best_score)
+    evaluate_active_models_internal(
+				    int *phone_bnd_models,
+				    int *bnd_cnt,
+				    int *active_model_index,
+				    int n_models,
+				    int *in_out_best_score
+				    )
 {
     /* iteration variables */
     int i, j;
@@ -1803,6 +1777,8 @@ evaluate_active_models_internal(int *phone_bnd_models,
     int t00, t01, t02;
     int t10, t11, t12;
     int t20, t21, t22;
+
+    int s1, s2, s3, s4;
 
     /* local copy of the senone sequence id of the model currently being evaluated */
     int sseq_id;
@@ -2108,6 +2084,7 @@ evaluate_active_models_internal(int *phone_bnd_models,
 	    scores[2] = WORST_SCORE;
 	}
 
+
 	score = T11;		/* (1->1) is best so far */
 	if (score < T01)	/* (0->1) is best */
 	    score = T01;
@@ -2158,7 +2135,7 @@ evaluate_active_models_internal(int *phone_bnd_models,
 
 /* presumably compilers are able to inline this code */
 static void
-make_worst_score(DYNMODEL_T *m)
+    make_worst_score(DYNMODEL_T *m)
 {
     int i;
     int *scores = m->score;
@@ -2173,14 +2150,14 @@ make_worst_score(DYNMODEL_T *m)
 }
 
 static void
-prune_active_models(int *pruned_active_models,
-		    int *out_pruned_active_cnt,
-		    int *active_models,
-		    int  active_cnt,
-		    int  pruning_threshold,
-		    DYNMODEL_T *paths_in_model)
+    prune_active_models(int *pruned_active_models,
+			int *out_pruned_active_cnt,
+			int *active_models,
+			int  active_cnt,
+			int  pruning_threshold,
+			DYNMODEL_T *paths_in_model)
 {
-    int i;
+    int i, j;
     int active_model_index;
     int pruned_active_cnt;
 
@@ -2219,12 +2196,13 @@ prune_active_models(int *pruned_active_models,
 #endif
 }
 
-#if 0 /* looks like debugging only */
 static void
-print_active_models(int *model_index,
-		    int n_models,
-		    int header,
-		    int pruning_threshold)
+    print_active_models(
+			int *model_index,
+			int n_models,
+			int header,
+			int pruning_threshold
+			)
 {
     int i, j, k;
     int *score;
@@ -2329,8 +2307,10 @@ print_active_models(int *model_index,
 }
 
 static void
-print_word_back_pointers(int from,       /* starting back pointer index */
-			 int stop_before) /* one greater than the last index */
+    print_word_back_pointers(
+			     int from,		/* starting back pointer index */
+			     int stop_before	/* one greater than the last index */
+			     )
 {
     printf("new word back pointers this frame\n");
     for (; from < stop_before; from++) {
@@ -2343,8 +2323,10 @@ print_word_back_pointers(int from,       /* starting back pointer index */
 }
 
 static void
-print_phone_back_pointers(int from,	  /* starting back pointer index */
-			  int stop_before) /* one greater than the last index */
+    print_phone_back_pointers(
+			      int from,		/* starting back pointer index */
+			      int stop_before		/* one greater than the last index */
+			      )
 {
     printf("new phone back pointers this frame\n");
     for (; from < stop_before; from++) {
@@ -2357,8 +2339,10 @@ print_phone_back_pointers(int from,	  /* starting back pointer index */
 }
 
 static void
-print_state_back_pointers(int from,	  /* starting back pointer index */
-			  int stop_before)/* one greater than the last index */
+    print_state_back_pointers(
+			      int from,		/* starting back pointer index */
+			      int stop_before		/* one greater than the last index */
+			      )
 {
     int id;
     int mid;
@@ -2379,13 +2363,14 @@ print_state_back_pointers(int from,	  /* starting back pointer index */
 	       );
     }
 }
-#endif /* 0 */
 
 static void
-print_models(DYNMODEL_T *models,
-	     int n_models,
-	     int32 *word_id_map,
-	     char  *boundary)
+    print_models(
+		 DYNMODEL_T *models,
+		 int n_models,
+		 int32 *word_id_map,
+		 char  *boundary
+		 )
 {
 #if SHOW&SHOW_PHONE_GRAPH
     int i, j, k, m;
@@ -2420,11 +2405,27 @@ print_models(DYNMODEL_T *models,
 }
 
 static int
-va_traverse_back_trace(BACK_POINTER_T *bp_table,
-		       int bp_idx,
-		       int *score,
-		       void (*segment_op)(),
-		       va_list ap)
+    traverse_back_trace(BACK_POINTER_T *bp_table,
+			int bp_idx,
+			int *score,
+			void (*segment_op)(),
+			...)
+{
+    va_list ap;
+
+    va_start(ap, segment_op);
+    
+    va_traverse_back_trace(bp_table, bp_idx, score, segment_op, ap);
+
+    va_end(ap);
+}
+
+static int
+    va_traverse_back_trace(BACK_POINTER_T *bp_table,
+			   int bp_idx,
+			   int *score,
+			   void (*segment_op)(),
+			   va_list ap)
 {
     int prior_end;
     int prior_score;
@@ -2456,48 +2457,28 @@ va_traverse_back_trace(BACK_POINTER_T *bp_table,
 }
 
 static int
-traverse_back_trace(BACK_POINTER_T *bp_table,
-		    int bp_idx,
-		    int *score,
-		    void (*segment_op)(),
-		    ...)
+    time_align_word_sequence_init(
+				  /* output arguments */
+				  DYNMODEL_T **out_model,
+				  int32 **out_word_id_map,
+				  int32 **out_phone_id_map,
+				  char **out_boundary,
+				  int *out_model_cnt,
+				  int *final_model,
+
+				  /* input arguments */
+				  char *left_word,
+				  char *word_seq,
+				  char *right_word
+				  )
 {
-    int rv;
-    va_list ap;
-
-    va_start(ap, segment_op);
-    
-    rv = va_traverse_back_trace(bp_table, bp_idx, score, segment_op, ap);
-
-    va_end(ap);
-    return rv;
-}
-
-static int
-time_align_word_sequence_init(
-    /* output arguments */
-    DYNMODEL_T **out_model,
-    int32 **out_word_id_map,
-    int32 **out_phone_id_map,
-    char **out_boundary,
-    int *out_model_cnt,
-    int *final_model,
-
-    /* input arguments */
-    char const *left_word,
-    /* FIXME: Actually, word_seq gets modified by
-       next_transcript_word(), which is probably a bug. */
-    char *word_seq,
-    char const *right_word)
-{
-    int i, k;	/* what good routine is w/o iteration variables */
+    int i, j, k;	/* what good routine is w/o iteration variables */
     int word_cnt;
     DYNMODEL_T *model;
     int         model_cnt;
 
     /* structure a set of models for forced recognition */
-    model = mk_models(out_phone_id_map, out_word_id_map, out_boundary,
-		      &model_cnt, &word_cnt, final_model,
+    model = mk_models(out_phone_id_map, out_word_id_map, out_boundary, &model_cnt, &word_cnt, final_model,
 		      left_word, word_seq, right_word);
 
     /* something prevented the model array from being built.  e.g. missing word */
@@ -2571,11 +2552,13 @@ time_align_word_sequence_init(
 }
 
 void
-print_word_segment(int word_id,
-		   int begin,
-		   int end,
-		   int score,
-		   va_list ap)
+    print_word_segment(
+		       int word_id,
+		       int begin,
+		       int end,
+		       int score,
+		       va_list ap
+		       )
 {
     char *name;
     char *utt_id = va_arg(ap, char *);
@@ -2595,14 +2578,16 @@ print_word_segment(int word_id,
 }
 
 void
-build_word_segment(int word_id,
+build_word_segment(
+		   int word_id,
 		   int begin,
 		   int end,
 		   int score,
-		   va_list ap) /* Gack!  not used... */
+		   va_list ap
+		   )
 {
     char *name;
-    /* char *utt_id = va_arg(ap, char *); */
+    char *utt_id = va_arg(ap, char *);
 
     name = WordDict->dict_list[word_id]->word;
 
@@ -2617,11 +2602,13 @@ build_word_segment(int word_id,
 }
 
 void
-append_word(int word_id,
-	    int begin,
-	    int end,
-	    int score,
-	    va_list ap)
+    append_word(
+		int word_id,
+		int begin,
+		int end,
+		int score,
+		va_list ap
+		)
 {
     char *str = va_arg(ap, char *);
     char *name;
@@ -2635,11 +2622,13 @@ append_word(int word_id,
 }
 
 void
-print_phone_segment(int model_index,
-		    int begin,
-		    int end,
-		    int score,
-		    va_list ap)
+    print_phone_segment(
+			int model_index,
+			int begin,
+			int end,
+			int score,
+			va_list ap
+			)
 {
     char *name = model_name[model_index];
     char *utt_id = va_arg(ap, char *);
@@ -2652,14 +2641,16 @@ print_phone_segment(int model_index,
 }
 
 void
-build_phone_segment(int model_index,
+build_phone_segment(
+		    int model_index,
 		    int begin,
 		    int end,
 		    int score,
-		    va_list ap) /* Not used (!) */
+		    va_list ap
+		    )
 {
     char *name = model_name[model_index];
-    /* char *utt_id = va_arg(ap, char *); */
+    char *utt_id = va_arg(ap, char *);
 
     phseg[n_phone_segments].name = name;
     phseg[n_phone_segments].start = begin;
@@ -2669,22 +2660,25 @@ build_phone_segment(int model_index,
     ++n_phone_segments;
 }
 
-void
-cnt_state_segments(int id,
-		   int begin,
-		   int end,
-		   int score,
-		   va_list ap)
+
+void cnt_state_segments(
+			int id,
+			int begin,
+			int end,
+			int score,
+			va_list ap
+			)
 {
     ++n_state_segments;
 }
 
-void
-cnt_word_segments(int id,
-		  int begin,
-		  int end,
-		  int score,
-		  va_list ap)
+void cnt_word_segments(
+		       int id,
+		       int begin,
+		       int end,
+		       int score,
+		       va_list ap
+		       )
 {
     best_word_string_len += (strlen(WordDict->dict_list[id]->word) + 1);
 
@@ -2692,11 +2686,13 @@ cnt_word_segments(int id,
 }
 
 void
-print_state_segment(int state_id,
-		    int begin,
-		    int end,
-		    int score,
-		    va_list ap)
+    print_state_segment(
+			int state_id,
+			int begin,
+			int end,
+			int score,
+			va_list ap
+			)
 {
     char state_name[64];
     int mid;
@@ -2718,10 +2714,11 @@ print_state_segment(int state_id,
     ++n_state_segments;
 }
 
-void
-find_active_senones(DYNMODEL_T *all_models,
+find_active_senones(
+		    DYNMODEL_T *all_models,
 		    int *active_index,
-		    int active_cnt)
+		    int active_cnt
+		    )
 {
     /* v6 uses int16 and v8 uses int32 */
     int32 *trans_to_senone_id;
@@ -2745,7 +2742,7 @@ find_active_senones(DYNMODEL_T *all_models,
 }
 
 static int
-lm_score(char const *left_word, char const *middle_words, char const *right_word)
+    lm_score(char *left_word, char *middle_words, char *right_word)
 {
     char *rem_word_seq;
     char *cur_word_str;
@@ -2755,8 +2752,7 @@ lm_score(char const *left_word, char const *middle_words, char const *right_word
     int wn = NO_WORD, wn1 = NO_WORD, wn2 = NO_WORD;
     char word_seq[1024];
 
-    /* FIXME: potential buffer overrun */
-    sprintf(word_seq, "%s %s %s", left_word, middle_words, right_word);
+    printf(word_seq, "%s %s %s", left_word, middle_words, right_word);
 
     rem_word_seq = word_seq;
     out_lm_score = 0;
@@ -2790,11 +2786,13 @@ lm_score(char const *left_word, char const *middle_words, char const *right_word
 }
 
 int
-time_align_word_sequence(char const * Utt,
-			 char const *left_word,
-			 char *word_seq,
-			 char const *right_word)
+    time_align_word_sequence(
+			     char *left_word,
+			     char *word_seq,
+			     char *right_word
+			     )
 {
+    int i, j, k;
     int phone_bnd_cnt;
     int32 *phone_id_map;
     int32 *word_id_map;
@@ -2812,6 +2810,7 @@ time_align_word_sequence(char const * Utt,
     int   total_model_boundaries_crossed;
     int	  total_models_pruned;
 
+    extern char *uttproc_get_uttid();
     extern int32 time_align_word;	/* Whether to output word alignment */
     extern int32 time_align_phone;	/* Whether to output phone alignment */
     extern int32 time_align_state;	/* Whether to output state alignment */
@@ -2824,7 +2823,7 @@ time_align_word_sequence(char const * Utt,
     time_align_set_utt (uttproc_get_uttid());
     
     if (all_models) {
-	int32 i;
+
 	for (i = 0; i < all_model_cnt; i++) {
 	    free(all_models[i].next);
 	    free(model_name[i]);
@@ -2850,6 +2849,7 @@ time_align_word_sequence(char const * Utt,
 				      right_word) < 0)
 	return -1;
 
+
     saved_phone_id_map = phone_id_map;
     saved_final_model  = final_model;
 
@@ -2866,6 +2866,7 @@ time_align_word_sequence(char const * Utt,
 	
 	/* compute only necessary senones */
 	find_active_senones(all_models, cur_active_models, cur_active_cnt);
+
 
 	/* compute the output probabilities for the active shared states */
 	probs_computed_cnt += SCVQScores(distScores,
@@ -2935,10 +2936,13 @@ time_align_word_sequence(char const * Utt,
 	++cur_frame;
 	
 	cur_active_cnt = next_active_cnt;
+
+	fflush(stdout);
+	fflush(stderr);
     } while (cur_frame < frame_cnt);
 
     if (cur_active_cnt == 0) {
-	E_WARN("%s(%d): WARNING: all paths pruned at end of input\n",
+	printf("%s(%d): WARNING: all paths pruned at end of input\n",
 	       __FILE__, __LINE__);
 	return -1;
     }
@@ -2980,7 +2984,6 @@ time_align_word_sequence(char const * Utt,
 			    NULL,
 			    build_word_segment, lcl_utt_id);
 	if (time_align_word) {
-	    int32 i;
 	    for (i = 0; i < n_word_segments; i++) {
 		printf ("%20s %4d %4d %12d\n",
 			wdseg[i].name, wdseg[i].start, wdseg[i].end, wdseg[i].score);
@@ -3001,20 +3004,10 @@ time_align_word_sequence(char const * Utt,
 			    NULL,
 			    build_phone_segment, lcl_utt_id);
 	if (time_align_phone) {
-	    int32 i;
 	    for (i = 0; i < n_phone_segments; i++) {
 		printf ("%20s %4d %4d %12d\n",
 			phseg[i].name, phseg[i].start, phseg[i].end, phseg[i].score);
 	    }
-	}
-
-	if (phonelabdirname)
-	{
-	    save_labs(phseg,n_phone_segments,
-		      phonelabdirname,
-		      Utt,
-		      phonelabextname,
-		      phonelabtype);
 	}
 #endif
 	
@@ -3044,17 +3037,21 @@ time_align_word_sequence(char const * Utt,
     free(active_models[1]);
 
     free(word_id_map);
-    free(boundary);
+
+    fflush(stdout);
+    fflush(stderr);
 
     return 0;
 }
 
 void
-next_state_segment(int state_id,
-		   int begin,
-		   int end,
-		   int score,
-		   va_list ap)
+    next_state_segment(
+		       int state_id,
+		       int begin,
+		       int end,
+		       int score,
+		       va_list ap
+		       )
 {
     int mid;
     int ci_id;
@@ -3085,10 +3082,10 @@ next_state_segment(int state_id,
     (*seg_idx)++;
 }
 
-int
 time_align_seg_output(unsigned short **seg, int *seg_cnt)
 {
     int last_bp;
+    int i;
     static unsigned short *seg_arr = NULL;
     static int seg_idx;
 
@@ -3128,13 +3125,14 @@ time_align_seg_output(unsigned short **seg, int *seg_cnt)
     return 0;
 }
 
-char *time_align_best_word_string(void)
+char *time_align_best_word_string()
 {
     int last_bp;
+    int i;
 
     if (best_word_string) {
 	free(best_word_string);
-	best_word_string = NULL;
+	best_word_string == NULL;
     }
 
     last_bp = all_models[saved_final_model].wbp[NODE_CNT-1];
@@ -3163,11 +3161,13 @@ char *time_align_best_word_string(void)
 }
 
 void
-append_segment(int id,
-	       int begin,
-	       int end,
-	       int score,
-	       va_list ap)
+    append_segment(
+		   int id,
+		   int begin,
+		   int end,
+		   int score,
+		   va_list ap
+		   )
 {
     seg_kind_t kind = va_arg(ap, seg_kind_t);
     SEGMENT_T *seg = va_arg(ap, SEGMENT_T *);
@@ -3210,8 +3210,8 @@ append_segment(int id,
     (*seg_idx)++;
 }
 
-SEGMENT_T *
-time_align_get_segmentation(seg_kind_t kind, int *seg_cnt)
+
+SEGMENT_T *time_align_get_segmentation(seg_kind_t kind, int *seg_cnt)
 {
     switch (kind) {
     case WORD_SEGMENTATION:

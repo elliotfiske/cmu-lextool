@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1993-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,41 +44,26 @@
  * ====================================================================
  *
  */
-int32 hmm_num_sseq(void);
-int32 hmm_pid2sid (int32 pid);
 
-void hmm_tied_read_bin (char const *dir_list,
-			char const *file,
-			SMD *smd,
-			double transSmooth,
-			int32 numAlphaExpected,
-			int norm,
-			double arcWeight);
+#include <s2types.h>
 
-void hmm_tied_read_big_bin (char const  *dir_list,
-			    char const  *file,
-			    SMD   *smds,
-			    double transSmooth,
-			    int32  numAlphaExpected,
-			    int    norm,
-			    double arcWeight);
+int32 *hmm_get_CiSenoneOffsets ();
+int32 *hmm_get_CiSenoneCounts ();
+int32 hmm_get_NumCiSenons ();
+int32 *hmm_get_CiSSeqOffsets ();
+int32 *hmm_get_CiSSeqCounts ();
 
-void read_dists (char const *distDir,
-		 char const *Code_Ext0, char const *Code_Ext1,
-		 char const *Code_Ext2, char const *Code_Ext3,
-		 int32 numAlphabet,
-		 double SmoothMin,
-		 int32 useCiDistsOnly);
+void read_dists (
+	char *distDir,
+	char *Code_Ext0, char *Code_Ext1, char *Code_Ext2, char *Code_Ext3,
+	int32 numAlphabet,
+	double SmoothMin,
+	int32 useCiDistsOnly);
 
 void readDistsOnly (
-	char const *distDir,
-	char const *Code_Ext0, char const *Code_Ext1,
-	char const *Code_Ext2, char const *Code_Ext3,
+	char *distDir,
+	char *Code_Ext0, char *Code_Ext1, char *Code_Ext2, char *Code_Ext3,
 	int32 numAlphabet,
 	int32 useCiDistsOnly);
 
-void read_map (char const *map_file, int32 compress);
-void remap (SMD *smdV);
-
-int32 senid2pid (int32 senid);
-int32 *hmm_get_psen (void);
+void read_map (char *map_file, int32 compress);

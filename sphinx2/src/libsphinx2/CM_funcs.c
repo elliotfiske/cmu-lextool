@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1993-2000 Carnegie Mellon University. All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,27 +44,28 @@
  * ====================================================================
  *
  */
+
 /* $Header$
  * DESCRIPTION
  *	CMPSL functions to make error handling a little easier.
  */
+
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <malloc.h>
 
-#ifdef WIN32
+#if (WIN32)
 #include <posixwin32.h>
 #endif
 
 #include <sys/types.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
+#include <s2types.h>
 
 FILE *
-_CM_fopen (char const *file, char const *mode, char const *srcfile, int32 srcline)
+_CM_fopen (char *file, char *mode, char *srcfile, int32 srcline)
 {
     FILE *fs = fopen (file, mode);
 
@@ -68,8 +80,7 @@ _CM_fopen (char const *file, char const *mode, char const *srcfile, int32 srclin
 }
 
 FILE *
-_CM_fopenp (char const *dirl, char const *file, char const *mode,
-	    char const *srcfile, int32 srcline)
+_CM_fopenp (char *dirl, char *file, char *mode, char *srcfile, int32 srcline)
 {
     char buffer[2048];
     FILE *fs;
@@ -87,14 +98,14 @@ _CM_fopenp (char const *dirl, char const *file, char const *mode,
     return (fs);
 }
 
-void *_CM_calloc (int32 cnt, int32 size, char const *file, int32 line)
+char *_CM_calloc (int32 cnt, int32 size, char *file, int32 line)
 {
-    void *ret;
+    char *ret;
 
     if (cnt == 0)
 	return 0;
 
-    ret = calloc ((size_t)cnt, (size_t)size);
+    ret = (char *) calloc ((size_t)cnt, (size_t)size);
     if (ret == 0) {
 	fprintf (stdout, "%s(%d): calloc(%d,%d) failed\n", file, line, cnt, size);
 	exit (-1);
@@ -102,8 +113,8 @@ void *_CM_calloc (int32 cnt, int32 size, char const *file, int32 line)
     return (ret);
 }
 
-void *_CM_2dcalloc (int32 rcnt, int32 ccnt, int32 size,
-		    char const *srcfile, int32 srcline)
+
+char *_CM_2dcalloc (int32 rcnt, int32 ccnt, int32 size, char *srcfile, int32 srcline)
 /*------------------------------------------------------------*
  * DESCRIPTION - allocate row pointers and data in one chunk
  */
@@ -115,8 +126,8 @@ void *_CM_2dcalloc (int32 rcnt, int32 ccnt, int32 size,
     if ((rcnt == 0) || (ccnt == 0))
 	return 0;
 
-    ret = calloc ((size_t)(rcnt * ccnt * size) +
-		  rcnt * sizeof(caddr_t), 1);
+    ret = (char *) calloc ((size_t)(rcnt * ccnt * size) +
+			   rcnt * sizeof(caddr_t), 1);
     rowPtr = (caddr_t *) ret;
 
     if (ret == 0) {
@@ -126,13 +137,12 @@ void *_CM_2dcalloc (int32 rcnt, int32 ccnt, int32 size,
     }
 
     for (r = 0; r < rcnt; r++)
-	rowPtr[r] = (caddr_t)(ret + (rcnt * sizeof(caddr_t)) + (r * ccnt * size));
+	rowPtr[r] = ret + (rcnt * sizeof(caddr_t)) + (r * ccnt * size);
 
     return (ret);
 }
 
-void *_CM_3dcalloc (int32 lcnt, int32 rcnt, int32 ccnt, int32 size,
-		    char const *srcfile, int32 srcline)
+char *_CM_3dcalloc (int32 lcnt, int32 rcnt, int32 ccnt, int32 size, char *srcfile, int32 srcline)
 /*------------------------------------------------------------*
  * DESCRIPTION - allocate row pointers and data in one chunk
  */
@@ -158,29 +168,29 @@ void *_CM_3dcalloc (int32 lcnt, int32 rcnt, int32 ccnt, int32 size,
 	lvlPtr[l] = ret + (lcnt * sizeof(caddr_t)) + (rcnt * sizeof(caddr_t) * l);
 	rowPtr = (caddr_t *) lvlPtr[l];
 	for (r = 0; r < rcnt; r++) {
-	    rowPtr[r] = (caddr_t)(ret + (lcnt * sizeof(caddr_t)) +
+	    rowPtr[r] = ret + (lcnt * sizeof(caddr_t)) +
 		        (lcnt * rcnt * sizeof(caddr_t)) +
 			(l * rcnt * ccnt * size) +
-			(r * ccnt * size));
+			(r * ccnt * size);
 	}
     }
 
     return (ret);
 }
 
-void *_CM_recalloc (void *ptr, int32 cnt, int32 size,
-		    char const *srcfile, int32 srcline)
+
+char *_CM_recalloc (char *ptr, int32 cnt, int32 size, char *srcfile, int32 srcline)
 {
-    void *ret;
+    char *ret;
 
     if (ptr == 0)
-	ret = calloc ((size_t)cnt, (size_t)size);
+	ret = (char *) calloc ((size_t)cnt, (size_t)size);
     else
-	ret = realloc (ptr, (size_t)size * (size_t)cnt);
+	ret = (char *) realloc (ptr, (size_t)size * (size_t)cnt);
 
     if (ret == 0) {
-	fprintf (stdout, "%s(%d): recalloc(0x%lX,%d,%d) failed\n", srcfile, srcline, 
-		 (unsigned long) ptr, cnt, size);
+	fprintf (stdout, "%s(%d): recalloc(0x%X,%d,%d) failed\n", srcfile, srcline, 
+		 ptr, cnt, size);
 	exit (-1);
     }
     return (ret);

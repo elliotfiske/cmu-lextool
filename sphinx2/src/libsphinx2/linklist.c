@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1994-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,44 +44,18 @@
  * ====================================================================
  *
  */
+
 /*
- * linklist.c -- generic module for efficient memory management of 
- * linked list elements of various sizes; a separate list for each 
- * size.  Elements must be a multiple of a pointer size.
+ * linklist.c -- generic module for efficient memory management of linked list elements
+ *		 of various sizes; a separate list for each size.  Elements must be
+ * 		 a multiple of a pointer size.
  * 
  * HISTORY
  * 
  * $Log$
- * Revision 1.7  2001/12/11  00:24:48  lenzo
- * Acknowledgement in License.
+ * Revision 1.1  2000/01/28  22:08:50  lenzo
+ * Initial revision
  * 
- * Revision 1.6  2001/12/07 17:30:02  lenzo
- * Clean up and remove extra lines.
- *
- * Revision 1.5  2001/12/07 05:09:30  lenzo
- * License.xsxc
- *
- * Revision 1.4  2001/12/07 04:27:35  lenzo
- * License cleanup.  Remove conditions on the names.  Rationale: These
- * conditions don't belong in the license itself, but in other fora that
- * offer protection for recognizeable names such as "Carnegie Mellon
- * University" and "Sphinx."  These changes also reduce interoperability
- * issues with other licenses such as the Mozilla Public License and the
- * GPL.  This update changes the top-level license files and removes the
- * old license conditions from each of the files that contained it.
- * All files in this collection fall under the copyright of the top-level
- * LICENSE file.
- *
- * Revision 1.3  2001/03/29 21:09:41  lenzo
- * Getting the compile under windows back to normal
- *
- * Revision 1.2  2000/12/05 01:45:12  lenzo
- * Restructuring, hear rationalization, warning removal, ANSIfy
- *
- * Revision 1.1.1.1  2000/01/28 22:08:50  lenzo
- * Initial import of sphinx2
- *
- *
  * 
  * 15-May-95	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon.
  * 		Added "static" declaration to list[] and n_list.
@@ -83,29 +68,32 @@
 #include <stdlib.h>
 #include <malloc.h>
 
-#include "s2types.h"
+#include <s2types.h>
 
 #define QUIT(x)		{fprintf x; exit(-1);}
 
+
 #define MAX_LIST	16
 #define MAX_ALLOC	40944
+
 
 /*
  * Elements are seen as structures with an array of void pointers.  So element size
  * must be integral muliple of (void *).
  */
 typedef struct list_s {
-    void **freelist;	/* ptr to first element in freelist */
+    char **freelist;	/* ptr to first element in freelist */
     int32 elem_size;	/* #(char *) in element */
     int32 n_malloc;	/* #elements to malloc if run out of free elments */
 } list_t;
 static list_t list[MAX_LIST];
 static int32 n_list = 0;
 
-void *listelem_alloc (int32 elem_size)
+
+char *listelem_alloc (int32 elem_size)
 {
     int32 i, j;
-    void **cpp, *cp;
+    char **cpp, *cp;
     
     for (i = 0; i < n_list; i++) {
 	if (list[i].elem_size == elem_size)
@@ -129,25 +117,25 @@ void *listelem_alloc (int32 elem_size)
     }
     
     if (list[i].freelist == NULL) {
-	cpp = list[i].freelist = (void **) malloc (list[i].n_malloc * elem_size);
-	cp = (void *) cpp;
+	cpp = list[i].freelist = (char **) malloc (list[i].n_malloc * elem_size);
+	cp = (char *) cpp;
 	for (j = list[i].n_malloc-1; j > 0; --j) {
-	    (char*)cp += elem_size;
+	    cp += elem_size;
 	    *cpp = cp;
-	    cpp = (void **)cp;
+	    cpp = (char **)cp;
 	}
 	*cpp = NULL;
     }
     
-    cp = list[i].freelist;
-    list[i].freelist = *(list[i].freelist);
+    cp = (char *)(list[i].freelist);
+    list[i].freelist = (char **)(*(list[i].freelist));
     return (cp);
 }
 
-void listelem_free (void *elem, int32 elem_size)
+void listelem_free (char *elem, int32 elem_size)
 {
     int32 i;
-    void **cpp;
+    char **cpp;
     
     for (i = 0; i < n_list; i++) {
 	if (list[i].elem_size == elem_size)
@@ -157,7 +145,7 @@ void listelem_free (void *elem, int32 elem_size)
 	QUIT((stdout, "%s(%d): **ERROR** elem_size (%d) not in known list\n",
 	      __FILE__, __LINE__, elem_size));
     
-    cpp = elem;
-    *cpp = list[i].freelist;
+    cpp = (char **) elem;
+    *cpp = (char *) list[i].freelist;
     list[i].freelist = cpp;
 }

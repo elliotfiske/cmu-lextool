@@ -1,191 +1,84 @@
-#!/usr/bin/perl
-## ====================================================================
-##
-## Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
-## reserved.
-##
-## Redistribution and use in source and binary forms, with or without
-## modification, are permitted provided that the following conditions
-## are met:
-##
-## 1. Redistributions of source code must retain the above copyright
-##    notice, this list of conditions and the following disclaimer. 
-##
-## 2. Redistributions in binary form must reproduce the above copyright
-##    notice, this list of conditions and the following disclaimer in
-##    the documentation and/or other materials provided with the
-##    distribution.
-##
-## 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
-##    endorse or promote products derived from this software without
-##    prior written permission. To obtain permission, contact 
-##    sphinx@cs.cmu.edu.
-##
-## 4. Redistributions of any form whatsoever must retain the following
-##    acknowledgment:
-##    "This product includes software developed by Carnegie
-##    Mellon University (http://www.speech.cs.cmu.edu/)."
-##
-## THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
-## ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
-## THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-## PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
-## NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-## SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-## LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-## DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
-## THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-## (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-## OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-##
-## ====================================================================
-##
-## Modified: Rita Singh, 27 Nov 2000
-## Author: Ricky Houghton 
-##
+#!/usr/opt/PERL5004/bin/perl -w
 
-my $index = 0;
-if (lc($ARGV[0]) eq '-cfg') {
-    $cfg_file = $ARGV[1];
-    $index = 2;
-} else {
-    $cfg_file = "etc/sphinx_train.cfg";
-}
+require "../sphinx_train.cfg";
 
-if (! -s "$cfg_file") {
-    print ("unable to find default configuration file, use -cfg file.cfg or create etc/sphinx_train.cfg for default\n");
-    exit -3;
-}
-require $cfg_file;
 
 #*******************************************************************
 #*******************************************************************
-$| = 1; # Turn on autoflushing
 
-die "USAGE: $0 <iter> <n_parts>" if ($#ARGV != $index+1);
+die "USAGE: $0 <iter>" if ($#ARGV != 0);
 
-$iter = $ARGV[$index];
-$n_parts = $ARGV[$index+1];
+$iter = $ARGV[0];
 
-$processname="02.ci_schmm";
+mkdir ($CFG_CI_LOG_DIR,0777) unless -d $CFG_CI_LOG_DIR;
 
-$logdir ="$CFG_LOG_DIR/$processname";
-mkdir ($logdir,0777) unless -d $logdir;
-$log = "$logdir/${CFG_EXPTNAME}.$iter.norm.log";
-$scriptdir = "$CFG_SCRIPT_DIR/$processname";
+$log      = "$CFG_CI_LOG_DIR/${CFG_EXPTNAME}.$iter.norm.log";
 
-# Check the number and list of parts done. Compute avg likelihood per frame
-$num_done = 0; $tot_lkhd = 0; $tot_frms = 0;
-for ($i=1;$i<=$n_parts;$i++){
-    $done[$i] = 0;
-    $input_log = "${logdir}/${CFG_EXPTNAME}.${iter}-${i}.bw.log";
-    next if (! -s $input_log);
-    open LOG,$input_log;
-    while (<LOG>) {
-        if (/.*(Counts saved to).*/) {
-            $num_done++;
-            $done[$i] = 1;
-        }
-        if (/.*(overall>).*/){
-            ($jnk,$jnk,$nfrms,$jnk,$jnk,$lkhd) = split(/ /);
-            $tot_lkhd = $tot_lkhd + $lkhd;
-            $tot_frms = $tot_frms + $nfrms;
-        }
-    }
-    close LOG;
+#$num_done = `grep "MLLR regmat" $CFG_CI_LOG_DIR/${CFG_EXPTNAME}.${iter}-*.bw.log | wc -l | awk '{print $1}'`;
+
+# Attempt to replace above:
+$num_done = 0;
+for $input_log (<${CFG_CI_LOG_DIR}/${CFG_EXPTNAME}.${iter}-*.bw.log>) {
+ open LOG,$input_log;
+ while (<LOG>) {
+     $num_done++ if /.*(MLLR regmat).*/;
+ }
+ close LOG;
 }
 
-if ($num_done != $n_parts) {
-    open OUTPUT,">$log";
-    print "Only $num_done parts of $n_parts of Baum Welch were successfully completed\n";
-    print "Parts ";
-    for ($i=1;$i<=$n_parts;$i++) {
-        print "$i " if ($done[$i] == 0);
-    }
-    print "failed to run!\n";
-    close OUTPUT;
+print "$num_done parts of $npart of Baum Welch were successfully completed\n";
+
+if ($num_done != $npart) {
+  open OUTPUT,">$log";
+  print OUTPUT "Some of the baum-welch jobs seem to have bombed out. Expected $npart, got $num_done.\nAborting\!\!\!\\n";
+  close OUTPUT;
+  exit 0;
+}
+
+system ("$CFG_CI_PERL_DIR/norm.pl $iter");
+
+# RAH, this needs to be cleaned up
+$like = `grep "overall>" $logdir/${$CFG_EXPTNAME}.${iter}-*.bw.log | awk '{X += $3;Y += $6} END {print Y/X}'`;
+system ("echo \"Current Overall Likelihood Per Frame = $like\" >> $log");
+
+if ($iter == 1) { # Always perform a second iteration
+    &Launch_BW();
     exit (0);
 }
-
-if ($tot_frms == 0) {
-    open OUTPUT,">$log";
-    print "Baum welch ran successfully for only 0 frames! Aborting..\n";
-    close OUTPUT;
-    exit (0);
-}
-
-$lkhd_per_frame = $tot_lkhd/$tot_frms;
 
 $previter = $iter - 1;
-$prev_norm = "${logdir}/${CFG_EXPTNAME}.${previter}.norm.log";
-if (! -s $prev_norm) {
-    # Either iter == 1 or we are starting from an intermediate iter value
-    system ("$scriptdir/norm.pl $iter");
-    system("echo \"Current Overall Likelihood Per Frame = $lkhd_per_frame\" >> $log");
-    &Launch_BW();
-    exit (0);
+$prevlike = `grep "overall>" $logdir/${exptname}.${previter}-*.bw.log | awk '{ X += $3; Y += $6} END {print Y/X}'`;
+
+
+# we seem to be starting from an intermediate iter value
+if  ($prevlike eq "") {
+  &Launch_BW();
+  exit (0);
 }
 
-# Find the likelihood from the previous iteration
-open LOG,$prev_norm; $prevlkhd = -99999999;
-while (<LOG>) {
-   if (/.*(Current Overall Likelihood Per Frame).*/){
-      ($jnk,$jnk,$jnk,$jnk,$jnk,$jnk,$prevlkhd) = split(/ /);
-   }
-}
-close LOG;
 
-if ($prevlkhd == -99999999) {
-    # Some error with previous norm.log. Continue Baum Welch
-    system ("$scriptdir/norm.pl $iter");
-    system("echo \"Current Overall Likelihood Per Frame = $lkhd_per_frame\" >> $log");
-    &Launch_BW();
-    exit (0);
+#hack to handle sign
+$absprev = `echo "$prevlike"|awk '$1 < 0 {print -$1} $1 > 0 {print $1}'`;
+system ("echo \"$prevlike $like $absprev\"|awk '{printf(\"Convergence Ratio = %f\n\",($2-$1)/$3)}' >> $log");
+$testval = `echo "$prevlike $like $absprev"|awk -v th=$CFG_CONVERGENCE_RATIO '($2-$1)/$3 > th {print 1} ($2-$1)/$3 < th {print 0}'`;
+
+
+if ($testval == 1) {
+  &Launch_BW();
+  exit (0);
 }
 
-if ($prevlkhd == 0) {
-    $convg_ratio = 0;
-    $convg_ratio = 1 if ($lkhd_per_frame > 0);
-    $convg_ratio = -1 if ($lkhd_per_frame < 0);
-}
-else {
-    $absprev = $prevlkhd;
-    $absprev = -$absprev if ($prevlkhd < 0);
-    $convg_ratio = ($lkhd_per_frame - $prevlkhd)/$absprev;
-}
-system ("$scriptdir/norm.pl $iter ");
+# if testval != 1, the likelihoods have converged. No further jobs needed
+system ("echo \"The likelihoods have converged. Baum Welch training completed\!\" >> $log");
+system ("echo \"*********************************TRAINING COMPLETE***************************\" >> $log");
+`date >> $log`;
 
-system("echo \"Current Overall Likelihood Per Frame = $lkhd_per_frame\" >> $log");
-system("echo \"Convergence ratio = $convg_ratio\" >> $log");
+exit (0);
 
-if ($convg_ratio < 0) {
-    system("echo \"*WARNING*: NEGATIVE CONVERGENCE RATIO! CHECK YOUR DATA AND TRASNCRIPTS\" >> $log");
-    print "*WARNING*: NEGATIVE CONVERGENCE RATIO AT ITER ${iter}! CHECK BW AND NORM LOGFILES\n";
-}
-
-if ($convg_ratio > $CFG_CONVERGENCE_RATIO && $iter >= $CFG_MAX_ITERATIONS) {
-    system("echo \"Maximum desired iterations $CFG_MAX_ITERATIONS performed. Terminating CI training\" >> $log");
-    system("echo \"******************************TRAINING COMPLETE*************************\" >> $log");
-    system("date >> $log");
-    print "Maximum desired iterations $CFG_MAX_ITERATIONS performed. Terminating CI training\n";
-    exit (0);
-}
-
-if ($convg_ratio > $CFG_CONVERGENCE_RATIO) {
-    &Launch_BW();
-    exit (0);
-}
-else {
-    print "        Current Overall Likelihood Per Frame = $lkhd_per_frame\n";
-    system("echo \"Likelihoods have converged! Baum Welch training completed\!\" >> $log");
-    system("echo \"******************************TRAINING COMPLETE*************************\" >> $log");
-    system("date >> $log");
-    exit (0);
-}
 
 sub Launch_BW () {
     $newiter = $iter + 1;
-    print "        Current Overall Likelihood Per Frame = $lkhd_per_frame\n";
-    system ("$scriptdir/slave_convg.pl $newiter $n_parts");
+    system ("$CFG_CI_PERL_DIR/slave_convg.pl $newiter");
 }
+
 

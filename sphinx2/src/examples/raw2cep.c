@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1997-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -42,19 +53,20 @@
  * 		Started.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
-#include <unistd.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "err.h"
-#include "ad.h"
-#include "cont_ad.h"
-#include "fe.h"
+#include <CM_macros.h>
+#include <err.h>
+
+#include <ad.h>
+#include <cont_ad.h>
+#include <fe.h>
+
 
 /*
  * Convert raw A/D data (16KHz, 16-bit PCM) into cepstra
@@ -67,6 +79,7 @@
  * no.) the utterance begins in the input stream.
  */
 
+
 static ad_rec_t *ad = NULL;
 static cont_ad_t *cont = NULL;
 static FILE *adfp = NULL;
@@ -76,6 +89,7 @@ static int32 cur_ns_read;	/* #Raw (unfiltered) samples read so far */
 static int32 max_ns_read;	/* Max #raw (unfiltered) samples to read */
 
 #define ADBUFSIZE	4096
+
 
 /*
  * Read A/D device or rawfile, depending on which of ad or adfp is non-NULL
@@ -96,6 +110,7 @@ static int32 adread_raw (ad_rec_t *dummy, int16 *buf, int32 len)
 	return ((k <= 0) ? -1 : k);
     }
 }
+
 
 /*
  * Pass result of adread_raw through silence filter, if specified.  Return only when
@@ -139,6 +154,7 @@ static int32 adread_filtered (int16 *buf, int32 len)
     }
 }
 
+
 static void cleanup_and_exit ( void )
 {
     if (ad)
@@ -156,6 +172,7 @@ static void cleanup_and_exit ( void )
     exit(0);
 }
 
+
 static void usage (char *pgm)
 {
     printf ("Usage: %s \\\n", pgm);
@@ -169,14 +186,13 @@ static void usage (char *pgm)
     cleanup_and_exit();
 }
 
-int
+
 main (int32 argc, char **argv)
 {
     FILE *adout, *mfcout;
     int32 i, k, ns, nc, n_utt, tot_ns, write_raw, write_mfc, removesil, sps;
     int16 adbuf[ADBUFSIZE];
-    float **mfcbuf = NULL;
-    fe_t *fe = NULL;
+    float **mfcbuf, *mfcp;
     char line[1024];
     char filename[4096], uttid[256], *rawfile;
     
@@ -302,23 +318,16 @@ main (int32 argc, char **argv)
     }
     
     if (write_mfc) {
-	param_t param;
-	float *mfcp;
-
-	memset(&param, 0, sizeof(param));
-	param.SAMPLING_RATE = (float)sps;
-
-	if ((fe = fe_init (&param)) == NULL)
-	    E_FATAL("fe_init(%d) failed\n", sps);
-
-	mfcp = (float *) CM_calloc (4096 * fe->NUM_CEPSTRA, sizeof(float));
+	mfcp = (float *) CM_calloc (4096 * 13, sizeof(float));
 	mfcbuf = (float **) CM_calloc (4096, sizeof(float *));
 
 	for (i = 0; i < 4096; i++) {
 	    mfcbuf[i] = mfcp;
-	    mfcp += fe->NUM_CEPSTRA;
+	    mfcp += 13;
 	}
-
+	
+	if (fe_init (sps, -1, -1) < 0)
+	    E_FATAL("fe_init(%d) failed\n", sps);
     }
     
     adout = mfcout = NULL;
@@ -341,23 +350,16 @@ main (int32 argc, char **argv)
 		fclose (adout);
 
 	    if (mfcout) {
-		int slop;
-		slop = fe_end_utt(fe, mfcbuf[0]);
-		if (slop) {
-		    fwrite (mfcbuf[0], sizeof(float), fe->NUM_CEPSTRA, mfcout);
-		    nc += 1;
-		}
-		fflush (mfcout);
+		fe_stop ();
 
-		/* set the float count */
+		fflush (mfcout);
 		fseek (mfcout, 0, SEEK_SET);
-		k = nc * fe->NUM_CEPSTRA;
+		k = nc * 13;
 		fwrite (&k, sizeof(int32), 1, mfcout);
-		fflush (mfcout);
-
+		
 		fclose (mfcout);
 
-		printf("%s: %d samples in, %d cepstrum frames out\n", uttid, ns, nc); 
+		E_INFO("%s: %d samples, %d cepstrum frames\n", uttid, ns, nc);
 	    }
 	    
 	    adout = mfcout = NULL;
@@ -394,7 +396,7 @@ main (int32 argc, char **argv)
 		    nc = 0;
 		    fwrite (&nc, sizeof(int32), 1, mfcout);	/* header placeholder */
 
-		    fe_start_utt (fe);
+		    fe_start ();
 		}
 	    }
 	    
@@ -406,12 +408,11 @@ main (int32 argc, char **argv)
 	    tot_ns += k;
 	    
 	    if (mfcout) {
-		
-		k = fe_process_utt (fe, adbuf, k, mfcbuf);
+		k = fe_raw2cep (adbuf, k, mfcbuf);
 		nc += k;
 		
 		for (i = 0; i < k; i++)
-		    fwrite (mfcbuf[i], sizeof(float), fe->NUM_CEPSTRA, mfcout);
+		    fwrite (mfcbuf[i], sizeof(float), 13, mfcout);
 		fflush (mfcout);
 	    }
 	}
@@ -419,10 +420,6 @@ main (int32 argc, char **argv)
 
     E_INFO("%d utterances, %.2f sec read, %.2f sec written\n", n_utt,
 	   (double) cur_ns_read / (double) sps, (double) tot_ns / (double) sps);
-    printf("%d utterances, %.2f sec read, %.2f sec written\n", n_utt,
-	   (double) cur_ns_read / (double) sps, 
-	   (double) tot_ns / (double) sps);
 
     cleanup_and_exit();
-    return 0;
 }

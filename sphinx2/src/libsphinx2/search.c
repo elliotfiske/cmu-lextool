@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1994-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * search.c -- HMM-tree version
  * 
@@ -168,34 +180,21 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <CM_macros.h>
+#include <err.h>
+#include <dict.h>
+#include <msd.h>
+#include <lm.h>
+#include <kb_exports.h>
+#include <log.h>
 #include <math.h>
+#include <c.h>
+#include <assert.h>
+#include <search.h>
+#include <fbs.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "linklist.h"
-#include "list.h"
-#include "hash.h"
-#include "search_const.h"
-#include "err.h"
-#include "dict.h"
-#include "msd.h"
-#include "lm.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "phone.h"
-#include "kb.h"
-#include "log.h"
-#include "c.h"
-#include "assert.h"
-#include "scvq.h"
-#include "fbs.h"
-#include "search.h"
-#include "hmm_tied_r.h"
-
-#ifdef USE_ILM
+#if (USE_ILM)
 #define lm_bg_score		ilm_bg_score
 #define lm_tg_score		ilm_tg_score
 #endif
@@ -285,7 +284,7 @@ static LM LangModel = NULL;
 static int32 UsingDarpaLM;
 static int32 NoLangModel;
 static int32 AllWordTProb;
-/* static int32 AllWordMode; */
+static int32 AllWordMode;
 
 static int32 StartWordId;
 static int32 FinishWordId;
@@ -379,9 +378,8 @@ static int32 n_1ph_words;		/* #single phone words in dict (total) */
 static int32 n_1ph_LMwords;		/* #single phone dict words also in LM;
 					   these come first in single_phone_wid */
 
-static void seg_back_trace (int32);
-static void renormalize_scores (int32);
-static void fwdflat_renormalize_scores (int32);
+static void renormalize_scores ();
+static void fwdflat_renormalize_scores ();
 static int32 renormalized;
 
 static int32 skip_alt_frm = 0;
@@ -424,10 +422,20 @@ static int32 *bestpscr;			/* Best senone score within each phone in frame */
 static uint16 **utt_pscr = NULL;	/* bestpscr for entire utt; scaled */
 
 static void topsen_init ( void );
-static void compute_phone_active (int32 topsenscr, int32 npa_th);
+static void compute_phone_active ();
 
-/* FIXME: put this in a header file */
-extern void quit (int status, char const *fmt, ...);
+/*
+ * Misc externs.
+ */
+#if 0
+extern char *query_utt_id();
+#endif
+
+extern char *phone_from_id();
+extern char *get_current_startword ();
+
+extern char *listelem_alloc();
+extern void  listelem_free();
 
 int32 context_frames ( void )
 {
@@ -454,12 +462,13 @@ static int32 n_lastphn_cand;
 
 extern int32 print_back_trace;
 
+
 #if 0
 /*
  * Evaluate arcprobs of all active HMMs (actually sseqids) in current frame.
  */
-void
-evaluateModels (int32 fwd) 	/* True for the forward direction */
+evaluateModels (fwd)
+    int32 fwd;	/* True for the forward direction */
 {
     long i, j, k;
     int32 *ap;
@@ -500,15 +509,15 @@ evaluateModels (int32 fwd) 	/* True for the forward direction */
 #endif
     
 #if SEARCH_TRACE_CHAN
-    E_INFO ("[%4d] %8d models evaluated\n", CurrentFrame, k);
+    printf ("[%4d] %8d models evaluated\n", CurrentFrame, k);
 #endif
 }
 
 /*
  * Evaluate arc-probs of a single hmm (actually sseqid).
  */
-void
-eval_hmm_arcprob (int32 ssid)
+eval_hmm_arcprob (ssid)
+    int32 ssid;
 {
     int32 *ap;
     int32 *tp;
@@ -543,8 +552,8 @@ eval_hmm_arcprob (int32 ssid)
 /* Node Plus Arc (mpx channel) */
 #define NPA(d,s,a)	(s + d->tp[a])
 
-void
-root_chan_v_mpx_eval (ROOT_CHAN_T *chan)
+root_chan_v_mpx_eval (chan)
+    ROOT_CHAN_T *chan;
 {
     int32 bestScore;
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;
@@ -784,8 +793,9 @@ root_chan_v_mpx_eval (ROOT_CHAN_T *chan)
     chan->bestscore = bestScore;		\
 }						\
 
-void
-root_chan_v_eval (ROOT_CHAN_T *chan)
+
+root_chan_v_eval (chan)
+    ROOT_CHAN_T *chan;
 {
     SMD *smd0;
     
@@ -793,8 +803,8 @@ root_chan_v_eval (ROOT_CHAN_T *chan)
     CHAN_V_EVAL(chan,smd0);
 }
 
-void
-chan_v_eval (CHAN_T *chan)
+chan_v_eval (chan)
+    CHAN_T *chan;
 {
     SMD *smd0;
     
@@ -802,7 +812,7 @@ chan_v_eval (CHAN_T *chan)
     CHAN_V_EVAL(chan,smd0);
 }
 
-int32 eval_root_chan (void)
+int32 eval_root_chan ()
 {
     ROOT_CHAN_T *rhmm;
     int32 i, cf, bestscore, k;
@@ -832,13 +842,13 @@ int32 eval_root_chan (void)
 #endif
 
 #if SEARCH_TRACE_CHAN
-    E_INFO (" %3d #root(%10d)", cf, k, bestscore);
+    printf (" %3d #root(%10d)", cf, k, bestscore);
 #endif
 
     return (bestscore);
 }
 
-int32 eval_nonroot_chan (void)
+int32 eval_nonroot_chan ()
 {
     CHAN_T *hmm, **acl;
     int32 i, cf, bestscore, k;
@@ -863,13 +873,13 @@ int32 eval_nonroot_chan (void)
 #endif
 
 #if SEARCH_TRACE_CHAN
-    E_INFO (" %5d #non-root(%10d)", k, bestscore);
+    printf (" %5d #non-root(%10d)", k, bestscore);
 #endif
 
     return (bestscore);
 }
 
-int32 eval_word_chan (void)
+int32 eval_word_chan ()
 {
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm;
@@ -941,8 +951,8 @@ int32 eval_word_chan (void)
     return (bestscore);
 }
 
-static void
-cache_bptable_paths (int32 bp)
+static cache_bptable_paths (bp)
+    int32 bp;
 {
     int32 w, prev_bp;
     BPTBL_T *bpe;
@@ -963,8 +973,12 @@ cache_bptable_paths (int32 bp)
 	bpe->prev_real_fwid = -1;
 }
 
-void
-save_bwd_ptr (WORD_ID w, int32 score, int32 path, int32 rc)
+
+save_bwd_ptr (w, score, path, rc)
+    WORD_ID w;
+    int32 score;
+    int32 path;
+    int32 rc;
 {
     int32 _bp_;
     
@@ -985,9 +999,10 @@ save_bwd_ptr (WORD_ID w, int32 score, int32 path, int32 rc)
 	
 	if ((BPIdx >= BPTableSize) || (BSSHead >= BScoreStackSize-NumCiPhones)) {
 	    if (! BPTblOflMsg) {
-		E_WARN("%s(%d): BPTable OVERFLOWED; IGNORING REST OF UTTERANCE!!\n",
+		printf("%s(%d): BPTable OVERFLOWED; IGNORING REST OF UTTERANCE!!\n",
 		       __FILE__, __LINE__);
 		BPTblOflMsg = 1;
+		fflush (stdout);
 	    }
 	    return;
 	}
@@ -1022,8 +1037,7 @@ save_bwd_ptr (WORD_ID w, int32 score, int32 path, int32 rc)
  * transitions out of them and activate successors.
  * score[] of pruned root chan set to WORST_SCORE elsewhere.
  */
-void
-prune_root_chan (void)
+prune_root_chan ()
 {
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm;
@@ -1101,8 +1115,7 @@ prune_root_chan (void)
  * Prune currently active nonroot channels in HMM tree for next frame.  Also, perform
  * exit transitions out of such channels and activate successors.
  */
-void
-prune_nonroot_chan (void)
+prune_nonroot_chan ()
 {
     CHAN_T *hmm, *nexthmm;
     int32 cf, nf, w, i, pip;
@@ -1211,8 +1224,7 @@ static cand_sf_t *cand_sf;
  * the HMM tree.  Attach LM scores to such transitions.
  * (Executed after pruning root and non-root, but before pruning word-chan.)
  */
-void
-last_phone_transition (void)
+last_phone_transition ()
 {
     int32 i, j, k, cf, nf, bp, bplast, w;
     lastphn_cand_t *candp;
@@ -1262,10 +1274,9 @@ last_phone_transition (void)
 			cand_sf_alloc = CAND_SF_ALLOCSIZE;
 		    } else {
 			cand_sf_alloc += CAND_SF_ALLOCSIZE;
-			cand_sf = (cand_sf_t *) CM_recalloc (cand_sf,
-							     cand_sf_alloc,
+			cand_sf = (cand_sf_t *) CM_recalloc (cand_sf, cand_sf_alloc,
 							     sizeof(cand_sf_t));
-			E_INFO("%s(%d): cand_sf[] increased to %d entries\n",
+			fprintf (stdout, "%s(%d): cand_sf[] increased to %d entries\n",
 			      __FILE__, __LINE__, cand_sf_alloc);
 		    }
 		}
@@ -1356,8 +1367,7 @@ last_phone_transition (void)
  * Prune currently active word channels for next frame.  Also, perform exit
  * transitions out of such channels and active successors.
  */
-void
-prune_word_chan (void)
+prune_word_chan ()
 {
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm, *thmm;
@@ -1434,8 +1444,8 @@ prune_word_chan (void)
  * may already exist.)
  * (NOTE: Assume that w uses context!!)
  */
-void
-alloc_all_rc (int32 w)
+alloc_all_rc (w)
+    int32 w;
 {
     dict_entry_t *de;
     CHAN_T *hmm, *thmm;
@@ -1489,8 +1499,8 @@ alloc_all_rc (int32 w)
     }
 }
 
-void
-free_all_rc (int32 w)
+free_all_rc (w)
+    int32 w;
 {
     CHAN_T *hmm, *thmm;
     
@@ -1513,22 +1523,20 @@ struct bestbp_rc_s {
     int32 lc;		/* right most ci-phone of above BP entry word */
 } *bestbp_rc;
 
-void
-word_transition (void)
+word_transition ()
 {
-    int32 i, k, bp, w, cf, nf;
-    /* int32 prev_bp, prev_wid, prev_endframe, prev2_bp, prev2_wid; */
-    int32 /* rcsize, */ rc;
+    int32 i, k, bp, w, prev_bp, prev_wid, prev_endframe, cf, nf, prev2_bp, prev2_wid;
+    int32 rcsize, rc;
     int32 *rcss;		/* right context score stack */
     int32 *rcpermtab;
-    int32 thresh, /* newword_thresh, */ newscore;
+    int32 thresh, newword_thresh, newscore;
     BPTBL_T *bpe;
     dict_entry_t *pde, *de;	/* previous dict entry, dict entry */
     ROOT_CHAN_T *rhmm;
-    /* CHAN_T *hmm; */
+    CHAN_T *hmm;
     struct bestbp_rc_s *bestbp_rc_ptr;
     int32 last_ciph;
-    int32 /* fwid0, fwid1, */ fwid2;
+    int32 fwid0, fwid1, fwid2;
     int32 pip;
     int32 ssid;
     
@@ -1665,6 +1673,7 @@ word_transition (void)
     }
 }
 
+
 #if 0
 static void dump_hmm_tp ( void )
 {
@@ -1680,9 +1689,10 @@ static void dump_hmm_tp ( void )
 }
 #endif
 
-void
-search_initialize (void)
+
+search_initialize ()
 {
+    int32 i;
     int32 bptable_size = query_lattice_size();
     
 #if SEARCH_TRACE_CHAN_DETAILED
@@ -1764,13 +1774,13 @@ search_initialize (void)
      */
     if ((topsen_window = query_topsen_window ()) < 1)
 	quit(-1, "%s(%d): topsen window = %d\n", __FILE__, __LINE__, topsen_window);
-    E_INFO ("%s(%d): topsen-window = %d", __FILE__, __LINE__, topsen_window);
+    printf ("%s(%d): topsen-window = %d", __FILE__, __LINE__, topsen_window);
     topsen_thresh = query_topsen_thresh ();
     if (topsen_window > 1)
-	E_INFO (", threshold = %d", topsen_thresh);
+	printf (", threshold = %d", topsen_thresh);
     else
-	E_INFO (", no phone-prediction");
-    E_INFO ("\n");
+	printf (", no phone-prediction");
+    printf ("\n");
     
     topsen_init ();
 
@@ -1781,6 +1791,8 @@ search_initialize (void)
 
     /* Inform SCVQ module of senones/phone and bestscore/phone array */
     {
+	extern int32 *hmm_get_psen();
+
 	bestpscr = (int32 *) CM_calloc (NumCiPhones, sizeof(int32));
 	utt_pscr = (uint16 **) CM_2dcalloc (MAX_FRAMES, NumCiPhones,
 						    sizeof(uint16));
@@ -1789,7 +1801,7 @@ search_initialize (void)
     }
 }
 
-int32 *search_get_dist_scores(void)
+int32 *search_get_dist_scores()
 {
     return distScores;
 }
@@ -1806,13 +1818,13 @@ search_init (beam_width, all_word_mode, force_str)
     startWord = get_current_startword ();
     if (*startWord) {
         StartWordId = kb_get_word_id (startWord);
-        E_INFO("startword %s -> %d (default is %d)\n",
+        fprintf(stdout, "startword %s -> %d (default is %d)\n",
                 startWord,
                 StartWordId,
                 kb_get_word_id (kb_get_lm_start_sym()));
 	if (StartWordId == -1) {
 	        StartWordId = kb_get_word_id (kb_get_lm_start_sym());
-		E_WARN("Using default startwordid %d\n",
+		fprintf(stderr, "Using default startwordid %d\n",
 			StartWordId);
 	}
     } else {
@@ -1834,14 +1846,17 @@ search_init (beam_width, all_word_mode, force_str)
 	ForceLen = 0;
 	ForcedRecMode = FALSE;
     }
+    fflush(stdout);
+    fflush(stderr);
     
     return 0;
 }
 #endif
 
-void search_set_startword (char const *str)
+
+void search_set_startword (char *str)
 {
-    char const *startWord;
+    char *startWord;
     
     /* For LISTEN project */
     startWord = str;
@@ -1854,9 +1869,10 @@ void search_set_startword (char const *str)
 	startWord = kb_get_lm_start_sym();
         StartWordId = kb_get_word_id (startWord);
     }
-    E_INFO("%s(%d): startword= %s (id= %d)\n",
-	     __FILE__, __LINE__, startWord, StartWordId);
+    fprintf(stdout, "%s(%d): startword= %s (id= %d)\n",
+	    __FILE__, __LINE__, startWord, StartWordId);
 }
+
 
 /*
  * Set previous two LM context words for search; ie, the first word decoded by
@@ -1898,8 +1914,7 @@ void search_remove_context (search_hyp_t *hyp)
  * Mark the active senones for all senones belonging to channels that are active in the
  * current frame.
  */
-void
-compute_sen_active (void)
+compute_sen_active ()
 {
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm, **acl;
@@ -1981,11 +1996,11 @@ compute_sen_active (void)
     n_senone_active = j;
 }
 
+
 /*
  * Tree-Search one frame forward.
  */
-void
-search_fwd (float *cep, float *dcep, float *dcep_80ms, float *pcep, float *ddcep)
+int32 search_fwd (float *cep, float *dcep, float *dcep_80ms, float *pcep, float *ddcep)
 {
     int32 *newscr;
     int32 i, cf;
@@ -2023,8 +2038,8 @@ search_fwd (float *cep, float *dcep, float *dcep_80ms, float *pcep, float *ddcep
 	search_one_ply_fwd ();
 }
 
-void
-search_start_fwd (void)
+
+search_start_fwd ()
 {
     int32 i, rcsize, lscr;
     ROOT_CHAN_T *rhmm;
@@ -2133,8 +2148,7 @@ search_start_fwd (void)
     n_topsen_frm = 0;
 }
 
-void
-evaluateChannels (void)
+evaluateChannels ()
 {
     int32 bs;
     
@@ -2147,8 +2161,7 @@ evaluateChannels (void)
     BestScoreTable[CurrentFrame] = BestScore;
 }
 
-void
-pruneChannels (void)
+pruneChannels ()
 {
     n_lastphn_cand = 0;
     prune_root_chan ();
@@ -2157,35 +2170,35 @@ pruneChannels (void)
     prune_word_chan ();
 }
 
-void
-search_one_ply_fwd (void)
+search_one_ply_fwd ()
 {
-    int32 /* bs, */ i, cf, nf, w; /*, *awl; */
+    int32 bs, i, cf, nf, w, *awl;
     ROOT_CHAN_T *rhmm;
     
     if (CurrentFrame >= MAX_FRAMES-1)
-	return;
+	return 0;
     
     BPTableIdx[CurrentFrame] = BPIdx;
     
     /* Need to renormalize? */
     if ((BestScore + (2 * LogBeamWidth)) < WORST_SCORE) {
-	E_INFO("%s(%d): Renormalizing Scores at frame %d, best score %d\n",
+	fprintf (stdout, "%s(%d): Renormalizing Scores at frame %d, best score %d\n",
 		 __FILE__, __LINE__, CurrentFrame, BestScore);
+	fflush (stdout);
 	renormalize_scores (BestScore);
     }
     
     BestScore = WORST_SCORE;
     
 #if SEARCH_TRACE_CHAN_DETAILED
-    E_INFO ("[%4d] CHAN trace before eval\n", CurrentFrame);
+    printf ("[%4d] CHAN trace before eval\n", CurrentFrame);
     dump_traceword_chan ();
 #endif
     
     evaluateChannels();
     
 #if SEARCH_TRACE_CHAN_DETAILED
-    E_INFO ("[%4d] CHAN trace after eval\n", CurrentFrame);
+    printf ("[%4d] CHAN trace after eval\n", CurrentFrame);
     dump_traceword_chan ();
 #endif
     
@@ -2229,22 +2242,22 @@ search_one_ply_fwd (void)
     /* This code terminates the loop by updating for the next pass */
     CurrentFrame++;
     if (CurrentFrame >= MAX_FRAMES-1) {
-	E_WARN ("%s(%d): MAX_FRAMES (%d) EXCEEDED; IGNORING REST OF UTTERANCE!!\n",
+	printf ("%s(%d): MAX_FRAMES (%d) EXCEEDED; IGNORING REST OF UTTERANCE!!\n",
 		__FILE__, __LINE__, MAX_FRAMES);
+	fflush (stdout);
     }
     
     lm_next_frame ();
 }
 
-void
-search_finish_fwd (void)
+search_finish_fwd ()
 {
-    /* register int32 idx; */
-    int32 i, j, w, cf, nf, /* f, */ *awl;
+    register int32 idx;
+    int32 i, j, w, cf, nf, f, *awl;
     ROOT_CHAN_T *rhmm;
-    CHAN_T *hmm, /* *thmm,*/ **acl;
-    /* int32 bp, bestbp, bestscore; */
-    /* int32 l_scr; */
+    CHAN_T *hmm, *thmm, **acl;
+    int32 bp, bestbp, bestscore;
+    int32 l_scr;
     static void compute_phone_perplexity( void );
     
     if ((CurrentFrame > 0) && (topsen_window > 1)) {
@@ -2316,20 +2329,20 @@ search_finish_fwd (void)
     
 #if SEARCH_PROFILE
     if (LastFrame > 0) {
-	E_INFO("%8d words recognized (%d/fr)\n",
+	fprintf (stdout, "%8d words recognized (%d/fr)\n",
 		 BPIdx, (BPIdx+(LastFrame>>1))/(LastFrame+1));
 	if (topsen_window > 1)
-	    E_INFO("%8d phones in topsen (%d/fr)\n",
+	    fprintf (stdout, "%8d phones in topsen (%d/fr)\n",
 		     n_phn_in_topsen, n_phn_in_topsen/(LastFrame+1));
-	E_INFO("%8d senones evaluated (%d/fr)\n", n_senone_active_utt,
+	fprintf (stdout, "%8d senones evaluated (%d/fr)\n", n_senone_active_utt,
 		 (n_senone_active_utt + (LastFrame>>1))/(LastFrame+1));
-	E_INFO("%8d channels searched (%d/fr), %d 1st, %d last\n",
+	fprintf (stdout, "%8d channels searched (%d/fr), %d 1st, %d last\n",
 		 n_root_chan_eval + n_nonroot_chan_eval,
 		 (n_root_chan_eval + n_nonroot_chan_eval)/(LastFrame+1),
 		 n_root_chan_eval, n_last_chan_eval);
-	E_INFO("%8d words for which last channels evaluated (%d/fr)\n",
+	fprintf (stdout, "%8d words for which last channels evaluated (%d/fr)\n",
 		 n_word_lastchan_eval, n_word_lastchan_eval/(LastFrame+1));
-	E_INFO("%8d candidate words for entering last phone (%d/fr)\n",
+	fprintf (stdout, "%8d candidate words for entering last phone (%d/fr)\n",
 		 n_lastphn_cand_utt, n_lastphn_cand_utt/(LastFrame+1));
 	
 	lm3g_cache_stats_dump (stdout);
@@ -2337,18 +2350,17 @@ search_finish_fwd (void)
 #endif
 }
 
-void
-search_postprocess_bptable (double lwf, char const *pass)
+search_postprocess_bptable (double lwf, char *pass)
 {
-    /* register int32 idx; */
-    int32 /* i, j, w,*/ cf, nf, f; /*, *awl; */
-    /* ROOT_CHAN_T *rhmm; */
-    /* CHAN_T *hmm, *thmm, **acl; */
-    int32 bp;
+    register int32 idx;
+    int32 i, j, w, cf, nf, f, *awl;
+    ROOT_CHAN_T *rhmm;
+    CHAN_T *hmm, *thmm, **acl;
+    int32 bp, bestbp, bestscore;
     int32 l_scr;
     
     if (LastFrame < 10) {	/* HACK!!  Hardwired constant 10 */
-	E_WARN("%s(%d): UTTERANCE TOO SHORT; IGNORED\n", __FILE__, __LINE__);
+	printf("%s(%d): UTTERANCE TOO SHORT; IGNORED\n", __FILE__, __LINE__);
 	LastFrame = 0;
 	
 	return;	
@@ -2366,13 +2378,12 @@ search_postprocess_bptable (double lwf, char const *pass)
 	    break;
     }
     if (bp >= BPIdx) {
-	int32 bestbp = 0, bestscore = 0; /* FIXME: good defaults? */
-	E_WARN ("\n%s(%d):  **ERROR**  Failed to terminate in final state\n\n",
+	printf ("\n%s(%d):  **ERROR**  Failed to terminate in final state\n\n",
 		__FILE__, __LINE__);
 	/* Find the most recent frame containing the best BP entry */
 	for (f = cf; (f >= 0) && (BPTableIdx[f] == BPIdx); --f);
 	if (f < 0) {
-	    E_WARN ("\n%s(%d):  **EMPTY BPTABLE**\n\n", __FILE__, __LINE__);
+	    printf ("\n%s(%d):  **EMPTY BPTABLE**\n\n", __FILE__, __LINE__);
 	    return;
 	}
 	
@@ -2404,10 +2415,11 @@ search_postprocess_bptable (double lwf, char const *pass)
     search_remove_context (hyp);
     search_hyp_to_str();
 
-    E_INFO ("%s: %s (%s %d (A=%d L=%d))\n",
+    printf ("%s: %s (%s %d (A=%d L=%d))\n",
 	    pass, hyp_str, uttproc_get_uttid(),
 	    HypTotalScore, HypTotalScore - TotalLangScore, TotalLangScore);
 }
+
 
 void bestpath_search ( void )
 {
@@ -2419,14 +2431,14 @@ void bestpath_search ( void )
     }
 }
 
+
 /*
  * Convert search hypothesis (word-id sequence) to a single string.
  */
-void
 search_hyp_to_str ( void )
 {
     int32 i, k, l;
-    char const *wd;
+    char *wd;
     
     hyp_str[0] = '\0';
     k = 0;
@@ -2443,6 +2455,7 @@ search_hyp_to_str ( void )
     }
 }
 
+
 int32 seg_topsen_score (int32 sf, int32 ef)
 {
     int32 f, sum;
@@ -2454,17 +2467,17 @@ int32 seg_topsen_score (int32 sf, int32 ef)
     return (sum);
 }
 
+
 /* SEG_BACK_TRACE
  *-------------------------------------------------------------*
- * Print32 out the backtrace
+ * Print32 out the bactrace
  */
-static void
-seg_back_trace (int32 bpidx)
+static seg_back_trace (int32 bpidx)
 {
     static int32 last_score;
     static int32 last_time;
     static int32 seg;
-    /* int32 *probs; */
+    int32 *probs;
     int32  l_scr;
     int32  a_scr;
     int32  a_scr_norm;		/* time normalized acoustic score */
@@ -2503,7 +2516,7 @@ seg_back_trace (int32 bpidx)
 	}
 	
 	if (print_back_trace)
-	    printf("%16s (%4d %4d) %7d %10d %8d %8d %6d %6.2f\n",
+	    fprintf (stdout, "%16s (%4d %4d) %7d %10d %8d %8d %6d %6.2f\n",
 		     WordIdToStr(WordDict, BPTable[bpidx].wid),
 		     last_time + 1,	BPTable[bpidx].frame,
 		     a_scr_norm, a_scr, l_scr,
@@ -2534,7 +2547,7 @@ seg_back_trace (int32 bpidx)
     }
     else {
 	if (print_back_trace)
-	    printf("%16s (%4s %4s) %7s %10s %8s %8s %6s %6s\n\n",
+	    fprintf (stdout, "%16s (%4s %4s) %7s %10s %8s %8s %6s %6s\n\n",
 		     "WORD", "SFrm", "Efrm", "AS/Len", "AS_Score", "LM_Scr", "BSDiff",
 		     "LatDen", "PhPerp");
 
@@ -2551,8 +2564,7 @@ seg_back_trace (int32 bpidx)
  *-------------------------------------------------------------*
  * Like seg_back_trace, but not as detailed.
  */
-static void
-partial_seg_back_trace (int32 bpidx)
+static partial_seg_back_trace (int32 bpidx)
 {
     static int32 seg;
     static int32 last_time;
@@ -2583,7 +2595,8 @@ partial_seg_back_trace (int32 bpidx)
     }
 }
 
-static void renormalize_scores (int32 norm)
+static void renormalize_scores (norm)
+    int32 norm;
 {
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm, **acl;
@@ -2632,51 +2645,57 @@ static void renormalize_scores (int32 norm)
     renormalized = 1;
 }
 
-int32 search_get_score (void)
+int32 search_get_score ()
 /*---------------------*/
 {
     return HypTotalScore;
 }
+
 
 void search_set_beam_width (double beam)
 {
     LogBeamWidth =  8 * LOG (beam);
 }
 
+
 /* SEARCH_SET_NEW_WORD_BEAM
  *-------------------------------------------------------------*
  */
-void search_set_new_word_beam_width (float beam)
+void search_set_new_word_beam_width (beam)
+float beam;
 {
     NewWordLogBeamWidth = 8 * LOG (beam);
-    E_INFO ("%8d = new word beam width\n", NewWordLogBeamWidth);
+    printf ("%8d = new word beam width\n", NewWordLogBeamWidth);
 }
 
 /* SEARCH_SET_LASTPHONE_ALONE_BEAM_WIDTH
  *-------------------------------------------------------------*
  */
-void search_set_lastphone_alone_beam_width (float beam)
+void search_set_lastphone_alone_beam_width (beam)
+float beam;
 {
     LastPhoneAloneLogBeamWidth = 8 * LOG (beam);
-    E_INFO ("%8d = Last phone alone beam width\n", LastPhoneAloneLogBeamWidth);
+    printf ("%8d = Last phone alone beam width\n", LastPhoneAloneLogBeamWidth);
 }
 
 /* SEARCH_SET_NEW_PHONE_BEAM
  *-------------------------------------------------------------*
  */
-void search_set_new_phone_beam_width (float beam)
+void search_set_new_phone_beam_width (beam)
+float beam;
 {
     NewPhoneLogBeamWidth = 8 * LOG (beam);
-    E_INFO ("%8d = new phone beam width\n", NewPhoneLogBeamWidth);
+    printf ("%8d = new phone beam width\n", NewPhoneLogBeamWidth);
 }
 
 /* SEARCH_SET_LAST_PHONE_BEAM
  *-------------------------------------------------------------*
  */
-void search_set_last_phone_beam_width (float beam)
+void search_set_last_phone_beam_width (beam)
+float beam;
 {
     LastPhoneLogBeamWidth = 8 * LOG (beam);
-    E_INFO ("%8d = last phone beam width\n", LastPhoneLogBeamWidth);
+    printf ("%8d = last phone beam width\n", LastPhoneLogBeamWidth);
 }
 
 /* SEARCH_SET_CHANNELS_PER_FRAME_TARGET
@@ -2687,74 +2706,77 @@ void search_set_channels_per_frame_target (int32 cpf)
      ChannelsPerFrameTarget = cpf;
 }
 
-void searchSetScVqTopN (int32 topN)
+searchSetScVqTopN (topN)
+int32 topN;
 {
     scVqTopN = topN;
 }
 
-int32 searchFrame (void)
+searchFrame ()
 {
     return LastFrame;
 }
 
-int32 searchCurrentFrame (void)
+searchCurrentFrame ()
 {
     return CurrentFrame;
 }
 
-void
-search_set_newword_penalty (double nw_pen)
+search_set_newword_penalty (nw_pen)
+    double nw_pen;
 {
     newword_penalty = LOG (nw_pen);
-    E_INFO ("%8d = newword penalty\n", newword_penalty);
+    printf ("%8d = newword penalty\n", newword_penalty);
 }
 
-void
-search_set_silence_word_penalty (float pen,
-				 float pip) /* Phone insertion penalty */
+search_set_silence_word_penalty (pen, pip)
+    float pen;
+    float pip;	/* Phone insertion penalty */
 {
     logPhoneInsertionPenalty = LOG(pip);
     SilenceWordPenalty = LOG (pen) + LOG (pip);
-    E_INFO ("%8d = LOG (Silence Word Penalty) + LOG (Phone Penalty)\n",
+    printf ("%8d = LOG (Silence Word Penalty) + LOG (Phone Penalty)\n",
 	    SilenceWordPenalty);
+    fflush (stdout);
 }
 
-void
-search_set_filler_word_penalty (float pen, float pip)
+search_set_filler_word_penalty (pen, pip)
+float pen;
+float pip;	/* Phone insertion penalty */
 {
      FillerWordPenalty = LOG (pen) + LOG (pip);;
-     E_INFO ("%8d = LOG (Filler Word Penalty) + LOG (Phone Penalty)\n",
+     printf ("%8d = LOG (Filler Word Penalty) + LOG (Phone Penalty)\n",
 	     FillerWordPenalty);
+     fflush (stdout);
 }
 
-void
 search_set_lw (double p1lw, double p2lw, double p3lw)
 {
     fwdtree_lw = p1lw;
     fwdflat_lw = p2lw;
     bestpath_lw = p3lw;
     
-    E_INFO ("%s(%d): LW = fwdtree: %.1f, fwdflat: %.1f, bestpath: %.1f\n",
+    printf ("%s(%d): LW = fwdtree: %.1f, fwdflat: %.1f, bestpath: %.1f\n",
 	    __FILE__, __LINE__, fwdtree_lw, fwdflat_lw, bestpath_lw);
 }
 
-void
-search_set_ip (float ip)
+
+search_set_ip (ip)
+float ip;
 {
     LogInsertionPenalty = LOG(ip);
 }
 
-void
-search_set_hyp_alternates (int32 arg)
+search_set_hyp_alternates (arg)
+int32 arg;
 {
     hyp_alternates = arg;
     if (hyp_alternates)
-	E_INFO ("Will report alternate hypotheses\n");
+	printf ("Will report alternate hypotheses\n");
     else
-	E_INFO ("Will NOT report alternate hypotheses\n");
+	printf ("Will NOT report alternate hypotheses\n");
 }
 
-void
 search_set_skip_alt_frm (int32 flag)
 {
     skip_alt_frm = flag;
@@ -2763,25 +2785,21 @@ search_set_skip_alt_frm (int32 flag)
 /*
  * SEARCH_FINISH_DOCUMENT: clean up at the end of a "document".
  */
-void 
-search_finish_document (void)
+search_finish_document ()
 {
 }
 
-void
-searchBestN (void)
+searchBestN ()
 {
     quit(-1, "%s(%d): searchBestN() not implemented\n", __FILE__,__LINE__);
 }
 
-void
-search_hyp_write (void)
+search_hyp_write ()
 {
     quit(-1, "%s(%d): search_hyp_write() not implemented\n", __FILE__,__LINE__);
 }
 
-void
-parse_ref_str (void)
+parse_ref_str ()
 {
     quit(-1, "%s(%d): parse_ref_str() not implemented\n", __FILE__,__LINE__);
 }
@@ -2791,7 +2809,7 @@ parse_ref_str (void)
  */
 int32 search_partial_result (int32 *fr, char **res)
 {
-    int32 bp, bestscore = 0, bestbp = 0, f; /* FIXME: good defaults? */
+    int32 bp, bestscore, bestbp, f;
     
     bestscore = WORST_SCORE;
     f = CurrentFrame-1;
@@ -2835,12 +2853,14 @@ int32 search_result (int32 *fr, char **res)
  * Return recognized word-id sequence; Note that the user cannot clobber it,
  * and must make a copy of it, if needed over the long term.
  */
-search_hyp_t *search_get_hyp (void)
+search_hyp_t *search_get_hyp ()
 {
     return (hyp);
 }
 
-char *search_get_wordlist (int *len, char sep_char)
+char *search_get_wordlist (len, sep_char)
+    int *len;
+    char sep_char;
 {
     dict_entry_t **dents = WordDict->dict_list;
     int32 dent_cnt = WordDict->dict_entry_count;
@@ -2869,8 +2889,7 @@ char *search_get_wordlist (int *len, char sep_char)
     return fwrdl;
 }
 
-void
-search_filtered_endpts (void)
+search_filtered_endpts ()
 {
     quit(-1, "%s(%d): search_filtered_endpts() not implemented\n", __FILE__,__LINE__);
 }
@@ -2886,14 +2905,13 @@ struct bptbl_entry_s {
     uint16 wid;
 } bptbl_entry;
 
-void
-search_dump_lattice (char const *file)
+search_dump_lattice (char *file)
 {
     int32 i;
     FILE *fp;
     
     if ((fp = fopen (file, "w")) == NULL) {
-	E_ERROR("%s(%d): fopen(%s,w) failed\n", __FILE__, __LINE__, file);
+	fprintf (stdout, "%s(%d): fopen(%s,w) failed\n", __FILE__, __LINE__, file);
 	return;
     }
     
@@ -2912,14 +2930,14 @@ search_dump_lattice (char const *file)
     fclose (fp);
 }
 
-void
-search_dump_lattice_ascii (char const *file)
+
+search_dump_lattice_ascii (char *file)
 {
     int32 i, sf;
     FILE *fp;
     
     if ((fp = fopen (file, "w")) == NULL) {
-	E_ERROR("%s(%d): fopen(%s,w) failed\n", __FILE__, __LINE__, file);
+	fprintf (stdout, "%s(%d): fopen(%s,w) failed\n", __FILE__, __LINE__, file);
 	return;
     }
     
@@ -2943,20 +2961,22 @@ search_dump_lattice_ascii (char const *file)
     fclose (fp);
 }
 
+
 #if SEARCH_TRACE_CHAN_DETAILED
 char *trace_wid;
 
-static void load_trace_wordlist (char const *file)
+static void load_trace_wordlist (file)
+    char *file;
 {
     FILE *fp;
     char wd[1000];
     int32 wid;
     
     trace_wid = (char *) CM_calloc (NumWords, sizeof(char));
-    E_INFO("%s(%d): Looking for file trace-wordlist file %s\n",
+    fprintf (stdout, "%s(%d): Looking for file trace-wordlist file %s\n",
 	     __FILE__, __LINE__, file);
     if ((fp = fopen (file, "r")) == NULL) {
-	E_ERROR("%s(%d): fopen(%s,r) failed\n", __FILE__, __LINE__, file);
+	fprintf (stdout, "%s(%d): fopen(%s,r) failed\n", __FILE__, __LINE__, file);
 	return;
     }
     while (fscanf (fp, "%s", wd) == 1) {
@@ -2966,8 +2986,7 @@ static void load_trace_wordlist (char const *file)
     fclose (fp);
 }
 
-void
-dump_traceword_chan (void)
+dump_traceword_chan ()
 {
     int32 w, len, i, j, k, cf;
     dict_entry_t *de;
@@ -3076,8 +3095,8 @@ static int32 *first_phone_rchan_map;	/* map 1st (left) diphone to root-chan inde
  * Allocate that part of the search channel tree structure that is independent of the
  * LM in use.
  */
-void
-init_search_tree (dictT *dict)
+init_search_tree (dict)
+    dictT *dict;
 {
     int32 w, mpx, max_ph0, i, s;
     dict_entry_t *de;
@@ -3088,11 +3107,12 @@ init_search_tree (dictT *dict)
     /* Find #single phone words, and #unique first diphones (#root channels) in dict. */
     max_ph0 = -1;
     n_1ph_words = 0;
-    mpx = dict->dict_list[0]->mpx;
     for (w = 0; w < NumMainDictWords; w++) {
 	de = dict->dict_list[w];
 	
-	if (de->mpx != mpx)
+	if (w == 0)
+	    mpx = de->mpx;
+	else if (de->mpx != mpx)
 	    quit(-1, "%s(%d): HMM tree words not all mpx or all non-mpx\n",
 		 __FILE__, __LINE__);
 	
@@ -3159,8 +3179,9 @@ init_search_tree (dictT *dict)
 /*
  * One-time initialization of internal channels in HMM tree.
  */
-static void
-init_nonroot_chan (CHAN_T *hmm, int32 ph, int32 ci)
+static init_nonroot_chan (hmm, ph, ci)
+    CHAN_T *hmm;
+    int32 ph, ci;
 {
     int32 s;
     
@@ -3186,18 +3207,20 @@ init_nonroot_chan (CHAN_T *hmm, int32 ph, int32 ci)
  * the search tree created for the previous utterance.  Meant for reconfiguring the
  * search tree to suit the currently active LM.
  */
-void
-create_search_tree (dictT *dict, int32 use_lm)
+create_search_tree (dict, use_lm)
+    dictT *dict;
+    int32 use_lm;
 {
     dict_entry_t *de;
-    CHAN_T *hmm;
+    CHAN_T *hmm, *prev_hmm;
     ROOT_CHAN_T *rhmm;
     int32 w, i, j, p, ph;
     
     if (use_lm)
-	E_INFO("%s(%d): Creating search tree\n", __FILE__, __LINE__);
+	fprintf (stdout, "%s(%d): Creating search tree\n", __FILE__, __LINE__);
     else
-	E_INFO("%s(%d): Estimating maximal search tree\n", __FILE__, __LINE__);
+	fprintf (stdout, "%s(%d): Estimating maximal search tree\n", __FILE__, __LINE__);
+    fflush (stdout);
     
     for (w = 0; w < NumMainDictWords; w++)
 	homophone_set[w] = -1;
@@ -3252,11 +3275,9 @@ create_search_tree (dictT *dict, int32 use_lm)
 		init_nonroot_chan (hmm, ph, de->ci_phone_ids[1]);
 		n_nonroot_chan++;
 	    } else {
-		CHAN_T *prev_hmm = NULL;
-
 		for (; hmm && (hmm->sseqid != ph); hmm = hmm->alt)
 		    prev_hmm = hmm;
-		if (! hmm) { /* thanks, rkm! */
+		if (! hmm) {
 		    prev_hmm->alt = hmm = (CHAN_T *) listelem_alloc (sizeof(CHAN_T));
 		    init_nonroot_chan (hmm, ph, de->ci_phone_ids[1]);
 		    n_nonroot_chan++;
@@ -3272,11 +3293,9 @@ create_search_tree (dictT *dict, int32 use_lm)
 		    init_nonroot_chan (hmm, ph, de->ci_phone_ids[p]);
 		    n_nonroot_chan++;
 		} else {
-		    CHAN_T * prev_hmm = NULL;
-
 		    for (hmm = hmm->next; hmm && (hmm->sseqid != ph); hmm = hmm->alt)
 			prev_hmm = hmm;
-		    if (! hmm) { /* thanks, rkm! */
+		    if (! hmm) {
 			prev_hmm->alt = hmm = (CHAN_T *) listelem_alloc (sizeof(CHAN_T));
 			init_nonroot_chan (hmm, ph, de->ci_phone_ids[p]);
 			n_nonroot_chan++;
@@ -3308,7 +3327,7 @@ create_search_tree (dictT *dict, int32 use_lm)
     if (max_nonroot_chan < n_nonroot_chan+1) {
 	/* Give some room for channels for new words added dynamically at run time */
 	max_nonroot_chan = n_nonroot_chan+128;
-	E_INFO ("%s(%d): max nonroot chan increased to %d\n",
+	printf ("%s(%d): max nonroot chan increased to %d\n",
 		__FILE__, __LINE__, max_nonroot_chan);
 	
 	/* Free old active channel list array if any and allocate new one */
@@ -3318,8 +3337,9 @@ create_search_tree (dictT *dict, int32 use_lm)
 	active_chan_list[1] = active_chan_list[0] + max_nonroot_chan;
     }
     
-    E_INFO("%s(%d):   %d root, %d non-root channels, %d single-phone words\n",
+    fprintf (stdout, "%s(%d):   %d root, %d non-root channels, %d single-phone words\n",
 	     __FILE__, __LINE__, n_root_chan, n_nonroot_chan, n_1ph_words);
+    fflush (stdout);
     
 #if 0
     printf ("%s(%d): Main Dictionary:\n", __FILE__, __LINE__);
@@ -3348,7 +3368,9 @@ create_search_tree (dictT *dict, int32 use_lm)
 
 #if 0
 int32 mid_stk[100];
-static dump_search_tree_root (dictT *dict, ROOT_CHAN_T *hmm)
+static dump_search_tree_root (dict, hmm)
+    dictT *dict;
+    ROOT_CHAN_T *hmm;
 {
     int32 i;
     CHAN_T *t;
@@ -3365,6 +3387,7 @@ static dump_search_tree_root (dictT *dict, ROOT_CHAN_T *hmm)
     for (t = hmm->next; t; t = t->alt)
 	printf (" %d", t->sseqid);
     printf ("\n");
+    fflush (stdout);
 
     mid_stk[0] = hmm->diphone;
     if (hmm->mpx)
@@ -3373,7 +3396,10 @@ static dump_search_tree_root (dictT *dict, ROOT_CHAN_T *hmm)
 	dump_search_tree (dict, t, 1);
 }
 
-static dump_search_tree (dictT *dict, CHAN_T *hmm, int32 level)
+static dump_search_tree (dict, hmm, level)
+    dictT *dict;
+    CHAN_T *hmm;
+    int32 level;
 {
     int32 i;
     CHAN_T *t;
@@ -3393,6 +3419,7 @@ static dump_search_tree (dictT *dict, CHAN_T *hmm, int32 level)
     for (t = hmm->next; t; t = t->alt)
 	printf (" %d", t->sseqid);
     printf ("\n");
+    fflush (stdout);
 
     mid_stk[level] = hmm->sseqid;
     for (t = hmm->next; t; t = t->alt)
@@ -3404,8 +3431,7 @@ static dump_search_tree (dictT *dict, CHAN_T *hmm, int32 level)
  * Delete search tree by freeing all interior channels within search tree and
  * restoring root channel state to the init state (i.e., just after init_search_tree()).
  */
-void
-delete_search_tree (void)
+delete_search_tree ()
 {
     int32 i;
     CHAN_T *hmm, *sibling;
@@ -3424,8 +3450,8 @@ delete_search_tree (void)
     }
 }
 
-void
-delete_search_subtree (CHAN_T *hmm)
+delete_search_subtree (hmm)
+    CHAN_T *hmm;
 {
     CHAN_T *child, *sibling;
     
@@ -3442,8 +3468,7 @@ delete_search_subtree (CHAN_T *hmm)
 /*
  * Switch search module to new LM.  NOTE: The LM module should have been switched first.
  */
-void
-search_set_current_lm (void)
+search_set_current_lm ()
 {
     lm_t *lm;
     
@@ -3458,7 +3483,6 @@ search_set_current_lm (void)
 /*
  * Compute acoustic and LM scores for each BPTable entry (segment).
  */
-void
 compute_seg_scores (double lwf)
 {
     int32 bp, start_score;
@@ -3514,7 +3538,7 @@ void search_set_hyp_total_score (int32 score)
     HypTotalScore = score;
 }
 
-int32 search_get_sil_penalty (void)
+int32 search_get_sil_penalty ()
 {
     return (SilenceWordPenalty);
 }
@@ -3554,7 +3578,8 @@ static int32 *expand_word_list = NULL;
 #define MIN_EF_WIDTH		4
 #define MAX_SF_WIN		25
 
-static void build_fwdflat_wordlist ( void )
+
+static int32 build_fwdflat_wordlist ( void )
 {
     int32 i, f, sf, ef, wid, nwd;
     BPTBL_T *bp;
@@ -3633,6 +3658,7 @@ static void build_fwdflat_wordlist ( void )
      */
 }
 
+
 void destroy_frm_wordlist ( void )
 {
     latnode_t *node, *tnode;
@@ -3649,7 +3675,7 @@ void destroy_frm_wordlist ( void )
     }
 }
 
-void
+
 build_fwdflat_chan ( void )
 {
     int32 i, s, wid, p;
@@ -3707,10 +3733,10 @@ build_fwdflat_chan ( void )
     }
 }
 
-void
+
 destroy_fwdflat_chan ( void )
 {
-    int32 i, wid; /*, p; */
+    int32 i, wid, p;
     dict_entry_t *de;
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm, *nexthmm;
@@ -3738,16 +3764,16 @@ destroy_fwdflat_chan ( void )
     }
 }
 
-void
+
 search_set_fwdflat_bw (double bw, double nwbw)
 {
     FwdflatLogBeamWidth = 8*LOG(bw);
     FwdflatLogWordBeamWidth = 8*LOG(nwbw);
-    E_INFO ("%s(%d): Flat-pass bw = %.1e (%d), nwbw = %.1e (%d)\n",
+    printf ("%s(%d): Flat-pass bw = %.1e (%d), nwbw = %.1e (%d)\n",
 	    __FILE__, __LINE__, bw, FwdflatLogBeamWidth, nwbw, FwdflatLogWordBeamWidth);
 }
 
-void
+
 search_fwdflat_start ( void )
 {
     int32 i, j, s;
@@ -3811,7 +3837,7 @@ search_fwdflat_start ( void )
     }
 }
 
-void
+
 search_fwdflat_frame (float *cep, float *dcep, float *dcep_80ms, float *pcep, float *ddcep)
 {
     int32 nf, i, j;
@@ -3825,14 +3851,15 @@ search_fwdflat_frame (float *cep, float *dcep, float *dcep_80ms, float *pcep, fl
     n_senone_active_utt += n_senone_active;
 
     if (CurrentFrame >= MAX_FRAMES-1)
-	return;
+	return 0;
     
     BPTableIdx[CurrentFrame] = BPIdx;
     
     /* Need to renormalize? */
     if ((BestScore + (2 * LogBeamWidth)) < WORST_SCORE) {
-	E_INFO("Renormalizing Scores at frame %d, best score %d\n",
+	fprintf (stdout, "Renormalizing Scores at frame %d, best score %d\n",
 		 CurrentFrame, BestScore);
+	fflush (stdout);
 	fwdflat_renormalize_scores (BestScore);
     }
     
@@ -3861,14 +3888,15 @@ search_fwdflat_frame (float *cep, float *dcep, float *dcep_80ms, float *pcep, fl
     /* This code terminates the loop by updating for the next pass */
     CurrentFrame = nf;
     if (CurrentFrame >= MAX_FRAMES-1) {
-	E_WARN ("%s(%d): MAX_FRAMES (%d) EXCEEDED; IGNORING REST OF UTTERANCE!!\n",
+	printf ("%s(%d): MAX_FRAMES (%d) EXCEEDED; IGNORING REST OF UTTERANCE!!\n",
 		__FILE__, __LINE__, MAX_FRAMES);
+	fflush (stdout);
     }
     
     lm_next_frame ();
 }
 
-void
+
 compute_fwdflat_senone_active ( void )
 {
     int32 i, cf, w, s, d;
@@ -3923,7 +3951,7 @@ compute_fwdflat_senone_active ( void )
     }
 }
 
-void
+
 fwdflat_eval_chan ( void )
 {
     int32 i, cf, w, bestscore;
@@ -3965,7 +3993,7 @@ fwdflat_eval_chan ( void )
     BestScoreTable[cf] = BestScore = bestscore;
 }
 
-void
+
 fwdflat_prune_chan ( void )
 {
     int32 i, cf, nf, w, s, pip, newscore, thresh, wordthresh;
@@ -4069,11 +4097,9 @@ fwdflat_prune_chan ( void )
     }
 }
 
-void
 fwdflat_word_transition ( void )
 {
-    int32 cf, nf, b, thresh, pip, i, w, s, newscore;
-    int32 best_silrc_score = 0, best_silrc_bp = 0; /* FIXME: good defaults? */
+    int32 cf, nf, b, thresh, pip, i, w, s, newscore, best_silrc_score, best_silrc_bp;
     BPTBL_T *bp;
     dict_entry_t *de, *newde;
     int32 *rcpermtab, *rcss;
@@ -4169,7 +4195,7 @@ fwdflat_word_transition ( void )
     }
 }
 
-void
+
 search_fwdflat_finish ( void )
 {
     destroy_fwdflat_chan ();
@@ -4183,22 +4209,24 @@ search_fwdflat_finish ( void )
     search_postprocess_bptable ((double) fwdflat_lw/fwdtree_lw, "FWDFLAT");
 
 #if SEARCH_PROFILE
-    E_INFO("%8d words recognized (%d/fr)\n",
+    fprintf (stdout, "%8d words recognized (%d/fr)\n",
 	     BPIdx, (BPIdx+(LastFrame>>1))/(LastFrame+1));
-    E_INFO("%8d senones evaluated (%d/fr)\n", n_senone_active_utt,
+    fprintf (stdout, "%8d senones evaluated (%d/fr)\n", n_senone_active_utt,
 	     (n_senone_active_utt + (LastFrame>>1))/(LastFrame+1));
-    E_INFO("%8d channels searched (%d/fr)\n",
+    fprintf (stdout, "%8d channels searched (%d/fr)\n",
 	     n_fwdflat_chan, n_fwdflat_chan/(LastFrame+1));
-    E_INFO("%8d words searched (%d/fr)\n",
+    fprintf (stdout, "%8d words searched (%d/fr)\n",
 	     n_fwdflat_words, n_fwdflat_words/(LastFrame+1));
-    E_INFO("%8d word transitions (%d/fr)\n",
+    fprintf (stdout, "%8d word transitions (%d/fr)\n",
 	    n_fwdflat_word_transition, n_fwdflat_word_transition/(LastFrame+1));
 
     lm3g_cache_stats_dump (stdout);
 #endif
 }
 
-static void fwdflat_renormalize_scores (int32 norm)
+
+static void fwdflat_renormalize_scores (norm)
+    int32 norm;
 {
     ROOT_CHAN_T *rhmm;
     CHAN_T *hmm;
@@ -4228,10 +4256,10 @@ static void fwdflat_renormalize_scores (int32 norm)
     renormalized = 1;
 }
 
-void
+
 get_expand_wordlist (int32 frm, int32 win)
 {
-    int32 f, sf, ef, nwd;
+    int32 i, f, sf, ef, nwd;
     latnode_t *node;
     
     if (! query_fwdtree_flag()) {
@@ -4261,7 +4289,7 @@ get_expand_wordlist (int32 frm, int32 win)
     n_fwdflat_word_transition += nwd;
 }
 
-void
+
 search_fwdflat_init ( void )
 {
     fwdflat_wordlist = (int32 *) CM_calloc (NumWords+1, sizeof(int32));
@@ -4269,14 +4297,21 @@ search_fwdflat_init ( void )
     expand_word_list = (int32 *) CM_calloc (NumWords+1, sizeof(int32));
     
 #if 0
-    E_INFO ("%s(%d): MIN_EF_WIDTH = %d, MAX_SF_WIN = %d\n",
+    printf ("%s(%d): MIN_EF_WIDTH = %d, MAX_SF_WIN = %d\n",
 	    __FILE__, __LINE__, MIN_EF_WIDTH, MAX_SF_WIN);
 #endif
 }
 
+
 /* ------------------ CODE FOR TOP SENONES BASED SEARCH PRUNING ----------------- */
 
 #define DUMP_PHN_TOPSEN_SCR	0
+
+#if DUMP_PHN_TOPSEN_SCR
+static int16 *pscr = NULL;
+static FILE *pscrfp = NULL;
+#endif
+
 
 static void compute_phone_perplexity( void )
 {
@@ -4317,10 +4352,11 @@ static void compute_phone_perplexity( void )
 	phone_perplexity[f] = 1.0;
 }
 
+
 static void topsen_init ( void )
 {
-    int32 p; /* ,s; */
-    char const *phn_name;
+    int32 s, p;
+    char *phn_name;
     
     npa = (int32 *) CM_calloc (NumCiPhones, sizeof(int32));
     npa_frm = (int32 **) CM_2dcalloc (topsen_window, NumCiPhones, sizeof(int32));
@@ -4338,9 +4374,10 @@ static void topsen_init ( void )
     }
 }
 
+
 static void compute_phone_active (int32 topsenscr, int32 npa_th)
 {
-    int32 *tmp, i, p, *newlist, thresh;
+    int32 *tmp, i, p, *newlist, n, thresh;
     uint16 *uttpscrp;
     
     thresh = topsenscr + npa_th;
@@ -4370,9 +4407,8 @@ static void compute_phone_active (int32 topsenscr, int32 npa_th)
 	    n_phn_in_topsen++;
     }
     
-    if (DUMP_PHN_TOPSEN_SCR) {
-	static int16 *pscr = NULL;
-	static FILE *pscrfp = NULL;
+#if DUMP_PHN_TOPSEN_SCR
+    {
 	char pscrfile[1024];
 	int32 scaled_scr;
 	
@@ -4398,12 +4434,15 @@ static void compute_phone_active (int32 topsenscr, int32 npa_th)
 	if (pscrfp)
 	    fwrite (pscr, sizeof(uint16), NumCiPhones, pscrfp);
     }
+#endif
 }
+
 
 uint16 **search_get_uttpscr ( void )
 {
     return utt_pscr;
 }
+
 
 typedef struct {
     int32 score;
@@ -4411,12 +4450,13 @@ typedef struct {
     int16 pred;
 } vithist_t;
 
+
 /* Min frames for each phone in allphone decoding */
 #define MIN_ALLPHONE_SEG	3
 #define PHONE_TRANS_PROB	0.0001
 
-int32
-search_uttpscr2phlat_print ( void )
+
+int32 search_uttpscr2phlat_print ( void )
 {
     int32 *pval;
     int32 f, i, p, nf, maxp, best, np;
@@ -4455,13 +4495,13 @@ search_uttpscr2phlat_print ( void )
 	for (i = 0; i < np; i++)
 	    printf (" %s", phone_from_id(pid[i]));
 	printf("\n");
+	fflush (stdout);
     }
     
     free (pval);
-    return 0;
 }
 
-#ifdef DUMP_VITHIST
+
 static void vithist_dump (FILE *fp, vithist_t **vithist, int32 *pid, int32 nfr, int32 n_state)
 {
     int32 i, j;
@@ -4477,7 +4517,6 @@ static void vithist_dump (FILE *fp, vithist_t **vithist, int32 *pid, int32 nfr, 
     }
     fflush (fp);
 }
-#endif /* DUMP_VITHIST */
 
 /*
  * Search a given CI-phone state-graph using utt_pscr scores for the best path.
@@ -4535,9 +4574,7 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
     /* Find proper final state to use */
     if (vithist[n_topsen_frm-1][final_state].pred < 0) {
 	E_ERROR("%s: search_pscr_path() didn't end in final state\n", uttproc_get_uttid());
-#ifdef DUMP_VITHIST
-	vithist_dump (stdout, vithist, pid, n_topsen_frm, n_state);
-#endif
+	/* vithist_dump (stdout, vithist, pid, n_topsen_frm, n_state); */
 	
 	bestscore = (int32)0x80000000;
 	bestp = -1;
@@ -4586,7 +4623,8 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
     return head;
 }
 
-static void print_pscr_path (FILE *fp, search_hyp_t *hyp, char const *caption)
+
+static void print_pscr_path (FILE *fp, search_hyp_t *hyp, char *caption)
 {
     search_hyp_t *h;
     int32 pathscore, nf;
@@ -4611,6 +4649,7 @@ static void print_pscr_path (FILE *fp, search_hyp_t *hyp, char const *caption)
     fprintf (fp, "\n");
     fflush (fp);
 }
+
 
 search_hyp_t *search_uttpscr2allphone ( void )
 {
@@ -4657,6 +4696,7 @@ search_hyp_t *search_uttpscr2allphone ( void )
 
     return allp;
 }
+
 
 static search_hyp_t *fwdtree_pscr_path ( void )
 {
@@ -4716,6 +4756,7 @@ static search_hyp_t *fwdtree_pscr_path ( void )
     return hyp;
 }
 
+
 /*
  * Search bptable for word wid and return its BPTable index.
  * Start search from the given frame frm.
@@ -4732,6 +4773,7 @@ int32 search_bptbl_wordlist (int32 wid, int32 frm)
     }
     return -1;
 }
+
 
 int32 search_bptbl_pred (int32 b)
 {

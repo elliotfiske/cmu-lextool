@@ -18,7 +18,12 @@
 #    prior written permission. To obtain permission, contact 
 #    sphinx@cs.cmu.edu.
 #
-# 4. Redistributions of any form whatsoever must retain the following
+# 4. Products derived from this software may not be called "Sphinx"
+#    nor may "Sphinx" appear in their names without prior written
+#    permission of Carnegie Mellon University. To obtain permission,
+#    contact sphinx@cs.cmu.edu.
+#
+# 5. Redistributions of any form whatsoever must retain the following
 #    acknowledgment:
 #    "This product includes software developed by Carnegie
 #    Mellon University (http://www.speech.cs.cmu.edu/)."
@@ -44,14 +49,10 @@ TOP=../..
 DIRNAME=scripts_pl/04.cd_schmm_untied
 BUILD_DIRS = 
 ALL_DIRS=
-PERLSCRIPTS = baum_welch.pl \
+FILES = Makefile baum_welch.pl initialize_with_ci.pl make_tied_untied_mdef.pl \
         makeuntiedmixw.pl norm.pl norm_and_launchbw.pl slave_convg.pl
-SCRIPTS = $(PERLSCRIPTS:%=$(SCRIPTDIR)/$(DIRNAME)/%)
-FILES = Makefile $(PERLSCRIPTS)
 
-ALL = $(SCRIPTS)
-
-LOCAL_CLEAN = $(SCRIPTS)
+ALL = 
 
 include $(TOP)/config/common_make_rules
 

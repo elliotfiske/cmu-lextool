@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1995-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * Package for checking and catching common errors, printing out
  * errors nicely, etc.
@@ -54,40 +66,30 @@
 #else
 #include <errno.h>
 #endif
-
-#include "s2types.h"
-#include "err.h"
-
-extern int32 verbosity_level;
+#include <err.h>
 
 void
-_E__pr_header(char const *f, long ln, char const *msg)
+_E__pr_header(const char *f, long ln, const char *msg)
 {
-    if (verbosity_level < 1)
-	    return;
-
     (void) fflush(stdout);
     (void) fprintf(stderr, "%s: \"%s\", line %ld: ", msg, f, ln);
 }
 
 void
-_E__pr_info_header(char const *f, long ln, char const *msg)
+_E__pr_info_header(f, ln, msg)
+char *f, *msg;
+long ln;
 {
-    if (verbosity_level < 2)
-	    return;
-
     (void) fflush(stdout);
+
     /* make different format so as not to be parsed by emacs compile */
     (void) fprintf(stderr, "%s: %s(%ld): ", msg, f, ln);
 }
 
 void
-_E__pr_warn( char const *fmt, ... ) 
+_E__pr_warn( char *fmt, ... ) 
 {
     va_list pvar;
-
-    if (verbosity_level < 1)
-	    return;
 
     va_start(pvar, fmt);
     (void) vfprintf(stderr, fmt, pvar);
@@ -97,12 +99,9 @@ _E__pr_warn( char const *fmt, ... )
 }
 
 void
-_E__pr_info( char const *fmt, ... ) 
+_E__pr_info( char *fmt, ... ) 
 {
     va_list pvar;
-
-    if (verbosity_level < 2)
-	    return;
 
     va_start(pvar, fmt);
     (void) vfprintf(stderr, fmt, pvar);
@@ -111,7 +110,7 @@ _E__pr_info( char const *fmt, ... )
     (void) fflush(stderr);
 }
 
-void _E__die_error( char const *fmt, ... ) 
+void _E__die_error( char *fmt, ... ) 
 {
     va_list pvar;
 
@@ -127,7 +126,7 @@ void _E__die_error( char const *fmt, ... )
     exit (-1);
 }
 
-void _E__fatal_sys_error( char const *fmt, ... ) 
+void _E__fatal_sys_error( char *fmt, ... ) 
 {
     va_list pvar;
 
@@ -145,7 +144,7 @@ void _E__fatal_sys_error( char const *fmt, ... )
     exit(errno);
 }
 
-void _E__sys_error( char const *fmt, ... ) 
+void _E__sys_error( char *fmt, ... ) 
 {
     va_list pvar;
 
@@ -161,7 +160,7 @@ void _E__sys_error( char const *fmt, ... )
     (void) fflush(stderr);
 }
 
-void _E__abort_error( char const *fmt, ... ) 
+void _E__abort_error( char *fmt, ... ) 
 {
     va_list pvar;
 
@@ -177,8 +176,8 @@ void _E__abort_error( char const *fmt, ... )
 #ifdef TEST
 main()
 {
-    char const *two = "two";
-    char const *three = "three";
+    char *two = "two";
+    char *three = "three";
     FILE *fp;
 
     E_WARN("this is a simple test\n");

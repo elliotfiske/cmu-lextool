@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * feat.c -- Feature vector description and cepstra->feature computation.
  *
@@ -45,13 +10,6 @@
  * 
  * HISTORY
  * 
- * 20.Apr.2001  RAH (rhoughton@mediasite.com, ricky.houghton@cs.cmu.edu)
- *              Adding feat_free() to free allocated memory
- *
- * 02-Jan-2001	Rita Singh (rsingh@cs.cmu.edu) at Carnegie Mellon University
- *		Modified feat_s2mfc2feat_block() to handle empty buffers at
- *		the end of an utterance
- *
  * 30-Dec-2000	Rita Singh (rsingh@cs.cmu.edu) at Carnegie Mellon University
  *		Added feat_s2mfc2feat_block() to allow feature computation
  *		from sequences of blocks of cepstral vectors
@@ -100,6 +58,7 @@
 #include "cmn.h"
 #include "agc.h"
 #include "s3types.h"
+
 
 #if (! WIN32)
 #include <sys/file.h>
@@ -245,7 +204,7 @@ int32 feat_writefile (feat_t *fcb, char *file, float32 ***feat, int32 nfr)
     }
     
     /* Feature data is assumed to be in a single block, starting at feat[0][0][0] */
-    if ((int32) fwrite (feat[0][0], sizeof(float32), nfr*k, fp) != nfr*k) {
+    if (fwrite (feat[0][0], sizeof(float32), nfr*k, fp) != (uint32)nfr*k) {
 	E_ERROR("%s: fwrite(%dx%d feature data) failed\n", file, nfr, k);
 	fclose (fp);
 	return -1;
@@ -294,11 +253,11 @@ int32 feat_s2mfc_read (char *file, int32 sf, int32 ef, float32 **mfc, int32 maxf
     
     /* Check if n_float32 matches file size */
     byterev = FALSE;
-    if ((int32) (n_float32*sizeof(float32) + 4) !=  (int32) statbuf.st_size) { /* RAH, typecast both sides to remove compile warning */
+    if ((n_float32*sizeof(float32) + 4) != (uint32)statbuf.st_size) {
 	n = n_float32;
 	SWAP_INT32(&n);
 
-	if ((int32) (n*sizeof(float32) + 4) != (int32) (statbuf.st_size)) { /* RAH, typecast both sides to remove compile warning */
+	if ((n*sizeof(float32) + 4) != (uint32)statbuf.st_size) {
 	    E_ERROR("%s: Header size field: %d(%08x); filesize: %d(%08x)\n",
 		    file, n_float32, n_float32, statbuf.st_size, statbuf.st_size);
 	    fclose (fp);
@@ -832,34 +791,20 @@ int32 feat_s2mfc2feat (feat_t *fcb, char *file, char *dir, int32 sf, int32 ef, f
  * and end-of-utterance flags to be set to indicate the beginning of
  * a new utterance or the end of an utterance in order to function
  * properly
- * The cyclic buffer of size 256 was controlled by using an unsigned
- * char. Replaced it so that the pointers into the buffer cycle, according
- * to the variable LIVEBUFBLOCKSIZE. This was, if one day we decide
- * to change this variable from 256 to something else, the cyclic buffer
- * will still work.  (ebg)
  */
 int32	feat_s2mfc2feat_block(feat_t *fcb, float32 **uttcep, int32 nfr,
 			      int32 beginutt, int32 endutt, float32 ***ofeat)
 {
     static float32 **feat=NULL;
     static float32 **cepbuf=NULL;
-    /*    static int32 nfr_allocated = 0; */ /* Variable never used. - EBG */
-    /*    static unsigned char   bufpos, curpos;   */
-    /*    static unsigned char  jp1, jp2, jp3, jf1, jf2, jf3;	   */
-    static int32   bufpos; /*  RAH 4.15.01 upgraded unsigned char variables to int32*/
-    static int32   curpos; /*  RAH 4.15.01 upgraded unsigned char variables to int32*/
-    static int32  jp1, jp2, jp3, jf1, jf2, jf3; /* RAH 4.15.01 upgraded unsigned char variables to int32 */
+    static unsigned char   bufpos, curpos;
+    static unsigned char  jp1, jp2, jp3, jf1, jf2, jf3;
     int32  win, cepsize; 
     int32  i, j, nfeatvec, residualvecs;
 
     float32 *w, *_w, *f;
     float32 *w1, *w_1, *_w1, *_w_1;
     float32 d1, d2;
-
-    /* If this assert fails, you're risking overwriting elements
-     * in the buffer. -EBG */
-    assert(nfr < LIVEBUFBLOCKSIZE);
-    win = feat_window_size(fcb);
 
     if (fcb->cepsize <= 0) 
 	E_FATAL("Bad cepsize: %d\n", fcb->cepsize);
@@ -868,18 +813,14 @@ int32	feat_s2mfc2feat_block(feat_t *fcb, float32 **uttcep, int32 nfr,
 	feat = (float32 **)ckd_calloc_2d(LIVEBUFBLOCKSIZE,
 					 feat_stream_len(fcb,0),
 					 sizeof(float32));
-    if (cepbuf == NULL){
+    if (cepbuf==NULL){
 	cepbuf = (float32 **)ckd_calloc_2d(LIVEBUFBLOCKSIZE,
 					 cepsize,
 					 sizeof(float32));
 	beginutt = 1; /* If no buffer was present we are beginning an utt */
-    if (! feat)
-      E_FATAL("Unable to allocate feat ckd_calloc_2d(%ld,%d,%d)\n",LIVEBUFBLOCKSIZE,feat_stream_len(fcb,0),sizeof(float32));
-    if (! cepbuf)
-      E_FATAL("Unable to allocate cepbuf ckd_calloc_2d(%ld,%d,%d)\n",LIVEBUFBLOCKSIZE,cepsize,sizeof(float32));
 	E_INFO("Feature buffers initialized to %d vectors\n",LIVEBUFBLOCKSIZE);
     }
-
+    win = feat_window_size(fcb);
 
     if (fcb->cmn) /* Only cmn_prior in block computation mode */
 	cmn_prior (uttcep, fcb->varnorm, nfr, fcb->cepsize, endutt);
@@ -889,50 +830,25 @@ int32	feat_s2mfc2feat_block(feat_t *fcb, float32 **uttcep, int32 nfr,
 	/* Replicate first frame into the first win frames */
 	for (i=0;i<win;i++) 
 	   memcpy(cepbuf[i],uttcep[0],cepsize*sizeof(float32));
-	/* beginutt = 0; */  /* Removed by Rita Singh around 02-Jan-2001 */
-                             /* See History at the top of this file */
+	beginutt = 0;
 	bufpos = win;
-	bufpos %= LIVEBUFBLOCKSIZE;
         curpos = bufpos;
         jp1 = curpos - 1;
-	jp1 %= LIVEBUFBLOCKSIZE;
         jp2 = curpos - 2;
-	jp2 %= LIVEBUFBLOCKSIZE;
         jp3 = curpos - 3;
-	jp3 %= LIVEBUFBLOCKSIZE;
         jf1 = curpos + 1;
-	jf1 %= LIVEBUFBLOCKSIZE;
         jf2 = curpos + 2;
-	jf2 %= LIVEBUFBLOCKSIZE;
         jf3 = curpos + 3;
-	jf3 %= LIVEBUFBLOCKSIZE;
 	residualvecs -= win;
     }
 
     for (i=0;i<nfr;i++){
-      assert(bufpos < LIVEBUFBLOCKSIZE);
 	memcpy(cepbuf[bufpos++],uttcep[i],cepsize*sizeof(float32));
-	bufpos %= LIVEBUFBLOCKSIZE;
     }
-
     if (endutt){
 	/* Replicate last frame into the last win frames */
-	if (nfr > 0) {
-	  for (i=0;i<win;i++) {
-	    assert(bufpos < LIVEBUFBLOCKSIZE);
+	for (i=0;i<win;i++) 
 	   memcpy(cepbuf[bufpos++],uttcep[nfr-1],cepsize*sizeof(float32));
-	   bufpos %= LIVEBUFBLOCKSIZE;
-	  }
-        }
-	else {
-	    int16 tpos = bufpos-1;
-	    tpos %= LIVEBUFBLOCKSIZE;
-	    for (i=0;i<win;i++) {
-	      assert(bufpos < LIVEBUFBLOCKSIZE);
-	        memcpy(cepbuf[bufpos++],cepbuf[tpos],cepsize*sizeof(float32));
-		bufpos %= LIVEBUFBLOCKSIZE;
-	    }
-	}
         residualvecs += win;
     }
 
@@ -981,30 +897,8 @@ int32	feat_s2mfc2feat_block(feat_t *fcb, float32 **uttcep, int32 nfr,
 	jf1++; jf2++; jf3++;
 	jp1++; jp2++; jp3++;
 	curpos++;
-	jf1 %= LIVEBUFBLOCKSIZE;
-	jf2 %= LIVEBUFBLOCKSIZE;
-	jf3 %= LIVEBUFBLOCKSIZE;
-	jp1 %= LIVEBUFBLOCKSIZE;
-	jp2 %= LIVEBUFBLOCKSIZE;
-	jp3 %= LIVEBUFBLOCKSIZE;
-	curpos %= LIVEBUFBLOCKSIZE;
     }
     *ofeat = feat;
 
     return(nfeatvec);
-}
-
-/*
- * RAH, remove memory allocated by feat_init
- * What is going on? feat_vector_alloc doesn't appear to be called
- */
-void feat_free (feat_t *f)
-{
-  if (f) {
-    //    if (f->stream_len)
-      //      ckd_free ((void *) f->stream_len);
-
-    //    ckd_free ((void *) f);
-  }
-
 }

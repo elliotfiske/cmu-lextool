@@ -1,38 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /************************************************
  * CMU ARPA Speech Project
  *
@@ -61,10 +26,8 @@
  * 		Started.
  */
 
-#ifdef WIN32
-#include <direct.h>		/* RAH, added */
-#endif
 
+/* #include <direct.h>*/
 #include "kb.h"
 #include "corpus.h"
 #include "utt.h"
@@ -135,7 +98,7 @@ void utt_end (kb_t *kb)
     dict_t *dict;
     int32 i;
     
-    fp = stderr;
+    fp = stdout;
     dict = kbcore_dict (kb->kbcore);
     
     if ((id = vithist_utt_end (kb->vithist, kb->kbcore)) >= 0) {
@@ -267,9 +230,9 @@ void utt_end (kb_t *kb)
     
     ptmr_reset (&(kb->tm_sen));
     ptmr_reset (&(kb->tm_srch));
-
-#if (!defined(WIN32) && !defined(sparc))    
-    system ("ps aguxwww | grep /live | grep -v grep");
+    
+#ifndef WIN32    
+    system ("ps aguxwww | grep dec");
 #endif
     
     for (i = 0; i < kb->n_lextree; i++) {
@@ -344,7 +307,7 @@ void utt_word_trans (kb_t *kb, int32 cf)
   /* Transition to unigram lextrees */
   for (p = 0; p < n_ci; p++) {
     if (bv[p] >= 0)
-      lextree_enter (kb->ugtree[k], (s3cipid_t) p, cf, bs[p], bv[p], th); /* RAH, typecast p to (s3cipid_t) to make compiler happy */
+      lextree_enter (kb->ugtree[k], (s3cipid_t)p, cf, bs[p], bv[p], th);
   }
   
   /* Transition to filler lextrees */

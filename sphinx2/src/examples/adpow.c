@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * adpow.c -- Compute the input A/D signal power.
  * 
@@ -45,13 +57,14 @@
  * 		Created.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#include "s2types.h"
-#include "ad.h"
-#include "err.h"
+#include <ad.h>
+#include <err.h>
+
 
 /*
  * Compute power in input signal for about 2 sec
@@ -64,7 +77,7 @@ static void adpow (ad_rec_t *ad)
     
     en = 0.0;
     prev = 0;
-
+    
     for (len = 0; len < 32000; ) {	/* len = #samples gathered */
 	if ((k = ad_read (ad, buf, 1000)) < 0)
 	    E_FATAL("ad_read returned %d\n", k);
@@ -82,16 +95,14 @@ static void adpow (ad_rec_t *ad)
     
     if (p < 1.0)
 	p = 1.0;
-    printf("log(Power) = %.2f dB\n", 10.0 * log10(p)); 
-    fflush(stdout);
-    /*     E_INFO("log(Power) = %.2f dB\n", 10.0 * log10(p)); */
+    E_INFO("log(Power) = %.2f dB\n", 10.0 * log10(p));
 }
+
 
 /*
  * Wait for the user to type a <CR> then capture input audio for approx. 2 sec
  * and compute a measure of its power.
  */
-int
 main (int32 argc, char *argv[])
 {
     char line[1024];
@@ -120,6 +131,4 @@ main (int32 argc, char *argv[])
     }
 
     ad_close (ad);
-    return 0;
 }
-

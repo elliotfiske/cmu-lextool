@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1990-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -59,54 +70,61 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <errno.h>
 
-#ifdef WIN32
+#include <s2types.h>
+
+#if (WIN32)
 #include <posixwin32.h>
 #else
-#include <fcntl.h>
-#include <unistd.h>
+#include <sys/fcntl.h>
 #endif
 
-#ifdef WIN32
-#include <io.h>
-#include <fcntl.h>
-#else
+extern char *salloc();
+
+extern off_t lseek();
+
+extern char *getenv();
+
+/* declaration for functions in libcs.a */
+extern FILE *fopenp();
+extern char *getname();
+extern char *nxtarg();
+
+#if (! WIN32)
 #include <sys/file.h>
 #include <sys/errno.h>
 #include <sys/param.h>
+#else
+#include <fcntl.h>
 #endif
 #include <stdlib.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "s2types.h"
-#include "strfuncs.h"
-#include "cepio.h"
-#include "err.h"
-
 #ifndef ESUCCESS
 #define ESUCCESS 0
 #endif
+extern int32 errno;
 
 #define SWABL(x) (((x << 24) & 0xFF000000) | ((x <<  8) & 0x00FF0000) | \
 	          ((x >>  8) & 0x0000FF00) | ((x >> 24) & 0x000000FF))
 
-int32 cep_read_bin (float32 **buf, int32 *len, char const *file)
+
+int32 cep_read_bin (float32 **buf, int32 *len, char *file)
 {
   int32 fd, floatCount, floatBytes, readBytes;
   int32 byteReverse = FALSE;
   struct stat st_buf;
 
-#ifdef WIN32
-  fd = open(file, O_RDONLY|O_BINARY, 0644);
-#else
+#if (! WIN32)
   fd = open(file, O_RDONLY, 0644);
+#else
+  fd = open(file, O_RDONLY|O_BINARY, 0644);
 #endif
 
   if (fd < 0) {
-    E_ERROR("%s(%d): Couldn't open %s\n",
+    fprintf(stderr, "%s(%d): Couldn't open %s\n",
 	    __FILE__, __LINE__, file);
     return errno;
   }
@@ -114,20 +132,17 @@ int32 cep_read_bin (float32 **buf, int32 *len, char const *file)
   /* assume float count file */
   if (read(fd, (char *)&floatCount, sizeof(int32)) != sizeof(int32))
     return errno;
-
+  /*
+   * Check if this is a byte reversed file !
+   */
   if (fstat (fd, &st_buf) < 0) {
     perror("cep_read_bin: fstat failed");
     return errno;
   }
 
-  /*  printf("Float count: %d st_buf.st_size: %d \n", floatCount, st_buf.st_size); */
-
-  /*
-   * Check if this is a byte reversed file !
-   */
   if ((floatCount+4 != st_buf.st_size) &&
       ((floatCount * sizeof(float32) + 4) != st_buf.st_size)) {
-	E_INFO("%s(%d): Byte reversing %s\n", __FILE__, __LINE__, file);
+	printf("%s(%d): Byte reversing %s\n", __FILE__, __LINE__, file);
 	byteReverse = TRUE;
 	floatCount = SWABL (floatCount);
   }
@@ -162,18 +177,18 @@ int32 cep_read_bin (float32 **buf, int32 *len, char const *file)
   return ESUCCESS;
 }  
 
-int32 cep_write_bin(char const *file, float32 *buf, int32 len)
+int32 cep_write_bin(char *file, float32 *buf, int32 len)
 {
-  int32 fd;
+  int32 fd, bytes;
 
-#ifdef WIN32
- fd = open(file, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644);
-#else
+#if (! WIN32)
   fd = open(file, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+#else
+  fd = open(file, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644);
 #endif
 
   if (fd < 0) {
-    E_ERROR("%s(%d): Couldn't open %s for writing\n",
+    fprintf(stderr, "%s(%d): Couldn't open %s for writing\n",
 	    __FILE__, __LINE__, file);
     return errno;
   }

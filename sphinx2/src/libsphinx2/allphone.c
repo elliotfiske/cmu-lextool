@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1995-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * allphone.c -- All CI phone decoding.
  *
@@ -55,27 +67,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "search_const.h"
-#include "linklist.h"
-#include "list.h"
-#include "hash.h"
-#include "phone.h"
-#include "err.h"
-#include "log.h"
-#include "scvq.h"
-#include "msd.h"
-#include "dict.h"
-#include "hmm_tied_r.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "kb.h"
-#include "fbs.h"
-#include "search.h"
+#include <CM_macros.h>
+#include <err.h>
+#include <log.h>
+#include <scvq.h>
+#include <msd.h>
+#include <fbs.h>
+
 
 static SMD *Models;		/* static model types */
 static int32 *senscr;
@@ -102,6 +101,11 @@ static search_hyp_t *allp_seghyp = NULL, *allp_seghyp_tail;
 
 extern int32 *senone_active;
 extern int32 n_senone_active;
+extern int32 *search_get_dist_scores();
+extern SMD *kb_get_models();
+extern char *phone_from_id();
+extern char *uttproc_get_uttid();
+
 
 static void allphone_start_utt ( void )
 {
@@ -110,18 +114,12 @@ static void allphone_start_utt ( void )
     for (p = 0; p < n_ciphone; p++)
 	ci_chan[p].active = -1;
 
-#if 0 /* note that SILb isn't in the current 4k models --kal */
     p = phone_to_id ("SILb", TRUE);
     if (p < 0) {
-      p = phone_to_id ("SIL", TRUE);
-      if (p < 0)
-	E_FATAL("SILb/SIL not found\n");
+	p = phone_to_id ("SIL", TRUE);
+	if (p < 0)
+	    E_FATAL("SILb/SIL not found\n");
     }
-#else
-    p = phone_to_id ("SIL", TRUE);
-    if (p < 0)
-      E_FATAL("SILb/SIL not found\n");
-#endif
     
     ci_chan[p].score[0] = 0;
     for (s = 1; s < HMM_LAST_STATE; s++)
@@ -131,6 +129,7 @@ static void allphone_start_utt ( void )
 
     n_bp = 0;
 }
+
 
 static void allphone_senone_active ( void )
 {
@@ -144,6 +143,7 @@ static void allphone_senone_active ( void )
     }
     n_senone_active = n;
 }
+
 
 static int32 allphone_eval_ci_chan (int32 f)
 {
@@ -163,6 +163,7 @@ static int32 allphone_eval_ci_chan (int32 f)
     return (bestscr);
 }
 
+
 static void allphone_bp_entry (int32 f, int32 p)
 {
     if (n_bp == ALLPHONE_BP_MAX-2)
@@ -176,6 +177,7 @@ static void allphone_bp_entry (int32 f, int32 p)
     allphone_bp[n_bp].bp = ci_chan[p].path[HMM_LAST_STATE];
     n_bp++;
 }
+
 
 static void allphone_chan_prune (int32 f, int32 bestscr)
 {
@@ -197,6 +199,7 @@ static void allphone_chan_prune (int32 f, int32 bestscr)
     }
 }
 
+
 static void allphone_chan_trans (int32 f, int32 bp)
 {
     int32 p, scr, s;
@@ -214,6 +217,7 @@ static void allphone_chan_trans (int32 f, int32 bp)
     }
 }
 
+
 static void allphone_renorm (int32 f, int32 bestscr)
 {
     int32 p, s;
@@ -228,6 +232,7 @@ static void allphone_renorm (int32 f, int32 bestscr)
 
     renorm_scr[f] = bestscr;
 }
+
 
 static void allphone_backtrace (int32 bp)
 {
@@ -271,6 +276,7 @@ static void allphone_backtrace (int32 bp)
     }
 }
 
+
 static void allphone_result ( void )
 {
     int32 i, b, f, sile, bestbp;
@@ -302,6 +308,7 @@ static void allphone_result ( void )
     
     allphone_backtrace (bestbp);
 }
+
 
 search_hyp_t *allphone_utt (int32 nfr,
 			    float *cep,
@@ -354,7 +361,7 @@ search_hyp_t *allphone_utt (int32 nfr,
     return allp_seghyp;
 }
 
-void
+
 allphone_init (double bw, double exitbw, double pip)
 {
     int32 i;

@@ -1,32 +1,20 @@
-/*
- * Copyright 1999-2002 Carnegie Mellon University.  
- * Portions Copyright 2002 Sun Microsystems, Inc.  
- * Portions Copyright 2002 Mitsubishi Electronic Research Laboratories.
- * All Rights Reserved.  Use is subject to license terms.
+/**
+ * Copyright 2001 Sun Microsystems, Inc.
  * 
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL 
  * WARRANTIES.
- *
  */
-
 package edu.cmu.sphinx.util;
 
 import java.text.DecimalFormat;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 /**
- * Keeps track of execution times. This class provides methods that
- * can be used for timing processes. The process to be timed should be
- * bracketed by calls to timer.start() and timer.stop().  Repeated
- * operations can be timed more than once. The timer will report the
- * minimum, maximum, average and last time executed for all start/stop
- * pairs when the timer.dump is called.
- *
- * Timers can be organized into groups called contexts. Timers in the
- * same context can be dumped together.
+ * Keeps track of execution times.
  */
 public class Timer {
     private final static DecimalFormat timeFormatter 
@@ -126,7 +114,6 @@ public class Timer {
      * Creates a timer.
      *
      * @param name the name of the timer
-     * @param context the context that the timer is in.
      */
     private Timer(String name, String context) {
          this.name = name;
@@ -181,10 +168,8 @@ public class Timer {
      *
      * @param verbose if <code>true</code>, print out details from
      * 	this run; otherwise, don't print the details
-     *
-     * @return the duration since start in milliseconds
      */
-    public long stop(boolean verbose) {
+    public void stop(boolean verbose) {
 	if (startTime == 0L) {
 	    notReliable = true;		// stop called, but start never called
 	}
@@ -201,7 +186,6 @@ public class Timer {
 	if (verbose) {
 	    dump();
 	}
-	return curTime;
     }
 
     /**
@@ -216,56 +200,6 @@ public class Timer {
      */
     public void dump() {
 	showTimesShort();
-    }
-
-
-    /**
-     * Gets the count of starts for this timer
-     *
-     * @return the count 
-     */
-    public long getCount() {
-	return count;
-    }
-
-
-    /**
-     * Returns the latest time gathered
-     *
-     * @return the time in milliseconds
-     */
-    public long getCurTime() {
-	return curTime;
-    }
-
-    /**
-     * Gets the average time for this timer in milliseconds
-     *
-     * @return the average time
-     */
-    public double getAverageTime() {
-	if (count == 0) {
-	    return 0.0;
-	}
-	return sum/count;
-    }
-
-    /**
-     * Gets the min time for this timer in milliseconds
-     *
-     * @return the min time
-     */
-    public long getMinTime() {
-	return minTime;
-    }
-
-    /**
-     * Gets the max time for this timer in milliseconds
-     *
-     * @return the max time in milliseconds
-     */
-    public long getMaxTime() {
-	return maxTime;
     }
 
     /**
@@ -302,7 +236,7 @@ public class Timer {
              "----------------------------------------------------------- ";
         System.out.println(Utilities.pad(titleBar, 78));
 	System.out.print(Utilities.pad("# Name", 15) + " ");
-	System.out.print(Utilities.pad("Count", 8));
+	System.out.print(Utilities.pad("Count", 6));
 	System.out.print(Utilities.pad("CurTime", 10));
 	System.out.print(Utilities.pad("MinTime", 10));
 	System.out.print(Utilities.pad("MaxTime", 10));
@@ -311,7 +245,7 @@ public class Timer {
 	System.out.println();
     }
     /**
-     * Shows brief timing stats. 
+     * Shows brief timing stats. If 
      *
      */
     private void showTimesShort() {
@@ -331,7 +265,7 @@ public class Timer {
 	    System.out.println("Not reliable.");
 	} else {
 	    System.out.print(Utilities.pad(name, 15) + " ");
-	    System.out.print(Utilities.pad("" + count, 8));
+	    System.out.print(Utilities.pad("" + count, 6));
 	    System.out.print(fmtTime(curTime));
 	    System.out.print(fmtTime(minTime));
 	    System.out.print(fmtTime(maxTime));
@@ -342,11 +276,6 @@ public class Timer {
     }
 
 
-    /**
-     * a simple set of tests for the Timer clas
-     e
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
 	System.out.println("Dump empty set");
 	Timer.dumpAll();
@@ -411,11 +340,6 @@ public class Timer {
 	Timer.dumpAll("garbage");
     }
 
-    /**
-     * Sleep for a while, while silently ignoring interrupts
-     *
-     * @param delay the time to sleep in milliseconds
-     */
     static void sleep(long delay) {
 	try {
 	    Thread.sleep(delay);

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1991-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  *
  * HISTORY
@@ -65,19 +77,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <limits.h>
+#include <log.h>
+#include "sc_vq_internal.h"
 
-#ifdef WIN32
+#if (WIN32)
 #include <windows.h>
 #include <time.h>
 #endif
-
-#include "s2types.h"
-#include "log.h"
-#include "logmsg.h"
-#include "scvq.h"
-#include "sc_vq_internal.h"
-#include "err.h"
 
 #if FAST8B
 #include "log_add.h"
@@ -86,6 +92,7 @@
 #define QUIT(x)		{fflush(stdout); fprintf x; exit(-1);}
 
 #define RPCC(x) asm ("rpcc %t0;" "stq %t0,(%0)",&x)
+
 
 static int32   detArr[NUM_FEATURES*NUM_ALPHABET];	/* storage for det vectors */
 static int32   *dets[NUM_FEATURES];	/* det values foreach feature */
@@ -100,7 +107,7 @@ static int32 *scrPass = NULL;
 static double dcep80msWeight = 1.0;
 
 static int32 use20ms_diff_pow = FALSE;
-/* static int32 useMeanNormalization = FALSE; */
+static int32 useMeanNormalization = FALSE;
 
 static int32 num_frames = 0;
 
@@ -109,7 +116,7 @@ static vqFeature_t ldfrm[MAX_TOPN];
 static vqFeature_t lxfrm[MAX_TOPN];
 static vqFeature_t vtmp;
 
-#ifdef WIN32
+#if (WIN32)
 static HANDLE pid;
 static FILETIME t_create, t_exit, kst, ket, ust, uet;
 static double vq_time;
@@ -117,10 +124,11 @@ static double scr_time;
 extern double win32_cputime();
 #endif
 
+
 static void cepDist0(vqFeature_t *topn, float *z)
 {
     register int32	i, j, cw;
-    vqFeature_t		*worst, *best = topn, *cur; /*, *src; */
+    vqFeature_t		*worst, *best = topn, *cur, *src;
     double		diff, d;
     float		*obs;
     float		*mean;
@@ -325,13 +333,13 @@ static void cepDist3(vqFeature_t *topn, float *z)
 static void dcepDist0(vqFeature_t *topn, float *dzs, float *dzl)
 {
     register int32	i, j, cw;
-    vqFeature_t		*worst, *best = topn, *cur; /* , *src; */
+    vqFeature_t		*worst, *best = topn, *cur, *src;
     double		diff, d;
     float		*obs1, *obs2;
     float		*mean;
     float		*var;
     int32			*det  =  dets[(int32)DCEP_FEAT], *detP;
-    int32			*detE = det + NUM_ALPHABET; /*, tmp; */
+    int32			*detE = det + NUM_ALPHABET, tmp;
 
     assert(dzs != NULL);
     assert(dzl != NULL);
@@ -401,17 +409,18 @@ static void dcepDist0(vqFeature_t *topn, float *dzs, float *dzl)
     memcpy (ldfrm, topn, sizeof(vqFeature_t)*topN);
 }
 
+
 static void ddcepDist0(vqFeature_t *topn, float *z)
 {
     register int32 i, j, cw;
-    vqFeature_t		*worst, *best = topn, *cur; /*, *src; */
+    vqFeature_t		*worst, *best = topn, *cur, *src;
     double	diff, d;
     float	*obs;
     float	*mean;
     float	*var;
     int32		*det  =  dets[(int32)DDCEP_FEAT];
     int32		*detE = det + NUM_ALPHABET;
-    int32		*detP; /*, tmp; */
+    int32		*detP, tmp;
 
     assert(z    != NULL);
     assert(topn != NULL);
@@ -468,6 +477,7 @@ static void ddcepDist0(vqFeature_t *topn, float *z)
     memcpy(lxfrm, topn, sizeof(vqFeature_t)*topN);
 }
 
+
 static void powDist(vqFeature_t *topn, float *pz)
 {
   register int32	i, j, cw;
@@ -516,6 +526,7 @@ static int32    inIdx = 0;
 static float   dBufArr[CEP_VECLEN*(DIFF_MASK+1)];
 static int32    dIdx = 0;
 
+
 void SCVQInit(int32 top, int32 numModels, int32 numDist, double vFloor, 
 	      int32 use20msdp)
 {
@@ -532,8 +543,9 @@ void SCVQInit(int32 top, int32 numModels, int32 numDist, double vFloor,
 	lxfrm[i].val.dist = ldfrm[i].val.dist = lcfrm[i].val.dist = WORST_DIST;
 	lxfrm[i].codeword = ldfrm[i].codeword = lcfrm[i].codeword = i;
     }
-    E_INFO("SCVQInit: top %d, %d models, %d dist, %f var floor.\n",
-	     top, numModels, numDist, vFloor);
+    fprintf(stdout,
+	    "SCVQInit: top %d, %d models, %d dist, %f var floor.\n",
+	    top, numModels, numDist, vFloor);
     /*
      * Configure TopN
      */
@@ -547,26 +559,29 @@ void SCVQInit(int32 top, int32 numModels, int32 numDist, double vFloor,
     
     setVarFloor(vFloor);	/* see sc_cbook_r.c */
 
-#ifdef WIN32
+#if (WIN32)
     pid = GetCurrentProcess();
 #endif
 }
 
-void SCVQNewUtt(void)
+
+void SCVQNewUtt()
 {
     num_frames = 0;
 
-#ifdef WIN32
+#if (WIN32)
     vq_time = scr_time = 0.0;
 #endif
 }
 
+
 void SCVQEndUtt ( void )
 {
-#ifdef WIN32
-    E_INFO ("VQ-TIME= %.1fsec, SCR-TIME= %.1fsec (CPU)\n", vq_time, scr_time);
+#if (WIN32)
+    fprintf (stdout, "VQ-TIME= %.1fsec, SCR-TIME= %.1fsec (CPU)\n", vq_time, scr_time);
 #endif
 }
+
 
 int SCVQComputeFeatures(float **cep,
 			float **dcep,
@@ -575,12 +590,12 @@ int SCVQComputeFeatures(float **cep,
 			float **ddcep,
 			float *in)
 {
-    register int32 i; /*, j; */
+    register int32 i, j;
     register float *df, *db, *dout;
     static float	ldBufArr[CEP_VECLEN];
     static float	ddBufArr[CEP_VECLEN];
     static float	pBufArr[POW_VECLEN];
-    /* int32		tmp[NUM_FEATURES]; */
+    int32		tmp[NUM_FEATURES];
 
     memcpy((char *)(inBufArr + inIdx*CEP_VECLEN), (char *)in,
 	  sizeof(float)*CEP_VECLEN);
@@ -644,6 +659,7 @@ int SCVQComputeFeatures(float **cep,
     }
 }
 
+
 /* Output PDF/feature (32-bit logprobs) */
 int32 *OPDF[NUM_FEATURES] = {NULL, NULL, NULL, NULL};
 
@@ -700,7 +716,7 @@ int32 SCVQScores (int32 *scores,
     int	      i, j, best;
     int32     tmp[NUM_FEATURES];
 
-#ifdef WIN32
+#if (WIN32)
     GetProcessTimes (pid, &t_create, &t_exit, &kst, &ust);
 #endif
 
@@ -724,25 +740,25 @@ int32 SCVQScores (int32 *scores,
 	for (j = 0; j < NUM_FEATURES; j++) {
 	    f[j][i].val.score -= tmp[j];
 	    if (f[j][i].val.score > 0)
-	      f[j][i].val.score = INT_MIN; /* tkharris++ */
-	    /*  QUIT((stderr, "%s(%d):  **ERROR** VQ score= %d\n",
-		__FILE__, __LINE__, f[j][i].val.score)); */
+		QUIT((stderr, "%s(%d):  **ERROR** VQ score= %d\n",
+		      __FILE__, __LINE__, f[j][i].val.score));
 	}
     
-#ifdef WIN32
+#if (WIN32)
     GetProcessTimes (pid, &t_create, &t_exit, &ket, &uet);
     vq_time += win32_cputime (&ust, &uet);
 #endif
 
     best = SCVQComputeScores(scores, f);
     
-#ifdef WIN32
+#if (WIN32)
     GetProcessTimes (pid, &t_create, &t_exit, &kst, &ust);
     scr_time += win32_cputime (&uet, &ust);
 #endif
 
     return (best);
 }
+
 
 /*
  * Compute scores for all senones.  Compute best senone score per phone into bestpscr.
@@ -755,7 +771,7 @@ int32 SCVQScores_all (int32 *scores,
     int	      i, j, best;
     int32     tmp[NUM_FEATURES];
 
-#ifdef WIN32
+#if (WIN32)
     GetProcessTimes (pid, &t_create, &t_exit, &kst, &ust);
 #endif
 
@@ -779,19 +795,18 @@ int32 SCVQScores_all (int32 *scores,
 	for (j = 0; j < NUM_FEATURES; j++) {
 	    f[j][i].val.score -= tmp[j];
 	    if (f[j][i].val.score > 0)
-	      f[j][i].val.score = INT_MIN; /* tkharris++ */
-	    /*  QUIT((stderr, "%s(%d):  **ERROR** VQ score= %d\n",
-		__FILE__, __LINE__, f[j][i].val.score)); */
+		QUIT((stderr, "%s(%d):  **ERROR** VQ score= %d\n",
+		      __FILE__, __LINE__, f[j][i].val.score));
 	}
     
-#ifdef WIN32
+#if (WIN32)
     GetProcessTimes (pid, &t_create, &t_exit, &ket, &uet);
     vq_time += win32_cputime (&ust, &uet);
 #endif
 
     best = SCVQComputeScores_all (scores, f);
     
-#ifdef WIN32
+#if (WIN32)
     GetProcessTimes (pid, &t_create, &t_exit, &kst, &ust);
     scr_time += win32_cputime (&uet, &ust);
 #endif
@@ -799,9 +814,11 @@ int32 SCVQScores_all (int32 *scores,
     return (best);
 }
 
+
 static int32 SCVQComputeScores(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     int32 	ret;
+    int i;
 
     if (prob_size == 8) {
 	switch (topN) {
@@ -820,9 +837,11 @@ static int32 SCVQComputeScores(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return ret;
 }
 
+
 static int32 SCVQComputeScores_all(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     int32 	ret;
+    int i;
 
     if (prob_size == 8) {
 	switch (topN) {
@@ -842,6 +861,7 @@ static int32 SCVQComputeScores_all(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return ret;
 }
 
+
 static int32 compute_bestpscr (int32 *scrp)
 {
     int32 b, i, j, k;
@@ -859,10 +879,12 @@ static int32 compute_bestpscr (int32 *scrp)
     return (b);
 }
 
+
 static int32 get_scores (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     return (get_scores_all (scores, frm));
 }
+
 
 static int32 get_scores_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
@@ -927,6 +949,7 @@ static int32 get_scores_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 
     return (compute_bestpscr (scores));
 }
+
 
 static int32 get_scores4(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
@@ -1013,9 +1036,10 @@ static int32 get_scores4(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (k);
 }
 
+
 static int32 get_scores4_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
-    int32 i; /*, k; */
+    int32 i, k;
     
     for (i = 0; i < CdWdPDFMod; i++)
 	senone_active[i] = i;
@@ -1027,10 +1051,12 @@ static int32 get_scores4_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (compute_bestpscr (scores));
 }
 
+
 static int32 get_scores1(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     return (get_scores1_all (scores, frm));
 }
+
 
 static int32 get_scores1_all(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
@@ -1068,15 +1094,18 @@ static int32 get_scores1_all(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (best);
 }
 
+
 static int32 get_scores_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     QUIT((stderr, "%s(%d): get_scores_8b() not implemented\n", __FILE__, __LINE__));
 }
 
+
 static int32 get_scores_8b_all(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     QUIT((stderr, "%s(%d): get_scores_8b_all () not implemented\n", __FILE__, __LINE__));
 }
+
 
 #if (! FAST8B)
 
@@ -1173,6 +1202,7 @@ static int32 get_scores4_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (k);
 }
 
+
 static int32 get_scores4_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     int32 i, k;
@@ -1201,9 +1231,9 @@ static int32 get_scores4_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
     int32 *scr;
     int32 w0, w1, w2, w3;			/* weights */
-    /* register int32   ts = Table_Size;
-       register int16 *at = Addition_Table;
-       int32 ff, tt, ii; */
+    register int32   ts = Table_Size;
+    register int16 *at = Addition_Table;
+    int32 ff, tt, ii;
 
     /* ptrs to senone prob ids */
     pid_cw0 = OPDF_8B[0]->id[frm[0][0].codeword];
@@ -1294,6 +1324,7 @@ static int32 get_scores4_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (k);
 }
 
+
 /*
  * Like get_scores4, but uses OPDF_8B:
  *     LogProb(feature f, codeword c, senone s) =
@@ -1303,14 +1334,14 @@ static int32 get_scores4_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
  */
 static int32 get_scores4_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
-    register int32 j, k; /*, bestscore; */
+    register int32 j, k, bestscore;
     int32 tmp1, tmp2;
     unsigned char *pid_cw0, *pid_cw1, *pid_cw2, *pid_cw3;
     int32 *scr;
     int32 w0, w1, w2, w3;			/* weights */
-    /* register int32   ts = Table_Size;
-       register int16 *at = Addition_Table;
-       int32 ff, tt, ii; */
+    register int32   ts = Table_Size;
+    register int16 *at = Addition_Table;
+    int32 ff, tt, ii;
 
     n_senone_active = CdWdPDFMod;
     
@@ -1405,16 +1436,17 @@ static int32 get_scores4_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (compute_bestpscr(scores));
 }
 
+
 static int32 get_scores2_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
-    register int32 j, k; /* , bestscore; */
+    register int32 j, k, bestscore;
     int32 tmp1, tmp2;
     unsigned char *pid_cw0, *pid_cw1;
     int32 *scr;
     int32 w0, w1;			/* weights */
-    /* register int32   ts = Table_Size;
-       register int16 *at = Addition_Table;
-       int32 ff, tt, ii; */
+    register int32   ts = Table_Size;
+    register int16 *at = Addition_Table;
+    int32 ff, tt, ii;
 
     n_senone_active = CdWdPDFMod;
     
@@ -1483,6 +1515,7 @@ static int32 get_scores2_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 
 #endif
 
+
 static int32 get_scores1_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
     int32 j, k, bestscore;
@@ -1518,6 +1551,7 @@ static int32 get_scores1_8b(int32 *scores, vqFeature_t frm[][MAX_TOPN])
     
     return (bestscore);
 }
+
 
 static int32 get_scores1_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
 {
@@ -1562,6 +1596,7 @@ static int32 get_scores1_8b_all (int32 *scores, vqFeature_t frm[][MAX_TOPN])
     return (bestscore);
 }
 
+
 /*
  * Parameter and setup code
  */
@@ -1572,7 +1607,8 @@ static void quantize_pdfs (int32 f)
 {
     int32 s, c, pid, scr, qscr;
     
-    E_INFO ("%s(%d): Quantizing senone PDFs to 8 bits\n", __FILE__, __LINE__);
+    printf ("%s(%d): Quantizing senone PDFs to 8 bits\n", __FILE__, __LINE__);
+    fflush (stdout);
 
     for (c = 0; c < NUM_ALPHABET; c++) {
 	for (s = 0; s < CdWdPDFMod; s++) {
@@ -1592,6 +1628,7 @@ static void quantize_pdfs (int32 f)
 }
 
 #endif
+
 
 /*
  * Read & initialize SC codebooks & output pdfs
@@ -1613,7 +1650,9 @@ int32 SCVQInitFeat(feat_t feat, char *meanPath, char *varPath, int32 *opdf)
 	if (feat != POW_FEAT)
 	    return -1;
 	else {
-	    log_debug("Synthesizing power codebook variances\n");
+	    fflush (stdout);
+	    fprintf(stderr, "Synthesizing power codebook variances\n");
+	    fflush (stderr);
 	    if (setPowVar(detP, vars + (int32)feat,
 			  (use20ms_diff_pow ? 0.125 : 0.05)) < 0)
 		return -1;
@@ -1634,11 +1673,11 @@ int32 SCVQInitFeat(feat_t feat, char *meanPath, char *varPath, int32 *opdf)
     return 0;
 }
 
+
 /*
  * SCVQSetSenoneCompression:  Must be called before SCVQInitFeat (if senone-probs
  * are compressed).
  */
-void
 SCVQSetSenoneCompression (int32 size)
 {
     if ((size != 8) && (size != 32))
@@ -1646,10 +1685,12 @@ SCVQSetSenoneCompression (int32 size)
     prob_size = size;
 }
 
+
 void SCVQSetdcep80msWeight (double arg)
 {
      dcep80msWeight = arg;
 }
+
 
 /*
  * Set senones/phone array
@@ -1659,6 +1700,7 @@ void scvq_set_psen (int32 n, int32 *p)
     n_phone = n;
     psen = p;
 }
+
 
 /*
  * Set best phone score array.

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1996-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -39,42 +50,9 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.10  2001/12/11  00:24:48  lenzo
- * Acknowledgement in License.
+ * Revision 1.1  2000/01/28  22:08:41  lenzo
+ * Initial revision
  * 
- * Revision 1.9  2001/12/07 17:30:01  lenzo
- * Clean up and remove extra lines.
- *
- * Revision 1.8  2001/12/07 05:09:30  lenzo
- * License.xsxc
- *
- * Revision 1.7  2001/12/07 04:27:35  lenzo
- * License cleanup.  Remove conditions on the names.  Rationale: These
- * conditions don't belong in the license itself, but in other fora that
- * offer protection for recognizeable names such as "Carnegie Mellon
- * University" and "Sphinx."  These changes also reduce interoperability
- * issues with other licenses such as the Mozilla Public License and the
- * GPL.  This update changes the top-level license files and removes the
- * old license conditions from each of the files that contained it.
- * All files in this collection fall under the copyright of the top-level
- * LICENSE file.
- *
- * Revision 1.6  2001/12/04 19:58:16  egouvea
- * Changes mostly in typecast to prevent warnings from compiler.
- *
- * Revision 1.5  2001/11/27 21:51:57  lenzo
- * Fix it so client ACK works cross-platform.
- *
- * Revision 1.3  2000/12/05 01:45:12  lenzo
- * Restructuring, hear rationalization, warning removal, ANSIfy
- *
- * Revision 1.2  2000/01/28 23:42:14  awb
- * *** empty log message ***
- *
- * Revision 1.1.1.1  2000/01/28 22:08:41  lenzo
- * Initial import of sphinx2
- *
- *
  *
  * 18-Aug-1999  Kevin Lenzo (lenzo@cs.cmu.edu).  Added sys/timeval.h and
  *              changed unsigned int16 etc to uint16 etc as in s2types.h.
@@ -82,6 +60,7 @@
  * 03-Jun-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University.
  * 		Creating from version of 1995.
  */
+
 
 /*
  * This server uses nonblocking sockets for communicating with clients.  It serves
@@ -101,6 +80,7 @@
  * server closes the client connection and is ready for the next client.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -108,29 +88,22 @@
 #include <assert.h>
 #include <signal.h>
 
-#ifdef WIN32
-#include <posixwin32.h>
-#else
-#include <unistd.h>
+#include <s2types.h>
 #include <sys/time.h>
+
+#if (WIN32)
+#include <posixwin32.h>
 #endif
 
-#include "s2types.h"
-#include "basic_types.h"
-#include "CM_macros.h"
-#include "err.h"
-#include "ad.h"
-#include "cont_ad.h"
-#include "srvcore.h"
-#include "search_const.h"
-#include "msd.h"
-#include "list.h"
-#include "hash.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "dict.h"
-#include "kb.h"
-#include "fbs.h"
+#include <CM_macros.h>
+#include <err.h>
+#include <fbs.h>
+#include <search.h>
+#include <ad.h>
+#include <cont_ad.h>
+
+#include <srvcore.h>
+
 
 #define DEFAULT_LISTEN_PORT	7027
 static int32 listenport;	/* Port on which server should listen for clients */
@@ -142,25 +115,29 @@ static cont_ad_t *cont;		/* Continuous listening/silence filtering module */
 
 static int32 startwid;
 
+
 /* Sleep for specified #msec */
 static void sleep_msec (int32 ms)
 {
-#ifdef WIN32
-    Sleep(ms);
-#else
+#if (! WIN32)
     /* ------------------- Unix ------------------ */
     struct timeval tmo;
+    int32 status;
     
     tmo.tv_sec = 0;
     tmo.tv_usec = ms*1000;
     
     select(0, NULL, NULL, NULL, &tmo);
+#else
+    Sleep(ms);
 #endif
 }
+
 
 static void server_error ( void )
 {
 }
+
 
 #define RBUFSIZE	1024
 
@@ -183,8 +160,8 @@ static int32 await_ack ( void )
 	rlen += len;
     }
     rbuf[rlen] = '\0';
-
-    if ((rlen > 5) || (strncmp(rbuf, "ACK", 3) != 0)) {
+    
+    if ((rlen > 4) || (strcmp(rbuf, "ACK\n") != 0)) {
 	E_ERROR("Expecting ACK\n, received:\n\t");
 	for (i = 0; i < rlen; i++)
 	    fprintf (stderr, " %02x", rbuf[i]);
@@ -194,6 +171,7 @@ static int32 await_ack ( void )
     
     return 0;
 }
+
 
 #define END_UTT_MARKER	"END_UTT\n"
 
@@ -250,6 +228,7 @@ static int32 send_result (char *best, search_hyp_t **alt, int32 n_alt)
 
     return 0;
 }
+
 
 #define MAX_ALT		30
 
@@ -361,6 +340,7 @@ static int32 listen_loop()
     return 0;
 }
 
+
 /*
  * Process current client until told to quit.
  */
@@ -383,6 +363,7 @@ static int32 process_client ( void )
     return 0;
 }
 
+
 static void sigint_handler (int arg)
 {
     E_INFO("^C...Exiting\n");
@@ -393,12 +374,13 @@ static void sigint_handler (int arg)
     exit (0);
 }
 
+
 /*
  * Main server loop.  Await client connections and process them.
  */
 static void s2srv_loop ( void )
 {
-#ifndef WIN32
+#if (! WIN32)
     signal (SIGPIPE, SIG_IGN);	/* How about WIN32? */
 #endif
     signal (SIGINT, sigint_handler);
@@ -434,6 +416,7 @@ static void s2srv_loop ( void )
     server_end ();
 }
 
+
 int32 s2srv_init (char *portarg)
 {
     if ((! portarg) || (sscanf (portarg, "%d", &listenport) != 1)) {
@@ -450,7 +433,7 @@ int32 s2srv_init (char *portarg)
     return 0;
 }
 
-int
+
 main (int32 argc, char *argv[])
 {
     int32 i;
@@ -492,5 +475,4 @@ main (int32 argc, char *argv[])
 
     /* Close recognition engine */
     fbs_end ();
-    return 0;
 }

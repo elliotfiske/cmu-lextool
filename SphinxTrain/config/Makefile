@@ -18,7 +18,12 @@
 #    prior written permission. To obtain permission, contact 
 #    sphinx@cs.cmu.edu.
 #
-# 4. Redistributions of any form whatsoever must retain the following
+# 4. Products derived from this software may not be called "Sphinx"
+#    nor may "Sphinx" appear in their names without prior written
+#    permission of Carnegie Mellon University. To obtain permission,
+#    contact sphinx@cs.cmu.edu.
+#
+# 5. Redistributions of any form whatsoever must retain the following
 #    acknowledgment:
 #    "This product includes software developed by Carnegie
 #    Mellon University (http://www.speech.cs.cmu.edu/)."
@@ -44,13 +49,9 @@ TOP=..
 DIRNAME=config
 BUILD_DIRS = 
 ALL_DIRS=
-FILES = Makefile common_make_rules project.mak config.in system.mak.in
+FILES = Makefile common_make_rules project.mak config-dist
+
 ALL = 
-
-# Unfortunately we can't remove these on 'clean' since the makefile
-# depends on them.
-
-# LOCAL_CLEAN = system.mak config
 
 include $(TOP)/config/common_make_rules
 

@@ -1,35 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * err.h -- Package for checking and catching common errors, printing out
  *		errors nicely, etc.
@@ -50,14 +18,14 @@
 #include <stdarg.h>
 #include <errno.h>
 
-void _E__pr_header( char const *file, long line, char const *msg );
-void _E__pr_info_header( char const *file, long line, char const *tag );
-void _E__pr_warn( char const *fmt, ... );
-void _E__pr_info( char const *fmt, ... );
-void _E__die_error( char const *fmt, ... );
-void _E__abort_error( char const *fmt, ... );
-void _E__sys_error( char const *fmt, ... );
-void _E__fatal_sys_error( char const *fmt, ... );
+void _E__pr_header( const char *file, long line, const char *msg );
+void _E__pr_info_header( char *file, long line, char *tag );
+void _E__pr_warn( char *fmt, ... );
+void _E__pr_info( char *fmt, ... );
+void _E__die_error( char *fmt, ... );
+void _E__abort_error( char *fmt, ... );
+void _E__sys_error( char *fmt, ... );
+void _E__fatal_sys_error( char *fmt, ... );
 
 /* These three all abort */
 

@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1995-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -39,58 +50,9 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.15  2001/12/11  00:24:48  lenzo
- * Acknowledgement in License.
+ * Revision 1.1  2000/01/28  22:08:58  lenzo
+ * Initial revision
  * 
- * Revision 1.14  2001/12/07 20:32:59  lenzo
- * No unistd.h on Windows.
- *
- * Revision 1.13  2001/12/07 17:46:00  lenzo
- * Un-ifdef the include for <unistd.h>
- *
- * Revision 1.12  2001/12/07 17:30:02  lenzo
- * Clean up and remove extra lines.
- *
- * Revision 1.11  2001/12/07 05:09:30  lenzo
- * License.xsxc
- *
- * Revision 1.10  2001/12/07 04:27:35  lenzo
- * License cleanup.  Remove conditions on the names.  Rationale: These
- * conditions don't belong in the license itself, but in other fora that
- * offer protection for recognizeable names such as "Carnegie Mellon
- * University" and "Sphinx."  These changes also reduce interoperability
- * issues with other licenses such as the Mozilla Public License and the
- * GPL.  This update changes the top-level license files and removes the
- * old license conditions from each of the files that contained it.
- * All files in this collection fall under the copyright of the top-level
- * LICENSE file.
- *
- * Revision 1.9  2001/10/23 22:20:30  lenzo
- * Change error logging and reporting to the E_* macros that call common
- * functions.  This will obsolete logmsg.[ch] and they will be removed
- * or changed in future versions.
- *
- * Revision 1.8  2001/03/31 00:56:12  lenzo
- * Added <string.h>
- *
- * Revision 1.6  2001/01/25 19:36:28  lenzo
- * Fixing some memory leaks
- *
- * Revision 1.5  2000/12/21 18:04:51  lenzo
- * Fixed a nasty (but small) FRAME_RATE error.  This will need cleanup later.
- *
- * Revision 1.4  2000/12/12 23:01:42  lenzo
- * Rationalizing libs and names some more.  Split a/d and fe libs out.
- *
- * Revision 1.3  2000/12/05 01:45:12  lenzo
- * Restructuring, hear rationalization, warning removal, ANSIfy
- *
- * Revision 1.2  2000/02/08 20:44:32  lenzo
- * Changed uttproc_allphone_cepfile() to uttproc_allphone_file.
- *
- * Revision 1.1.1.1  2000/01/28 22:08:58  lenzo
- * Initial import of sphinx2
- *
  * 09-Jan-00    Kevin Lenzo <lenzo@cs.cmu.edu> at Carnegie Mellon
  *              Altered to accomodate new fe lib.
  * 
@@ -164,49 +126,41 @@
  *		Added uttproc_set_lm() and uttproc_set_startword().
  */
 
+
 /*
  * BUGS:
  *   - Instead of using query_fwdtree_flag() to determine which first pass to run
  *     (tree or flag), there should be an explicit uttproc_set_firstpass() call.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
+#if (SUN4)
+#include <unistd.h>
+#endif
 #include <time.h>
 
-#ifdef WIN32
+#if (! WIN32)
+#include <sys/time.h>
+#include <sys/resource.h>
+#else
 #include <io.h>
 #include <windows.h>
 #include <time.h>
 #include <sys/stat.h>
-#else
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <unistd.h>
 #endif
 
 #include <assert.h>
-#include <string.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "basic_types.h"
-#include "err.h"
-#include "scvq.h"
-#include "search_const.h"
-#include "msd.h"
-#include "strfuncs.h"
-#include "linklist.h"
-#include "list.h"
-#include "hash.h"
-#include "dict.h"
-#include "lmclass.h"
-#include "lm_3g.h"
-#include "kb.h"
-#include "cdcn.h"
-#include "fe.h"
-#include "fbs.h"
-#include "search.h"
+#include <CM_macros.h>
+#include <err.h>
+#include <scvq.h>
+#include <fbs.h>
+#include <search.h>
+#include <fe.h>
+#include <kb_exports.h>
+#include <cdcn.h>
 
 #define MAX_UTT_LEN	6000	/* #frames */
 #define MAX_CEP_LEN	(MAX_UTT_LEN*CEP_SIZE)
@@ -221,6 +175,7 @@ typedef enum {UTTSTATE_UNDEF=-1,
 	      UTTSTATE_STOPPED=3
 } uttstate_t;
 static uttstate_t uttstate = UTTSTATE_UNDEF;
+
 
 static int32 inputtype;
 #define INPUT_UNKNOWN	0
@@ -278,55 +233,29 @@ static search_hyp_t *utt_seghyp = NULL;
 
 static CDCN_type cdcn;
 
+extern int32 delete_background (float *cep, int32 fcnt, int32 cf_cnt, double thresh);
+extern float histo_noise_level (float *cep, int32 fcnt, int32 cf_cnt);
+extern search_hyp_t *search_get_hyp ();
+extern char *query_match_file_name ();
+extern char *query_matchseg_file_name ();
+extern char *query_dumplat_dir ();
+extern char *query_cdcn_file ();
+
 static float TotalCPUTime, TotalElapsedTime, TotalSpeechTime;
 
-#ifdef WIN32
+#if (! WIN32)
+static struct rusage start, stop;
+static struct timeval e_start, e_stop;
+#else
 static float e_start, e_stop;
 static HANDLE pid;
 static FILETIME t_create, t_exit, kst, ket, ust, uet;
 static double lowscale, highscale;
 extern double win32_cputime();
-#else
-static struct rusage start, stop;
-static struct timeval e_start, e_stop;
 #endif
 
-/* FIXME: These are all internal to this module, but still should go
-   into internal header files... */
 
-/* live_norm.c */
-extern void mean_norm_init(int32 vlen);
-extern void mean_norm_update(void);
-extern void mean_norm_acc_sub(float *vec);
-extern int32 cepmean_set (float *vec);
-extern int32 cepmean_get (float *vec);
-
-/* agc_emax.c */
-void agc_emax_update ( void );
-extern int32 agcemax_set (double m);
-extern double agcemax_get ( void );
-extern int agc_emax_proc (float *ocep, float const *icep, int veclen);
-
-/* norm.c */
-void norm_mean (float *vec, int32 nvec, int32 veclen);
-
-/* r_agc_noise.c */
-extern int32 delete_background (float *cep, int32 fcnt,
-				int32 cf_cnt, double thresh);
-extern float histo_noise_level (float *cep, int32 fcnt, int32 cf_cnt);
-extern int32 histo_add_c0 (float c0);
-void compute_noise_level (void);
-void real_agc_noise(float *cep,
-		    register int32 fcnt,
-		    register int32 cf_cnt);
-void agc_max(float *cep,
-	     register int32 fcnt,
-	     register int32 cf_cnt);
-
-/* searchlat.c */
-void searchlat_set_rescore_lm (char const *lmname);
-
-#ifdef WIN32
+#if (WIN32)
 
 double win32_cputime (FILETIME *st, FILETIME *et)
 {
@@ -340,22 +269,24 @@ double win32_cputime (FILETIME *st, FILETIME *et)
 
 #else
 
-double MakeSeconds (struct timeval const *s, struct timeval const *e)
+double MakeSeconds (s, e)
 /*------------------------------------------------------------------------*
  * Compute an elapsed time from two timeval structs
  */
+struct timeval *s, *e;
 {
     return ((e->tv_sec - s->tv_sec) + ((e->tv_usec - s->tv_usec) / 1000000.0));
 }
 
 #endif
 
+
 /*
  * One time initialization
  */
 static void timing_init ( void )
 {
-#ifdef WIN32
+#if (WIN32)
     lowscale = 1e-7;
     highscale = 65536.0 * 65536.0 * lowscale;
 
@@ -365,21 +296,23 @@ static void timing_init ( void )
     TotalCPUTime = TotalElapsedTime = TotalSpeechTime = 0.0;
 }
 
+
 /*
  * Start of each utterance
  */
 static void timing_start ( void )
 {
-#ifndef WIN32
-#ifndef _HPUX_SOURCE
+#if (! WIN32)
+#if (! _HPUX_SOURCE)
     getrusage (RUSAGE_SELF, &start);
 #endif
     gettimeofday (&e_start, 0);
-#else /* WIN32 */
+#else
     e_start = (float)clock()/CLOCKS_PER_SEC;
     GetProcessTimes (pid, &t_create, &t_exit, &kst, &ust);
-#endif /* WIN32 */
+#endif
 }
+
 
 /*
  * End of each utterance
@@ -389,34 +322,34 @@ static void timing_stop ( void )
     if (searchFrame() == 0)
 	return;
     
-    E_INFO(" %5.2f SoS", searchFrame()*0.01);
+    printf (" %5.2f SoS", searchFrame()*0.01);
     TotalSpeechTime += searchFrame()*0.01;
     
-#ifdef WIN32
+#if (WIN32)
     /* ---------------- WIN32 ---------------- */
     e_stop = (float)clock()/CLOCKS_PER_SEC;
     GetProcessTimes (pid, &t_create, &t_exit, &ket, &uet);
     
-    E_INFO(", %6.2f sec elapsed", (e_stop - e_start));
-    E_INFO(", %5.2f xRT", (e_stop - e_start)/(searchFrame()*0.01));
-    E_INFO(", %6.2f sec CPU", win32_cputime(&ust, &uet));
-    E_INFO(", %5.2f xRT", win32_cputime(&ust, &uet)/(searchFrame()*0.01));
+    printf (", %6.2f sec elapsed", (e_stop - e_start));
+    printf (", %5.2f xRT", (e_stop - e_start)/(searchFrame()*0.01));
+    printf (", %6.2f sec CPU", win32_cputime(&ust, &uet));
+    printf (", %5.2f xRT", win32_cputime(&ust, &uet)/(searchFrame()*0.01));
     
     TotalCPUTime += win32_cputime(&ust, &uet);
     TotalElapsedTime += (e_stop - e_start);
 #else
     /* ---------------- Unix ---------------- */
-#ifndef _HPUX_SOURCE
+#if (! _HPUX_SOURCE)
     getrusage (RUSAGE_SELF, &stop);
 #endif
     gettimeofday (&e_stop, 0);
     
-    E_INFO(", %6.2f sec elapsed", MakeSeconds (&e_start, &e_stop));
-    E_INFO(", %5.2f xRT", MakeSeconds (&e_start, &e_stop)/(searchFrame()*0.01));
+    printf (", %6.2f sec elapsed", MakeSeconds (&e_start, &e_stop));
+    printf (", %5.2f xRT", MakeSeconds (&e_start, &e_stop)/(searchFrame()*0.01));
     
-#ifndef _HPUX_SOURCE
-    E_INFO(", %6.2f sec CPU", MakeSeconds (&start.ru_utime, &stop.ru_utime));
-    E_INFO(", %5.2f xRT",
+#if (! _HPUX_SOURCE)
+    printf (", %6.2f sec CPU", MakeSeconds (&start.ru_utime, &stop.ru_utime));
+    printf (", %5.2f xRT",
 	    MakeSeconds (&start.ru_utime, &stop.ru_utime)/(searchFrame()*0.01));
 #endif
     
@@ -424,30 +357,32 @@ static void timing_stop ( void )
     TotalElapsedTime += MakeSeconds (&e_start, &e_stop);
 #endif
     
-    E_INFO("\n");
+    printf ("\n");
 }
+
 
 /*
  * One time cleanup before exiting program
  */
 static void timing_end ( void )
 {
-    E_INFO("\n");
+    fprintf (stdout, "\n");
 
-    E_INFO("TOTAL Elapsed time %.2f seconds\n",TotalElapsedTime);
-#ifndef _HPUX_SOURCE
-    E_INFO("TOTAL CPU time %.2f seconds\n", TotalCPUTime);
+    fprintf (stdout, "TOTAL Elapsed time %.2f seconds\n",TotalElapsedTime);
+#if (! _HPUX_SOURCE)
+    fprintf (stdout, "TOTAL CPU time %.2f seconds\n", TotalCPUTime);
 #endif
-    E_INFO("TOTAL Speech %.2f seconds\n", TotalSpeechTime);
+    fprintf (stdout, "TOTAL Speech %.2f seconds\n", TotalSpeechTime);
 
     if (TotalSpeechTime > 0.0) {
-	E_INFO("AVERAGE %.2f xRT(Elapsed)", TotalElapsedTime/TotalSpeechTime);
-#ifndef _HPUX_SOURCE
-	E_INFO(", %.2f xRT(CPU)\n", TotalCPUTime/TotalSpeechTime);
+	fprintf (stdout, "AVERAGE %.2f xRT(Elapsed)", TotalElapsedTime/TotalSpeechTime);
+#if (! _HPUX_SOURCE)
+	fprintf (stdout, ", %.2f xRT(CPU)\n", TotalCPUTime/TotalSpeechTime);
 #endif
-	E_INFO("\n");
+	fprintf (stdout, "\n");
     }
 }
+
 
 static void feat_alloc ( void )
 {
@@ -467,6 +402,7 @@ static void feat_alloc ( void )
     }
 }
 
+
 int32 uttproc_get_featbuf (float **cep, float **dcep, float **dcep_80ms, float **pcep,
 float **ddcep)
 {
@@ -478,6 +414,7 @@ float **ddcep)
 
     return n_featfr;
 }
+
 
 /*
  * Compute sphinx-II feature vectors (cep, dcep, ddcep, pow) from input melcep vector.
@@ -512,11 +449,13 @@ static int32 compute_features(float *cep_o,
 	return 0;
 }
 
-static void warn_notidle (char const *func)
+
+static void warn_notidle (char *func)
 {
     if (uttstate != UTTSTATE_IDLE)
 	E_WARN("%s called when not in IDLE state\n", func);
 }
+
 
 static void mfc2feat_live_frame (float *incep, int32 rawfr)
 {
@@ -548,6 +487,7 @@ static void mfc2feat_live_frame (float *incep, int32 rawfr)
     }
 }
 
+
 /* Convert all given mfc vectors to feature vectors */
 static int32 mfc2feat_live (float **mfc, int32 nfr)
 {
@@ -558,6 +498,7 @@ static int32 mfc2feat_live (float **mfc, int32 nfr)
 
     return 0;
 }
+
 
 static int32 cmn_batch (float **mfc, int32 nfr)
 {
@@ -572,6 +513,7 @@ static int32 cmn_batch (float **mfc, int32 nfr)
 
     return 0;
 }
+
 
 static int32 agc_batch (float **mfc, int32 nfr)
 {
@@ -592,6 +534,7 @@ static int32 agc_batch (float **mfc, int32 nfr)
 
     return 0;
 }
+
 
 static int32 silcomp_batch (float **mfc, int32 nfr)
 {
@@ -622,6 +565,7 @@ static int32 silcomp_batch (float **mfc, int32 nfr)
     
     return nfr;
 }
+
 
 static int32 mfc2feat_batch (float **mfc, int32 nfr)
 {
@@ -681,6 +625,7 @@ static int32 mfc2feat_batch (float **mfc, int32 nfr)
     return 0;
 }
 
+
 /* Convert all given mfc vectors to feature vectors, and search one frame */
 static int32 uttproc_frame ( void )
 {
@@ -704,6 +649,7 @@ static int32 uttproc_frame ( void )
     return 0;
 }
 
+
 static void fwdflat_search (int32 n_frames)
 {
     int32 i, j, k;
@@ -716,10 +662,12 @@ static void fwdflat_search (int32 n_frames)
     search_fwdflat_finish ();
 }
 
-static void write_results (char const *hyp, int32 aborted)
+
+static void write_results (char *hyp, int32 aborted)
 {
     search_hyp_t *seghyp;	/* Hyp with word segmentation information */
     int32 i;
+    char *dumplatdir;
     
     /* Check if need to autonumber utterances */
     if (matchfp) {
@@ -742,16 +690,15 @@ static void write_results (char const *hyp, int32 aborted)
     }
     
 #if 0
-    {
-	char const *dumplatdir;
-	if ((dumplatdir = query_dumplat_dir()) != NULL) {
-	    char fplatfile[1024];
+    if ((dumplatdir = query_dumplat_dir()) != NULL) {
+	char fplatfile[1024];
 	
-	    sprintf (fplatfile, "%s/%s.fplat", dumplatdir, uttid);
-	    search_dump_lattice_ascii (fplatfile);
+	sprintf (fplatfile, "%s/%s.fplat", dumplatdir, uttid);
+	search_dump_lattice_ascii (fplatfile);
     }
-#endif /* 0 */
+#endif
 }
+
 
 static void uttproc_windup (int32 *fr, char **hyp)
 {
@@ -777,6 +724,7 @@ static void uttproc_windup (int32 *fr, char **hyp)
     uttstate = UTTSTATE_IDLE;
 }
 
+
 /*
  * One time initialization
  */
@@ -785,11 +733,11 @@ fe_t    *fe;
 
 int32 uttproc_init ( void )
 {
-    char const *fn;
+    char *fn;
     int32 sps;
 
     param_t *fe_param;
-    fe_param = CM_calloc(1, sizeof(param_t));
+    fe_param = calloc(1, sizeof(param_t));
 
     if (uttstate != UTTSTATE_UNDEF) {
 	E_ERROR("uttproc_init called when not in UNDEF state\n");
@@ -798,15 +746,15 @@ int32 uttproc_init ( void )
     
     sps = query_sampling_rate ();
 
+
     if ((sps != 16000) && (sps != 8000))
-	E_FATAL("Sampling rate must be 8000 or 16000, is %d\n", sps);
+	E_FATAL("Sampling rate must be 8000 or 16000\n");
     
 
     frame_spacing = sps/100;
 
     fe_param->SAMPLING_RATE = sps;
-  /*    fe_param->FRAME_RATE    = frame_spacing; */  /* removed; KAL */
-    fe_param->FRAME_RATE    = 100;
+    fe_param->FRAME_RATE    = frame_spacing;
     fe_param->PRE_EMPHASIS_ALPHA = 0.97;
     
     fe = fe_init(fe_param);
@@ -840,16 +788,16 @@ int32 uttproc_init ( void )
     uttstate = UTTSTATE_IDLE;
     utt_ofl = 0;
     uttno = 0;
-
-    free(fe_param);
-
+    
     return 0;
 }
+
 
 CDCN_type *uttproc_get_cdcn_ptr ( void )
 {
     return &cdcn;
 }
+
 
 /*
  * One time cleanup
@@ -871,7 +819,8 @@ int32 uttproc_end ( void )
     return 0;
 }
 
-int32 uttproc_begin_utt (char const *id)
+
+int32 uttproc_begin_utt (char *id)
 {
     char filename[1024];
     int32 i;
@@ -953,6 +902,7 @@ int32 uttproc_begin_utt (char const *id)
     return 0;
 }
 
+
 int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
 {
     int32 i, k, v;
@@ -1025,6 +975,7 @@ int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
     return (n_featfr - n_searchfr);
 }
 
+
 int32 uttproc_cepdata (float **cep, int32 nfr, int32 block)
 {
     int32 i, k;
@@ -1071,11 +1022,12 @@ int32 uttproc_cepdata (float **cep, int32 nfr, int32 block)
     return (n_featfr - n_searchfr);
 }
 
+
 int32 uttproc_end_utt ( void )
 {
     int32 i, k;
     float cep[13], c0;
-    float *leftover_cep;
+    float **leftover_cep;
 
     /* kal */
     leftover_cep       = (float *) CM_calloc (MAX_CEP_LEN, sizeof(float));
@@ -1087,8 +1039,9 @@ int32 uttproc_end_utt ( void )
     if (k > 0) {
 	E_INFO("Samples histogram (%s) (4/8/16/30/32K):", uttproc_get_uttid());
 	for (i = 0; i < 5; i++)
-	    E_INFO(" %.1f%%(%d)", samp_hist[i]*100.0/k, samp_hist[i]);
-	E_INFO("; max: %d\n", max_samp);
+	    fprintf (stdout, " %.1f%%(%d)", samp_hist[i]*100.0/k, samp_hist[i]);
+	fprintf (stdout, "; max: %d\n", max_samp);
+	fflush (stdout);
     }
     
     if (uttstate != UTTSTATE_BEGUN) {
@@ -1129,7 +1082,7 @@ int32 uttproc_end_utt ( void )
     if (rawfp) {
 	fclose (rawfp);
 	rawfp = NULL;
-#ifdef WIN32
+#if (WIN32)
 	if (_chmod(rawfilename, _S_IREAD ) < 0)
 	    E_ERROR("chmod(%s,READONLY) failed\n", rawfilename);
 #endif
@@ -1146,10 +1099,9 @@ int32 uttproc_end_utt ( void )
 	mfcfp = NULL;
     }
 
-    free(leftover_cep);
-
     return 0;
 }
+
 
 int32 uttproc_abort_utt ( void )
 {
@@ -1181,6 +1133,7 @@ int32 uttproc_abort_utt ( void )
     return 0;
 }
 
+
 int32 uttproc_stop_utt ( void )
 {
     if (uttstate != UTTSTATE_BEGUN) {
@@ -1199,6 +1152,7 @@ int32 uttproc_stop_utt ( void )
     
     return 0;
 }
+
 
 int32 uttproc_restart_utt ( void )
 {
@@ -1223,6 +1177,7 @@ int32 uttproc_restart_utt ( void )
     return 0;
 }
 
+
 int32 uttproc_partial_result (int32 *fr, char **hyp)
 {
     if ((uttstate != UTTSTATE_BEGUN) && (uttstate != UTTSTATE_ENDED)) {
@@ -1236,6 +1191,7 @@ int32 uttproc_partial_result (int32 *fr, char **hyp)
     
     return 0;
 }
+
 
 int32 uttproc_result (int32 *fr, char **hyp, int32 block)
 {
@@ -1263,10 +1219,14 @@ int32 uttproc_result (int32 *fr, char **hyp, int32 block)
     return 0;
 }
 
-void uttproc_align (char *sent)
+
+int32 uttproc_align (char *sent)
 {
+    FILE *fp;
+    
     time_align_utterance ("alignment", NULL, "<s>", -1, sent, -1, "</s>");
 }
+
 
 void utt_seghyp_free (search_hyp_t *h)
 {
@@ -1278,6 +1238,7 @@ void utt_seghyp_free (search_hyp_t *h)
 	h = tmp;
     }
 }
+
 
 static void build_utt_seghyp ( void )
 {
@@ -1306,6 +1267,7 @@ static void build_utt_seghyp ( void )
     }
 }
 
+
 int32 uttproc_partial_result_seg (int32 *fr, search_hyp_t **hyp)
 {
     char *str;
@@ -1328,6 +1290,7 @@ int32 uttproc_partial_result_seg (int32 *fr, search_hyp_t **hyp)
     return 0;
 }
 
+
 int32 uttproc_result_seg (int32 *fr, search_hyp_t **hyp, int32 block)
 {
     char *str;
@@ -1346,7 +1309,8 @@ int32 uttproc_result_seg (int32 *fr, search_hyp_t **hyp, int32 block)
     return 0;
 }
 
-int32 uttproc_lmupdate (char const *lmname)
+
+int32 uttproc_lmupdate (char *lmname)
 {
     lm_t *lm, *cur_lm;
     
@@ -1362,7 +1326,8 @@ int32 uttproc_lmupdate (char const *lmname)
     return 0;
 }
 
-int32 uttproc_set_context (char const *wd1, char const *wd2)
+
+int32 uttproc_set_context (char *wd1, char *wd2)
 {
     int32 w1, w2;
     
@@ -1404,7 +1369,8 @@ int32 uttproc_set_context (char const *wd1, char const *wd2)
     return 0;
 }
 
-int32 uttproc_set_lm (char const *lmname)
+
+int32 uttproc_set_lm (char *lmname)
 {
     warn_notidle ("uttproc_set_lm");
     
@@ -1420,19 +1386,22 @@ int32 uttproc_set_lm (char const *lmname)
     return 0;
 }
 
-int32 uttproc_set_rescore_lm (char const *lmname)
+
+int32 uttproc_set_rescore_lm (char *lmname)
 {
     searchlat_set_rescore_lm (lmname);
     return 0;
 }
 
-int32 uttproc_set_startword (char const *str)
+
+int32 uttproc_set_startword (char *str)
 {
     warn_notidle ("uttproc_set_startword");
     
     search_set_startword (str);
     return 0;
 }
+
 
 int32 uttproc_set_cmn (scvq_norm_t n)
 {
@@ -1442,6 +1411,7 @@ int32 uttproc_set_cmn (scvq_norm_t n)
     return 0;
 }
 
+
 int32 uttproc_set_agc (scvq_agc_t a)
 {
     warn_notidle ("uttproc_set_agc");
@@ -1449,6 +1419,7 @@ int32 uttproc_set_agc (scvq_agc_t a)
     agc = a;
     return 0;
 }
+
 
 int32 uttproc_set_silcmp (scvq_compress_t c)
 {
@@ -1461,8 +1432,9 @@ int32 uttproc_set_silcmp (scvq_compress_t c)
     return 0;
 }
 
+
 #if 0
-int32 uttproc_set_uttid (char const *id)
+int32 uttproc_set_uttid (char *id)
 {
     warn_notidle ("uttproc_set_uttid");
     
@@ -1473,12 +1445,14 @@ int32 uttproc_set_uttid (char const *id)
 }
 #endif
 
-char const *uttproc_get_uttid ( void )
+
+char *uttproc_get_uttid ( void )
 {
     return uttid;
 }
 
-int32 uttproc_set_auto_uttid_prefix (char const *prefix)
+
+int32 uttproc_set_auto_uttid_prefix (char *prefix)
 {
     if (uttid_prefix)
 	free (uttid_prefix);
@@ -1488,13 +1462,15 @@ int32 uttproc_set_auto_uttid_prefix (char const *prefix)
     return 0;
 }
 
+
 int32	uttprocGetcomp2rawfr(int16 **ptr)
 {
     *ptr = comp2rawfr;
     return n_featfr;
 }
 
-void	uttprocSetcomp2rawfr(int32 num, int32 const *ptr)
+
+void	uttprocSetcomp2rawfr(int32 num, int32 *ptr)
 {
     int32		i;
     
@@ -1502,6 +1478,7 @@ void	uttprocSetcomp2rawfr(int32 num, int32 const *ptr)
     for (i = 0; i < num; i++)
 	comp2rawfr[i] = ptr[i];
 }
+
 
 int32 uttproc_feat2rawfr (int32 fr)
 {
@@ -1512,6 +1489,7 @@ int32 uttproc_feat2rawfr (int32 fr)
 
     return comp2rawfr[fr+8]-4;
 }
+
 
 int32 uttproc_raw2featfr (int32 fr)
 {
@@ -1524,6 +1502,7 @@ int32 uttproc_raw2featfr (int32 fr)
     return (i-8);
 }
 
+
 int32 uttproc_cepmean_set (float *cep)
 {
     warn_notidle ("uttproc_cepmean_set");
@@ -1531,10 +1510,12 @@ int32 uttproc_cepmean_set (float *cep)
     return (cepmean_set (cep));
 }
 
+
 int32 uttproc_cepmean_get (float *cep)
 {
     return (cepmean_get (cep));
 }
+
 
 int32 uttproc_agcemax_set (float c0max)
 {
@@ -1542,6 +1523,7 @@ int32 uttproc_agcemax_set (float c0max)
     agcemax_set (c0max);
     return 0;
 }
+
 
 double uttproc_agcemax_get ( void )
 {
@@ -1551,6 +1533,7 @@ double uttproc_agcemax_get ( void )
     return agcemax_get ();
 }
 
+
 int32 uttproc_nosearch (int32 flag)
 {
     warn_notidle ("uttproc_nosearch");
@@ -1559,7 +1542,8 @@ int32 uttproc_nosearch (int32 flag)
     return 0;
 }
 
-int32 uttproc_set_rawlogdir (char const *dir)
+
+int32 uttproc_set_rawlogdir (char *dir)
 {
     warn_notidle ("uttproc_set_rawlogdir");
 
@@ -1575,7 +1559,8 @@ int32 uttproc_set_rawlogdir (char const *dir)
     return 0;
 }
 
-int32 uttproc_set_mfclogdir (char const *dir)
+
+int32 uttproc_set_mfclogdir (char *dir)
 {
     warn_notidle ("uttproc_set_mfclogdir");
 
@@ -1591,7 +1576,8 @@ int32 uttproc_set_mfclogdir (char const *dir)
     return 0;
 }
 
-search_hyp_t *uttproc_allphone_file (char const *utt)
+
+search_hyp_t *uttproc_allphone_cepfile (char *utt)
 {
     int32 nfr;
     extern search_hyp_t *allphone_utt();

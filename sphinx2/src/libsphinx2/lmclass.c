@@ -1,5 +1,5 @@
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 1998-2000 Carnegie Mellon University.  All rights 
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,9 +14,20 @@
  *    the documentation and/or other materials provided with the
  *    distribution.
  *
- * This work was supported in part by funding from the Defense Advanced 
- * Research Projects Agency and the National Science Foundation of the 
- * United States of America, and the CMU Sphinx Speech Consortium.
+ * 3. The names "Sphinx" and "Carnegie Mellon" must not be used to
+ *    endorse or promote products derived from this software without
+ *    prior written permission. To obtain permission, contact 
+ *    sphinx@cs.cmu.edu.
+ *
+ * 4. Products derived from this software may not be called "Sphinx"
+ *    nor may "Sphinx" appear in their names without prior written
+ *    permission of Carnegie Mellon University. To obtain permission,
+ *    contact sphinx@cs.cmu.edu.
+ *
+ * 5. Redistributions of any form whatsoever must retain the following
+ *    acknowledgment:
+ *    "This product includes software developed by Carnegie
+ *    Mellon University (http://www.speech.cs.cmu.edu/)."
  *
  * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
  * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -33,6 +44,7 @@
  * ====================================================================
  *
  */
+
 /*
  * lmclass.c -- Class-of-words objects in language models.
  * 
@@ -42,22 +54,26 @@
  * 		Started.
  */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <math.h>
 
-#include "s2types.h"
-#include "CM_macros.h"
-#include "str2words.h"
-#include "strfuncs.h"
-#include "err.h"
-#include "log.h"
+#include <CM_macros.h>
+#include <str2words.h>
+#include <err.h>
+#include <log.h>
 
-#include "lmclass.h"
+#include <lmclass.h>
+
+
+extern char *salloc();
+
 
 #define LMCLASS_UNDEFINED_PROB		32001	/* Some large +ve non-logprob value */
+
 
 void lmclass_dump (lmclass_t cl, FILE *fp)
 {
@@ -73,6 +89,7 @@ void lmclass_dump (lmclass_t cl, FILE *fp)
     fflush (fp);
 }
 
+
 void lmclass_set_dump (lmclass_set_t set, FILE *fp)
 {
     lmclass_t cl;
@@ -83,6 +100,7 @@ void lmclass_set_dump (lmclass_set_t set, FILE *fp)
 	lmclass_dump (cl, fp);
 }
 
+
 lmclass_set_t lmclass_newset ( void )
 {
     lmclass_set_t set;
@@ -91,6 +109,7 @@ lmclass_set_t lmclass_newset ( void )
     set->lmclass_list = NULL;
     return set;
 }
+
 
 static lmclass_set_t lmclass_add (lmclass_set_t set, lmclass_t new)
 {
@@ -117,6 +136,7 @@ static lmclass_set_t lmclass_add (lmclass_set_t set, lmclass_t new)
     return set;
 }
 
+
 static lmclass_t lmclass_addword (lmclass_t class, lmclass_word_t new)
 {
     lmclass_word_t w, prev;
@@ -139,6 +159,7 @@ static lmclass_t lmclass_addword (lmclass_t class, lmclass_word_t new)
     return class;
 }
 
+
 lmclass_set_t lmclass_loadfile (lmclass_set_t lmclass_set, char *file)
 {
     FILE *fp;
@@ -147,6 +168,7 @@ lmclass_set_t lmclass_loadfile (lmclass_set_t lmclass_set, char *file)
     lmclass_t lmclass;
     lmclass_word_t lmclass_word;
     float SUMp, p;
+    int32 LOGp;
     int32 n_implicit_prob, n_word;
     
     assert (lmclass_set != NULL);
@@ -188,8 +210,6 @@ lmclass_set_t lmclass_loadfile (lmclass_set_t lmclass_set, char *file)
 	n_implicit_prob = 0;
 	n_word = 0;
 	for (;;) {
-	    int32 LOGp = 0; /* No, GCC, it won't be used uninitialized */
-
 	    while (((_eof = fgets (line, sizeof(line), fp)) != NULL) &&
 		   ((line[0] == '#') || ((nwd = str2words(line, word, 4096)) == 0))) {
 		lineno++;
@@ -233,8 +253,6 @@ lmclass_set_t lmclass_loadfile (lmclass_set_t lmclass_set, char *file)
 	}
 
 	if (n_implicit_prob > 0) {
-	    int32 LOGp;
-
 	    if (SUMp >= 1.0)
 		E_FATAL("Sum(prob)(LMClass %s) = %e\n", lmclass->name, SUMp);
 	    
@@ -261,11 +279,13 @@ lmclass_set_t lmclass_loadfile (lmclass_set_t lmclass_set, char *file)
     return lmclass_set;
 }
 
+
 void lmclass_set_dictwid (lmclass_word_t w, int32 dictwid)
 {
     assert (w != NULL);
     w->dictwid = dictwid;
 }
+
 
 lmclass_t lmclass_get_lmclass (lmclass_set_t set, char *name)
 {
@@ -277,6 +297,7 @@ lmclass_t lmclass_get_lmclass (lmclass_set_t set, char *name)
     
     return cl;
 }
+
 
 int32 lmclass_get_nclass (lmclass_set_t set)
 {

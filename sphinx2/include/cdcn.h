@@ -1,35 +1,3 @@
-/* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
- * reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
- *
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY CARNEGIE MELLON UNIVERSITY ``AS IS'' AND 
- * ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL CARNEGIE MELLON UNIVERSITY
- * NOR ITS EMPLOYEES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ====================================================================
- *
- */
 /*
  * cdcn.h -- From the robust speech group at CMU-ECE/SCS
  * 
@@ -91,13 +59,20 @@ typedef struct suitcase
   int    run_cdcn;
 } CDCN_type;
 
-int 	cdcn_init (char const *, CDCN_type *);
+#if 0
+
+int 	cdcn_init (char *, CDCN_type *);
 float   cdcn_update (float *, int, CDCN_type *);
 void    cdcn_norm (float *, CDCN_type *);
-void    block_cdcn_norm (float z[][NUM_COEFF+1],
-			 int num_frames,
-			 CDCN_type *cdcn_variabls);
+void    block_cdcn_norm (float *, int, CDCN_type *);
 
-CDCN_type *uttproc_get_cdcn_ptr ( void );
+#else
 
-#endif /* _CDCN_H_ */
+int 	cdcn_init();
+float   cdcn_update();
+void    cdcn_norm();
+void    block_cdcn_norm();
+
+#endif
+
+#endif
