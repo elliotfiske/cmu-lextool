@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project basedir="." default="all" name="Sphinx-4">
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Where to find things...                                * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <path id="libs">
+        <fileset dir="lib" includes="**/jsapi.jar"/>
+    </path>
+    <property name="src_dir"		value="."/>
+    <property name="build_dir"		value="bld"/>
+    <property name="classes_dir"	value="${build_dir}/classes"/>
+    <property name="lib_dir"            value="${build_dir}/lib"/>
+    <property name="bin_dir"            value="${build_dir}/bin"/>
+    <property name="javadoc_dir"	value="javadoc"/>
+    <property name="javadoc_check_dir"  value="${build_dir}/javadoc_check"/>
+    <property name="javadoc_zip"	value="javadoc.zip"/>
+
+    <!-- Load the environment -->
+    <property environment="env"/>
+
+    <condition property="javadoc_level" 
+                value="${access}">
+         <isset property="access"/>
+    </condition>
+    <condition property="javadoc_level" 
+                value="public">
+       <not>
+         <isset property="access"/>
+       </not>
+    </condition>
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Determine which sources should be compiled depending   * -->
+    <!-- * on the availability of lib/jsapi.jar.  This creates a  * -->
+    <!-- * property called "patternset_to_compile" and sets its   * -->
+    <!-- * val to either "all" or "no_jsapi", which refers to the * -->
+    <!-- * name of a patternset.  The value of srcs_to_compile    * -->
+    <!-- * will be used in the javac target as a patternset       * -->
+    <!-- * refid.                                                 * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <patternset id="all" 
+                includes="edu/**,com/**"/>
+
+    <patternset id="edu" 
+                includes="edu/**"
+	        excludes="com/**"/>
+
+    <patternset id="no_jsapi" 
+                includes="edu/**"
+	        excludes="com/**,
+                          edu/cmu/sphinx/jsapi/**"/>
+             
+    <target name="set_patternset_to_compile">
+        <condition property="patternset_to_compile"
+                   value="all">
+            <available file="lib/jsapi.jar"/>
+        </condition>
+        <condition property="patternset_to_compile"
+                   value="no_jsapi">
+            <not>
+                <available file="lib/jsapi.jar"/>
+            </not>
+        </condition>
+    </target>
+
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Determine which sources should be documented using     * -->
+    <!-- * javadoc depending on the availability of               * -->
+    <!-- * lib/jsapi.jar. This creates a property called          * -->
+    <!-- * "patternset_to_doc" and sets its val to either         * -->
+    <!-- * "all" or "no_jsapi", which refers to the name of a     * -->
+    <!-- * patternset.                                            * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+
+    <target name="set_patternset_to_doc">
+        <condition property="patternset_to_doc"
+                   value="edu">
+            <available file="lib/jsapi.jar"/>
+        </condition>
+        <condition property="patternset_to_doc"
+                   value="no_jsapi">
+            <not>
+                <available file="lib/jsapi.jar"/>
+            </not>
+        </condition>
+    </target>
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Handle JSAPI:                                          * -->
+    <!-- *                                                        * -->
+    <!-- *    1) If a jsapi.jar file can be found, use it and     * --> 
+    <!-- *       compile all the sources.                         * -->
+    <!-- *                                                        * -->
+    <!-- *    2) If a jsapi.jar file cannot be found, issue a     * -->
+    <!-- *       message and just compile the sources that do     * -->
+    <!-- *       not depend upon jsapi.jar.                       * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <target name="check_jsapi_default.isPresent">
+        <!-- Complicated way of doing a "if... else"                 -->
+        <!-- Check if the environment variable is set. If it is, set -->
+        <!-- the local variable to the same value.                   -->
+        <condition property="EXTERNAL_JSAPI_LOCATION" 
+                   value="${env.EXTERNAL_JSAPI_LOCATION}">
+            <isset property="env.EXTERNAL_JSAPI_LOCATION"/>
+        </condition>
+
+        <!-- If environment variable is not set, set the local       -->
+        <!-- variable to a default value.                            -->
+        <condition property="EXTERNAL_JSAPI_LOCATION" 
+                   value="/lab/speech/sphinx4/lib/jsapi.jar">
+            <not>
+                 <isset property="env.EXTERNAL_JSAPI_LOCATION"/>
+            </not>
+        </condition>
+        <available file="${EXTERNAL_JSAPI_LOCATION}" 
+                   property="jsapi_default.isPresent"/>
+    </target>
+
+    <target name="copy_jsapi_jar" if="jsapi_default.isPresent">
+        <copy file="${EXTERNAL_JSAPI_LOCATION}" tofile="lib/jsapi.jar"/>
+    </target>
+
+    <target name="check_jsapi_jar.isPresent"
+            depends="check_jsapi_default.isPresent,copy_jsapi_jar">
+        <available file="lib/jsapi.jar" property="jsapi_jar.isPresent"/>
+    </target>
+
+    <target name="issue_jsapi_warning"
+            unless="jsapi_jar.isPresent">
+        <echo>
+
+Cannot find lib/jsapi.jar needed to build Java Speech API
+(JSAPI) support for Sphinx-4.  Will not build any sources
+that require jsapi.jar.  If you'd like to enable JSAPI
+support, please extract jsapi.jar by running jsapi.sh or 
+jsapi.exe from the lib directory.
+        </echo>
+    </target>
+
+    <target name="handle_jsapi"
+            depends="check_jsapi_jar.isPresent,
+                     issue_jsapi_warning,
+                     set_patternset_to_compile,
+                     set_patternset_to_doc"/>
+
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Builds srcs, jars, demos                               * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <target name="all"
+	    depends="compile_src,jars"
+	    description="Build everything">
+	<echo message="Build complete."/>
+    </target>
+
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Builds just the srcs.                                  * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <target name="compile_src"
+	    depends="handle_jsapi"
+	    description="Build just the srcs">
+	<mkdir dir="${classes_dir}"/>
+	<javac debug="true"
+	       source="1.4"
+ 	       srcdir="${src_dir}"
+	       deprecation="true"
+	       destdir="${classes_dir}">
+            <patternset refid="${patternset_to_compile}"/>
+	    <classpath refid="libs"/>
+	</javac>
+    </target>
+
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Generates the jar files                                * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <target name="jars"
+	    depends="sphinx4_jar,audiotool_jar"
+	    description="Builds all the jar files"/>
+
+
+    <!-- sphinx4.jar -->
+    <property name="sphinx4_jar" value="${lib_dir}/sphinx4.jar"/>
+
+    <target name="sphinx4_jar" 
+	    depends="compile_src"
+	    description="Create ${lib_dir}/sphinx4.jar">
+        <mkdir dir="${lib_dir}"/>
+        <jar destfile="${sphinx4_jar}" 
+	     manifest="${src_dir}/edu/cmu/sphinx/sphinx4.manifest"
+	     compress="true"
+             excludes="edu/cmu/sphinx/tools/**">
+            <fileset dir="${classes_dir}"/>
+        </jar>
+    </target>
+
+    <!-- audiotool.jar -->
+    <property name="audiotool_jar" value="${bin_dir}/audiotool.jar"/>
+
+    <target name="audiotool_jar" 
+	    depends="compile_src"
+	    description="Create ${bin_dir}/audiotool.jar">
+        <mkdir dir="${bin_dir}"/>
+        <jar destfile="${audiotool_jar}" 
+	     manifest="${src_dir}/edu/cmu/sphinx/tools/audio/Manifest"
+	     compress="true">
+            <fileset dir="${classes_dir}"
+		     includes="edu/cmu/sphinx/tools/audio/*"/>
+            <fileset dir="${src_dir}"
+		     includes="edu/cmu/sphinx/tools/audio/spectrogram.props"/>
+        </jar>
+    </target>
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Generates the javadoc                                  * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+    <property name="javadoc_desc" value="Sphinx-4"/>
+
+    <target name="javadoc" 	    
+	    depends="handle_jsapi"
+	    description="Generate javadoc, optionally with '-Daccess=private'">
+	<delete dir="${javadoc_dir}"/>
+        <mkdir dir="${javadoc_dir}"/>
+        <javadoc sourcepath="${src_dir}"
+	         source="1.4"
+		 additionalparam="-breakiterator"
+		 destdir="${javadoc_dir}" 
+		 overview="${src_dir}/overview.html"
+		 windowtitle="${javadoc_desc}"
+                 doctitle="${javadoc_desc}"
+                 access="${javadoc_level}">
+            <link href="http://java.sun.com/products/java-media/speech/forDevelopers/jsapi-doc"
+                  offline="true"
+                  packagelistLoc="lib/jsapi" />
+            <packageset dir="${src_dir}" defaultexcludes="yes">
+                  <patternset refid="${patternset_to_doc}"/>
+            </packageset>
+	    <classpath refid="libs"/>
+        </javadoc>
+    </target>
+
+    <!-- ********************************************************** -->
+    <!-- *                                                        * -->
+    <!-- * Checks javadocs                                        * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** -->
+
+    <target name="javadoc_check" 	    
+	    depends="handle_jsapi"
+	    description="checks the javadocs">
+        <mkdir dir="${javadoc_check_dir}"/>
+        <javadoc sourcepath="${src_dir}"
+		 additionalparam="-source 1.4"
+		 packagenames="edu.*"
+                 excludepackagenames="edu.cmu.sphinx.trainer"
+		 destdir="${javadoc_check_dir}" 
+		 overview="${src_dir}/overview.html"
+                 doclet="com.sun.tools.doclets.doccheck.DocCheck"
+                 docletpath="/lab/speech/java/doccheck1.2b2/doccheck.jar"
+                 access="${javadoc_level}">
+	    <classpath refid="libs"/>
+        </javadoc>
+    </target>
+
+
+    <!-- ********************************************************** --> 
+    <!-- *                                                        * -->
+    <!-- * Deletes all build output and *~ file droppings         * -->
+    <!-- *                                                        * -->
+    <!-- ********************************************************** --> 
+    <target name="clean" description="Delete all build output">
+	<delete>
+	    <fileset defaultexcludes="no" dir="." includes="**/*~"/>
+	</delete>
+	<delete dir="${build_dir}"/>
+	<delete dir="${javadoc_dir}"/>
+    </target>
+
+</project>
