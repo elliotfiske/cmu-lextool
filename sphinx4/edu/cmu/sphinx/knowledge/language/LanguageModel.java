@@ -12,12 +12,11 @@
 
 package edu.cmu.sphinx.knowledge.language;
 
-import java.io.IOException;
-import java.util.Set;
-
 import edu.cmu.sphinx.knowledge.dictionary.Dictionary;
 import edu.cmu.sphinx.util.LogMath;
-import edu.cmu.sphinx.util.SphinxProperties;
+import java.util.List;
+import java.util.Set;
+import java.io.IOException;
 
 
 /**
@@ -92,13 +91,12 @@ public interface LanguageModel {
     /**
      * Initializes this LanguageModel
      *
-     * @param prop the sphinx properties for the model
-     * @param dictionary the dictinary to use
+     * @param context the context to associate this linguist with
      * 
      *
      * @throws IOException if an error occurs while loading the model
      */
-    public void initialize(SphinxProperties prop, Dictionary dictionary) 
+    public void initialize(String context, Dictionary dictionary) 
         throws IOException;
 	    	
 
@@ -134,15 +132,6 @@ public interface LanguageModel {
       * base
       */
      public float getProbability(WordSequence wordSequence);
-
-
-     /**
-      * Gets the smear term for the given wordSequence
-      *
-      * @param wordSequence the word sequence
-      * @return the smear term associated with this word sequence
-      */
-     public float getSmear(WordSequence wordSequence);
 
 
      /**

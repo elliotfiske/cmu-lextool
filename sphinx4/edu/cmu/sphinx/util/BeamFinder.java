@@ -12,10 +12,11 @@
 
 package edu.cmu.sphinx.util;
 
-import java.text.DecimalFormat;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
+import java.text.DecimalFormat;
 
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.result.Result;

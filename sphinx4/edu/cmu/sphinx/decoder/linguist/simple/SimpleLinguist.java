@@ -12,37 +12,40 @@
 
 package edu.cmu.sphinx.decoder.linguist.simple;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import edu.cmu.sphinx.decoder.linguist.Grammar;
-import edu.cmu.sphinx.decoder.linguist.GrammarArc;
-import edu.cmu.sphinx.decoder.linguist.GrammarNode;
-import edu.cmu.sphinx.decoder.linguist.Linguist;
-import edu.cmu.sphinx.decoder.linguist.SearchState;
-import edu.cmu.sphinx.decoder.linguist.SearchStateArc;
-import edu.cmu.sphinx.decoder.linguist.util.LinguistTimer;
-import edu.cmu.sphinx.knowledge.acoustic.AcousticModel;
 import edu.cmu.sphinx.knowledge.acoustic.HMM;
-import edu.cmu.sphinx.knowledge.acoustic.HMMPosition;
 import edu.cmu.sphinx.knowledge.acoustic.HMMState;
 import edu.cmu.sphinx.knowledge.acoustic.HMMStateArc;
-import edu.cmu.sphinx.knowledge.acoustic.LeftRightContext;
+import edu.cmu.sphinx.knowledge.acoustic.HMMPosition;
 import edu.cmu.sphinx.knowledge.acoustic.Unit;
+import edu.cmu.sphinx.knowledge.acoustic.AcousticModel;
+import edu.cmu.sphinx.knowledge.acoustic.Context;
+import edu.cmu.sphinx.knowledge.acoustic.LeftRightContext;
 import edu.cmu.sphinx.knowledge.dictionary.Dictionary;
-import edu.cmu.sphinx.knowledge.dictionary.Pronunciation;
-import edu.cmu.sphinx.knowledge.dictionary.Word;
 import edu.cmu.sphinx.knowledge.language.LanguageModel;
-import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.SphinxProperties;
 import edu.cmu.sphinx.util.StatisticsVariable;
+import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.Timer;
+import edu.cmu.sphinx.util.Utilities;
+import edu.cmu.sphinx.knowledge.dictionary.Pronunciation;
+import edu.cmu.sphinx.knowledge.dictionary.Word;
+import edu.cmu.sphinx.decoder.linguist.GrammarNode;
+import edu.cmu.sphinx.decoder.linguist.GrammarArc;
+import edu.cmu.sphinx.decoder.linguist.SearchState;
+import edu.cmu.sphinx.decoder.linguist.SearchStateArc;
+import edu.cmu.sphinx.decoder.linguist.Grammar;
+import edu.cmu.sphinx.decoder.linguist.Linguist;
+import edu.cmu.sphinx.decoder.linguist.util.LinguistTimer;
+
+
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * A simple form of the linguist.  It makes the following simplifying
@@ -232,11 +235,6 @@ public class SimpleLinguist implements  Linguist {
     protected void setAcousticModels(AcousticModel[] models) {
         assert models.length == 1;
         this.acousticModel = models[0];
-
-        // this linguist requires that 
-        assert    this.acousticModel.getLeftContextSize() == 1
-               && this.acousticModel.getRightContextSize() == 1 :
-               "SimpleLinguist requires left and right AM context size of 1";
     }
 
 
@@ -1240,9 +1238,7 @@ public class SimpleLinguist implements  Linguist {
             for (int i = 0; i < leftUnits.length - 1; i++) {
                 leftUnits[i] = prevUnits[i + 1];
             }
-            if (leftUnits.length > 0) {
-                leftUnits[leftUnits.length -1] = unit;
-            }
+            leftUnits[leftUnits.length -1] = unit;
             return UnitContext.get(leftUnits);
         }
 

@@ -25,26 +25,16 @@ import java.util.*;
  * To change this template use Options | File Templates.
  */
 public class AlternateHypothesisManager {
+
+    public AlternateHypothesisManager(SphinxProperties props) {
+        this.props = props;
+    }
+
     private Map viterbiLoserMap = new HashMap();
 
     protected SphinxProperties props;
     protected double logBase;
 
-    /**
-     * Creates an alternate hypotheses manager
-     *
-     * @param props the sphinx-4 properties
-     */
-    public AlternateHypothesisManager(SphinxProperties props) {
-        this.props = props;
-    }
-
-
-    /**
-     * Retrieves the s4 properties
-     *
-     * @return the sphinx4 properties.
-     */
     public SphinxProperties getProperties() {
         return props;
     }
@@ -102,12 +92,6 @@ public class AlternateHypothesisManager {
     }
 
 
-    /**
-     * Chantge the successor from one token to another
-     *
-     * @param newSuccessor the new successor token
-     * @param oldSuccessor the old successor token
-     */
     public void changeSuccessor(Token newSuccessor, Token oldSuccessor) {
         Object list = viterbiLoserMap.get(oldSuccessor);
         viterbiLoserMap.put(newSuccessor, list);

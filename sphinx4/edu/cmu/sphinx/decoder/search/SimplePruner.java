@@ -13,6 +13,10 @@
 
 package edu.cmu.sphinx.decoder.search;
 
+import edu.cmu.sphinx.decoder.search.Pruner;
+import edu.cmu.sphinx.decoder.search.ActiveList;
+
+import java.util.List;
 
 /**
  * Performs the default pruning behavior which is to invoke

@@ -30,18 +30,6 @@ public class  Context implements Serializable {
 
 
     /**
-     * Checks to see if there is a partial match with the given
-     * context. For a simple context such as this we always match.
-     *
-     * @param context the context to check
-     *
-     * @return true if there is a partial match
-     */
-    public boolean isPartialMatch(Context context) {
-	return true;
-    }
-
-    /**
      * Provides a string representation of a context
      */
     public String toString() {
@@ -74,5 +62,18 @@ public class  Context implements Serializable {
      */
     public int hashCode() {
 	return toString().hashCode();
+    }
+
+
+    /**
+     * Checks to see if there is a partial match with the given
+     * context. For a simple context such as this we always match.
+     *
+     * @param context the context to check
+     *
+     * @return true if there is a partial match
+     */
+    public boolean isPartialMatch(Context context) {
+	return true;
     }
 }

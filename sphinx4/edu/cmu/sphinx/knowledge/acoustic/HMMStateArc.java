@@ -13,6 +13,7 @@
  */
 
 package edu.cmu.sphinx.knowledge.acoustic;
+import java.io.Serializable;
 
 
 /**
@@ -20,7 +21,7 @@ package edu.cmu.sphinx.knowledge.acoustic;
  *
  * All probabilities are maintained in linear base
  */
-public class HMMStateArc {
+public class HMMStateArc implements Serializable {
     private HMMState hmmState;
     private float probability;
 

@@ -12,6 +12,7 @@
 
 package edu.cmu.sphinx.knowledge.acoustic;
 
+import edu.cmu.sphinx.util.Utilities;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.Serializable;
@@ -31,6 +32,7 @@ public class  LeftRightContext extends Context implements Serializable {
 	}
     }
     
+    private static int objectCount; // for tracking objects
 
     /**
      * Creates a LeftRightContext
@@ -41,6 +43,7 @@ public class  LeftRightContext extends Context implements Serializable {
     private LeftRightContext(Unit[] leftContext, Unit[] rightContext) {
         this.leftContext = leftContext;
         this.rightContext = rightContext;
+	Utilities.objectTracker("LeftRightContext", objectCount++);
     }
 
 

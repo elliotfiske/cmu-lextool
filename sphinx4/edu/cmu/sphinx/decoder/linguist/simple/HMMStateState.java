@@ -16,7 +16,7 @@
 package edu.cmu.sphinx.decoder.linguist.simple;
 
 import edu.cmu.sphinx.knowledge.acoustic.HMMState;
-import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.Feature;
 import java.io.Serializable;
 import edu.cmu.sphinx.decoder.linguist.HMMSearchState;
 
@@ -36,7 +36,9 @@ public class HMMStateState extends SentenceHMMState
      * @param hmmState the hmmState associated with this state
      */
     public HMMStateState(SentenceHMMState parent, HMMState hmmState) {
-	super( "S", parent, hmmState.getState()); 
+	super((hmmState.getHMM().isComposite() ? "@":"") + "S",
+		parent,
+		hmmState.getState()); 
 	this.hmmState = hmmState;
         this.isEmitting = hmmState.isEmitting();
     }
@@ -76,7 +78,7 @@ public class HMMStateState extends SentenceHMMState
      *
      * @return the acoustic score for this state
      */
-    public float getScore(Data feature) {
+    public float getScore(Feature feature) {
 	return hmmState.getScore(feature);
     }
 

@@ -13,26 +13,28 @@
 
 package edu.cmu.sphinx.frontend.endpoint;
 
+import edu.cmu.sphinx.frontend.Audio;
+import edu.cmu.sphinx.frontend.AudioSource;
+import edu.cmu.sphinx.frontend.DataProcessor;
+import edu.cmu.sphinx.frontend.FrontEnd;
+import edu.cmu.sphinx.frontend.Signal;
+
+import edu.cmu.sphinx.util.SphinxProperties;
+import edu.cmu.sphinx.util.LogMath;
+
+import java.io.IOException;
+
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataEndSignal;
-import edu.cmu.sphinx.frontend.DataProcessingException;
-import edu.cmu.sphinx.frontend.DataProcessor;
-import edu.cmu.sphinx.frontend.DataStartSignal;
-import edu.cmu.sphinx.frontend.FrontEndFactory;
-import edu.cmu.sphinx.frontend.Signal;
-import edu.cmu.sphinx.util.SphinxProperties;
-
 
 /**
- * Converts a stream of SpeechClassifiedData objects, marked as 
- * speech and non-speech, and mark out the regions that are considered speech.
- * This is done by inserting SPEECH_START and SPEECH_END signals 
- * into the stream.
+ * Converts a stream of Audio objects, marked as speech and non-speech,
+ * into utterances. This is done by inserting SPEECH_START and
+ * SPEECH_END signals into the stream.
  *
  * <p>The algorithm for inserting the two signals is as follows.
  *
@@ -52,11 +54,8 @@ import edu.cmu.sphinx.util.SphinxProperties;
  * 'ou-of-speech' state. If any speech audio is encountered in-between,
  * the accounting starts all over again.
  */
-public class SpeechMarker extends BaseDataProcessor {
+public class SpeechMarker extends DataProcessor implements AudioSource {
 
-    /**
-     * The prefix for all the properties of this SpeechMarker.
-     */
     public static final String PROP_PREFIX = 
         "edu.cmu.sphinx.frontend.endpoint.SpeechMarker.";
 
@@ -108,6 +107,7 @@ public class SpeechMarker extends BaseDataProcessor {
     public static final int PROP_SPEECH_TRAILER_DEFAULT = 100;
 
 
+    private AudioSource predecessor;
     private List outputQueue;  // Audio objects are added to the end
     private boolean inSpeech;
     private int startSpeechTime;
@@ -118,42 +118,44 @@ public class SpeechMarker extends BaseDataProcessor {
 
 
     /**
-     * Initializes this SpeechMarker with the given name, front end,
-     * properties, and AudioSource predecessor.
+     * Initializes this SpeechMarker with the given name, context,
+     * and AudioSource predecessor.
      *
-     * @param name        the name of this SpeechMarker
-     * @param frontEnd    the front end this SpeechMarker belongs to
-     * @param props       the SphinxProperties to read properties from
-     * @param predecessor the DataProcessor this SpeechMarker gets Data from
+     * @param name the name of this SpeechMarker
+     * @param context the context of the SphinxProperties this
+     *    SpeechMarker uses
+     * @param props the SphinxProperties to read properties from
+     * @param predecessor the AudioSource where this SpeechMarker
+     *    gets Cepstrum from
+     *
+     * @throws java.io.IOException
      */
-    public void initialize(String name, String frontEnd, 
-                           SphinxProperties props, DataProcessor predecessor) {
-        super.initialize(name, frontEnd, props, predecessor);
+    public void initialize(String name, String context, 
+                           SphinxProperties props,
+                           AudioSource predecessor) throws IOException {
+        super.initialize(name, context, props);
+        this.predecessor = predecessor;
         this.outputQueue = new ArrayList();
-        setProperties(props);
+        setProperties();
         reset();
     }
 
     /**
      * Sets the properties for this SpeechMarker.
      */
-    private void setProperties(SphinxProperties props) {
-
+    private void setProperties() {
+        SphinxProperties props = getSphinxProperties();
         startSpeechTime = 
-            props.getInt(getFullPropertyName(PROP_START_SPEECH),
-                         PROP_START_SPEECH_DEFAULT);
+            props.getInt(PROP_START_SPEECH, PROP_START_SPEECH_DEFAULT);
         endSilenceTime = 
-            props.getInt(getFullPropertyName(PROP_END_SILENCE),
-                         PROP_END_SILENCE_DEFAULT);
+            props.getInt(PROP_END_SILENCE, PROP_END_SILENCE_DEFAULT);
         speechLeader =
-            props.getInt(getFullPropertyName(PROP_SPEECH_LEADER),
-                         PROP_SPEECH_LEADER_DEFAULT);
+            props.getInt(PROP_SPEECH_LEADER, PROP_SPEECH_LEADER_DEFAULT);
         speechTrailer =
-            props.getInt(getFullPropertyName(PROP_SPEECH_TRAILER),
-                         PROP_SPEECH_TRAILER_DEFAULT);
+            props.getInt(PROP_SPEECH_TRAILER, PROP_SPEECH_TRAILER_DEFAULT);
         sampleRate =
-            props.getInt(getFullPropertyName(FrontEndFactory.PROP_SAMPLE_RATE),
-                         FrontEndFactory.PROP_SAMPLE_RATE_DEFAULT);
+            props.getInt(FrontEnd.PROP_SAMPLE_RATE,
+                         FrontEnd.PROP_SAMPLE_RATE_DEFAULT);
     }
 
     /**
@@ -164,103 +166,112 @@ public class SpeechMarker extends BaseDataProcessor {
     }
 
     /**
-     * Returns the next Data object.
+     * Returns the next Audio object.
      *
-     * @return the next Data object, or null if none available
+     * @return the next Audio object, or null if none available
      *
-     * @throws DataProcessingException if a data processing error occurs
+     * @throws java.io.IOException if an error occurred
+     *
+     * @see Audio
      */
-    public Data getData() throws DataProcessingException {
+    public Audio getAudio() throws IOException {
         if (outputQueue.size() == 0) {
             if (!inSpeech) {
                 readInitialFrames();
             } else {
-                Data audio = readData();
+                Audio audio = readAudio();
                 if (audio != null) {
-                    if (audio instanceof SpeechClassifiedData) {
-                        SpeechClassifiedData data =
-                            (SpeechClassifiedData) audio;
-                        sendToQueue(data);
-                        if (!data.isSpeech()) {
-                            inSpeech = !(readEndFrames(data));
+                    if (audio.hasContent()) {
+                        sendToQueue(audio);
+                        if (!audio.isSpeech()) {
+                            inSpeech = !(readEndFrames(audio));
                         }
-                    } else if (audio instanceof DataEndSignal) {
-                        sendToQueue(new SpeechStartSignal
-                                    (((Signal) audio).getTime()));
+                    } else if (audio.hasSignal(Signal.UTTERANCE_END)) {
+                        sendToQueue(new Audio(Signal.SPEECH_END, 
+                                              audio.getCollectTime(),
+                                              audio.getFirstSampleNumber()));
                         sendToQueue(audio);
                         inSpeech = false;
-                    } else if (audio instanceof DataStartSignal) {
-                        throw new Error("Got DataStartSignal while in speech");
+                    } else if (audio.hasSignal(Signal.UTTERANCE_START)) {
+                        throw new Error("Got UTTERANCE_START while in speech");
                     }
                 }
             }
         }
         if (outputQueue.size() > 0) {
-            Data audio = (Data) outputQueue.remove(0);
-            if (audio instanceof SpeechClassifiedData) {
-                SpeechClassifiedData data = (SpeechClassifiedData) audio;
-                audio = data.getDoubleData();
-            }
+            Audio audio = (Audio) outputQueue.remove(0);
             return audio;
         } else {
             return null;
         }
     }
 
-    private Data readData() throws DataProcessingException {
-        Data audio = getPredecessor().getData();
+    private Audio readAudio() throws IOException {
+        Audio audio = predecessor.getAudio();
+        /*
+        if (audio != null) {
+            String speech = "";
+            if (audio.hasContent() && audio.isSpeech()) {
+                speech = " *";
+            }
+            System.out.println("SpeechMarker: incoming: " + 
+                               audio.getSignal() + speech);
+        }
+        */
         return audio;
     }
 
     private int numUttStarts;
     private int numUttEnds;
 
-    private void sendToQueue(Data audio) {
+    private void sendToQueue(Audio audio) {
         // now add the audio
         outputQueue.add(audio);
-        if (audio instanceof DataStartSignal) {
+        if (audio.hasSignal(Signal.UTTERANCE_START)) {
             numUttEnds = 0;
             numUttStarts++;
-        } else if (audio instanceof DataEndSignal) {
+            if (numUttStarts > 1) {
+                // throw new Error("Too many utterance starts");
+            }
+        } else if (audio.hasSignal(Signal.UTTERANCE_END)) {
             numUttStarts = 0;
             numUttEnds++;
+            if (numUttEnds > 1) {
+                // throw new Error("Too many utterance ends");
+            }
         }
     }
 
     /**
      * Returns the amount of audio data in milliseconds in the 
-     * given SpeechClassifiedData object.
+     * given Audio object.
      *
-     * @param audio the SpeechClassifiedData object
+     * @param audio the Audio object
      *
      * @return the amount of audio data in milliseconds
      */
-    public int getAudioTime(SpeechClassifiedData audio) {
-        return (int) (audio.getValues().length * 1000.0f / sampleRate);
+    public int getAudioTime(Audio audio) {
+        return (int) (audio.getSamples().length * 1000.0f / sampleRate);
     }
         
     /**
      * Read the starting frames until the utterance has started.
-     *
-     * @throws DataProcessingException if a data processing error occurs
      */
-    private void readInitialFrames() throws DataProcessingException {
+    private void readInitialFrames() throws IOException {
         int nonSpeechTime = 0;
         int minSpeechTime = (startSpeechTime > speechLeader) ?
             startSpeechTime : speechLeader;
 
         while (!inSpeech) {
-            Data audio = readData();
+            Audio audio = readAudio();
             if (audio == null) {
                 return;
             } else {
                 sendToQueue(audio);
-                if (audio instanceof SpeechClassifiedData) {
-                    nonSpeechTime +=
-                        getAudioTime((SpeechClassifiedData) audio);
-                    SpeechClassifiedData data = (SpeechClassifiedData) audio;
-                    if (data.isSpeech()) {
-                        boolean speechStarted = handleFirstSpeech(data);
+                if (audio.hasContent()) {
+                    nonSpeechTime += getAudioTime(audio);
+                    if (audio.isSpeech()) {
+                        boolean speechStarted = handleFirstSpeech(audio);
                         if (speechStarted) {
                             // System.out.println("Speech started !!!");
                             addSpeechStart();
@@ -273,14 +284,18 @@ public class SpeechMarker extends BaseDataProcessor {
             int i = 0;
             // prune any excessive non-speech
             while (nonSpeechTime > minSpeechTime) {
-                Data next = (Data) outputQueue.get(i);
-                if (next instanceof SpeechClassifiedData) {
-                    int thisAudioTime
-                        = getAudioTime((SpeechClassifiedData) next);
-                    if (nonSpeechTime - thisAudioTime >= minSpeechTime) {
-                        outputQueue.remove(i);
-                        nonSpeechTime -= thisAudioTime;
+                Audio next = (Audio) outputQueue.get(i);
+                if (next.hasContent()) {
+                    int audioTime = getAudioTime(next);
+                    if (nonSpeechTime - audioTime >= minSpeechTime) {
+                        next = (Audio) outputQueue.remove(i);
+                        nonSpeechTime -= audioTime;
                     }
+                } else {
+                    /*
+                    System.out.println
+                        ("Not removed ("+i+"): "+next.getSignal());
+                    */
                 }
                 i++;
             }
@@ -288,30 +303,26 @@ public class SpeechMarker extends BaseDataProcessor {
     }
 
     /**
-     * Handles an SpeechClassifiedData object that can possibly be the first in
+     * Handles an Audio object that can possibly be the first in
      * an utterance. 
      *
-     * @param audio the SpeechClassifiedData to handle
+     * @param audio the Audio to handle
      *
      * @return true if utterance/speech has started for real, false otherwise
      */
-    private boolean handleFirstSpeech(SpeechClassifiedData audio)
-        throws DataProcessingException {
+    private boolean handleFirstSpeech(Audio audio) throws IOException {
         int speechTime = getAudioTime(audio);
-        
         // System.out.println("Entering handleFirstSpeech()");
+        
         // try to read more that 'startSpeechTime' amount of
         // audio that is labeled as speech (the condition for speech start)
-        
         while (speechTime < startSpeechTime) {
-            Data next = readData();
+            Audio next = readAudio();
             sendToQueue(next);
-            if (next instanceof SpeechClassifiedData) {
-                if (!((SpeechClassifiedData) next).isSpeech()) {
-                    return false;
-                } else {
-                    speechTime += getAudioTime(audio);
-                }
+            if (!next.isSpeech()) {
+                return false;
+            } else {
+                speechTime += getAudioTime(audio);
             }
         }
         return true;
@@ -329,20 +340,22 @@ public class SpeechMarker extends BaseDataProcessor {
 
         // backtrack until we have 'speechLeader' amount of non-speech
         while (silenceLength < speechLeader && i.hasPrevious()) {
-            Data current = (Data) i.previous();
-            if (current instanceof SpeechClassifiedData) {
-                SpeechClassifiedData data = (SpeechClassifiedData) current;
-                if (data.isSpeech()) {
+            Audio current = (Audio) i.previous();
+            if (current.hasContent()) {
+                if (current.isSpeech()) {
                     silenceLength = 0;
                 } else {
-                    silenceLength += getAudioTime(data);
+                    silenceLength += getAudioTime(current);
                 }
-                lastCollectTime = data.getCollectTime();
-                firstSampleNumber = data.getFirstSampleNumber();
-            } else if (current instanceof DataStartSignal) {
+                lastCollectTime = current.getCollectTime();
+                firstSampleNumber = current.getFirstSampleNumber();
+            } else if (current.hasSignal(Signal.UTTERANCE_START)) {
+                if (firstSampleNumber == 0) {
+                    firstSampleNumber = current.getFirstSampleNumber();
+                }
                 i.next(); // put the SPEECH_START after the UTTERANCE_START
                 break;
-            } else if (current instanceof DataEndSignal) {
+            } else if (current.hasSignal(Signal.UTTERANCE_END)) {
                 throw new Error("No UTTERANCE_START after UTTERANCE_END");
             }
         }
@@ -351,7 +364,8 @@ public class SpeechMarker extends BaseDataProcessor {
             assert lastCollectTime != 0;
         }
         // add the SPEECH_START
-        i.add(new SpeechStartSignal(lastCollectTime));
+        i.add(new Audio(Signal.SPEECH_START, lastCollectTime, 
+                        firstSampleNumber));
     }
 
     /**
@@ -363,8 +377,7 @@ public class SpeechMarker extends BaseDataProcessor {
      * @return true if speech has really ended, false if speech
      *    has not ended
      */
-    private boolean readEndFrames(SpeechClassifiedData audio) throws 
-        DataProcessingException {
+    private boolean readEndFrames(Audio audio) throws IOException {
 
         boolean speechEndAdded = false;
         boolean readTrailer = true;
@@ -373,50 +386,52 @@ public class SpeechMarker extends BaseDataProcessor {
 
         // read ahead until we have 'endSilenceTime' amount of silence
         while (silenceLength < endSilenceTime) {
-            Data next = readData();
-            if (next instanceof SpeechClassifiedData) {
-                SpeechClassifiedData data = (SpeechClassifiedData) next;
-                sendToQueue(data);
-                if (data.isSpeech()) {
+            Audio next = readAudio();
+            if (next.hasContent()) {
+                sendToQueue(next);
+                if (next.isSpeech()) {
                     // if speech is detected again, we're still in
                     // an utterance
                     return false;
                 } else {
                     // it is non-speech
-                    silenceLength += getAudioTime(data);
+                    silenceLength += getAudioTime(next);
                 }
-            } else if (next instanceof DataEndSignal) {
+            } else if (next.hasSignal(Signal.UTTERANCE_END)) {
                 sendToQueue(next);
                 readTrailer = false;
                 break;
-            } else if (next instanceof Signal) {
-                throw new Error("Illegal signal: " + next.toString());
+            } else {
+                throw new Error("Illegal signal: " + next.getSignal());
             }
         }
 
         if (readTrailer) {
             // read ahead until we have 'speechTrailer' amount of silence
             while (!speechEndAdded && silenceLength < speechTrailer) {
-                Data next = readData();
-                if (next instanceof SpeechClassifiedData) {
-                    SpeechClassifiedData data = (SpeechClassifiedData) next;
-                    if (data.isSpeech()) {
+                Audio next = readAudio();
+                if (next.hasContent()) {
+                    if (next.isSpeech()) {
                         // if we have hit speech again, then the current
                         // speech should end
-                        sendToQueue(new SpeechEndSignal(data.getCollectTime()));
-                        sendToQueue(data);
+                        sendToQueue(new Audio(Signal.SPEECH_END,
+                                              next.getCollectTime(),
+                                              next.getFirstSampleNumber()-1));
+                        sendToQueue(next);
                         speechEndAdded = true;
                         break;
                     } else {
-                        silenceLength += getAudioTime(data);
-                        sendToQueue(data);
+                        silenceLength += getAudioTime(next);
+                        sendToQueue(next);
                     }
-                } else if (next instanceof DataEndSignal) {
-                    sendToQueue(new SpeechEndSignal(((Signal)next).getTime()));
+                } else if (next.hasSignal(Signal.UTTERANCE_END)) {
+                    sendToQueue(new Audio(Signal.SPEECH_END,
+                                          next.getCollectTime(),
+                                          next.getFirstSampleNumber()));
                     sendToQueue(next);
                     speechEndAdded = true;
                 } else {
-                    throw new Error("Illegal signal: " + next.toString());
+                    throw new Error("Illegal signal: " + next.getSignal());
                 }
             }
         }
@@ -434,24 +449,26 @@ public class SpeechMarker extends BaseDataProcessor {
             silenceLength = 0;
 
             while (silenceLength < speechTrailer && i.hasNext()) {
-                Data next = (Data) i.next();
-                if (next instanceof DataEndSignal) {
+                Audio next = (Audio) i.next();
+                nextCollectTime = next.getCollectTime();
+                if (next.hasSignal(Signal.UTTERANCE_END)) {
                     i.previous();
                     break;
-                } else if (next instanceof SpeechClassifiedData) {
-                    SpeechClassifiedData data = (SpeechClassifiedData) next;
-                    nextCollectTime = data.getCollectTime();
-                    assert !data.isSpeech();
-                    silenceLength += getAudioTime(data);
-                    lastSampleNumber = data.getFirstSampleNumber() +
-                        data.getValues().length - 1;
+                } else {
+                    assert !next.isSpeech();
+                    silenceLength += getAudioTime(next);
+                    if (next.hasContent()) {
+                        lastSampleNumber = next.getFirstSampleNumber() +
+                            next.getSamples().length - 1;
+                    }
                 }
             }
             
             if (speechTrailer > 0) {
                 assert nextCollectTime != 0 && lastSampleNumber != 0;
             }
-            i.add(new SpeechEndSignal(nextCollectTime));
+            i.add(new Audio(Signal.SPEECH_END, nextCollectTime, 
+                            lastSampleNumber));
         }
 
         // System.out.println("Speech ended !!!");

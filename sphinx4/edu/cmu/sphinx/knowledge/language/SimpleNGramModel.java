@@ -12,27 +12,30 @@
 
 package edu.cmu.sphinx.knowledge.language;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-
 import edu.cmu.sphinx.knowledge.dictionary.Dictionary;
 import edu.cmu.sphinx.knowledge.dictionary.FastDictionary;
 import edu.cmu.sphinx.knowledge.dictionary.Word;
+
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.SphinxProperties;
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.Reader;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
+import java.util.StringTokenizer;
+
+// for testing
+import java.io.*;
 import edu.cmu.sphinx.util.Timer;
 
 /**
@@ -44,6 +47,8 @@ import edu.cmu.sphinx.util.Timer;
  * stored in log 10  base.
  */
 public class SimpleNGramModel implements LanguageModel {
+
+    private SphinxProperties props;
     private LogMath logMath;
     private Map map;
     private Set vocabulary;
@@ -56,14 +61,13 @@ public class SimpleNGramModel implements LanguageModel {
      * Creates a simple ngram model from the data at the URL. The
      * data should be an ARPA format
      *
-     * @param props the sphinx properties for the model
-     * @param dictionary the dictionary for the model
+     * @param context the context for this model
      *
      * @throws IOException if there is trouble loading the data
      */
-    public SimpleNGramModel(SphinxProperties props, Dictionary dictionary) 
+    public SimpleNGramModel(String context, Dictionary dictionary) 
         throws IOException, FileNotFoundException {
-            initialize(props, dictionary);
+            initialize(context, dictionary);
     }
     
     /**
@@ -75,11 +79,12 @@ public class SimpleNGramModel implements LanguageModel {
     /**
      * Initializes this LanguageModel
      *
-     * @param props the sphinx properties for this model
-     * @param dictionary the dictionary associated with this model
+     * @param context the context to associate this linguist with
      */
-    public void initialize(SphinxProperties props, Dictionary dictionary)
+    public void initialize(String context, Dictionary dictionary)
         throws IOException {
+        this.props = SphinxProperties.getSphinxProperties(context);
+        
         String format = props.getString
             (LanguageModel.PROP_FORMAT, LanguageModel.PROP_FORMAT_DEFAULT);
         String location = props.getString
@@ -91,7 +96,7 @@ public class SimpleNGramModel implements LanguageModel {
         
         map = new HashMap();
         vocabulary = new HashSet();
-        logMath = LogMath.getLogMath(props.getContext());
+        logMath = LogMath.getLogMath(context);
         load(format, location, unigramWeight, dictionary);
 
         int desiredMaxDepth = props.getInt
@@ -159,17 +164,6 @@ public class SimpleNGramModel implements LanguageModel {
         
         return logProbability;
     }
-
-     /**
-      * Gets the smear term for the given wordSequence
-      *
-      * @param wordSequence the word sequence
-      * @return the smear term associated with this word sequence
-      */
-     public float getSmear(WordSequence wordSequence) {
-         return 0.0f;
-     }
-
 
 
     /**
@@ -517,9 +511,7 @@ public class SimpleNGramModel implements LanguageModel {
         Timer.start("LM Load");
         SphinxProperties.initContext(context, new URL(propsPath));
         Dictionary dictionary = new FastDictionary(context);
-        SimpleNGramModel sm = new
-                SimpleNGramModel(SphinxProperties.getSphinxProperties(context), 
-                dictionary);
+        SimpleNGramModel sm = new SimpleNGramModel(context, dictionary);
         Timer.stop("LM Load");
 
         Timer.dumpAll();

@@ -45,39 +45,37 @@ public class LanguageModelFactory {
 
 
     /**
-     * Creates a language model based upon the particular set of
-     * sphinx properties
+     * Creates a language model based upon the particular context
      *
-     * @param props the sphinx properties
-     * @param dictionary the dictionary to be used by the model
+     * @param context the context
      *
      * @return a language model (or null)
-     *
-     * @throws InstantiationException if the model could not be created
-     * @throws IOException if the model could not be loaded
      */
-    public static LanguageModel getModel(
-            SphinxProperties props, Dictionary dictionary)
-            throws IOException, InstantiationException {
+    public static LanguageModel createLanguageModel(String context, 
+                                                    Dictionary dictionary) {
 	String path =  "";
 	try {
 
            Timer.start("createLanguageModel");
 	   LanguageModel lm = null;
+	   SphinxProperties props = 
+	       	SphinxProperties.getSphinxProperties(context);
 	   path = props.getString(PROP_CLASS, null);
 
 	   if (path != null) {
 	       lm = (LanguageModel) Class.forName(path).newInstance();
-	       lm.initialize(props, dictionary);
+	       lm.initialize(context, dictionary);
 	   }
            Timer.stop("createLanguageModel");
 	   return lm;
 	} catch (ClassNotFoundException fe) {
-	    throw new InstantiationException(
-                    "CNFE:Can't create language model " + path);
+	    throw new Error("CNFE:Can't create language model " + path, fe);
+	} catch (InstantiationException ie) {
+	    throw new Error("IE: Can't create language model" + path, ie);
 	} catch (IllegalAccessException iea) {
-	    throw new InstantiationException(
-                    "IEA: Can't create language model " + path);
+	    throw new Error("IEA: Can't create language model" + path, iea);
+	} catch (IOException ioe) {
+	    throw new Error("IOE: Can't create language model" + path, ioe);
 	} 
     }
 }

@@ -12,19 +12,21 @@
 
 package edu.cmu.sphinx.decoder.search;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-
-import edu.cmu.sphinx.decoder.linguist.HMMSearchState;
+import edu.cmu.sphinx.frontend.Feature;
+import edu.cmu.sphinx.knowledge.acoustic.HMMState;
+import edu.cmu.sphinx.knowledge.dictionary.Dictionary;
+import edu.cmu.sphinx.knowledge.dictionary.Word;
 import edu.cmu.sphinx.decoder.linguist.SearchState;
 import edu.cmu.sphinx.decoder.linguist.WordSearchState;
+import edu.cmu.sphinx.decoder.linguist.HMMSearchState;
 import edu.cmu.sphinx.decoder.scorer.Scoreable;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.knowledge.acoustic.HMMState;
-import edu.cmu.sphinx.knowledge.dictionary.Word;
+
+import java.util.List;
+import java.util.Comparator;
+import java.text.DecimalFormat;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
 
 /**
  * Represents a single state in the recognition trellis. Subclasses of
@@ -202,9 +204,9 @@ public class Token implements Scoreable {
      *
      * @return the feature for this Token
      */
-    public Data getData() {
-        if (appObject != null && appObject instanceof Data) {
-            return (Data) appObject;
+    public Feature getFeature() {
+        if (appObject != null && appObject instanceof Feature) {
+            return (Feature) appObject;
         } else {
             return null;
         }
@@ -225,12 +227,12 @@ public class Token implements Scoreable {
      * retreived with get score
      *
      * @param feature the feature to be scored
-     * @param keepData whether this Scoreable should keep a reference
+     * @param keepFeature whether this Scoreable should keep a reference
      *    to the given feature
      *
      * @return the score for the feature
      */
-    public float calculateScore(Data feature, boolean keepData) {
+    public float calculateScore(Feature feature, boolean keepFeature) {
         assert searchState.isEmitting() 
             : "Attempting to score non-scoreable token: " + searchState;
         HMMSearchState hmmSearchState = (HMMSearchState) searchState;
@@ -238,7 +240,7 @@ public class Token implements Scoreable {
         logAcousticScore = hmmState.getScore(feature);
         logTotalScore += logAcousticScore;
 
-        if (keepData) {
+        if (keepFeature) {
             setAppObject(feature);
         }
 

@@ -12,10 +12,11 @@
 
 package edu.cmu.sphinx.util;
 
+import java.util.Iterator;
 import java.io.IOException;
 
 
-/**
+/*
  * Provides a standard interface to a batching mechanism
  *
  */
@@ -25,8 +26,6 @@ public interface BatchManager {
     /**
      * Starts processing the batch
      *
-     * @throws IOException if an error occurs while processing the
-     * batch file
      */
     public void start() throws IOException;
 
@@ -35,17 +34,11 @@ public interface BatchManager {
      * available
      *
      * @return the next available batch item
-     *
-     * @throws IOException if an error occurs while processing the
-     * batch file
      */
     public BatchItem getNextItem() throws IOException ;
 
     /**
      * Stops processing the batch
-     *
-     * @throws IOException if an error occurs while processing the
-     * batch file
      */
     public void stop() throws IOException;
 

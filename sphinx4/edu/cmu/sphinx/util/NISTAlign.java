@@ -11,13 +11,17 @@
  */
 package edu.cmu.sphinx.util;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.text.DecimalFormat;
 import java.util.LinkedList;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.ListIterator;
+
 import java.util.StringTokenizer;
+import java.text.DecimalFormat;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.FileInputStream;
 
 /**
  * Implements a portion of the NIST align/scoring algorithm to compare

@@ -14,20 +14,19 @@
 
 package edu.cmu.sphinx.frontend.util;
 
-import java.util.Arrays;
+import edu.cmu.sphinx.frontend.Cepstrum;
+import edu.cmu.sphinx.frontend.Signal;
 
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DoubleData;
 import edu.cmu.sphinx.util.SphinxProperties;
+
+import java.util.Arrays;
 
 
 /**
- * Plots positive energy values of a cepstrum to stdout.
- * The energy value is assumed to be the first element of the 
- * double array returned by <code>Data.getValues()</code>. 
+ * Plots positive energy values of Cepstrum to stdout. 
  * For negative energy value, a "-" will be printed out.
- * The plots look like the following, one line per cepstrum. The
- * energy value for that particular cepstrum is printed at the end of
+ * The plots look like the following, one line per Cepstrum. The
+ * energy value for that particular Cepstrum is printed at the end of
  * the line.
  * <p>
  * <code>
@@ -79,16 +78,9 @@ import edu.cmu.sphinx.util.SphinxProperties;
  */
 public class EnergyPlotter {
 
-    /**
-     * The maximum level of energy for which a plot string will be
-     * preconstructed.
-     */
     public static final String PROP_MAX_ENERGY =
-        "edu.cmu.sphinx.frontend.util.EnergyPlotter.maxEnergy";
+    "edu.cmu.sphinx.frontend.util.EnergyPlotter.maxEnergy";
 
-    /**
-     * The default value of PROP_MAX_ENERGY.
-     */
     public static final int PROP_MAX_ENERGY_DEFAULT = 20;
 
 
@@ -141,15 +133,15 @@ public class EnergyPlotter {
 
     
     /**
-     * Plots the energy values of the given Data to System.out.
-     * If the Data contains a signal, it prints the signal.
+     * Plots the energy values of the given Cepstrum to System.out.
+     * If the Cepstrum contains a signal, it prints the signal.
      *
-     * @param cepstrum the Data to plot
+     * @param cepstrum the Cepstrum to plot
      */
-    public void plot(Data cepstrum) {
+    public void plot(Cepstrum cepstrum) {
         if (cepstrum != null) {
-            if (cepstrum instanceof DoubleData) {
-                int energy = (int) ((DoubleData) cepstrum).getValues()[0];
+            if (cepstrum.hasContent()) {
+                int energy = (int) cepstrum.getEnergy();
                 System.out.println(getPlot(energy));
             } else {
                 System.out.println(cepstrum.toString());

@@ -13,42 +13,54 @@
 
 package edu.cmu.sphinx.frontend.util;
 
+import edu.cmu.sphinx.frontend.Audio;
+import edu.cmu.sphinx.frontend.AudioSource;
+import edu.cmu.sphinx.frontend.DataProcessor;
+import edu.cmu.sphinx.frontend.FrontEnd;
+import edu.cmu.sphinx.frontend.Signal;
+import edu.cmu.sphinx.frontend.Utterance;
+import edu.cmu.sphinx.frontend.util.Util;
+
+import edu.cmu.sphinx.util.SphinxProperties;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.FileOutputStream;
+import java.io.File;
+
+import java.util.Collections;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.Arrays;
+import java.util.Vector;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Line;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.TargetDataLine;
-
-import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataEndSignal;
-import edu.cmu.sphinx.frontend.DataProcessingException;
-import edu.cmu.sphinx.frontend.DataProcessor;
-import edu.cmu.sphinx.frontend.DataStartSignal;
-import edu.cmu.sphinx.frontend.DoubleData;
-import edu.cmu.sphinx.frontend.FrontEndFactory;
-import edu.cmu.sphinx.util.SphinxProperties;
+import javax.sound.sampled.Line;
 
 
 /**
  * A Microphone captures audio data from the system's underlying
- * audio input systems. Converts these audio data into Data
+ * audio input systems. Converts these audio data into Audio
  * objects. The Microphone should be run in a separate thread.
  * When the method <code>startRecording()</code> is called, it will
  * start capturing audio, and stops when <code>stopRecording()</code>
- * is called. Calling <code>getData()</code> returns the captured audio
- * data as Data objects.
+ * is called. An Utterance is created for all the audio captured
+ * in between calls to <code>startRecording()</code> and
+ * <code>stopRecording()</code>.
+ * Calling <code>getAudio()</code> returns the captured audio
+ * data as Audio objects.
  */
-public class Microphone extends BaseDataProcessor {
+public class Microphone extends DataProcessor implements AudioSource {
 
     private final static String PROP_PREFIX = 
         "edu.cmu.sphinx.frontend.util.Microphone.";
@@ -59,14 +71,15 @@ public class Microphone extends BaseDataProcessor {
      * (linux for one), closing and reopening the audio does not work
      * too well.
      */
-    public final static String PROP_CLOSE_BETWEEN_UTTERANCES =
-	PROP_PREFIX + "closeBetweenUtterances";
+    public final static String PROP_CLOSE_AUDIO_BETWEEN_UTTERANCES =
+	PROP_PREFIX + "closeAudioBetweenUtterances";
 
     /**
-     * The default value for the PROP_CLOSE_BETWEEN_UTTERANCES
-     * property.
+     * The default value for the PROP_CLOSE_AUDIO_BETWEEN_UTTERANCES
+     * property
      */
-    public final static boolean PROP_CLOSE_BETWEEN_UTTERANCES_DEFAULT = true;
+    public final static boolean
+	PROP_CLOSE_AUDIO_BETWEEN_UTTERANCES_DEFAULT = true;
 
     /**
      * The Sphinx property that specifies whether debug statements should
@@ -78,44 +91,6 @@ public class Microphone extends BaseDataProcessor {
      * The default value of PROP_DEBUG.
      */
     public final static boolean PROP_DEBUG_DEFAULT = false;
-
-    /**
-     * The Sphinx property that specifies the number of bytes to
-     * read each time from the underlying Java Sound audio device.
-     */
-    public final static String PROP_BYTES_PER_READ
-        = PROP_PREFIX + "bytesPerRead";
-
-    /**
-     * The default value of PROP_BYTES_PER_READ. The current default
-     * is 320 bytes. Assuming that the sample rate is 16kHz and it is
-     * 2 bytes per samples, 320 bytes corresponds to 10 milliseconds
-     * of audio.
-     */
-    public final static int PROP_BYTES_PER_READ_DEFAULT = 320;
-
-    /**
-     * SphinxProperty for the number of bits per value.
-     */
-    public static final String PROP_BITS_PER_SAMPLE =
-        PROP_PREFIX + "bitsPerSample";
-
-    /**
-     * Default value for PROP_BITS_PER_SAMPLE.
-     */
-    public static final int PROP_BITS_PER_SAMPLE_DEFAULT = 16;
-
-    /**
-     * The Sphinx property that specifies whether to keep the audio
-     * data of an utterance around until the next utterance is recorded.
-     */
-    public final static String PROP_KEEP_LAST_AUDIO
-        = PROP_PREFIX + "keepLastAudio";
-
-    /**
-     * The default value of PROP_KEEP_AUDIO.
-     */
-    public final static boolean PROP_KEEP_LAST_AUDIO_DEFAULT = false;
 
 
     /**
@@ -141,7 +116,7 @@ public class Microphone extends BaseDataProcessor {
     private TargetDataLine audioLine = null;
     private AudioInputStream audioStream = null;
     private LineListener lineListener = new MicrophoneLineListener();
-    private DataList audioList;
+    private AudioList audioList;
     private Utterance currentUtterance;
 
     private long totalSamplesRead;
@@ -153,8 +128,8 @@ public class Microphone extends BaseDataProcessor {
     private volatile boolean utteranceEndReached = true;
 
     private boolean debug = false;
-    private boolean closeBetweenUtterances = true;
-    private boolean keepDataReference = true;
+    private boolean closeAudioBetweenUtterances = true;
+    private boolean keepAudioReference = true;
 
     private static Logger logger = Logger.getLogger
         ("edu.cmu.sphinx.frontend.util.Microphone");
@@ -164,55 +139,49 @@ public class Microphone extends BaseDataProcessor {
      * Constructs a Microphone with the given InputStream.
      *
      * @param name the name of this Microphone
-     * @param frontEnd the frontEnd this Microphone belongs to
+     * @param context the context of this Microphone
      * @param props the SphinxProperties to read properties from
-     * @param predecessor the predecessor DataProcessor of this Microphone
-     *
-     * @throws IOException if an I/O error occurs
      */
-    public void initialize(String name, String frontEnd,
-                           SphinxProperties props, DataProcessor predecessor) {
-        super.initialize(name, frontEnd, props, predecessor);
+    public Microphone(String name, String context, SphinxProperties props) 
+	throws IOException {
+        super(name, context);
 	setProperties(props);
         audioFormat = new AudioFormat(sampleRate, sampleSizeInBytes * 8,
                                       channels, signed, bigEndian);
-        audioList = new DataList();
+        audioList = new AudioList();
     }
 
 
     /**
      * Reads the parameters needed from the static SphinxProperties object.
-     *
-     * @param props a SphinxProperties object specifying the properties values
      */
-    private void setProperties(SphinxProperties props) {
+    public void setProperties(SphinxProperties props) {
 
-        sampleRate = props.getInt
-            (getFullPropertyName(FrontEndFactory.PROP_SAMPLE_RATE),
-             FrontEndFactory.PROP_SAMPLE_RATE_DEFAULT);
+        sampleRate = props.getInt(FrontEnd.PROP_SAMPLE_RATE,
+                                  FrontEnd.PROP_SAMPLE_RATE_DEFAULT);
+	closeAudioBetweenUtterances =
+	    props.getBoolean(PROP_CLOSE_AUDIO_BETWEEN_UTTERANCES,
+                             PROP_CLOSE_AUDIO_BETWEEN_UTTERANCES_DEFAULT);
 
-	closeBetweenUtterances = props.getBoolean
-            (getFullPropertyName(PROP_CLOSE_BETWEEN_UTTERANCES),
-             PROP_CLOSE_BETWEEN_UTTERANCES_DEFAULT);
+        SphinxProperties properties = getSphinxProperties();
 
-        frameSizeInBytes = props.getInt
-            (getFullPropertyName(PROP_BYTES_PER_READ),
-             PROP_BYTES_PER_READ_DEFAULT);
+        frameSizeInBytes = properties.getInt
+            (FrontEnd.PROP_BYTES_PER_AUDIO_FRAME,
+             FrontEnd.PROP_BYTES_PER_AUDIO_FRAME_DEFAULT);
 
         if (frameSizeInBytes % 2 == 1) {
             frameSizeInBytes++;
         }
 
-        sampleSizeInBytes = props.getInt
-            (getFullPropertyName(PROP_BITS_PER_SAMPLE),
-             PROP_BITS_PER_SAMPLE_DEFAULT) / 8;
+        sampleSizeInBytes = properties.getInt
+            (FrontEnd.PROP_BITS_PER_SAMPLE, 
+             FrontEnd.PROP_BITS_PER_SAMPLE_DEFAULT) / 8;
 
-        keepDataReference = props.getBoolean
-            (getFullPropertyName(PROP_KEEP_LAST_AUDIO),
-             PROP_KEEP_LAST_AUDIO_DEFAULT);
+        keepAudioReference = properties.getBoolean
+            (FrontEnd.PROP_KEEP_AUDIO_REFERENCE,
+             FrontEnd.PROP_KEEP_AUDIO_REFERENCE_DEFAULT);
         
-        debug = props.getBoolean
-            (getFullPropertyName(PROP_DEBUG), PROP_DEBUG_DEFAULT);
+        debug = properties.getBoolean(PROP_DEBUG, PROP_DEBUG_DEFAULT);
     }
 
     /**
@@ -291,31 +260,32 @@ public class Microphone extends BaseDataProcessor {
 
                 printMessage("started recording");
 
-                if (keepDataReference) {
-                    currentUtterance 
-                        = new Utterance("Microphone", audioFormat);
+                if (keepAudioReference) {
+                    currentUtterance = new Utterance
+                        ("Microphone", getContext());
                 }
 
-                audioList.add(new DataStartSignal());
+                audioList.add(new Audio(Signal.UTTERANCE_START,
+                                        System.currentTimeMillis(),
+                                        totalSamplesRead));
                                 
                 while (getRecording() && !getClosed()) {
                     printMessage("reading ...");
-                    audioList.add(readData(currentUtterance));
+                    audioList.add(readAudio(currentUtterance));
                 }
 
-                audioList.add(new DataEndSignal());
+                audioList.add(new Audio(Signal.UTTERANCE_END,
+                                        System.currentTimeMillis(),
+                                        totalSamplesRead - 1));
                 
                 audioLine.stop();
-		if (closeBetweenUtterances) {
+		if (closeAudioBetweenUtterances) {
                     audioLine.close();
-                    printMessage("Audio line closed.");
                     try {
                         audioStream.close();
-                        printMessage("Audio stream closed.");
                         if (doConversion) {
                             nativelySupportedStream.close();
-                            printMessage("Native stream closed.");
-                        }                        
+                        }
                     } catch(IOException e) {
                         logger.warning("IOException closing audio streams");
                     }
@@ -333,18 +303,16 @@ public class Microphone extends BaseDataProcessor {
     /**
      * Reads one frame of audio data, and adds it to the given Utterance.
      *
-     * @return an Data object containing the audio data
+     * @return an Audio object containing the audio data
      */
-    private Data readData(Utterance utterance) {
+    private Audio readAudio(Utterance utterance) {
         // Read the next chunk of data from the TargetDataLine.
         byte[] data = new byte[frameSizeInBytes];
         long collectTime = System.currentTimeMillis();
         long firstSampleNumber = totalSamplesRead;
 
         try {
-            printMessage("reading from audio stream...");
             int numBytesRead = audioStream.read(data, 0, data.length);
-            printMessage("... finished reading from audio stream.");
             totalSamplesRead += (numBytesRead / sampleSizeInBytes);
 
             if (numBytesRead != frameSizeInBytes) {
@@ -365,14 +333,14 @@ public class Microphone extends BaseDataProcessor {
             return null;
         }
 
-        if (keepDataReference) {
+        if (keepAudioReference) {
             utterance.add(data);
         }
 
-        double[] samples = DataUtil.bytesToValues
+        double[] samples = Util.bytesToSamples
             (data, 0, data.length, sampleSizeInBytes, signed);
         
-        return (new DoubleData(samples, collectTime, firstSampleNumber));
+        return (new Audio(samples, collectTime, firstSampleNumber));
     }
 
     /**
@@ -489,7 +457,7 @@ public class Microphone extends BaseDataProcessor {
      * Clears all cached audio data.
      */
     public void clear() {
-        audioList = new DataList();
+        audioList = new AudioList();
     }
 
 
@@ -532,27 +500,27 @@ public class Microphone extends BaseDataProcessor {
 
     
     /**
-     * Reads and returns the next Data object from this
+     * Reads and returns the next Audio object from this
      * Microphone, return null if there is no more audio data.
      * All audio data captured in-between <code>startRecording()</code>
      * and <code>stopRecording()</code> is cached in an Utterance
      * object. Calling this method basically returns the next
      * chunk of audio data cached in this Utterance.
      *
-     * @return the next Data or <code>null</code> if none is
-     *         available
+     * @return the next Audio or <code>null</code> if none is
+     *     available
      *
-     * @throws DataProcessingException if there is a data processing error
+     * @throws java.io.IOException
      */
-    public Data getData() throws DataProcessingException {
+    public Audio getAudio() throws IOException {
 
         getTimer().start();
 
-        Data output = null;
+        Audio output = null;
 
         if (!utteranceEndReached) {
-            output = (Data) audioList.remove(0);
-            if (output instanceof DataEndSignal) {
+            output = (Audio) audioList.remove(0);
+            if (output.hasSignal(Signal.UTTERANCE_END)) {
                 utteranceEndReached = true;
             }
         }
@@ -593,7 +561,7 @@ public class Microphone extends BaseDataProcessor {
 
     /**
      * Returns true if this Microphone is currently
-     * in a recording state, false otherwise.
+     * in a recording state; false otherwise
      *
      * @return true if recording, false if not recording
      */ 
@@ -660,17 +628,17 @@ public class Microphone extends BaseDataProcessor {
     }
 }
 
-class DataList {
+class AudioList {
 
     private List list;
 
-    public DataList() {
+    public AudioList() {
         list = new LinkedList();
     }
 
-    public synchronized void add(Data audio) {
+    public synchronized void add(Audio audio) {
         list.add(audio);
-        // System.out.println("Data added...");
+        // System.out.println("Audio added...");
         notify();
     }
 
@@ -689,7 +657,7 @@ class DataList {
         }
         Object obj = list.remove(index);
         if (obj == null) {
-            System.out.println("DataList is returning null.");
+            System.out.println("AudioList is returning null.");
         }
         return obj;
     }
