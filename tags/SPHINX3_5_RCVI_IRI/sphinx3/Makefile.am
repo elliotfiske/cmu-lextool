@@ -1,0 +1,88 @@
+SUBDIRS = src \
+	doc \
+	scripts \
+	model
+
+EXTRA_DIST = autogen.sh \
+	programs.dsw \
+	src/programs/main_livedecode.c \
+	win32/batch/an4.ctl \
+	win32/batch/sphinx3-simple.bat \
+	win32/batch/sphinx3-test.align.bat \
+	win32/batch/sphinx3-test.all.bat \
+	win32/batch/sphinx3-test.allphone.bat \
+	win32/batch/sphinx3-test.astar.bat \
+	win32/batch/sphinx3-test.bat \
+	win32/batch/sphinx3-test.dag.bat \
+	win32/batch/sphinx3-test.decode.bat \
+	win32/batch/sphinx3-test.ep.bat \
+	win32/batch/sphinx3-test.gausubvq.bat \
+	win32/batch/sphinx3-test.livepretend.bat \
+	win32/batch/sphinx3-test.simple.bat \
+	win32/msdev/libs3audio/libs3audio.dsp \
+	win32/msdev/libs3decoder/libs3decoder.dsp \
+	win32/msdev/libutil/libutil.dsp \
+	win32/msdev/programs/align/align.dsp \
+	win32/msdev/programs/allphone/allphone.dsp \
+	win32/msdev/programs/astar/astar.dsp \
+	win32/msdev/programs/dag/dag.dsp \
+	win32/msdev/programs/decode/allphone.dsp \
+	win32/msdev/programs/decode/decode.dsp \
+	win32/msdev/programs/ep/ep.dsp \
+	win32/msdev/programs/gausubvq/gausubvq.dsp \
+	win32/msdev/programs/livedecode/livedecode.dsp \
+	win32/msdev/programs/livepretend/livepretend.dsp
+
+# Add an item for each and every test target to the CLEANFILES variable
+CLEANFILES = chan3.mfc \
+	test.out \
+	test-*.out \
+	tmp.out \
+	pittsburgh.* 
+
+etags:
+	etags `find . -name "*.[ch]"`
+
+ctags:
+	ctags `find . -name "*.[ch]"`
+
+doxygen: 
+	doxygen ./doc/doxygen.cfg
+
+#######################################################################
+#Session of testing
+#######################################################################
+
+
+# Override the Automake target so that make test-full gets run during
+# distcheck
+check: test-full
+	@:
+
+test-full : test-decode test-align test-allphone test-livepretend test-astar test-dag test-gausubvq test-ep test-cepview test-decode_anytopo
+test-all-app : test-decode test-align test-allphone test-livepretend test-astar test-dag test-gausubvq test-ep test-wave2feat test-cepview 
+
+test-decode_anytopo \
+test-decode \
+test-align \
+test-allphone \
+test-astar \
+test-cepview \
+test-dag \
+test-livepretend \
+test-gausubvq \
+test-ep \
+test-wave2feat:
+	$(top_builddir)/src/tests/regression/$@.sh
+
+#Cannot not be used because libtool will confuse valgrind.  Need to figure out later. 
+#test-valgrind:
+#	@echo "LIVEPRETEND TEST"
+#	@echo "YOU SHOULD SEE THE RECOGNITION RESULT 'P I T T S B U R G H'"
+#
+#	$(LIBTOOL) --mode=execute valgrind --skin=memcheck src/programs/livepretend \
+#		model/lm/an4/an4.ctl \
+#		$(top_srcdir)/model/lm/an4 \
+#		model/lm/an4/args.an4.test > $@.out 2>&1 
+#	@grep "FWDVIT" $@.out 
+#	@grep "FWDXCT" $@.out 
