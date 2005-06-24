@@ -90,8 +90,6 @@ fi
 
 popd >> $outfile 2>&1
 
-/bin/rm -rf sphinx2
-
 # Fresh download of sphinx3
 cvs -d:ext:${address}:/cvsroot/cmusphinx co sphinx3 > $outfile 2>&1
 
@@ -114,8 +112,6 @@ if ! ${GMAKE} all test-full >> $outfile 2>&1 ;
 fi
 
 popd >> $outfile 2>&1
-
-/bin/rm -rf sphinx3
 
 # Fresh download of SphinxTrain
 cvs -d:ext:${address}:/cvsroot/cmusphinx co SphinxTrain > $outfile 2>&1
