@@ -86,7 +86,8 @@ void gmm_compute (void *data, char *uttfile, int32 sf, int32 ef, char *uttid)
   subvq_t *svq;
   gs_t * gs;
 
-  int32 maxwpf, maxhistpf, maxhmmpf, ptranskip;
+  
+  int32 ptranskip;
   int32 s,f,t;
   int32 single_el_list[2];
   stats_t cur_ci_st;
@@ -117,9 +118,6 @@ void gmm_compute (void *data, char *uttfile, int32 sf, int32 ef, char *uttid)
 
   s3senid_t *cd2cisen;
 
-  maxwpf = kb->histprune->maxwpf;
-  maxhistpf = kb->histprune->maxwpf;
-  maxhmmpf = kb->histprune->maxhmmpf;
   ptranskip = kb->beam->ptranskip;
 
   pheurtype = kb->pl->pheurtype;
