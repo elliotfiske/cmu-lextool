@@ -34,9 +34,15 @@
  *
  * HISTORY
  * $Log$
- * Revision 1.18  2005/07/05  13:12:36  dhdfu
- * Add new arguments to logs3_init() in some tests, main_ep
+ * Revision 1.15.4.2  2005/07/05  21:35:00  arthchan2003
+ * Merged from HEAD.
  * 
+ * Revision 1.18  2005/07/05 13:12:36  dhdfu
+ * Add new arguments to logs3_init() in some tests, main_ep
+ *
+ * Revision 1.15.4.1  2005/07/05 06:49:38  arthchan2003
+ * Merged from HEAD.
+ *
  * Revision 1.17  2005/07/04 20:57:52  dhdfu
  * Finally remove the "temporary hack" for the endpointer, and do
  * everything in logs3 domain.  Should make it faster and less likely to
@@ -54,25 +60,9 @@
  *
  * Revision 1.2  2005/03/30 00:43:41  archan
  * Add $Log$
- * Revision 1.18  2005/07/05  13:12:36  dhdfu
- * Add new arguments to logs3_init() in some tests, main_ep
+ * Revision 1.15.4.2  2005/07/05  21:35:00  arthchan2003
+ * Merged from HEAD.
  * 
- * Add Revision 1.17  2005/07/04 20:57:52  dhdfu
- * Add Finally remove the "temporary hack" for the endpointer, and do
- * Add everything in logs3 domain.  Should make it faster and less likely to
- * Add crash on Alphas.
- * Add
- * Add Actually it kind of duplicates the existing GMM computation functions,
- * Add but it is slightly different (see the comment in classify.c).  I don't
- * Add know the rationale for this.
- * Add
- * Add Revision 1.16  2005/07/02 04:24:46  egouvea
- * Add Changed some hardwired constants to user defined parameters in the end pointer. Tested with make test-ep.
- * Add
- * Add Revision 1.15  2005/06/22 05:39:56  arthchan2003
- * Add Synchronize argument with decode. Removed silwid, startwid and finishwid.  Wrapped up logs3_init, Wrapped up lmset. Refactor with functions in dag.
- * Add into most of the .[ch] files. It is easy to keep track changes.
- *
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -102,6 +92,7 @@
 #include "classify.h"
 #include "endptr.h"
 #include "fe.h"
+#include "logs3.h"
 
 /* Define a null device that depends on the platform */
 #if defined(WIN32)

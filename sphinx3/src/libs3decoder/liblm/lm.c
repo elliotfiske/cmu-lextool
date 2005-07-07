@@ -45,9 +45,15 @@
  * 
  * HISTORY
  * $Log$
- * Revision 1.15  2005/07/05  13:12:37  dhdfu
- * Add new arguments to logs3_init() in some tests, main_ep
+ * Revision 1.14.4.2  2005/07/05  21:31:25  arthchan2003
+ * Merged from HEAD.
  * 
+ * Revision 1.15  2005/07/05 13:12:37  dhdfu
+ * Add new arguments to logs3_init() in some tests, main_ep
+ *
+ * Revision 1.14.4.1  2005/07/03 22:58:56  arthchan2003
+ * tginfo and membg 's memory were not deallocated at all. This change fixed it.
+ *
  * Revision 1.14  2005/06/21 22:24:02  arthchan2003
  * Log. In this change, I introduced a new interface for lm ,which is
  * call lmset_t. lmset_t wraps up multiple lm, n_lm, n_alloclm into the
@@ -1881,19 +1887,57 @@ s3lmwid_t lm_wid (lm_t *lm, char *word)
 void lm_free (lm_t *lm)
 {
   int i;
+  tginfo_t *tginfo;
+
+  if(lm->fp)
+    fclose(lm->fp);
+
+  ckd_free ((void *) lm->ug);  
 
   for (i=0;i<lm->n_ug;i++) 
     ckd_free ((void *) lm->wordstr[i]);	/*  */
-  ckd_free ((void *) lm->membg);
   ckd_free ((void *) lm->wordstr);
-  ckd_free ((void *) lm->tgcache);
-  ckd_free ((void *) lm->tg_segbase);
-  ckd_free ((void *) lm->tgprob);
-  ckd_free ((void *) lm->tgbowt);
-  ckd_free ((void *) lm->bgprob);
-  ckd_free ((void *) lm->tginfo);
-  ckd_free ((void *) lm->ug);  
-  ckd_free ((void *) lm);
+
+  if(lm->n_bg >0){
+    if (lm->bg)		/* Memory-based; free all bg */
+      ckd_free (lm->bg);
+    else {		/* Disk-based; free in-memory bg */
+      for (i = 0; i < lm->n_ug; i++)
+	if (lm->membg[i].bg)
+	  ckd_free (lm->membg[i].bg);
+      ckd_free (lm->membg);
+    }
+    
+    ckd_free (lm->bgprob);
+  }
+
+  if(lm->n_tg>0){
+    if(lm->tg)
+      free(lm->tg);
+
+    for(i=0;i<lm->n_ug;i++){
+      if(lm->tginfo[i]!=NULL){
+	/* Free the whole linked list of tginfo. */
+	while (lm->tginfo[i]){
+	  tginfo=lm->tginfo[i];
+	  lm->tginfo[i]=tginfo->next;
+	  ckd_free((void*) tginfo->tg);
+	  ckd_free((void*) tginfo);
+	}
+      }
+    }
+    ckd_free ((void *) lm->tginfo);
+
+    ckd_free ((void *) lm->tgcache);
+    ckd_free ((void *) lm->tg_segbase);
+    ckd_free ((void *) lm->tgprob);
+    ckd_free ((void *) lm->tgbowt);
+
+  }
+
+
+  /*  ckd_free ((void *) lm);*/
+
   
 }
 

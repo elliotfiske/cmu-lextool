@@ -45,26 +45,26 @@
  *
  * HISTORY
  * $Log$
- * Revision 1.18  2005/07/04  20:57:53  dhdfu
+ * Revision 1.17.4.2  2005/07/05  21:28:57  arthchan2003
+ * 1, Merged from HEAD. 2, Remove redundant keyword in cont_mgau.
+ * 
+ * Revision 1.17.4.1  2005/07/05 06:48:54  arthchan2003
+ * Merged from HEAD.
+ *
+ * Revision 1.18  2005/07/04 20:57:53  dhdfu
  * Finally remove the "temporary hack" for the endpointer, and do
  * everything in logs3 domain.  Should make it faster and less likely to
  * crash on Alphas.
- * 
+ *
  * Actually it kind of duplicates the existing GMM computation functions,
  * but it is slightly different (see the comment in classify.c).  I don't
  * know the rationale for this.
- * 
+ *
  * Revision 1.17  2005/06/21 18:06:45  arthchan2003
  * Log. 1, Fixed Doxygen documentation. 2, Added $Log$
- * Revision 1.18  2005/07/04  20:57:53  dhdfu
- * Finally remove the "temporary hack" for the endpointer, and do
- * everything in logs3 domain.  Should make it faster and less likely to
- * crash on Alphas.
+ * Revision 1.17.4.2  2005/07/05  21:28:57  arthchan2003
+ * 1, Merged from HEAD. 2, Remove redundant keyword in cont_mgau.
  * 
- * Actually it kind of duplicates the existing GMM computation functions,
- * but it is slightly different (see the comment in classify.c).  I don't
- * know the rationale for this.
- *  keyword.
  *
  * Revision 1.3  2005/03/30 01:22:46  archan
  * Fixed mistakes in last updates. Add

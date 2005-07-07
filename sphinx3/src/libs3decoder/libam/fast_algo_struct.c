@@ -45,9 +45,12 @@
  * 
  * HISTORY
  * $Log$
- * Revision 1.6  2005/06/30  13:08:44  egouvea
- * Beams in linear scale have to be float64, since they can be easily defined as < 1e-40
+ * Revision 1.5.4.1  2005/07/03  22:53:15  arthchan2003
+ * 1, Changed free to ckd_free, 2, Join from HEAD, using float64 instead of float32.
  * 
+ * Revision 1.6  2005/06/30 13:08:44  egouvea
+ * Beams in linear scale have to be float64, since they can be easily defined as < 1e-40
+ *
  * Revision 1.5  2005/06/21 18:26:38  arthchan2003
  * Log. fast_algo_struct.c go through major changes in the gentle
  * refactoring process. It is the location of several wrapper structures
@@ -336,7 +339,7 @@ void histprune_update_histbinsize(histprune_t *h,
 void histprune_free(histprune_t *h){
   if(h!=NULL){
     if(h->hmm_hist!=NULL){
-      free(h->hmm_hist);
+      ckd_free(h->hmm_hist);
     }
     free(h);
   }
