@@ -47,9 +47,12 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.17  2005/07/02  03:48:46  egouvea
- * Removed condition compilation on WIN32 for included time.h. Not regression tested since this affects only Windows
+ * Revision 1.16.4.1  2005/07/05  06:47:08  arthchan2003
+ * Merged from HEAD.
  * 
+ * Revision 1.17  2005/07/02 03:48:46  egouvea
+ * Removed condition compilation on WIN32 for included time.h. Not regression tested since this affects only Windows
+ *
  * Revision 1.16  2005/06/21 21:02:05  arthchan2003
  * Please ignore the last log. vector.c has now fix doxygen-style documents and fixed $ keyword.
  *

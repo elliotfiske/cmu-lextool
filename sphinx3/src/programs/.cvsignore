@@ -1,4 +1,3 @@
-
 *.o
 .deps
 .libs
@@ -16,4 +15,5 @@ gausubvq
 livedecode
 livepretend
 livepretendDEVEL
+lm_convert
 wave2feat
