@@ -64,6 +64,14 @@ test-full : \
 	test-decode \
 	test-decode-clm \
 	test-decode-mllr \
+	test-decode-s3cont \
+	test-decode-lts \
+	test-decode-noncomp \
+	test-decode-mode3 \
+	test-decode-mode3-mulmpx \
+	test-decode-mode3-mpx \
+	test-decode-mode5 \
+	test-decode-mode5-noncomp \
 	test-align \
 	test-align-mllr \
 	test-allphone \
@@ -79,14 +87,25 @@ test-full : \
 	test-ep \
 	test-cepview \
 	test-decode_anytopo \
-	test-decode_anytopo-mllr
+	test-decode_anytopo-mllr \
+	test-wave2feat 
 
 test-all-app : test-full test-wave2feat
 
 
 test-decode_anytopo \
+test-decode_anytopo-2ndstage \
 test-decode_anytopo-mllr \
 test-decode \
+test-decode-noncomp \
+test-decode-lts \
+test-decode-mode3 \
+test-decode-mode3-mulmpx \
+test-decode-mode3-mpx \
+test-decode-mode5 \
+test-decode-mode5-noncomp \
+test-decode-s3cont \
+test-decode-2ndstage \
 test-decode-clm \
 test-decode-mllr \
 test-align \
@@ -109,7 +128,7 @@ test-wave2feat:
 
 perf-std : 
 	make -C $(top_srcdir)/src/tests/performance/ti46 ti46-lp ti46-decode ti46-decany
-	make -C $(top_srcdir)/src/tests/performance/tidigits tidigits-lp tidigits-decode 
+	make -C $(top_srcdir)/src/tests/performance/tidigits tidigits-lp tidigits-decode  
 	make -C $(top_srcdir)/src/tests/performance/Communicator com-fast-lp com-fast-decode
 
 perf-std-s3 : 

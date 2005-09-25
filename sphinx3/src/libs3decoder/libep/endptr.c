@@ -41,9 +41,12 @@
  * Created
  * HISTORY
  * $Log$
- * Revision 1.6  2005/07/02  04:24:45  egouvea
- * Changed some hardwired constants to user defined parameters in the end pointer. Tested with make test-ep.
+ * Revision 1.5.4.1  2005/07/05  06:46:23  arthchan2003
+ * 1, Merged from HEAD.  2, fixed dox-doc.
  * 
+ * Revision 1.6  2005/07/02 04:24:45  egouvea
+ * Changed some hardwired constants to user defined parameters in the end pointer. Tested with make test-ep.
+ *
  * Revision 1.5  2005/06/21 21:07:28  arthchan2003
  * Added  keyword.
  *
