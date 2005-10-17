@@ -45,20 +45,14 @@
  * HISTORY
  *
  * $Log$
- * Revision 1.12  2005/10/05  15:42:52  dhdfu
- * Accidentally checked-in a different version, reverting...
- * 
- * Revision 1.10  2005/06/22 05:39:56  arthchan2003
+ * Revision 1.10  2005/06/22  05:39:56  arthchan2003
  * Synchronize argument with decode. Removed silwid, startwid and finishwid.  Wrapped up logs3_init, Wrapped up lmset. Refactor with functions in dag.
- *
+ * 
  * Revision 1.2  2005/03/30 00:43:41  archan
  * Add $Log$
- * Revision 1.12  2005/10/05  15:42:52  dhdfu
- * Accidentally checked-in a different version, reverting...
- * 
- * Add Revision 1.10  2005/06/22 05:39:56  arthchan2003
- * Add Synchronize argument with decode. Removed silwid, startwid and finishwid.  Wrapped up logs3_init, Wrapped up lmset. Refactor with functions in dag.
- * Add into most of the .[ch] files. It is easy to keep track changes.
+ * Revision 1.10  2005/06/22  05:39:56  arthchan2003
+ * Synchronize argument with decode. Removed silwid, startwid and finishwid.  Wrapped up logs3_init, Wrapped up lmset. Refactor with functions in dag.
+ *  into most of the .[ch] files. It is easy to keep track changes.
  *
  */
 

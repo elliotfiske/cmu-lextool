@@ -194,8 +194,8 @@ cb2mllr_read(const char *fn,
  * Log record.  Maintained by RCS.
  *
  * $Log$
- * Revision 1.3  2005/10/05  00:29:44  dhdfu
- * Silence some largely unimportant signedness warnings.
+ * Revision 1.2.4.1  2005/10/09  19:51:05  arthchan2003
+ * Followed Dave's changed in the trunk.
  * 
  * Revision 1.2  2005/06/22 03:29:35  arthchan2003
  * Makefile.am s  for all subdirectory of libs3decoder/

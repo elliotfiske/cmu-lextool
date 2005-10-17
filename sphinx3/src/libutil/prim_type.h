@@ -45,12 +45,15 @@
  * 
  * HISTORY
  * $Log$
- * Revision 1.12  2005/10/05  00:31:14  dhdfu
- * Make int8 be explicitly signed (signedness of 'char' is
- * architecture-dependent).  Then make a bunch of things use uint8 where
- * signedness is unimportant, because on the architecture where 'char' is
- * unsigned, it is that way for a reason (signed chars are slower).
+ * Revision 1.11.4.3  2005/10/09  20:02:13  arthchan2003
+ * Explicitly make int8 to be signed. This will make the code works well in some architecture.
  * 
+ * Revision 1.11.4.2  2005/09/07 23:43:50  arthchan2003
+ * Add boolean in the prim_type. Not yet fully implemented.
+ *
+ * Revision 1.11.4.1  2005/06/27 05:42:21  arthchan2003
+ * Merge from the tip of the trunk
+ *
  * Revision 1.11  2005/06/22 03:10:23  arthchan2003
  * Added  keyword.
  *
@@ -94,12 +97,22 @@ typedef unsigned char	uint8;
 typedef float		float32;
 typedef double		float64;
 
+#if 1 /* This is added for sphinx 2 routine tool compilation. Currently, it is only used in the fsg routine. */
+typedef unsigned char   boolean;
+#endif
+
+typedef union any4byte_type_s {
+    int32 i_32;
+    uint32 ui_32;
+} any4byte_type_t;
+
 typedef union anytype_s {
     void *ptr;		/* User defined data types at this ptr */
     int32 i_32;
     uint32 ui_32;
     float32 fl_32;
     float64 fl_64;
+    boolean b;
 } anytype_t;
 
 

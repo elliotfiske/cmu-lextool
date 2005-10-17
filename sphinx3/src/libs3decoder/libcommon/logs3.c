@@ -45,9 +45,12 @@
  * 
  * HISTORY
  * $Log$
- * Revision 1.7  2005/07/05  13:12:39  dhdfu
- * Add new arguments to logs3_init() in some tests, main_ep
+ * Revision 1.6.4.1  2005/07/05  21:29:31  arthchan2003
+ * 1, Merged from HEAD.
  * 
+ * Revision 1.7  2005/07/05 13:12:39  dhdfu
+ * Add new arguments to logs3_init() in some tests, main_ep
+ *
  * Revision 1.6  2005/06/21 20:46:54  arthchan2003
  * 1, Added a report flag in logs3_init, 2, Fixed doxygen documentation, 3, Add the $ keyword.
  *
