@@ -1,2 +1,0 @@
-cvs -z3 -d:ext:cvs.sourceforge.net:/cvsroot/cmusphinx $*
-
