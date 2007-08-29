@@ -1,5 +1,0 @@
-#JSGF;
-
-grammar test3;
-
-public <list> = HELLO | HELLO <list>;
