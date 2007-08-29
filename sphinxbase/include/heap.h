@@ -65,9 +65,7 @@
 #ifndef _LIBUTIL_HEAP_H_
 #define _LIBUTIL_HEAP_H_
 
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase_export.h>
-#include <prim_type.h>
+#include "prim_type.h"
 
   /** \file heap.h
    * \brief Heap Implementation. 
@@ -96,7 +94,6 @@ typedef void *heap_t;
 /**
  * Allocate a new heap and return handle to it.
  */
-SPHINXBASE_EXPORT
 heap_t heap_new ( void );
 
 
@@ -104,7 +101,6 @@ heap_t heap_new ( void );
  * Insert a new item into the given heap.
  * Return value: 0 if successful, -1 otherwise.
  */
-SPHINXBASE_EXPORT
 int32 heap_insert (heap_t heap,	/**< In: Heap into which item is to be inserted */
 		   void *data,	/**< In: Application-determined data pointer */
 		   int32 val	/**< In: According to item entered in sorted heap */
@@ -114,7 +110,6 @@ int32 heap_insert (heap_t heap,	/**< In: Heap into which item is to be inserted 
  * Return value: 1 if heap is not empty and the topmost value is returned;
  * 0 if heap is empty; -1 if some error occurred.
  */
-SPHINXBASE_EXPORT
 int32 heap_top (heap_t heap,	/**< In: Heap whose topmost item is to be returned */
 		void **data,	/**< Out: Data pointer associated with the topmost item */
 		int32 *val	/**< Out: Value associated with the topmost item */
@@ -122,7 +117,6 @@ int32 heap_top (heap_t heap,	/**< In: Heap whose topmost item is to be returned 
 /**
  * Like heap_top but also pop the top item off the heap.
  */
-SPHINXBASE_EXPORT
 int32 heap_pop (heap_t heap, void **data, int32 *val);
 
 
@@ -131,7 +125,6 @@ int32 heap_pop (heap_t heap, void **data, int32 *val);
  * Return value: 0 if successful, -1 otherwise.
  */
 
-SPHINXBASE_EXPORT
 int32 heap_destroy (heap_t heap);
 
 #ifdef __cplusplus

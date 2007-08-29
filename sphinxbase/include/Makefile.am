@@ -30,7 +30,6 @@ pkginclude_HEADERS =				\
 	profile.h				\
 	sphinx_config.h				\
 	sphinx_types.h				\
-	sphinxbase_export.h			\
 	strfuncs.h				\
 	s3_arraylist.h				\
 	unlimit.h

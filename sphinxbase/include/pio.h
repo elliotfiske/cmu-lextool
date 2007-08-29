@@ -86,10 +86,7 @@
 #ifndef _WIN32_WCE
 #include <sys/stat.h>
 #endif
-
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase_export.h>
-#include <prim_type.h>
+#include "prim_type.h"
 
 /** \file pio.h
  * \brief file IO related operations.  
@@ -113,7 +110,6 @@ extern "C" {
  * Like fopen, but use popen and zcat if it is determined that "file" is compressed
  * (i.e., has a .z, .Z, .gz, or .GZ extension).
  */
-SPHINXBASE_EXPORT
 FILE *fopen_comp (const char *file,		/**< In: File to be opened */
 		  char *mode,		/**< In: "r" or "w", as with normal fopen */
 		  int32 *ispipe	/**< Out: On return *ispipe is TRUE iff file
@@ -123,7 +119,6 @@ FILE *fopen_comp (const char *file,		/**< In: File to be opened */
 /**
  * Close a file opened using fopen_comp.
  */
-SPHINXBASE_EXPORT
 void fclose_comp (FILE *fp,		/**< In: File pointer to be closed */
 		  int32 ispipe	/**< In: ispipe argument that was returned by the
 				   corresponding fopen_comp() call */
@@ -133,7 +128,6 @@ void fclose_comp (FILE *fp,		/**< In: File pointer to be closed */
  * Open a file for reading, but if file not present try to open compressed version (if
  * file is uncompressed, and vice versa).
  */
-SPHINXBASE_EXPORT
 FILE *fopen_compchk (char *file,	/**< In: File to be opened */
 		     int32 *ispipe	/**< Out: On return *ispipe is TRUE iff file
 					   was opened via a pipe */
@@ -142,7 +136,6 @@ FILE *fopen_compchk (char *file,	/**< In: File to be opened */
 /**
  * Wrapper around fopen to check for failure and E_FATAL if failed.
  */
-SPHINXBASE_EXPORT
 FILE *_myfopen(const char *file, char *mode,
 	       char *pgm, int32 line);	/* In: __FILE__, __LINE__ from where called */
 #define myfopen(file,mode)	_myfopen((file),(mode),__FILE__,__LINE__)
@@ -155,7 +148,6 @@ FILE *_myfopen(const char *file, char *mode,
  * beyond EOF will trigger such retries, wasting about a minute in retries.
  * Arguments identical to regular fread.
  */
-SPHINXBASE_EXPORT
 int32 fread_retry(void *pointer, int32 size, int32 num_items, FILE *stream);
 
 #ifdef _WIN32_WCE
@@ -171,14 +163,12 @@ struct stat {
  * Like fread_retry, but for stat.  Arguments identical to regular stat.
  * Return value: 0 if successful, -1 if stat failed several attempts.
  */
-SPHINXBASE_EXPORT
 int32 stat_retry (char *file, struct stat *statbuf);
 
 /**
  * Return time of last modification for the given file, or -1 if stat fails.
  */
 
-SPHINXBASE_EXPORT
 int32 stat_mtime (char *file);
 
 #ifdef __cplusplus

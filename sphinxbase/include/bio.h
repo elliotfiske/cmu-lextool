@@ -68,11 +68,8 @@
 #define _S3_BIO_H_
 
 #include <stdio.h>
-
-/* Win32/WinCE DLL gunk */
-#include <sphinxbase_export.h>
-#include <prim_type.h>
-#include <byteorder.h>
+#include "prim_type.h"
+#include "byteorder.h"
 
 /** \file bio.h
  * \brief Cross platform binary IO to process files in sphinx3 format. 
@@ -118,7 +115,6 @@ extern "C" {
  * Memory for name and val allocated by this function; use bio_hdrarg_free to free them.
  * @return: 0 if successful, -1 otherwise.
  */
-SPHINXBASE_EXPORT
 int32 bio_readhdr (FILE *fp,		/**< In: File to read */
 		   char ***name,	/**< Out: array of argument name strings read */
 		   char ***val,		/**< Out: corresponding value strings read */
@@ -129,7 +125,6 @@ int32 bio_readhdr (FILE *fp,		/**< In: File to read */
  * the byte order magic word.
  * @return: 0 if successful, -1 otherwise.
  */
-SPHINXBASE_EXPORT
 int32 bio_writehdr_version (FILE *fp,  /**< Output: File to write */
 			    char *version /**< Input: A string of version */
 	);
@@ -138,7 +133,6 @@ int32 bio_writehdr_version (FILE *fp,  /**< Output: File to write */
 /**
  * Free name and value strings previously allocated and returned by bio_readhdr.
  */
-SPHINXBASE_EXPORT
 void bio_hdrarg_free (char **name,	/**< In: Array previously returned by bio_readhdr */
 		      char **val	/**< In: Array previously returned by bio_readhdr */
 		      );
@@ -148,7 +142,6 @@ void bio_hdrarg_free (char **name,	/**< In: Array previously returned by bio_rea
  * But unlike fread, returns -1 if required number of elements (n_el) not read; also,
  * no byteswapping or checksum accumulation is performed in that case.
  */
-SPHINXBASE_EXPORT
 int32 bio_fread (void *buf,
 		 int32 el_sz,
 		 int32 n_el,
@@ -165,7 +158,6 @@ int32 bio_fread (void *buf,
  * Fails fatally if expected data not read.
  * Return value: #array elements allocated and read; -1 if error.
  */
-SPHINXBASE_EXPORT
 int32 bio_fread_1d (void **buf,		/**< Out: contains array data; allocated by this
 					   function; can be freed using ckd_free */
 		    size_t el_sz,	/**< In: Array element size */
@@ -183,7 +175,6 @@ int32 bio_fread_1d (void **buf,		/**< Out: contains array data; allocated by thi
  * Fails fatally if expected data not read.
  * Return value: #array elements allocated and read; -1 if error.
  */
-SPHINXBASE_EXPORT
 int32 bio_fread_2d(void ***arr,
                    size_t e_sz,
                    uint32 *d1,
@@ -200,7 +191,6 @@ int32 bio_fread_2d(void ***arr,
  * Fails fatally if expected data not read.
  * Return value: #array elements allocated and read; -1 if error.
  */
-SPHINXBASE_EXPORT
 int32 bio_fread_3d(void ****arr,
                    size_t e_sz,
                    uint32 *d1,
@@ -214,7 +204,6 @@ int32 bio_fread_3d(void ****arr,
  * Read and verify checksum at the end of binary file.  Fails fatally if there is
  * a mismatch.
  */
-SPHINXBASE_EXPORT
 void bio_verify_chksum (FILE *fp,	/**< In: File to read */
 			int32 byteswap,	/**< In: Byteswap iff (swap != 0) */
 			uint32 chksum	/**< In: Value to compare with checksum in file */

@@ -1,5 +1,0 @@
-#JSGF;
-
-grammar test10;
-
-public <greeting> = HELLO+;
