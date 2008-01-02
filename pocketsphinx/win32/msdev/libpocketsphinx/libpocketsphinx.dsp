@@ -153,19 +153,11 @@ SOURCE=..\..\..\src\libpocketsphinx\lmclass.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\src\libpocketsphinx\log_add.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\libpocketsphinx\mdef.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\ms_gauden.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\ms_mgau.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\..\src\libpocketsphinx\ms_senone.c
 # End Source File
 # Begin Source File
 

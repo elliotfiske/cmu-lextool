@@ -2,69 +2,41 @@ ARCH   = `uname -m | sed s/i.86/i386/`_`uname -s | tr A-Z a-z`
 
 lib_LTLIBRARIES = libpocketsphinx.la
 
-libpocketsphinx_la_LDFLAGS = -version-info 1:0:0
+libpocketsphinx_la_LDFLAGS = -version-info 0:0:0
 
-libpocketsphinx_la_SOURCES =			\
+libpocketsphinx_la_SOURCES = \
 	allphone.c				\
 	awriteshort.c				\
 	bin_mdef.c				\
 	blkarray_list.c				\
+	cache_lm.c				\
 	dict.c					\
 	fbs_main.c				\
 	fsg_history.c				\
 	fsg_lextree.c				\
 	fsg_psubtree.c				\
 	fsg_search.c				\
-	hmm.c					\
+	hmm.c                                   \
 	kb_main.c				\
 	kdtree.c				\
 	lm_3g.c					\
+	lm.c					\
 	lmclass.c				\
+	log_add.c				\
 	mdef.c					\
-	ms_gauden.c				\
-	ms_mgau.c				\
-	ms_senone.c				\
 	phone.c					\
+	s2_mmap.c				\
 	s2_semi_mgau.c				\
 	search.c				\
 	searchlat.c				\
 	senscr.c				\
+	subvq_mgau.c				\
 	tmat.c					\
 	uttproc.c				\
 	vector.c				\
 	word_fsg.c
 
-noinst_HEADERS = uttproc.h allphone.h \
-	basic_types.h				\
-	bin_mdef.h				\
-	blkarray_list.h				\
-	dict.h					\
-	fsg_history.h				\
-	fsg_lextree.h				\
-	fsg_psubtree.h				\
-	fsg_search.h				\
-	hmm.h					\
-	kb.h					\
-	kdtree.h				\
-	lm_3g.h					\
-	lmclass.h				\
-	lm.h					\
-	log.h					\
-	mdef.h					\
-	ms_gauden.h				\
-	ms_mgau.h				\
-	ms_senone.h				\
-	phone.h					\
-	posixwin32.h				\
-	s2_semi_mgau.h				\
-	s2io.h					\
-	s2params.h				\
-	search_const.h				\
-	search.h				\
-	senscr.h				\
-	tmat.h					\
-	vector.h				\
-	word_fsg.h
+noinst_HEADERS = uttproc.h allphone.h
 
 INCLUDES = -I$(top_srcdir)/include \
            -I$(top_builddir)/include 

@@ -47,8 +47,9 @@
 #define __S2TYPES_H__
 
 #include <sphinx_config.h>
-#include <prim_type.h>
-#include <fixpoint.h>
+
+#include "prim_type.h"
+#include "fixpoint.h"
 
 #ifdef FIXED_POINT
 /** Gaussian mean storage type. */

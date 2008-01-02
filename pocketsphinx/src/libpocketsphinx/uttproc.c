@@ -709,9 +709,6 @@ uttproc_init(void)
         return -1;
     }
 
-    /* Make sure linklist functions can operate. */
-    linklist_init();
-
     fe = fe_init_auto();
 
     if (!fe)
@@ -1328,7 +1325,7 @@ static void
 build_utt_seghyp(void)
 {
     int32 i;
-    search_hyp_t *seghyp, *last, *newhyp;
+    search_hyp_t *seghyp, *last, *new;
 
     /* Obtain word segmentation result */
     seghyp = search_get_hyp();
@@ -1336,19 +1333,19 @@ build_utt_seghyp(void)
     /* Fill in missing details and build segmentation linked list */
     last = NULL;
     for (i = 0; seghyp[i].wid >= 0; i++) {
-        newhyp = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
-        newhyp->wid = seghyp[i].wid;
-        newhyp->word = kb_get_word_str(newhyp->wid);
-        newhyp->sf = seghyp[i].sf;
-        newhyp->ef = seghyp[i].ef;
-        newhyp->latden = seghyp[i].latden;
-        newhyp->next = NULL;
+        new = (search_hyp_t *) listelem_alloc(sizeof(search_hyp_t));
+        new->wid = seghyp[i].wid;
+        new->word = kb_get_word_str(new->wid);
+        new->sf = seghyp[i].sf;
+        new->ef = seghyp[i].ef;
+        new->latden = seghyp[i].latden;
+        new->next = NULL;
 
         if (!last)
-            utt_seghyp = newhyp;
+            utt_seghyp = new;
         else
-            last->next = newhyp;
-        last = newhyp;
+            last->next = new;
+        last = new;
     }
 }
 

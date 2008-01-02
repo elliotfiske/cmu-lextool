@@ -165,7 +165,6 @@
 #include "s2types.h"
 #include "s2io.h"
 #include "ckd_alloc.h"
-#include "logmath.h"
 #include "cmd_ln.h"
 #include "pio.h"
 #include "basic_types.h"
@@ -176,6 +175,7 @@
 #include "err.h"
 #include "lmclass.h"
 #include "lm_3g.h"
+#include "log.h"
 #include "search_const.h"
 #include "dict.h"
 #include "kb.h"
@@ -936,11 +936,11 @@ lm_read_clm(char const *filename,
     int32 i, j, k, last_bg, last_tg;
     int32 dictid, classid, notindict, maperr;
     lmclass_word_t lmclass_word;
+    int do_mmap;
 
     E_INFO("Reading LM file %s (name \"%s\")\n", filename, lmname);
 
-    /* Make sure linklist functions can operate. */
-    linklist_init();
+    do_mmap = cmd_ln_boolean("-mmap");
 
     if (start_sym == NULL)
         start_sym = ckd_salloc("<s>");
@@ -1070,7 +1070,7 @@ lm_read_clm(char const *filename,
         E_INFO("prob(%s,%s) changed from %.4f to %.4f\n",
                word_str[i], word_str[BG_WID(model, j)],
                model->prob2[model->bigrams[j].prob2].f, model->prob2[0].f);
-        if (!model->dump_mmap)
+        if (!do_mmap)
             model->bigrams[j].prob2 = 0;
 
         if (model->tcount > 0) {
@@ -1087,7 +1087,7 @@ lm_read_clm(char const *filename,
                        word_str[TG_WID(model, k)],
                        model->prob3[model->trigrams[k].prob3].f,
                        model->prob3[0].f);
-                if (!model->dump_mmap)
+                if (!do_mmap)
                     model->trigrams[k].prob3 = 0;
             }
         }
@@ -1102,13 +1102,13 @@ lm_read_clm(char const *filename,
         E_INFO("prob(%s,%s) changed from %.4f to %.4f\n",
                word_str[i], word_str[BG_WID(model, j)],
                model->prob2[model->bigrams[j].prob2].f, model->prob2[0].f);
-        if (!model->dump_mmap)
+        if (!do_mmap)
             model->bigrams[j].prob2 = 0;
     }
 
     lm_add(lmname, model, lw, uw, wip);
 
-    if (!model->dump_mmap)
+    if (!do_mmap)
         for (i = 0; i < model->ucount; i++)
             free(word_str[i]);
     free(word_str);
@@ -1174,9 +1174,9 @@ lm_add_word(lm_t * model, int32 dictwid)
     /* Append new word to unigrams */
     model->unigrams[model->ucount].mapid = dictwid;
     model->unigrams[model->ucount].prob1.l =
-        LWMUL(logmath_log10_to_log(lmath, oov_ugprob), model->lw) + model->log_wip;
+        LWMUL(LOG10TOLOG(oov_ugprob), model->lw) + model->log_wip;
     model->unigrams[model->ucount].bo_wt1.l =
-        LWMUL(logmath_log10_to_log(lmath, 0.0), model->lw);
+        LWMUL(LOG10TOLOG(0.0), model->lw);
 
     /* Advance the sentinel unigram */
     model->unigrams[model->ucount + 1].bigrams =
@@ -1532,13 +1532,7 @@ lm3g_load(char const *file, char const *lmname,
             do_mmap = FALSE;
         }
         else {
-            model->dump_mmap = mmio_file_read(file);
-            if (model->dump_mmap == NULL) {
-                do_mmap = FALSE;
-            }
-            else {
-                map_base = mmio_file_ptr(model->dump_mmap);
-            }
+            map_base = s2_mmap(file);
         }
     }
 
@@ -1848,53 +1842,55 @@ lm_set_param(lm_t * model, double lw, double uw,
     int32 i;
     int32 tmp1, tmp2;
     int32 logUW, logOneMinusUW, logUniform;
+    const int16 *at = fe_logadd_table;
+    int32 ts = fe_logadd_table_size;
 
     model->lw = FLOAT2LW(lw);
     model->invlw = FLOAT2LW(1.0 / lw);
     model->uw = uw;
-    model->log_wip = logmath_log(lmath, wip);
+    model->log_wip = LOG(wip);
     E_INFO("%8.2f = Language Weight\n", LW2FLOAT(model->lw));
     E_INFO("%8.2f = Unigram Weight\n", model->uw);
     E_INFO("%8d = LOG (Insertion Penalty (%.2f))\n", model->log_wip, wip);
 
-    logUW = logmath_log(lmath, model->uw);
-    logOneMinusUW = logmath_log(lmath, 1.0 - model->uw);
-    logUniform = logmath_log(lmath, 1.0 / (model->ucount - 1));        /* -1 for ignoring <s> */
+    logUW = LOG(model->uw);
+    logOneMinusUW = LOG(1.0 - model->uw);
+    logUniform = LOG(1.0 / (model->ucount - 1));        /* -1 for ignoring <s> */
 
     if (word_pair)
         E_FATAL("word-pair LM not implemented\n");
 
     for (i = 0; i < model->ucount; i++) {
         model->unigrams[i].bo_wt1.l =
-            (logmath_log10_to_log(lmath, UG_BO_WT_F(model, i)) * lw);
+            (LOG10TOLOG(UG_BO_WT_F(model, i)) * lw);
 
         /* Interpolate LM unigram prob with uniform prob (except start_sym) */
         if (strcmp(word_str[i], start_sym) == 0) {
             model->unigrams[i].prob1.l =
-                (logmath_log10_to_log(lmath, UG_PROB_F(model, i)) * lw) + model->log_wip;
+                (LOG10TOLOG(UG_PROB_F(model, i)) * lw) + model->log_wip;
         }
         else {
-            tmp1 = (logmath_log10_to_log(lmath, UG_PROB_F(model, i))) + logUW;
+            tmp1 = (LOG10TOLOG(UG_PROB_F(model, i))) + logUW;
             tmp2 = logUniform + logOneMinusUW;
-            tmp1 = logmath_add(lmath, tmp1, tmp2);
+            FAST_ADD(tmp1, tmp1, tmp2, at, ts);
             model->unigrams[i].prob1.l = (tmp1 * lw) + model->log_wip;
         }
     }
 
     for (i = 0; i < model->n_prob2; i++) {
         model->prob2[i].l =
-            (logmath_log10_to_log(lmath, model->prob2[i].f) * lw) + model->log_wip;
+            (LOG10TOLOG(model->prob2[i].f) * lw) + model->log_wip;
     }
     if (model->tcount > 0) {
         for (i = 0; i < model->n_bo_wt2; i++) {
-            model->bo_wt2[i].l = (logmath_log10_to_log(lmath, model->bo_wt2[i].f) * lw);
+            model->bo_wt2[i].l = (LOG10TOLOG(model->bo_wt2[i].f) * lw);
         }
     }
 
     if (model->tcount > 0) {
         for (i = 0; i < model->n_prob3; i++) {
             model->prob3[i].l =
-                (logmath_log10_to_log(lmath, model->prob3[i].f) * lw) + model->log_wip;
+                (LOG10TOLOG(model->prob3[i].f) * lw) + model->log_wip;
         }
     }
 }

@@ -234,7 +234,7 @@
 #include "kb.h"
 #include "log.h"
 #include "s2_semi_mgau.h"
-#include "ms_mgau.h"
+#include "subvq_mgau.h"
 #include "senscr.h"
 #include "fbs.h"
 #include "search.h"
@@ -1063,7 +1063,7 @@ last_phone_transition(void)
 
                 dscr = BScoreStack[bpe->s_idx + rcpermtab[ciph0]];
                 dscr +=
-                    lm3g_tg_score(bpe->prev_real_fwid, bpe->real_fwid,
+                    lm_tg_score(bpe->prev_real_fwid, bpe->real_fwid,
                                 fwid2);
 
                 if (last_ltrans[candp->wid].dscr < dscr) {
@@ -1380,7 +1380,7 @@ word_transition(void)
 
             newscore = rcss[rcpermtab[de->ci_phone_ids[0]]];
             newscore +=
-                lm3g_tg_score(bpe->prev_real_fwid, bpe->real_fwid, fwid2);
+                lm_tg_score(bpe->prev_real_fwid, bpe->real_fwid, fwid2);
 
             if (last_ltrans[w].dscr < newscore) {
                 last_ltrans[w].dscr = newscore;
@@ -1442,12 +1442,10 @@ search_initialize(void)
 {
     int32 bptable_size = cmd_ln_int32("-latsize");
 
-    linklist_init();
-
     NumWords = word_dict->dict_entry_count;
     StartWordId = kb_get_word_id(cmd_ln_str("-lmstartsym"));
     FinishWordId = kb_get_word_id(cmd_ln_str("-lmendsym"));
-    SilenceWordId = kb_get_word_id("<sil>");
+    SilenceWordId = kb_get_word_id("SIL");
     SilencePhoneId = phone_to_id("SIL", TRUE);
     NumCiPhones = phoneCiCount();
 
@@ -1822,7 +1820,7 @@ search_start_fwd(void)
         de = word_dict->dict_list[context_word[0]];
         rcsize = (de->mpx && (de->len > 1)) ?
             RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
-        lscr = lm3g_bg_score(StartWordId, context_word[0]);
+        lscr = lm_bg_score(StartWordId, context_word[0]);
         for (i = 0; i < rcsize; i++)
             save_bwd_ptr(context_word[0], lscr, 0, i);
         WordLatIdx[context_word[0]] = NO_BP;
@@ -1835,7 +1833,7 @@ search_start_fwd(void)
             rcsize = (de->mpx && (de->len > 1)) ?
                 RightContextFwdSize[de->phone_ids[de->len - 1]] : 1;
             lscr +=
-                lm3g_tg_score(StartWordId, context_word[0], context_word[1]);
+                lm_tg_score(StartWordId, context_word[0], context_word[1]);
             for (i = 0; i < rcsize; i++)
                 save_bwd_ptr(context_word[1], lscr, 1, i);
             WordLatIdx[context_word[0]] = NO_BP;
@@ -2116,7 +2114,7 @@ search_postprocess_bptable(lw_t lwf, char const *pass)
 
         bestscore = WORST_SCORE;
         for (bp = BPTableIdx[f]; bp < BPTableIdx[f + 1]; bp++) {
-            l_scr = lm3g_tg_score(BPTable[bp].prev_real_fwid,
+            l_scr = lm_tg_score(BPTable[bp].prev_real_fwid,
                                 BPTable[bp].real_fwid, FinishWordId);
             l_scr = LWMUL(l_scr, lwf);
 
@@ -2388,7 +2386,7 @@ search_get_lscr(void)
 void
 search_set_beam_width(double beam)
 {
-    DynamicLogBeamWidth = LogBeamWidth = logmath_log(lmath, beam);
+    DynamicLogBeamWidth = LogBeamWidth = LOG(beam);
     E_INFO("%8d = beam width\n", LogBeamWidth);
 }
 
@@ -2398,7 +2396,7 @@ search_set_beam_width(double beam)
 void
 search_set_new_word_beam_width(double beam)
 {
-    NewWordLogBeamWidth = logmath_log(lmath, beam);
+    NewWordLogBeamWidth = LOG(beam);
     E_INFO("%8d = new word beam width\n", NewWordLogBeamWidth);
 }
 
@@ -2408,7 +2406,7 @@ search_set_new_word_beam_width(double beam)
 void
 search_set_lastphone_alone_beam_width(double beam)
 {
-    LastPhoneAloneLogBeamWidth = logmath_log(lmath, beam);
+    LastPhoneAloneLogBeamWidth = LOG(beam);
     E_INFO("%8d = Last phone alone beam width\n",
            LastPhoneAloneLogBeamWidth);
 }
@@ -2419,7 +2417,7 @@ search_set_lastphone_alone_beam_width(double beam)
 void
 search_set_new_phone_beam_width(double beam)
 {
-    NewPhoneLogBeamWidth = logmath_log(lmath, beam);
+    NewPhoneLogBeamWidth = LOG(beam);
     E_INFO("%8d = new phone beam width\n", NewPhoneLogBeamWidth);
 }
 
@@ -2429,7 +2427,7 @@ search_set_new_phone_beam_width(double beam)
 void
 search_set_last_phone_beam_width(double beam)
 {
-    LastPhoneLogBeamWidth = logmath_log(lmath, beam);
+    LastPhoneLogBeamWidth = LOG(beam);
     E_INFO("%8d = last phone beam width\n", LastPhoneLogBeamWidth);
 }
 
@@ -2463,15 +2461,15 @@ searchCurrentFrame(void)
 void
 search_set_newword_penalty(double nw_pen)
 {
-    newword_penalty = logmath_log(lmath, nw_pen);
+    newword_penalty = LOG(nw_pen);
     E_INFO("%8d = newword penalty\n", newword_penalty);
 }
 
 void
 search_set_silence_word_penalty(float pen, float pip)
 {                               /* Phone insertion penalty */
-    logPhoneInsertionPenalty = logmath_log(lmath, pip);
-    SilenceWordPenalty = logmath_log(lmath, pen) + logmath_log(lmath, pip);
+    logPhoneInsertionPenalty = LOG(pip);
+    SilenceWordPenalty = LOG(pen) + LOG(pip);
     E_INFO("%8d = LOG (Silence Word Penalty) + LOG (Phone Penalty)\n",
            SilenceWordPenalty);
 }
@@ -2485,7 +2483,7 @@ search_get_logs2pip(void)
 void
 search_set_filler_word_penalty(float pen, float pip)
 {
-    FillerWordPenalty = logmath_log(lmath, pen) + logmath_log(lmath, pip);;
+    FillerWordPenalty = LOG(pen) + LOG(pip);;
     E_INFO("%8d = LOG (Filler Word Penalty) + LOG (Phone Penalty)\n",
            FillerWordPenalty);
 }
@@ -2507,7 +2505,7 @@ search_set_lw(double p1lw, double p2lw, double p3lw)
 void
 search_set_ip(float ip)
 {
-    LogInsertionPenalty = logmath_log(lmath, ip);
+    LogInsertionPenalty = LOG(ip);
 }
 
 void
@@ -3093,7 +3091,7 @@ compute_seg_scores(lw_t lwf)
         }
         else {
             bpe->lscr =
-                lm3g_tg_score(p_bpe->prev_real_fwid, p_bpe->real_fwid,
+                lm_tg_score(p_bpe->prev_real_fwid, p_bpe->real_fwid,
                             de->fwid);
             bpe->lscr = LWMUL(bpe->lscr, lwf);
         }
@@ -3355,8 +3353,8 @@ destroy_fwdflat_chan(void)
 void
 search_set_fwdflat_bw(double bw, double nwbw)
 {
-    FwdflatLogBeamWidth = logmath_log(lmath, bw);
-    FwdflatLogWordBeamWidth = logmath_log(lmath, nwbw);
+    FwdflatLogBeamWidth = LOG(bw);
+    FwdflatLogWordBeamWidth = LOG(nwbw);
     E_INFO("Flat-pass bw = %.1e (%d), nwbw = %.1e (%d)\n",
            bw, FwdflatLogBeamWidth, nwbw, FwdflatLogWordBeamWidth);
 }
@@ -3463,8 +3461,8 @@ search_fwdflat_frame(mfcc_t **feat)
             /* FIXME: This recomputes the codebook, which we'd rather not do. */
             if (semi_mgau)
                 s2_semi_mgau_frame_eval(semi_mgau, feat, CurrentFrame, FALSE);
-            else if (ms_mgau)
-                ms_cont_mgau_frame_eval(senone_scores, ms_mgau, feat);
+            else
+                subvq_mgau_frame_eval(subvq_mgau, feat, CurrentFrame, FALSE);
 
             /* Intersect the senone scores */
             for (i = 0; i < n_senone_active; ++i) {
@@ -3787,7 +3785,7 @@ fwdflat_word_transition(void)
              * something approximating it. */
             newscore = rcss[rcpermtab[newde->ci_phone_ids[0]]];
             newscore +=
-                LWMUL(lm3g_tg_score
+                LWMUL(lm_tg_score
                       (bp->prev_real_fwid, bp->real_fwid, newde->fwid),
                       lwf);
             newscore += pip;
