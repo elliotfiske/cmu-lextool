@@ -37,6 +37,13 @@ EXTRA_DIST=compare_table.pl				\
 	data/tidigits/tidigits.lsn			\
 	data/tidigits/test-tidigits-simple.match	\
 	data/tidigits/test-tidigits-fsg.match		\
+	data/an4/test-an4-subvq.match			\
+	data/an4/an432-marh-b.mfc			\
+	data/an4/an4.ctl				\
+	data/an4/cen5-fjlp-b.mfc			\
+	data/an4/an406-fcaw-b.mfc			\
+	data/an4/an4.lsn				\
+	data/an4/cen6-mdms2-b.mfc			\
 	data/wsj/test5k.s1.ctl				\
 	data/wsj/test5k.s1.lsn				\
 	data/wsj/440c0201.mfc				\
@@ -44,6 +51,7 @@ EXTRA_DIST=compare_table.pl				\
 	data/wsj/442c0201.mfc				\
 	data/wsj/443c0201.mfc				\
 	data/wsj/444c0201.mfc				\
+	data/wsj/445c0201.mfc				\
 	data/wsj/446c0201.mfc				\
 	data/wsj/447c0201.mfc				\
 	data/wsj/wlist5o.nvp.dict			\
@@ -55,9 +63,12 @@ EXTRA_DIST=compare_table.pl				\
 	data/wsj/n800_440c0205.wav			\
 	data/wsj/n800_440c0206.wav			\
 	data/wsj/n800_440c0207.wav			\
+	data/wsj/n800_440c0208.wav			\
+	data/wsj/n800_440c0209.wav			\
 	data/wsj/test5k.n800.ctl			\
 	data/wsj/test-wsj1-fwdtree.match		\
 	data/wsj/test-wsj1-n800-fwdtree.match		\
 	data/wsj/n800_440c0201.wav			\
 	data/wsj/n800_440c0204.wav			\
+	data/wsj/n800_440c020a.wav			\
 	data/wsj/test-wsj1-simple.match

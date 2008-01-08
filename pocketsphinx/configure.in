@@ -1,7 +1,7 @@
 dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
-AC_INIT(pocketsphinx, 0.5)
+AC_INIT(pocketsphinx, 0.4.1)
 AM_INIT_AUTOMAKE([no-define dist-bzip2 dist-zip])
 
 CFLAGS=${CFLAGS:--g -O2 -Wall}
@@ -81,8 +81,8 @@ dnl
 : ${sphinxbasebuild=$sphinxbase}
 if test x$sphinxbase != x && test x$cross_compiling = xyes; then
    CPPFLAGS="-I$sphinxbase/include -I$sphinxbasebuild/include $CPPFLAGS"
-   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxad \
-		     -L$sphinxbasebuild/src/libsphinxbase"
+   LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxfeat \
+		     -L$sphinxbasebuild/src/libsphinxutil -L$sphinxbasebuild/src/libsphinxad"
 fi
 if test x$sphinxbase != x && test x$cross_compiling != xyes; then
    AC_CHECK_FILE($sphinxbase/include/prim_type.h,CPPFLAGS="-I$sphinxbase/include $CPPFLAGS",
@@ -92,10 +92,10 @@ if test x$sphinxbase != x && test x$cross_compiling != xyes; then
 SphinxBase.  Run $0 --help for more information.]))
 fi
 if test x$sphinxbasebuild != x && test x$cross_compiling != xyes; then
-   AC_CHECK_FILE($sphinxbasebuild/src/libsphinxbase/libsphinxbase.la,
+   AC_CHECK_FILE($sphinxbasebuild/src/libsphinxutil/libsphinxutil.la,
 [CPPFLAGS="-I$sphinxbasebuild/include $CPPFLAGS"
-LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxad \
-		  -L$sphinxbasebuild/src/libsphinxbase"],
+LDFLAGS="$LDFLAGS -L$sphinxbasebuild/src/libsphinxfe -L$sphinxbasebuild/src/libsphinxfeat \
+		  -L$sphinxbasebuild/src/libsphinxutil -L$sphinxbasebuild/src/libsphinxad"],
 		   AC_ERROR(
 [SphinxBase libraries were not found in $sphinxbasebuild.
 Use the --with-sphinxbase-build option to `configure' to specify
@@ -120,10 +120,12 @@ model/Makefile
 model/hmm/Makefile
 model/hmm/wsj1/Makefile
 model/hmm/tidigits/Makefile
+model/hmm/an4/Makefile
 model/lm/Makefile
 model/lm/turtle/Makefile
 model/lm/swb/Makefile
 model/lm/tidigits/Makefile
+model/lm/an4/Makefile
 scripts/Makefile
 scripts/pocketsphinx_test
 scripts/pocketsphinx_swb

@@ -59,7 +59,6 @@
 #include "ckd_alloc.h"
 #include "strfuncs.h"
 #include "phone.h"
-#include "mdef.h"
 #include "bin_mdef.h"
 #include "err.h"
 #include "kb.h"

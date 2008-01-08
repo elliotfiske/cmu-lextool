@@ -118,25 +118,33 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <limits.h>
 
-#include <err.h>
-#include <ckd_alloc.h>
-#include <cmd_ln.h>
-#include <pio.h>
-
+#include "s2types.h"
 #include "strfuncs.h"
+#include "basic_types.h"
+#include "search_const.h"
+#include "err.h"
+#include "ckd_alloc.h"
+#include "pio.h"
+#include "log.h"
 #include "dict.h"
 #include "lm.h"
+#include "lmclass.h"
+#include "lm_3g.h"
 #include "s2_semi_mgau.h"
-#include "ms_mgau.h"
+#include "subvq_mgau.h"
 #include "kb.h"
 #include "phone.h"
 #include "fbs.h"
 #include "mdef.h"
 #include "tmat.h"
 #include "search.h"
+#include "cmd_ln.h"
 
 /* Dictionary. */
 dictT *word_dict;
@@ -153,11 +161,11 @@ bin_mdef_t *mdef;
 /* S2 fast SCGMM computation object */
 s2_semi_mgau_t *semi_mgau;
 
-/* Slow CDGMM computation object */
-ms_mgau_model_t *ms_mgau;
+/* SubVQ-based fast CDGMM computation object */
+subvq_mgau_t *subvq_mgau;
 
 /* Model file names */
-char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn, *logaddfn;
+char *hmmdir, *mdeffn, *meanfn, *varfn, *mixwfn, *tmatfn, *kdtreefn, *sendumpfn;
 
 /* Language model set */
 lmclass_set_t lmclass_set;
@@ -417,7 +425,7 @@ phonetp_init(int32 num_ci_phones)
         if (n == 0) {           /* No data here, use uniform probs */
             p = 1.0 / (float32) num_ci_phones;
             p *= pip;           /* Phone insertion penalty */
-            logp = (int32) (logmath_log(lmath, p) * ptplw);
+            logp = (int32) (LOG(p) * ptplw);
 
             for (j = 0; j < num_ci_phones; j++)
                 phonetp[i][j] = logp;
@@ -430,7 +438,7 @@ phonetp_init(int32 num_ci_phones)
                 p = ((1.0 - uptpwt) * p) + (uptpwt * uptp);     /* Smooth */
                 p *= pip;       /* Phone insertion penalty */
 
-                phonetp[i][j] = (int32) (logmath_log(lmath, p) * ptplw);
+                phonetp[i][j] = (int32) (LOG(p) * ptplw);
             }
         }
     }
@@ -468,14 +476,6 @@ kb_init(void)
         else {
             fclose(tmp);
         }
-        logaddfn = string_join(hmmdir, "/logadd", NULL);
-        if ((tmp = fopen(logaddfn, "rb")) == NULL) {
-            ckd_free(logaddfn);
-            logaddfn = NULL;
-        }
-        else {
-            fclose(tmp);
-        }
     }
     /* Allow overrides from the command line */
     if (cmd_ln_str("-mdef")) {
@@ -506,21 +506,6 @@ kb_init(void)
         ckd_free(kdtreefn);
         kdtreefn = ckd_salloc(cmd_ln_str("-kdtree"));
     }
-    if (cmd_ln_str("-logadd")) {
-        ckd_free(logaddfn);
-        logaddfn = ckd_salloc(cmd_ln_str("-logadd"));
-    }
-
-    /* Initialize log tables. */
-    if (logaddfn) {
-        lmath = logmath_read(logaddfn);
-        if (lmath == NULL) {
-            E_FATAL("Failed to read log-add table from %s\n", logaddfn);
-        }
-    }
-    else {
-        lmath = logmath_init((float64)cmd_ln_float32("-logbase"), 0, FALSE);
-    }
 
     /* Read model definition. */
     if (mdeffn == NULL)
@@ -540,33 +525,32 @@ kb_init(void)
     tmat = tmat_init(tmatfn, cmd_ln_float32("-tmatfloor"), TRUE);
 
     /* Read the acoustic models. */
-    if ((meanfn == NULL)
-        || (varfn == NULL)
-        || (tmatfn == NULL))
-        E_FATAL("No mean/var/tmat files specified\n");
+    if (cmd_ln_str("-subvq")) {
+        subvq_mgau = subvq_mgau_init(cmd_ln_str("-subvq"),
+                                     cmd_ln_float32("-varfloor"),
+                                     mixwfn,
+                                     cmd_ln_float32("-mixwfloor"),
+                                     cmd_ln_int32("-topn"));
+    }
+    else {
+        if ((meanfn == NULL)
+            || (varfn == NULL)
+            || (tmatfn == NULL))
+            E_FATAL("No mean/var/tmat files specified\n");
 
-    E_INFO("Attempting to use SCGMM computation module\n");
-    semi_mgau = s2_semi_mgau_init(meanfn,
-                                  varfn,
-                                  cmd_ln_float32("-varfloor"),
-                                  mixwfn,
-                                  cmd_ln_float32("-mixwfloor"),
-                                  cmd_ln_int32("-topn"));
-    if (semi_mgau) {
+        E_INFO("Initializing SCGMM computation module\n");
+        semi_mgau = s2_semi_mgau_init(meanfn,
+                                      varfn,
+                                      cmd_ln_float32("-varfloor"),
+                                      mixwfn,
+                                      cmd_ln_float32("-mixwfloor"),
+                                      cmd_ln_int32("-topn"));
         if (kdtreefn)
             s2_semi_mgau_load_kdtree(semi_mgau,
                                      kdtreefn,
                                      cmd_ln_int32("-kdmaxdepth"),
                                      cmd_ln_int32("-kdmaxbbi"));
         semi_mgau->ds_ratio = cmd_ln_int32("-dsratio");
-    }
-    else {
-        E_INFO("Falling back to general multi-stream GMM computation\n");
-        ms_mgau = ms_mgau_init(meanfn, varfn,
-                               cmd_ln_float32("-varfloor"),
-                               mixwfn, 
-                               cmd_ln_float32("-mixwfloor"),
-                               cmd_ln_int32("-topn"));
     }
 
     /*
@@ -602,11 +586,10 @@ kb_close(void)
     }
     tmat_free(tmat);
 
+    if (subvq_mgau)
+        subvq_mgau_free(subvq_mgau);
     if (semi_mgau)
         s2_semi_mgau_free(semi_mgau);
-
-    if (ms_mgau)
-        ms_mgau_free(ms_mgau);
 
     if (phonetp)
         ckd_free_2d((void **)phonetp);

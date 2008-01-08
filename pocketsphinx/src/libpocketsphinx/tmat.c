@@ -95,10 +95,9 @@
 #include <string.h>
 
 #include "tmat.h"
-#include "kb.h"
 #include "bio.h"
 #include "vector.h"
-#include "logmath.h"
+#include "log.h"
 #include "err.h"
 #include "ckd_alloc.h"
 
@@ -137,7 +136,7 @@ tmat_chk_uppertri(tmat_t * tmat)
     for (i = 0; i < tmat->n_tmat; i++) {
         for (dst = 0; dst < tmat->n_state; dst++)
             for (src = dst + 1; src < tmat->n_state; src++)
-                if (tmat->tp[i][src][dst] > logmath_get_zero(lmath)) {
+                if (tmat->tp[i][src][dst] > MIN_LOG) {
                     E_ERROR("tmat[%d][%d][%d] = %d\n",
                             i, src, dst, tmat->tp[i][src][dst]);
                     return -1;
@@ -156,7 +155,7 @@ tmat_chk_1skip(tmat_t * tmat)
     for (i = 0; i < tmat->n_tmat; i++) {
         for (src = 0; src < tmat->n_state; src++)
             for (dst = src + 3; dst <= tmat->n_state; dst++)
-                if (tmat->tp[i][src][dst] > logmath_get_zero(lmath)) {
+                if (tmat->tp[i][src][dst] > MIN_LOG) {
                     E_ERROR("tmat[%d][%d][%d] = %d\n",
                             i, src, dst, tmat->tp[i][src][dst]);
                     return -1;
@@ -266,7 +265,7 @@ tmat_init(char *file_name, float64 tpfloor, int32 breport)
                  * zero, otherwise HMM evaluation goes nuts. */
                 if (k >= j && k-j < 3 && tp[j][k] == 0.0f)
                     tp[j][k] = tpfloor;
-                t->tp[i][j][k] = logmath_log(lmath, tp[j][k]);
+                t->tp[i][j][k] = LOG(tp[j][k]);
 #if 0
                 if (tp[j][k] > 0.0f)
                     printf("%d,%d,%d (%d) = %f = %d\n",

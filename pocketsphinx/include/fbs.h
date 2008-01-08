@@ -195,8 +195,9 @@ extern "C" {
 }
 #endif
 
-#include <s2types.h>
-#include <cmd_ln.h>
+#include "s2types.h"
+#include "cmd_ln.h"
+#include "fe.h"
 
 /* Win32/WinCE DLL gunk */
 #if (defined(_WIN32) || defined(_WIN32_WCE)) && !defined(LIBPOCKETSPHINX) && !defined(CYGWIN)

@@ -1,11 +1,11 @@
 Source: pocketsphinx
-Priority: optional
+Priority: extra
 Maintainer: David Huggins-Daines <dhuggins@cs.cmu.edu>
-Build-Depends: debhelper (>= 4), autotools-dev, libsphinxbase-dev
+Build-Depends: debhelper (>= 4), autotools-dev, libsphinxbase0-dev
 Standards-Version: 3.7.2
 Section: libs
 
-Package: libpocketsphinx-dev
+Package: libpocketsphinx0-dev
 Section: libdevel
 Architecture: any
 Depends: libpocketsphinx0 (= ${Source-Version})
@@ -28,7 +28,6 @@ Description: Lightweight speech recognition - library
 Package: pocketsphinx-hmm-wsj1
 Section: sound
 Architecture: all
-Depends: pocketsphinx-utils
 Description: Lightweight speech recognition - WSJ1 acoustic model
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
@@ -40,7 +39,6 @@ Description: Lightweight speech recognition - WSJ1 acoustic model
 Package: pocketsphinx-hmm-tidigits
 Section: sound
 Architecture: all
-Depends: pocketsphinx-utils
 Description: Lightweight speech recognition - TIDIGITS models
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
@@ -53,7 +51,6 @@ Description: Lightweight speech recognition - TIDIGITS models
 Package: pocketsphinx-lm-swb5k
 Section: sound
 Architecture: all
-Depends: pocketsphinx-utils, pocketsphinx-hmm-wsj1
 Description: Lightweight speech recognition - SWB5k language model
  PocketSphinx is a lightweight, cross-platform, speaker-independent,
  large-vocabulary continuous speech recognition engine.
