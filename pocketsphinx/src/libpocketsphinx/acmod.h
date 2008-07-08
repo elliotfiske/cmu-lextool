@@ -56,7 +56,6 @@
 /* Local headers. */
 #include "bin_mdef.h"
 #include "s2_semi_mgau.h"
-#include "sdc_mgau.h"
 #include "ms_mgau.h"
 #include "tmat.h"
 #include "hmm.h"

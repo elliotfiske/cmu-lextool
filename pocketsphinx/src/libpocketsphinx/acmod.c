@@ -105,38 +105,24 @@ acmod_init_am(acmod_t *acmod)
         return -1;
     }
 
-    /* If there is a subspace distribution map, use SDCHMM computation. */
-    if (cmd_ln_str_r(acmod->config, "-sdmap")) {
-        E_INFO("Using SDCHMM computation module\n");
-        acmod->mgau = sdc_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-        if (acmod == NULL) {
-            E_ERROR("SDCHMM init failed\n");
-            return -1;
-        }
-        acmod->frame_eval = (frame_eval_t)&sdc_mgau_frame_eval;
-        acmod->mgau_free = (void *)&sdc_mgau_free;
+    E_INFO("Attempting to use SCGMM computation module\n");
+    acmod->mgau
+        = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+    if (acmod->mgau) {
+        char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
+        if (kdtreefn)
+            s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
+        acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
+        acmod->mgau_free = (void *)&s2_semi_mgau_free;
     }
-    /* Otherwise, try to use SCHMM or CDHMM computation. */
     else {
-        E_INFO("Attempting to use SCHMM computation module\n");
-        acmod->mgau
-            = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-        if (acmod->mgau) {
-            char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
-            if (kdtreefn)
-                s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
-                                         cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
-                                         cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
-            acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
-            acmod->mgau_free = (void *)&s2_semi_mgau_free;
-        }
-        else {
-            E_INFO("Falling back to general multi-stream GMM computation\n");
-            acmod->mgau =
-                ms_mgau_init(acmod->config, acmod->lmath);
-            acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
-            acmod->mgau_free = (void *)&ms_mgau_free;
-        }
+        E_INFO("Falling back to general multi-stream GMM computation\n");
+        acmod->mgau =
+            ms_mgau_init(acmod->config, acmod->lmath);
+        acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
+        acmod->mgau_free = (void *)&ms_mgau_free;
     }
 
     return 0;
@@ -189,12 +175,12 @@ acmod_init_feat(acmod_t *acmod)
         while (nvals < acmod->fcb->cmn_struct->veclen
                && (cc = strchr(c, ',')) != NULL) {
             *cc = '\0';
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC((float32)atof(c));
             c = cc + 1;
             ++nvals;
         }
         if (nvals < acmod->fcb->cmn_struct->veclen && *c != '\0') {
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC((float32)atof(c));
         }
         ckd_free(vallist);
     }
