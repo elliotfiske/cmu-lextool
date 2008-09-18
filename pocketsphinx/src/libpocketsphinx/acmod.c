@@ -129,6 +129,8 @@ acmod_init_am(acmod_t *acmod)
                                          cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
             acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
             acmod->mgau_free = (void *)&s2_semi_mgau_free;
+            acmod->mgau_grow = (void *)&s2_semi_mgau_grow;
+            acmod->mgau_start = (void *)&s2_semi_mgau_start;
         }
         else {
             E_INFO("Falling back to general multi-stream GMM computation\n");
@@ -334,6 +336,8 @@ acmod_grow_feat_buf(acmod_t *acmod, int nfr)
     feat_array_free(acmod->feat_buf);
     acmod->feat_buf = new_feat_buf;
     acmod->n_feat_alloc = nfr;
+    if (acmod->mgau_grow)
+        (*acmod->mgau_grow)(acmod->mgau, nfr);
 }
 
 int
@@ -359,6 +363,8 @@ acmod_start_utt(acmod_t *acmod)
     acmod->mfc_outidx = 0;
     acmod->feat_outidx = 0;
     acmod->output_frame = 0;
+    if (acmod->mgau_start)
+        (*acmod->mgau_start)(acmod->mgau);
     return 0;
 }
 
@@ -396,6 +402,8 @@ acmod_process_full_cep(acmod_t *acmod,
         acmod->n_feat_alloc = *inout_n_frames;
         acmod->n_feat_frame = 0;
         acmod->feat_outidx = 0;
+        if (acmod->mgau_grow)
+            (*acmod->mgau_grow)(acmod->mgau, *inout_n_frames);
     }
     /* Make dynamic features. */
     nfr = feat_s2mfc2feat_live(acmod->fcb, *inout_cep, inout_n_frames,

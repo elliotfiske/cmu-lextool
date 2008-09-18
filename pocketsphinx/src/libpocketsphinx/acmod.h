@@ -115,7 +115,9 @@ struct acmod_s {
     void *mgau;                /**< either s2_semi_mgau_t or
                                   ms_mgau_t, will make this more
                                   type-safe in the future. */
-    void (*mgau_free)(void *); /**< Function to dealloate mgau. */
+    void (*mgau_free)(void *); /**< Function to deallocate mgau. */
+    int (*mgau_grow)(void *, int); /**< Function to grow mgau. */
+    void (*mgau_start)(void *); /**< Function to start mgau eval. */
 
     /* Senone scoring: */
     frame_eval_t frame_eval;   /**< Function to compute GMM scores. */

@@ -70,6 +70,9 @@
 #define NONE		-1
 #define WORST_DIST	(int32)(0x80000000)
 
+/* Cache top-N from previous frames. */
+#define TOPN_CACHE
+
 struct vqFeature_s {
     int32 score; /* score or distance */
     int32 codeword; /* codeword (vector index) */
@@ -343,10 +346,29 @@ mgau_dist(s2_semi_mgau_t * s, int32 frame, int32 feat, mfcc_t * z)
 }
 
 static void
-mgau_norm(s2_semi_mgau_t *s, int feat)
+mgau_norm(s2_semi_mgau_t *s, int feat, int frame)
 {
     int32 norm;
     int j;
+
+#ifdef TOPN_CACHE
+    /* If cache is active and frame is inside it, return that. */
+    if (s->topn_cache && frame < s->n_cache_frame) {
+        uint8 *cw = (s->topn_cache
+                      + (frame * s->n_feat * s->topn * 2)
+                      + (feat * s->topn * 2));
+        uint8 *score = cw + s->topn;
+#if 0
+        E_INFO("Reading Top-N cache at frame %d (index %d)\n",
+               frame, cw - s->topn_cache);
+#endif
+        for (j = 0; j < s->topn; ++j) {
+            s->f[feat][j].score = score[j];
+            s->f[feat][j].codeword = cw[j];
+        }
+        return;
+    }
+#endif
 
     /* Compute quantized normalizing constant. */
     norm = s->f[feat][0].score >> SENSCR_SHIFT;
@@ -361,6 +383,44 @@ mgau_norm(s2_semi_mgau_t *s, int feat)
         if (s->f[feat][j].score < 0 || s->f[feat][j].score > MAX_NEG_ASCR)
             s->f[feat][j].score = MAX_NEG_ASCR;
     }
+
+#ifdef TOPN_CACHE
+    /* Write cache depending on frame. */
+    if (s->topn_cache) {
+        uint8 *cw = (s->topn_cache
+                      + (frame * s->n_feat * s->topn * 2)
+                      + (feat * s->topn * 2));
+        uint8 *score = cw + s->topn;
+#if 0
+        E_INFO("Writing Top-N cache at frame %d (index %d)\n",
+               frame, cw - s->topn_cache);
+#endif
+        for (j = 0; j < s->topn; ++j) {
+            score[j] = s->f[feat][j].score;
+            cw[j] = s->f[feat][j].codeword;
+        }
+        s->n_cache_frame = frame;
+    }
+#endif
+}
+
+void
+s2_semi_mgau_start(s2_semi_mgau_t *s)
+{
+    s->n_cache_frame = 0;
+}
+
+int
+s2_semi_mgau_grow(s2_semi_mgau_t *s, int nfr)
+{
+    if (s->n_cache_alloc >= nfr)
+        return s->n_cache_alloc;
+
+    s->topn_cache = ckd_realloc(s->topn_cache, nfr * 2 * s->n_feat * s->topn);
+    s->n_cache_alloc = nfr;
+    E_INFO("Top-N cache expanded to %d entries (%d bytes)\n",
+           nfr, nfr * 2 * s->n_feat * s->topn);
+    return nfr;
 }
 
 /*
@@ -378,7 +438,7 @@ s2_semi_mgau_frame_eval(s2_semi_mgau_t * s,
 
     for (i = 0; i < s->n_feat; ++i) {
         mgau_dist(s, frame, i, featbuf[i]);
-        mgau_norm(s, i);
+        mgau_norm(s, i, frame);
     }
 
     if (compallsen) {
@@ -1141,6 +1201,8 @@ s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef)
             s->lastf[i][j].codeword = j;
         }
     }
+    /* Top-N cache */
+    s->topn_cache = NULL;
 
     return s;
 }
@@ -1174,5 +1236,6 @@ s2_semi_mgau_free(s2_semi_mgau_t * s)
     ckd_free_2d((void **)s->f);
     ckd_free_2d((void **)s->lastf);
     ckd_free_2d((void **)s->dets);
+    ckd_free(s->topn_cache);
     ckd_free(s);
 }

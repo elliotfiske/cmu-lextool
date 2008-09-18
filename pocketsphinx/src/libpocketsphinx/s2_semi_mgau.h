@@ -71,24 +71,31 @@ struct s2_semi_mgau_s {
     int32 n_sen;	/* Number of senones */
     int16 topn;		/* Number of top densities to compute (<S2_MAX_TOPN) */
 
-    kd_tree_t **kdtrees;
-    uint32 n_kdtrees;
-    uint32 kd_maxdepth;
-    int32 kd_maxbbi;
+    kd_tree_t **kdtrees; /* k-d trees for codebook evaluation */
+    uint32 n_kdtrees;    /* Number of trees. */
+    uint32 kd_maxdepth;  /* Maximum depth in trees to evaluate. */
+    int32 kd_maxbbi;     /* Maximum number of leaves to use. */
 
-    int32 num_frames;
-    int32 ds_ratio;
+    int32 ds_ratio;      /* Frame downsampling ratio. */
 
     /* Top-N scores and codewords from current, last frame. */
     vqFeature_t **f, **lastf;
+
+    /* Cached codeword IDs and normalized scores from all frames. */
+    uint8 *topn_cache;
+    int16 n_cache_alloc; /**< Number of frames allocated in topn_cache. */
+    int16 n_cache_frame; /**< Number of frames active in topn_cache. */
 
     /* Log-add table for compressed values. */
     logmath_t *lmath_8b;
 };
 
-s2_semi_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath, bin_mdef_t *mdef);
-
+s2_semi_mgau_t *s2_semi_mgau_init(cmd_ln_t *config, logmath_t *lmath,
+                                  bin_mdef_t *mdef);
 void s2_semi_mgau_free(s2_semi_mgau_t *s);
+
+void s2_semi_mgau_start(s2_semi_mgau_t *s);
+int s2_semi_mgau_grow(s2_semi_mgau_t *s, int nfr);
 
 int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
                               int16 *senone_scores,
