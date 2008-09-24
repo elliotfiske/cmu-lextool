@@ -78,7 +78,7 @@ static ps_searchfuncs_t ngram_funcs = {
 static void
 ngram_search_update_widmap(ngram_search_t *ngs)
 {
-    const char **words;
+    char **words;
     int32 i, n_words;
 
     /* It's okay to include fillers since they won't be in the LM */
@@ -131,7 +131,7 @@ ngram_search_calc_beams(ngram_search_t *ngs)
         / cmd_ln_float32_r(config, "-lw");
 
     /* Acoustic score scale for posterior probabilities. */
-    ngs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
+    ngs->ascale = 1.0f / cmd_ln_float32_r(config, "-ascale");
 }
 
 ps_search_t *
@@ -345,7 +345,7 @@ ngram_search_save_bp(ngram_search_t *ngs, int frame_idx,
 
     _bp_ = ngs->word_lat_idx[w];
     if (_bp_ != NO_BP) {
-        if (ngs->bp_table[_bp_].score WORSE_THAN score) {
+        if (ngs->bp_table[_bp_].score < score) {
             if (ngs->bp_table[_bp_].bp != path) {
                 ngs->bp_table[_bp_].bp = path;
                 cache_bptable_paths(ngs, _bp_);
@@ -420,6 +420,7 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
         frame_idx = ngs->n_frame - 1;
     end_bpidx = ngs->bp_table_idx[frame_idx];
 
+    /* FIXME: WORST_SCORE has to go away and be replaced with a log-zero number. */
     best_score = WORST_SCORE;
     best_exit = NO_BP;
 
@@ -434,7 +435,7 @@ ngram_search_find_exit(ngram_search_t *ngs, int frame_idx, int32 *out_best_score
     assert(end_bpidx < ngs->bp_table_size);
     for (bp = ngs->bp_table_idx[frame_idx]; bp < end_bpidx; ++bp) {
         if (ngs->bp_table[bp].wid == ps_search_finish_wid(ngs)
-            || ngs->bp_table[bp].score BETTER_THAN best_score) {
+            || ngs->bp_table[bp].score > best_score) {
             best_score = ngs->bp_table[bp].score;
             best_exit = bp;
         }
@@ -504,7 +505,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
     sseq_rc = ps_search_dict(ngs)->rcFwdTable[de->phone_ids[de->len - 1]];
 
     hmm = ngs->word_chan[w];
-    if ((hmm == NULL) || (hmm_nonmpx_ssid(&hmm->hmm) != *sseq_rc)) {
+    if ((hmm == NULL) || (hmm->hmm.s.ssid != *sseq_rc)) {
         hmm = listelem_malloc(ngs->chan_alloc);
         hmm->next = ngs->word_chan[w];
         ngs->word_chan[w] = hmm;
@@ -514,7 +515,7 @@ ngram_search_alloc_all_rc(ngram_search_t *ngs, int32 w)
         hmm_init(ngs->hmmctx, &hmm->hmm, FALSE, *sseq_rc, hmm->ciphone);
     }
     for (i = 1, sseq_rc++; *sseq_rc != 65535; sseq_rc++, i++) {
-        if ((hmm->next == NULL) || (hmm_nonmpx_ssid(&hmm->next->hmm) != *sseq_rc)) {
+        if ((hmm->next == NULL) || (hmm->next->hmm.s.ssid != *sseq_rc)) {
             thmm = listelem_malloc(ngs->chan_alloc);
             thmm->next = hmm->next;
             hmm->next = thmm;
@@ -592,7 +593,8 @@ ngram_compute_seg_scores(ngram_search_t *ngs, float32 lwf)
             bpe->lscr = ngram_tg_score(ngs->lmset, de->wid,
                                        p_bpe->real_wid,
                                        p_bpe->prev_real_wid, &n_used);
-            bpe->lscr = bpe->lscr * lwf;
+			/* FIXME: Floating-point conversion = SLOW */
+            bpe->lscr = (int32)(bpe->lscr * lwf);
         }
         bpe->ascr = bpe->score - start_score - bpe->lscr;
     }
@@ -852,7 +854,7 @@ ngram_search_seg_iter(ps_search_t *search, int32 *out_score)
         return ngram_search_bp_iter(ngs, bpidx,
                                     /* but different language weights... */
                                     (ngs->done && ngs->fwdflat)
-                                    ? ngs->fwdflat_fwdtree_lw_ratio : 1.0);
+                                    ? ngs->fwdflat_fwdtree_lw_ratio : 1.0f);
     }
 
     return NULL;
@@ -987,9 +989,10 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
                                ngs->bp_table[bp].real_wid,
                                ngs->bp_table[bp].prev_real_wid,
                                &n_used);
-        l_scr = l_scr * lwf;
+		/* FIXME: Floating-point conversion = SLOW */
+        l_scr = (int32)(l_scr * lwf);
 
-        if (ngs->bp_table[bp].score + l_scr BETTER_THAN bestscore) {
+        if (ngs->bp_table[bp].score + l_scr > bestscore) {
             bestscore = ngs->bp_table[bp].score + l_scr;
             bestbp = bp;
         }
@@ -1092,7 +1095,7 @@ ngram_search_lattice(ps_search_t *search)
             score =
                 (ngs->bscore_stack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) +
                 bp_ptr->ascr;
-            if (score BETTER_THAN 0) {
+            if (score > 0) {
                 /* Scores must be negative, or Bad Things will happen.
                    In general, they are, except in corner cases
                    involving filler words.  We don't want to throw any
@@ -1101,7 +1104,7 @@ ngram_search_lattice(ps_search_t *search)
                 ps_lattice_link(dag, from, to, -424242, bp_ptr->frame);
                 from->reachable = TRUE;
             }
-            else if (score BETTER_THAN WORST_SCORE) {
+            else if (score > WORST_SCORE) {
                 ps_lattice_link(dag, from, to, score, bp_ptr->frame);
                 from->reachable = TRUE;
             }

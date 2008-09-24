@@ -59,6 +59,7 @@
 static const arg_t feat_defn[] = {
     waveform_to_cepstral_command_line_macro(),
     cepstral_to_feature_command_line_macro(),
+    POCKETSPHINX_DEBUG_OPTIONS,
     CMDLN_EMPTY_OPTION
 };
 
@@ -105,38 +106,24 @@ acmod_init_am(acmod_t *acmod)
         return -1;
     }
 
-    /* If there is a subspace distribution map, use SDCHMM computation. */
-    if (cmd_ln_str_r(acmod->config, "-sdmap")) {
-        E_INFO("Using SDCHMM computation module\n");
-        acmod->mgau = sdc_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-        if (acmod == NULL) {
-            E_ERROR("SDCHMM init failed\n");
-            return -1;
-        }
-        acmod->frame_eval = (frame_eval_t)&sdc_mgau_frame_eval;
-        acmod->mgau_free = (void *)&sdc_mgau_free;
+    E_INFO("Attempting to use SCGMM computation module\n");
+    acmod->mgau
+        = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
+    if (acmod->mgau) {
+        char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
+        if (kdtreefn)
+            s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
+                                     cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
+        acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
+        acmod->mgau_free = (void *)&s2_semi_mgau_free;
     }
-    /* Otherwise, try to use SCHMM or CDHMM computation. */
     else {
-        E_INFO("Attempting to use SCHMM computation module\n");
-        acmod->mgau
-            = s2_semi_mgau_init(acmod->config, acmod->lmath, acmod->mdef);
-        if (acmod->mgau) {
-            char const *kdtreefn = cmd_ln_str_r(acmod->config, "-kdtree");
-            if (kdtreefn)
-                s2_semi_mgau_load_kdtree(acmod->mgau, kdtreefn,
-                                         cmd_ln_int32_r(acmod->config, "-kdmaxdepth"),
-                                         cmd_ln_int32_r(acmod->config, "-kdmaxbbi"));
-            acmod->frame_eval = (frame_eval_t)&s2_semi_mgau_frame_eval;
-            acmod->mgau_free = (void *)&s2_semi_mgau_free;
-        }
-        else {
-            E_INFO("Falling back to general multi-stream GMM computation\n");
-            acmod->mgau =
-                ms_mgau_init(acmod->config, acmod->lmath);
-            acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
-            acmod->mgau_free = (void *)&ms_mgau_free;
-        }
+        E_INFO("Falling back to general multi-stream GMM computation\n");
+        acmod->mgau =
+            ms_mgau_init(acmod->config, acmod->lmath);
+        acmod->frame_eval = (frame_eval_t)&ms_cont_mgau_frame_eval;
+        acmod->mgau_free = (void *)&ms_mgau_free;
     }
 
     return 0;
@@ -189,12 +176,12 @@ acmod_init_feat(acmod_t *acmod)
         while (nvals < acmod->fcb->cmn_struct->veclen
                && (cc = strchr(c, ',')) != NULL) {
             *cc = '\0';
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC((float32)atof(c));
             c = cc + 1;
             ++nvals;
         }
         if (nvals < acmod->fcb->cmn_struct->veclen && *c != '\0') {
-            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC(atof(c));
+            acmod->fcb->cmn_struct->cmn_mean[nvals] = FLOAT2MFCC((float32)atof(c));
         }
         ckd_free(vallist);
     }
@@ -651,7 +638,9 @@ acmod_rewind(acmod_t *acmod)
 
 int16 const *
 acmod_score(acmod_t *acmod,
-	    int *out_frame_idx)
+	    int *out_frame_idx,
+	    int16 *out_best_score,
+	    int32 *out_best_senid)
 {
     /* No frames available to score. */
     if (acmod->n_feat_frame == 0)
@@ -668,13 +657,15 @@ acmod_score(acmod_t *acmod,
     if (acmod->feat_outidx == acmod->n_feat_alloc)
         acmod->feat_outidx = 0;
     /* Generate scores for the next available frame */
-    (*acmod->frame_eval)(acmod->mgau,
-                         acmod->senone_scores,
-                         acmod->senone_active,
-                         acmod->n_senone_active,
-                         acmod->feat_buf[acmod->feat_outidx],
-                         acmod->output_frame,
-                         acmod->compallsen);
+    *out_best_score = 
+        (*acmod->frame_eval)(acmod->mgau,
+                             acmod->senone_scores,
+                             acmod->senone_active,
+                             acmod->n_senone_active,
+                             acmod->feat_buf[acmod->feat_outidx],
+                             acmod->output_frame,
+                             acmod->compallsen,
+                             out_best_senid);
     /* Advance the output pointers. */
     ++acmod->feat_outidx;
     --acmod->n_feat_frame;
@@ -685,35 +676,6 @@ acmod_score(acmod_t *acmod,
     return acmod->senone_scores;
 }
 
-int
-acmod_best_score(acmod_t *acmod, int *out_best_senid)
-{
-    int i, best;
-
-    best = WORST_SCORE;
-    if (acmod->compallsen) {
-        for (i = 0; i < bin_mdef_n_sen(acmod->mdef); ++i) {
-            if (acmod->senone_scores[i] BETTER_THAN best) {
-                best = acmod->senone_scores[i];
-                *out_best_senid = i;
-            }
-        }
-    }
-    else {
-        int16 *senscr;
-        senscr = acmod->senone_scores;
-        for (i = 0; i < acmod->n_senone_active; ++i) {
-            senscr += acmod->senone_active[i];
-            if (*senscr BETTER_THAN best) {
-                best = *senscr;
-                *out_best_senid = i;
-            }
-        }
-    }
-    return best;
-}
-
-
 void
 acmod_clear_active(acmod_t *acmod)
 {
@@ -721,12 +683,13 @@ acmod_clear_active(acmod_t *acmod)
     acmod->n_senone_active = 0;
 }
 
-#define MPX_BITVEC_SET(a,h,i)                                   \
-    if (hmm_mpx_ssid(h,i) != BAD_SSID)                          \
-        bitvec_set((a)->senone_active_vec, hmm_mpx_senid(h,i))
+#define MPX_BITVEC_SET(a,h,i)                                           \
+    if ((h)->s.mpx_ssid[i] != -1)                                       \
+        bitvec_set((a)->senone_active_vec,                              \
+                   bin_mdef_sseq2sen((a)->mdef, (h)->s.mpx_ssid[i], (i)));
 #define NONMPX_BITVEC_SET(a,h,i)                                        \
     bitvec_set((a)->senone_active_vec,                                  \
-               hmm_nonmpx_senid(h,i))
+               bin_mdef_sseq2sen((a)->mdef, (h)->s.ssid, (i)));
 
 void
 acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
@@ -770,7 +733,7 @@ acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm)
 static int32
 acmod_flags2list(acmod_t *acmod)
 {
-    int32 w, l, n, b, total_dists, total_words, extra_bits;
+    int32 w, n, b, total_dists, total_words, extra_bits;
     bitvec_t *flagptr;
 
     total_dists = bin_mdef_n_sen(acmod->mdef);
@@ -780,41 +743,27 @@ acmod_flags2list(acmod_t *acmod)
     }
     total_words = total_dists / BITVEC_BITS;
     extra_bits = total_dists % BITVEC_BITS;
-    w = n = l = 0;
+    w = n = 0;
     for (flagptr = acmod->senone_active_vec; w < total_words; ++w, ++flagptr) {
         if (*flagptr == 0)
             continue;
-        for (b = 0; b < BITVEC_BITS; ++b) {
-            if (*flagptr & (1UL << b)) {
-                int32 sen = w * BITVEC_BITS + b;
-                int32 delta = sen - l;
-                /* Handle excessive deltas "lossily" by adding a few
-                   extra senones to bridge the gap. */
-                while (delta > 255) {
-                    acmod->senone_active[n++] = 255;
-                    delta -= 255;
-                }
-                acmod->senone_active[n++] = delta;
-                l = sen;
-            }
-        }
+        for (b = 0; b < BITVEC_BITS; ++b)
+            if (*flagptr & (1UL << b))
+                acmod->senone_active[n++] = w * BITVEC_BITS + b;
     }
 
-    for (b = 0; b < extra_bits; ++b) {
-        if (*flagptr & (1UL << b)) {
-            int32 sen = w * BITVEC_BITS + b;
-            int32 delta = sen - l;
-            /* Handle excessive deltas "lossily" by adding a few
-               extra senones to bridge the gap. */
-            while (delta > 255) {
-                acmod->senone_active[n++] = 255;
-                delta -= 255;
-            }
-            acmod->senone_active[n++] = delta;
-            l = sen;
-        }
-    }
+    for (b = 0; b < extra_bits; ++b)
+        if (*flagptr & (1UL << b))
+            acmod->senone_active[n++] = w * BITVEC_BITS + b;
 
     acmod->n_senone_active = n;
     return n;
+}
+
+int const *
+acmod_active_list(acmod_t *acmod, int32 *out_n_active)
+{
+    acmod_flags2list(acmod);
+    if (out_n_active) *out_n_active = acmod->n_senone_active;
+    return acmod->senone_active;
 }

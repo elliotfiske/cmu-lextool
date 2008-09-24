@@ -153,14 +153,15 @@ ms_mgau_free(ms_mgau_model_t * msg)
 int32
 ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
 			int16 *senscr,
-			uint8 *senone_active,
+			int32 *senone_active,
 			int32 n_senone_active,
                         mfcc_t ** feat,
 			int32 frame,
-			int32 compallsen)
+			int32 compallsen,
+			int32 *bestidx)
 {
     int32 gid;
-    int32 i, n;
+    int32 i;
     int32 topn;
     int32 best;
     gauden_t *g;
@@ -179,12 +180,9 @@ ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
     for (gid = 0; gid < g->n_mgau; gid++)
         msg->mgau_active[gid] = 0;
 
-    n = 0;
     for (i = 0; i < n_senone_active; i++) {
-	/* senone_active consists of deltas. */
-	int32 s = senone_active[i] + n;
+	int32 s = senone_active[i];
 	msg->mgau_active[sen->mgau[s]] = 1;
-	n = s;
     }
 
     /* Compute topn gaussian density values (for active codebooks) */
@@ -194,28 +192,26 @@ ms_cont_mgau_frame_eval(ms_mgau_model_t * msg,
     }
 
     best = (int32) 0x7fffffff;
-    n = 0;
+    *bestidx = -1;
     for (i = 0; i < n_senone_active; i++) {
-	int32 s = senone_active[i] + n;
+	int32 s = senone_active[i];
 	senscr[s] = senone_eval(sen, s, msg->dist[sen->mgau[s]], topn);
 	if (best > senscr[s]) {
 	    best = senscr[s];
+	    *bestidx = s;
 	}
-	n = s;
     }
 
     /* Normalize senone scores */
-    n = 0;
     for (i = 0; i < n_senone_active; i++) {
-	int32 s = senone_active[i] + n;
+	int32 s = senone_active[i];
 	int32 bs = senscr[s] - best;
 	if (bs > 32767)
 	  bs = 32767;
 	if (bs < -32768)
 	  bs = -32768;
 	senscr[s] = bs;
-	n = s;
     }
 
-    return 0;
+    return best;
 }

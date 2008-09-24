@@ -56,7 +56,6 @@
 /* Local headers. */
 #include "bin_mdef.h"
 #include "s2_semi_mgau.h"
-#include "sdc_mgau.h"
 #include "ms_mgau.h"
 #include "tmat.h"
 #include "hmm.h"
@@ -76,11 +75,12 @@ typedef enum acmod_state_e {
  */
 typedef int (*frame_eval_t)(void *eval_obj,
                             int16 *senscr,
-                            uint8 *senone_active,
+                            int32 *senone_active,
                             int32 n_senone_active,
                             mfcc_t ** feat,
                             int32 frame,
-                            int32 compallsen);
+                            int32 compallsen,
+                            int32 *out_bestidx);
 
 /**
  * Acoustic model structure.
@@ -121,7 +121,7 @@ struct acmod_s {
     frame_eval_t frame_eval;   /**< Function to compute GMM scores. */
     int16 *senone_scores;      /**< GMM scores for current frame. */
     bitvec_t *senone_active_vec; /**< Active GMMs in current frame. */
-    uint8 *senone_active;      /**< Array of deltas to active GMMs. */
+    int *senone_active;        /**< Array of active GMMs. */
     int n_senone_active;       /**< Number of active GMMs. */
     int log_zero;              /**< Zero log-probability value. */
 
@@ -263,17 +263,16 @@ int acmod_frame_idx(acmod_t *acmod);
  *
  * @param out_frame_idx  Output: frame index corresponding to this set
  *                       of scores.
+ * @param out_best_score Output: best un-normalized acoustic score.
+ * @param out_best_senid Output: senone ID corresponding to best score.
  * @return Array of senone scores for this frame, or NULL if no frame
  *         is available for scoring.  The data pointed to persists only
  *         until the next call to acmod_score().
  */
 int16 const *acmod_score(acmod_t *acmod,
-                         int *out_frame_idx);
-
-/**
- * Get best score and senone index for current frame.
- */
-int acmod_best_score(acmod_t *acmod, int *out_best_senid);
+                         int *out_frame_idx,
+                         int16 *out_best_score,
+                         int32 *out_best_senid);
 
 /**
  * Clear set of active senones.
@@ -284,5 +283,13 @@ void acmod_clear_active(acmod_t *acmod);
  * Activate senones associated with an HMM.
  */
 void acmod_activate_hmm(acmod_t *acmod, hmm_t *hmm);
+
+/**
+ * Return the array of active senones.
+ *
+ * @param out_n_active Output: number of elements in returned array.
+ * @return array of active senone IDs.
+ */
+int const *acmod_active_list(acmod_t *acmod, int *out_n_active);
 
 #endif /* __ACMOD_H__ */
