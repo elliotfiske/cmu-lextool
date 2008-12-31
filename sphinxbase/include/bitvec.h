@@ -38,8 +38,6 @@
 #ifndef _LIBUTIL_BITVEC_H_
 #define _LIBUTIL_BITVEC_H_
 
-#include <string.h>
-
 /* Win32/WinCE DLL gunk */
 #include <sphinxbase_export.h>
 

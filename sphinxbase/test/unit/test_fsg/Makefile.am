@@ -1,7 +1,6 @@
 check_PROGRAMS = \
 	test_fsg_read \
-	test_fsg_jsgf \
-	test_fsg_write_fsm
+	test_fsg_jsgf
 
 TESTS = $(check_PROGRAMS)
 

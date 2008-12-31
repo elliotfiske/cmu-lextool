@@ -135,7 +135,6 @@
 #include "err.h"
 #include "ckd_alloc.h"
 #include "prim_type.h"
-#include "glist.h"
 
 #define FEAT_VERSION	"1.0"
 #define FEAT_DCEP_WIN		2
@@ -306,7 +305,7 @@ feat_set_subvecs(feat_t *fcb, int32 **subvecs)
         }
         ++n_sv;
     }
-    if (n_dim > feat_dimension(fcb)) {
+    if (n_dim > (int)feat_dimension(fcb)) {
         E_ERROR("Total dimensionality of subvector specification %d "
                 "> feature dimensionality %d\n", n_dim, feat_dimension(fcb));
         return -1;
@@ -485,7 +484,6 @@ feat_s2mfc_read(char *file, int32 win,
 #endif
         if (fread_retry(float_feat, sizeof(float32), n_float32, fp) != n_float32) {
             E_ERROR("%s: fread(%dx%d) (MFC data) failed\n", file, n, cepsize);
-            ckd_free_2d(mfc);
             fclose(fp);
             return -1;
         }
@@ -530,7 +528,7 @@ feat_array_alloc(feat_t * fcb, int32 nfr)
     k = 0;
     for (i = 0; i < fcb->n_stream; ++i)
         k += fcb->stream_len[i];
-    assert(k >= feat_dimension(fcb));
+    assert(k >= (int)feat_dimension(fcb));
     assert(k >= fcb->sv_dim);
 
     feat =
@@ -841,6 +839,9 @@ feat_init(char const *type, cmn_type_t cmn, int32 varnorm,
           agc_type_t agc, int32 breport, int32 cepsize)
 {
     feat_t *fcb;
+    int32 i, l, k;
+    __BIGSTACKVARIABLE__ char wd[16384];
+    char *strp;
 
     if (cepsize == 0)
         cepsize = 13;
@@ -924,10 +925,7 @@ feat_init(char const *type, cmn_type_t cmn, int32 varnorm,
         fcb->compute_feat = feat_s3_cep;
     }
     else {
-        int32 i, l, k;
-        char *strp;
         char *mtype = ckd_salloc(type);
-        char *wd = ckd_salloc(type);
         /*
          * Generic definition: Format should be %d,%d,%d,...,%d (i.e.,
          * comma separated list of feature stream widths; #items =
@@ -977,7 +975,6 @@ feat_init(char const *type, cmn_type_t cmn, int32 varnorm,
         /* Input is already the feature stream */
         fcb->compute_feat = feat_copy;
         ckd_free(mtype);
-        ckd_free(wd);
     }
 
     if (cmn != CMN_NONE)
@@ -995,17 +992,13 @@ feat_init(char const *type, cmn_type_t cmn, int32 varnorm,
         agc_emax_set(fcb->agc_struct, (cmn != CMN_NONE) ? 5.0 : 10.0);
     }
     fcb->agc = agc;
-    /*
-     * Make sure this buffer is large enough to be used in feat_s2mfc2feat_block_utt()
-     */
-    fcb->cepbuf = (mfcc_t **) ckd_calloc_2d((LIVEBUFBLOCKSIZE < feat_window_size(fcb) * 2) ? feat_window_size(fcb) * 2 : LIVEBUFBLOCKSIZE,
+    fcb->cepbuf = (mfcc_t **) ckd_calloc_2d(LIVEBUFBLOCKSIZE,
                                             feat_cepsize(fcb),
                                             sizeof(mfcc_t));
     /* This one is actually just an array of pointers to "flatten out"
      * wraparounds. */
     fcb->tmpcepbuf = ckd_calloc(2 * feat_window_size(fcb) + 1,
                                 sizeof(*fcb->tmpcepbuf));
-
     return fcb;
 }
 
@@ -1112,74 +1105,48 @@ int32
 feat_s2mfc2feat(feat_t * fcb, const char *file, const char *dir, const char *cepext,
                 int32 sf, int32 ef, mfcc_t *** feat, int32 maxfr)
 {
-    char *path;
-    char *ps = "/";
+    __BIGSTACKVARIABLE__ char path[16384];
     int32 win, nfr;
-    int32 file_length, cepext_length, path_length = 0;
+    int32 file_length, cepext_length;
     mfcc_t **mfc;
+
+    if (cepext == NULL)
+        cepext = "";
 
     if (fcb->cepsize <= 0) {
         E_ERROR("Bad cepsize: %d\n", fcb->cepsize);
         return -1;
     }
 
-    if (cepext == NULL)
-        cepext = "";
 
-    /*
+    /* 
      * Create mfc filename, combining file, dir and extension if
      * necessary
      */
 
     /*
      * First we decide about the path. If dir is defined, then use
-     * it. Otherwise assume the filename already contains the path.
+     * it. Otherwise. assume the filename already contains the path.
      */
-    if (dir == NULL) {
-        dir = "";
-        ps = "";
-        /*
-         * This is not true but some 3rd party apps
-         * may parse the output explicitly checking for this line
-         */
-        E_INFO("At directory . (current directory)\n");
+
+    if (dir != NULL) {
+        sprintf(path, "%s/%s", dir, file);
+        E_INFO("At directory %s\n", dir);
     }
     else {
-        E_INFO("At directory %s\n", dir);
-        /*
-         * Do not forget the path separator!
-         */
-        path_length += strlen(dir) + 1;
+        strcpy(path, file);
+        E_INFO("At directory . (current directory)\n", dir);
     }
 
     /*
-     * Include cepext, if it's not already part of the filename.
+     * Now include the cepext, if it's not already part of the filename.
      */
     file_length = strlen(file);
     cepext_length = strlen(cepext);
-    if ((file_length > cepext_length)
-        && (strcmp(file + file_length - cepext_length, cepext) == 0)) {
-        cepext = "";
-        cepext_length = 0;
+    if ((file_length <= cepext_length)
+        || (strcmp(file + file_length - cepext_length, cepext) != 0)) {
+        strcat(path, cepext);
     }
-
-    /*
-     * Do not forget the '\0'
-     */
-    path_length += file_length + cepext_length + 1;
-    path = (char*) ckd_calloc(path_length, sizeof(char));
-
-#ifdef HAVE_SNPRINTF
-    /*
-     * Paranoia is our best friend...
-     */
-    while ((file_length = snprintf(path, path_length, "%s%s%s%s", dir, ps, file, cepext)) > path_length) {
-        path_length = file_length;
-        path = (char*) ckd_realloc(path, path_length * sizeof(char));
-    }
-#else
-    sprintf(path, "%s%s%s%s", dir, ps, file, cepext);
-#endif
 
     win = feat_window_size(fcb);
     /* Pad maxfr with win, so we read enough raw feature data to
@@ -1190,7 +1157,6 @@ feat_s2mfc2feat(feat_t * fcb, const char *file, const char *dir, const char *cep
     if (feat != NULL) {
         /* Read mfc file including window or padding if necessary. */
         nfr = feat_s2mfc_read(path, win, sf, ef, &mfc, maxfr, fcb->cepsize);
-        ckd_free(path);
         if (nfr < 0) {
             ckd_free_2d((void **) mfc);
             return -1;
@@ -1202,7 +1168,6 @@ feat_s2mfc2feat(feat_t * fcb, const char *file, const char *dir, const char *cep
     else {
         /* Just calculate the number of frames we would need. */
         nfr = feat_s2mfc_read(path, win, sf, ef, NULL, maxfr, fcb->cepsize);
-        ckd_free(path);
         if (nfr < 0)
             return nfr;
     }
@@ -1227,13 +1192,18 @@ feat_s2mfc2feat_block_utt(feat_t * fcb, mfcc_t ** uttcep,
     cepbuf = ckd_calloc(nfr + win * 2, sizeof(mfcc_t *));
     memcpy(cepbuf + win, uttcep, nfr * sizeof(mfcc_t *));
     for (i = 0; i < win; ++i) {
-        cepbuf[i] = fcb->cepbuf[i];
+        cepbuf[i] = ckd_calloc(cepsize, sizeof(mfcc_t));
         memcpy(cepbuf[i], uttcep[0], cepsize * sizeof(mfcc_t));
-        cepbuf[nfr + win + i] = fcb->cepbuf[win + i];
+        cepbuf[nfr + win + i] = ckd_calloc(cepsize, sizeof(mfcc_t));
         memcpy(cepbuf[nfr + win + i], uttcep[nfr - 1], cepsize * sizeof(mfcc_t));
     }
     /* Compute as usual. */
     feat_compute_utt(fcb, cepbuf, nfr + win * 2, win, ofeat);
+    /* Free arrays of pointers. */
+    for (i = 0; i < win; ++i) {
+        ckd_free(cepbuf[i]);
+        ckd_free(cepbuf[nfr + win + i]);
+    }
     ckd_free(cepbuf);
     return nfr;
 }

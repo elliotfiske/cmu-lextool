@@ -36,18 +36,16 @@
  */
 
 #include <hash_table.h>
-#include <fsg_model.h>
-#include <jsgf.h>
 #include <err.h>
 
 #include <string.h>
 
-static fsg_model_t *
-get_fsg(jsgf_t *grammar, const char *name)
+#include "jsgf.h"
+
+static int
+write_fsg(jsgf_t *grammar, const char *name)
 {
     jsgf_rule_iter_t *itor;
-    logmath_t *lmath = logmath_init(1.0001, 0, 0);
-    fsg_model_t *fsg = NULL;
 
     for (itor = jsgf_rule_iter(grammar); itor;
          itor = jsgf_rule_iter_next(itor)) {
@@ -57,56 +55,25 @@ get_fsg(jsgf_t *grammar, const char *name)
         if ((name == NULL && jsgf_rule_public(rule))
             || (name && strlen(rule_name)-2 == strlen(name) &&
                 0 == strncmp(rule_name + 1, name, strlen(rule_name) - 2))) {
-            fsg = jsgf_build_fsg(grammar, rule, logmath_retain(lmath), 1.0);
+            jsgf_write_fsg(grammar, rule, stdout);
             jsgf_rule_iter_free(itor);
             break;
         }
     }
 
-    logmath_free(lmath);
-    return fsg;
+    return 0;
 }
 
 int
 main(int argc, char *argv[])
 {
     jsgf_t *jsgf;
-    fsg_model_t *fsg;
-    int fsm = 0;
-    char *outfile = NULL;
-    char *symfile = NULL;
-
-    if (argc > 1 && 0 == strcmp(argv[1], "-fsm")) {
-        fsm = 1;
-        ++argv;
-    }
 
     jsgf = jsgf_parse_file(argc > 1 ? argv[1] : NULL, NULL);
     if (jsgf == NULL) {
         return 1;
     }
-    fsg = get_fsg(jsgf, argc > 2 ? argv[2] : NULL);
-
-    if (argc > 3)
-        outfile = argv[3];
-    if (argc > 4)
-        symfile = argv[4];
-
-    if (fsm) {
-        if (outfile)
-            fsg_model_writefile_fsm(fsg, outfile);
-        else
-            fsg_model_write_fsm(fsg, stdout);
-        if (symfile)
-            fsg_model_writefile_symtab(fsg, symfile);
-    }
-    else {
-        if (outfile)
-            fsg_model_writefile(fsg, outfile);
-        else
-            fsg_model_write(fsg, stdout);
-    }
-    fsg_model_free(fsg);
+    write_fsg(jsgf, argc > 2 ? argv[2] : NULL);
     jsgf_grammar_free(jsgf);
 
     return 0;
