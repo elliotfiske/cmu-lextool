@@ -129,7 +129,7 @@ fsg_search_init(cmd_ln_t *config,
         fsgs->bestpath = TRUE;
 
     /* Acoustic score scale for posterior probabilities. */
-    fsgs->ascale = 1.0 / cmd_ln_float32_r(config, "-ascale");
+    fsgs->ascale = 1.0f / cmd_ln_float32_r(config, "-ascale");
 
     E_INFO("FSG(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
            fsgs->beam_orig, fsgs->pbeam_orig, fsgs->wbeam_orig,
@@ -495,7 +495,7 @@ fsg_search_hmm_eval(fsg_search_t *fsgs)
         hmm_dump(hmm, stdout);
 #endif
 
-        if (score BETTER_THAN bestscore)
+        if (bestscore < score)
             bestscore = score;
     }
 
@@ -555,8 +555,7 @@ fsg_search_pnode_trans(fsg_search_t *fsgs, fsg_pnode_t * pnode)
          child; child = fsg_pnode_sibling(child)) {
         newscore = hmm_out_score(hmm) + child->logs2prob;
 
-        if ((newscore BETTER_THAN thresh)
-            && (newscore BETTER_THAN hmm_in_score(&child->hmm))) {
+        if ((newscore >= thresh) && (newscore > hmm_in_score(&child->hmm))) {
             /* Incoming score > pruning threshold and > target's existing score */
             if (hmm_frame(&child->hmm) < nf) {
                 /* Child node not yet activated; do so */
@@ -782,8 +781,8 @@ fsg_search_word_trans(fsg_search_t *fsgs)
                  */
                 newscore = score + root->logs2prob;
 
-                if ((newscore BETTER_THAN thresh)
-                    && (newscore BETTER_THAN hmm_in_score(&root->hmm))) {
+                if ((newscore >= thresh)
+                    && (newscore > hmm_in_score(&root->hmm))) {
                     if (hmm_frame(&root->hmm) < nf) {
                         /* Newly activated node; add to active list */
                         fsgs->pnode_active_next =
@@ -816,7 +815,8 @@ fsg_search_step(ps_search_t *search)
 {
     fsg_search_t *fsgs = (fsg_search_t *)search;
     int16 const *senscr;
-    int frame_idx;
+    int frame_idx, best_senid;
+    int16 best_senscr;
     acmod_t *acmod = search->acmod;
     gnode_t *gn;
     fsg_pnode_t *pnode;
@@ -830,7 +830,7 @@ fsg_search_step(ps_search_t *search)
     if (!acmod->compallsen)
         fsg_search_sen_active(fsgs);
     /* Compute GMM scores for the current frame. */
-    senscr = acmod_score(acmod, &frame_idx);
+    senscr = acmod_score(acmod, &frame_idx, &best_senscr, &best_senid);
     fsgs->n_sen_eval += acmod->n_senone_active;
     hmm_context_set_senscore(fsgs->hmmctx, senscr);
 
@@ -1037,7 +1037,7 @@ fsg_search_find_exit(fsg_search_t *fsgs, int frame_idx, int final, int32 *out_sc
         fl = fsg_hist_entry_fsglink(hist_entry);
         score = fsg_hist_entry_score(hist_entry);
 
-        if (score BETTER_THAN bestscore) {
+        if (score > bestscore) {
             /* Only enforce the final state constraint if this is a final hypothesis. */
             if ((!final)
                 || fsg_link_to_state(fl) == fsg_model_final_state(fsg)) {
@@ -1302,7 +1302,7 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 a
         if (node->fef == -1 || node->fef > ef)
             node->fef = ef;
         /* Update best link score. */
-        if (ascr BETTER_THAN node->info.best_exit)
+        if (node->info.best_exit < ascr)
             node->info.best_exit = ascr;
     }
     else {

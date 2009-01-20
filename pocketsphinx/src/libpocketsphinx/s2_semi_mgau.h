@@ -65,11 +65,11 @@ struct s2_semi_mgau_s {
     uint8 ***mixw;     /* mixture weight distributions */
     mmio_file_t *sendump_mmap;/* memory map for mixw (or NULL if not mmap) */
 
+    int32 n_feat;	/* Number of feature streams */
     int32 *veclen;	/* Length of feature streams */
-    int16 n_feat;	/* Number of feature streams */
-    int16 n_density;	/* Number of mixtures per codebook */
+    int32 n_density;	/* Number of mixtures per codebook */
     int32 n_sen;	/* Number of senones */
-    int16 topn;		/* Number of top densities to compute (<S2_MAX_TOPN) */
+    int32 topn;		/* Number of top densities to compute (<S2_MAX_TOPN) */
 
     kd_tree_t **kdtrees;
     uint32 n_kdtrees;
@@ -92,11 +92,12 @@ void s2_semi_mgau_free(s2_semi_mgau_t *s);
 
 int32 s2_semi_mgau_frame_eval(s2_semi_mgau_t *s,
                               int16 *senone_scores,
-                              uint8 *senone_active,
+                              int32 *senone_active,
                               int32 n_senone_active,
 			      mfcc_t **featbuf,
 			      int32 frame,
-                              int32 compallsen);
+                              int32 compallsen,
+                              int32 *out_bestidx);
 
 int32 s2_semi_mgau_load_kdtree(s2_semi_mgau_t *s, const char *kdtree_path,
 			       uint32 maxdepth, int32 maxbbi);

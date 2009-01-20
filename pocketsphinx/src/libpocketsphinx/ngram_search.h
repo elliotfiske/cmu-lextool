@@ -108,7 +108,7 @@ typedef struct root_chan_s {
 typedef struct bptbl_s {
     int16    frame;		/**< start or end frame */
     uint8    valid;		/**< For absolute pruning */
-    uint8    refcnt;            /**< Reference count (number of successors) */
+    uint8    reserved;          /**< Not used */
     int32    wid;		/**< Word index */
     int32    bp;		/**< Back Pointer */
     int32    score;		/**< Score (best among all right contexts) */
@@ -116,6 +116,8 @@ typedef struct bptbl_s {
     int32    real_wid;		/**< wid of this or latest predecessor real word */
     int32    prev_real_wid;	/**< real word predecessor of real_wid */
     int32    r_diph;		/**< rightmost diphone of this word */
+    int32    ascr;
+    int32    lscr;
 } bptbl_t;
 
 /**

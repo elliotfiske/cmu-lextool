@@ -1,7 +1,7 @@
 dnl Welcome to the Sphinx automated build system.
 dnl try not to hurt yourself ;)
 
-AC_INIT(sphinxbase, 0.4.99)
+AC_INIT(sphinxbase, 0.4.1)
 AM_CONFIG_HEADER([include/config.h include/sphinx_config.h])
 AM_INIT_AUTOMAKE([no-define dist-bzip2 dist-zip])
 
@@ -38,7 +38,7 @@ AC_TYPE_SIGNAL
 AC_CHECK_TYPES(long long)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(long)
-AC_CHECK_FUNCS([popen perror snprintf])
+AC_CHECK_FUNCS([popen perror])
 AC_CHECK_HEADER(errno.h)
 AM_ICONV
 

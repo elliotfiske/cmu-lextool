@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 2007 Carnegie Mellon University.  All rights
+ * Copyright (c) 1999-2007 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,47 +34,17 @@
  * ====================================================================
  *
  */
+/*
+ * \file ngram_model_htk.c HTK format language models
+ *
+ * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
+ */
 
-#include <hash_table.h>
-#include <err.h>
-
-#include <string.h>
-
-#include "jsgf.h"
-
-static int
-write_fsg(jsgf_t *grammar, const char *name)
-{
-    jsgf_rule_iter_t *itor;
-
-    for (itor = jsgf_rule_iter(grammar); itor;
-         itor = jsgf_rule_iter_next(itor)) {
-        jsgf_rule_t *rule = jsgf_rule_iter_rule(itor);
-        char const *rule_name = jsgf_rule_name(rule);
-
-        if ((name == NULL && jsgf_rule_public(rule))
-            || (name && strlen(rule_name)-2 == strlen(name) &&
-                0 == strncmp(rule_name + 1, name, strlen(rule_name) - 2))) {
-            jsgf_write_fsg(grammar, rule, stdout);
-            jsgf_rule_iter_free(itor);
-            break;
-        }
-    }
-
-    return 0;
-}
+#include "ngram_model_internal.h"
 
 int
-main(int argc, char *argv[])
+ngram_model_htk_write(ngram_model_t *model,
+                      const char *file_name)
 {
-    jsgf_t *jsgf;
-
-    jsgf = jsgf_parse_file(argc > 1 ? argv[1] : NULL, NULL);
-    if (jsgf == NULL) {
-        return 1;
-    }
-    write_fsg(jsgf, argc > 2 ? argv[2] : NULL);
-    jsgf_grammar_free(jsgf);
-
-    return 0;
+    return -1;
 }

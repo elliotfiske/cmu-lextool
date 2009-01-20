@@ -54,9 +54,9 @@
 
 hmm_context_t *
 hmm_context_init(int32 n_emit_state,
-		 uint8 ** const *tp,
+		 int32 ** const *tp,
 		 int16 const *senscore,
-		 uint16 * const *sseq)
+		 int16 * const *sseq)
 {
     hmm_context_t *ctx;
 
@@ -72,6 +72,7 @@ hmm_context_init(int32 n_emit_state,
     ctx->senscore = senscore;
     ctx->sseq = sseq;
     ctx->st_sen_scr = ckd_calloc(n_emit_state, sizeof(*ctx->st_sen_scr));
+    ctx->mpx_ssid_alloc = listelem_alloc_init(sizeof(int32) * ctx->n_emit_state);
 
     return ctx;
 }
@@ -79,6 +80,7 @@ hmm_context_init(int32 n_emit_state,
 void
 hmm_context_free(hmm_context_t *ctx)
 {
+    listelem_alloc_free(ctx->mpx_ssid_alloc);
     ckd_free(ctx->st_sen_scr);
     ckd_free(ctx);
 }
@@ -86,20 +88,18 @@ hmm_context_free(hmm_context_t *ctx)
 void
 hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
 {
+    /* Watch for integer overflows in ssids (shouldn't happen anymore) */
+    assert(ssid >= -1);
     hmm->ctx = ctx;
     hmm->mpx = mpx;
     hmm->n_emit_state = ctx->n_emit_state;
     if (mpx) {
-        int i;
-        hmm->ssid = BAD_SSID;
-        hmm->senid[0] = ssid;
-        for (i = 1; i < hmm_n_emit_state(hmm); ++i) {
-            hmm->senid[i] = BAD_SSID;
-        }
+        hmm->s.mpx_ssid = listelem_malloc(ctx->mpx_ssid_alloc);
+        memset(hmm->s.mpx_ssid, -1, sizeof(*hmm->s.mpx_ssid) * hmm_n_emit_state(hmm));
+        hmm->s.mpx_ssid[0] = ssid;
     }
     else {
-        hmm->ssid = ssid;
-        memcpy(hmm->senid, ctx->sseq[ssid], hmm->n_emit_state * sizeof(*hmm->senid));
+        hmm->s.ssid = ssid;
     }
     hmm->tmatid = tmatid;
     hmm_clear(hmm);
@@ -108,6 +108,10 @@ hmm_init(hmm_context_t *ctx, hmm_t *hmm, int mpx, int ssid, int tmatid)
 void
 hmm_deinit(hmm_t *hmm)
 {
+    hmm_context_t *ctx = hmm->ctx;
+
+    if (hmm->mpx)
+        listelem_free(ctx->mpx_ssid_alloc, hmm->s.mpx_ssid);
 }
 
 void
@@ -209,22 +213,23 @@ hmm_normalize(hmm_t *h, int32 bestscr)
     int32 i;
 
     for (i = 0; i < hmm_n_emit_state(h); i++) {
-        if (hmm_score(h, i) BETTER_THAN WORST_SCORE)
+        if (hmm_score(h, i) > WORST_SCORE)
             hmm_score(h, i) -= bestscr;
     }
-    if (hmm_out_score(h) BETTER_THAN WORST_SCORE)
+    if (hmm_out_score(h) > WORST_SCORE)
         hmm_out_score(h) -= bestscr;
 }
 
-#define hmm_tprob_5st(i, j) (-tp[(i)*6+(j)] << SENSCR_SHIFT)
-#define nonmpx_senscr(i) (-senscore[sseq[i]] << SENSCR_SHIFT)
+#define hmm_tprob_5st(i, j) (tp[(i)*6+(j)])
+#define nonmpx_senscr(i) (-senscore[sseq[i]] << 10)
 
 static int32
 hmm_vit_eval_5st_lr(hmm_t * hmm)
 {
     int16 const *senscore = hmm->ctx->senscore;
-    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
-    uint16 const *sseq = hmm->senid;
+    int32 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    /* Cache problem here! */
+    int16 const *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0, bestScore;
 
     /* It was the best of scores, it was the worst of scores. */
@@ -234,35 +239,35 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
     s4 = hmm_score(hmm, 4) + nonmpx_senscr(4);
     s3 = hmm_score(hmm, 3) + nonmpx_senscr(3);
     /* Transitions into non-emitting state 5 */
-    if (s3 BETTER_THAN WORST_SCORE) {
+    if (s3 > WORST_SCORE) {
         t1 = s4 + hmm_tprob_5st(4, 5);
         t2 = s3 + hmm_tprob_5st(3, 5);
-        if (t1 BETTER_THAN t2) {
+        if (t1 > t2) {
             s5 = t1;
             hmm_out_history(hmm)  = hmm_history(hmm, 4);
         } else {
             s5 = t2;
             hmm_out_history(hmm)  = hmm_history(hmm, 3);
         }
-        if (s5 WORSE_THAN WORST_SCORE) s5 = WORST_SCORE;
+        if (s5 < WORST_SCORE) s5 = WORST_SCORE;
         hmm_out_score(hmm) = s5;
         bestScore = s5;
     }
 
     s2 = hmm_score(hmm, 2) + nonmpx_senscr(2);
     /* All transitions into state 4 */
-    if (s2 BETTER_THAN WORST_SCORE) {
+    if (s2 > WORST_SCORE) {
         t0 = s4 + hmm_tprob_5st(4, 4);
         t1 = s3 + hmm_tprob_5st(3, 4);
         t2 = s2 + hmm_tprob_5st(2, 4);
-        if (t0 BETTER_THAN t1) {
-            if (t2 BETTER_THAN t0) {
+        if (t0 > t1) {
+            if (t2 > t0) {
                 s4 = t2;
                 hmm_history(hmm, 4)  = hmm_history(hmm, 2);
             } else
                 s4 = t0;
         } else {
-            if (t2 BETTER_THAN t1) {
+            if (t2 > t1) {
                 s4 = t2;
                 hmm_history(hmm, 4)  = hmm_history(hmm, 2);
             } else {
@@ -270,25 +275,25 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
                 hmm_history(hmm, 4)  = hmm_history(hmm, 3);
             }
         }
-        if (s4 WORSE_THAN WORST_SCORE) s4 = WORST_SCORE;
-        if (s4 BETTER_THAN bestScore) bestScore = s4;
+        if (s4 < WORST_SCORE) s4 = WORST_SCORE;
+        if (s4 > bestScore) bestScore = s4;
         hmm_score(hmm, 4) = s4;
     }
 
     s1 = hmm_score(hmm, 1) + nonmpx_senscr(1);
     /* All transitions into state 3 */
-    if (s1 BETTER_THAN WORST_SCORE) {
+    if (s1 > WORST_SCORE) {
         t0 = s3 + hmm_tprob_5st(3, 3);
         t1 = s2 + hmm_tprob_5st(2, 3);
         t2 = s1 + hmm_tprob_5st(1, 3);
-        if (t0 BETTER_THAN t1) {
-            if (t2 BETTER_THAN t0) {
+        if (t0 > t1) {
+            if (t2 > t0) {
                 s3 = t2;
                 hmm_history(hmm, 3)  = hmm_history(hmm, 1);
             } else
                 s3 = t0;
         } else {
-            if (t2 BETTER_THAN t1) {
+            if (t2 > t1) {
                 s3 = t2;
                 hmm_history(hmm, 3)  = hmm_history(hmm, 1);
             } else {
@@ -296,8 +301,8 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
                 hmm_history(hmm, 3)  = hmm_history(hmm, 2);
             }
         }
-        if (s3 WORSE_THAN WORST_SCORE) s3 = WORST_SCORE;
-        if (s3 BETTER_THAN bestScore) bestScore = s3;
+        if (s3 < WORST_SCORE) s3 = WORST_SCORE;
+        if (s3 > bestScore) bestScore = s3;
         hmm_score(hmm, 3) = s3;
     }
 
@@ -306,14 +311,14 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
     t0 = s2 + hmm_tprob_5st(2, 2);
     t1 = s1 + hmm_tprob_5st(1, 2);
     t2 = s0 + hmm_tprob_5st(0, 2);
-    if (t0 BETTER_THAN t1) {
-        if (t2 BETTER_THAN t0) {
+    if (t0 > t1) {
+        if (t2 > t0) {
             s2 = t2;
             hmm_history(hmm, 2)  = hmm_in_history(hmm);
         } else
             s2 = t0;
     } else {
-        if (t2 BETTER_THAN t1) {
+        if (t2 > t1) {
             s2 = t2;
             hmm_history(hmm, 2)  = hmm_in_history(hmm);
         } else {
@@ -321,28 +326,28 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
             hmm_history(hmm, 2)  = hmm_history(hmm, 1);
         }
     }
-    if (s2 WORSE_THAN WORST_SCORE) s2 = WORST_SCORE;
-    if (s2 BETTER_THAN bestScore) bestScore = s2;
+    if (s2 < WORST_SCORE) s2 = WORST_SCORE;
+    if (s2 > bestScore) bestScore = s2;
     hmm_score(hmm, 2) = s2;
 
 
     /* All transitions into state 1 */
     t0 = s1 + hmm_tprob_5st(1, 1);
     t1 = s0 + hmm_tprob_5st(0, 1);
-    if (t0 BETTER_THAN t1) {
+    if (t0 > t1) {
         s1 = t0;
     } else {
         s1 = t1;
         hmm_history(hmm, 1)  = hmm_in_history(hmm);
     }
-    if (s1 WORSE_THAN WORST_SCORE) s1 = WORST_SCORE;
-    if (s1 BETTER_THAN bestScore) bestScore = s1;
+    if (s1 < WORST_SCORE) s1 = WORST_SCORE;
+    if (s1 > bestScore) bestScore = s1;
     hmm_score(hmm, 1) = s1;
 
     /* All transitions into state 0 */
     s0 = s0 + hmm_tprob_5st(0, 0);
-    if (s0 WORSE_THAN WORST_SCORE) s0 = WORST_SCORE;
-    if (s0 BETTER_THAN bestScore) bestScore = s0;
+    if (s0 < WORST_SCORE) s0 = WORST_SCORE;
+    if (s0 > bestScore) bestScore = s0;
     hmm_in_score(hmm) = s0;
 
     hmm_bestscore(hmm) = bestScore;
@@ -350,32 +355,32 @@ hmm_vit_eval_5st_lr(hmm_t * hmm)
 }
 
 #define mpx_senid(st) sseq[ssid[st]][st]
-#define mpx_senscr(st) (-senscore[mpx_senid(st)] << SENSCR_SHIFT)
+#define mpx_senscr(st) (-senscore[mpx_senid(st)] << 10)
 
 static int32
 hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
 {
-    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
-    int16 const *senscore = hmm->ctx->senscore;
-    uint16 * const *sseq = hmm->ctx->sseq;
-    uint16 *ssid = hmm->senid;
+    const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
+    const int16 *senscore = hmm->ctx->senscore;
+    int16 * const *sseq = hmm->ctx->sseq;
+    int32 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
     int32 s5, s4, s3, s2, s1, s0, t2, t1, t0;
 
     /* Don't propagate WORST_SCORE */
-    if (ssid[4] == BAD_SSID)
+    if (ssid[4] == -1)
         s4 = t1 = WORST_SCORE;
     else {
         s4 = hmm_score(hmm, 4) + mpx_senscr(4);
         t1 = s4 + hmm_tprob_5st(4, 5);
     }
-    if (ssid[3] == BAD_SSID)
+    if (ssid[3] == -1)
         s3 = t2 = WORST_SCORE;
     else {
         s3 = hmm_score(hmm, 3) + mpx_senscr(3);
         t2 = s3 + hmm_tprob_5st(3, 5);
     }
-    if (t1 BETTER_THAN t2) {
+    if (t1 > t2) {
         s5 = t1;
         hmm_out_history(hmm) = hmm_history(hmm, 4);
     }
@@ -383,12 +388,12 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
         s5 = t2;
         hmm_out_history(hmm) = hmm_history(hmm, 3);
     }
-    if (s5 WORSE_THAN WORST_SCORE) s5 = WORST_SCORE;
+    if (s5 < WORST_SCORE) s5 = WORST_SCORE;
     hmm_out_score(hmm) = s5;
     bestScore = s5;
 
     /* Don't propagate WORST_SCORE */
-    if (ssid[2] == BAD_SSID)
+    if (ssid[2] == -1)
         s2 = t2 = WORST_SCORE;
     else {
         s2 = hmm_score(hmm, 2) + mpx_senscr(2);
@@ -400,8 +405,8 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
         t0 = s4 + hmm_tprob_5st(4, 4);
     if (s3 != WORST_SCORE)
         t1 = s3 + hmm_tprob_5st(3, 4);
-    if (t0 BETTER_THAN t1) {
-        if (t2 BETTER_THAN t0) {
+    if (t0 > t1) {
+        if (t2 > t0) {
             s4 = t2;
             hmm_history(hmm, 4) = hmm_history(hmm, 2);
             ssid[4] = ssid[2];
@@ -410,7 +415,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
             s4 = t0;
     }
     else {
-        if (t2 BETTER_THAN t1) {
+        if (t2 > t1) {
             s4 = t2;
             hmm_history(hmm, 4) = hmm_history(hmm, 2);
             ssid[4] = ssid[2];
@@ -421,13 +426,13 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
             ssid[4] = ssid[3];
         }
     }
-    if (s4 WORSE_THAN WORST_SCORE) s4 = WORST_SCORE;
-    if (s4 BETTER_THAN bestScore)
+    if (s4 < WORST_SCORE) s4 = WORST_SCORE;
+    if (s4 > bestScore)
         bestScore = s4;
     hmm_score(hmm, 4) = s4;
 
     /* Don't propagate WORST_SCORE */
-    if (ssid[1] == BAD_SSID)
+    if (ssid[1] == -1)
         s1 = t2 = WORST_SCORE;
     else {
         s1 = hmm_score(hmm, 1) + mpx_senscr(1);
@@ -438,8 +443,8 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
         t0 = s3 + hmm_tprob_5st(3, 3);
     if (s2 != WORST_SCORE)
         t1 = s2 + hmm_tprob_5st(2, 3);
-    if (t0 BETTER_THAN t1) {
-        if (t2 BETTER_THAN t0) {
+    if (t0 > t1) {
+        if (t2 > t0) {
             s3 = t2;
             hmm_history(hmm, 3) = hmm_history(hmm, 1);
             ssid[3] = ssid[1];
@@ -448,7 +453,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
             s3 = t0;
     }
     else {
-        if (t2 BETTER_THAN t1) {
+        if (t2 > t1) {
             s3 = t2;
             hmm_history(hmm, 3) = hmm_history(hmm, 1);
             ssid[3] = ssid[1];
@@ -459,8 +464,8 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
             ssid[3] = ssid[2];
         }
     }
-    if (s3 WORSE_THAN WORST_SCORE) s3 = WORST_SCORE;
-    if (s3 BETTER_THAN bestScore) bestScore = s3;
+    if (s3 < WORST_SCORE) s3 = WORST_SCORE;
+    if (s3 > bestScore) bestScore = s3;
     hmm_score(hmm, 3) = s3;
 
     /* State 0 is always active */
@@ -473,8 +478,8 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
     if (s1 != WORST_SCORE)
         t1 = s1 + hmm_tprob_5st(1, 2);
     t2 = s0 + hmm_tprob_5st(0, 2);
-    if (t0 BETTER_THAN t1) {
-        if (t2 BETTER_THAN t0) {
+    if (t0 > t1) {
+        if (t2 > t0) {
             s2 = t2;
             hmm_history(hmm, 2) = hmm_in_history(hmm);
             ssid[2] = ssid[0];
@@ -483,7 +488,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
             s2 = t0;
     }
     else {
-        if (t2 BETTER_THAN t1) {
+        if (t2 > t1) {
             s2 = t2;
             hmm_history(hmm, 2) = hmm_in_history(hmm);
             ssid[2] = ssid[0];
@@ -494,8 +499,8 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
             ssid[2] = ssid[1];
         }
     }
-    if (s2 WORSE_THAN WORST_SCORE) s2 = WORST_SCORE;
-    if (s2 BETTER_THAN bestScore) bestScore = s2;
+    if (s2 < WORST_SCORE) s2 = WORST_SCORE;
+    if (s2 > bestScore) bestScore = s2;
     hmm_score(hmm, 2) = s2;
 
     /* Don't propagate WORST_SCORE */
@@ -503,7 +508,7 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
     if (s1 != WORST_SCORE)
         t0 = s1 + hmm_tprob_5st(1, 1);
     t1 = s0 + hmm_tprob_5st(0, 1);
-    if (t0 BETTER_THAN t1) {
+    if (t0 > t1) {
         s1 = t0;
     }
     else {
@@ -511,27 +516,27 @@ hmm_vit_eval_5st_lr_mpx(hmm_t * hmm)
         hmm_history(hmm, 1) = hmm_in_history(hmm);
         ssid[1] = ssid[0];
     }
-    if (s1 WORSE_THAN WORST_SCORE) s1 = WORST_SCORE;
-    if (s1 BETTER_THAN bestScore) bestScore = s1;
+    if (s1 < WORST_SCORE) s1 = WORST_SCORE;
+    if (s1 > bestScore) bestScore = s1;
     hmm_score(hmm, 1) = s1;
 
     s0 += hmm_tprob_5st(0, 0);
-    if (s0 WORSE_THAN WORST_SCORE) s0 = WORST_SCORE;
-    if (s0 BETTER_THAN bestScore) bestScore = s0;
+    if (s0 < WORST_SCORE) s0 = WORST_SCORE;
+    if (s0 > bestScore) bestScore = s0;
     hmm_in_score(hmm) = s0;
 
     hmm_bestscore(hmm) = bestScore;
     return bestScore;
 }
 
-#define hmm_tprob_3st(i, j) (-tp[(i)*4+(j)] << SENSCR_SHIFT)
+#define hmm_tprob_3st(i, j) (tp[(i)*4+(j)])
 
 static int32
 hmm_vit_eval_3st_lr(hmm_t * hmm)
 {
-    int16 const *senscore = hmm->ctx->senscore;
-    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
-    uint16 const *sseq = hmm->senid;
+    const int16 *senscore = hmm->ctx->senscore;
+    const int32 *tp = hmm->ctx->tp[hmm->tmatid][0];
+    const int16 *sseq = hmm->ctx->sseq[hmm_ssid(hmm, 0)];
     int32 s3, s2, s1, s0, t2, t1, t0, bestScore;
 
     s2 = hmm_score(hmm, 2) + nonmpx_senscr(2);
@@ -543,18 +548,18 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
     t2 = INT_MIN; /* Not used unless skipstate is true */
 
     /* Transitions into non-emitting state 3 */
-    if (s1 BETTER_THAN WORST_SCORE) {
+    if (s1 > WORST_SCORE) {
         t1 = s2 + hmm_tprob_3st(2, 3);
-        if (hmm_tprob_3st(1,3) BETTER_THAN WORST_SCORE)
+        if (hmm_tprob_3st(1,3) > WORST_SCORE)
             t2 = s1 + hmm_tprob_3st(1, 3);
-        if (t1 BETTER_THAN t2) {
+        if (t1 > t2) {
             s3 = t1;
             hmm_out_history(hmm)  = hmm_history(hmm, 2);
         } else {
             s3 = t2;
             hmm_out_history(hmm)  = hmm_history(hmm, 1);
         }
-        if (s3 WORSE_THAN WORST_SCORE) s3 = WORST_SCORE;
+        if (s3 < WORST_SCORE) s3 = WORST_SCORE;
         hmm_out_score(hmm) = s3;
         bestScore = s3;
     }
@@ -562,16 +567,16 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
     /* All transitions into state 2 (state 0 is always active) */
     t0 = s2 + hmm_tprob_3st(2, 2);
     t1 = s1 + hmm_tprob_3st(1, 2);
-    if (hmm_tprob_3st(0, 2) BETTER_THAN WORST_SCORE)
+    if (hmm_tprob_3st(0, 2) > WORST_SCORE)
         t2 = s0 + hmm_tprob_3st(0, 2);
-    if (t0 BETTER_THAN t1) {
-        if (t2 BETTER_THAN t0) {
+    if (t0 > t1) {
+        if (t2 > t0) {
             s2 = t2;
             hmm_history(hmm, 2)  = hmm_in_history(hmm);
         } else
             s2 = t0;
     } else {
-        if (t2 BETTER_THAN t1) {
+        if (t2 > t1) {
             s2 = t2;
             hmm_history(hmm, 2)  = hmm_in_history(hmm);
         } else {
@@ -579,27 +584,27 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
             hmm_history(hmm, 2)  = hmm_history(hmm, 1);
         }
     }
-    if (s2 WORSE_THAN WORST_SCORE) s2 = WORST_SCORE;
-    if (s2 BETTER_THAN bestScore) bestScore = s2;
+    if (s2 < WORST_SCORE) s2 = WORST_SCORE;
+    if (s2 > bestScore) bestScore = s2;
     hmm_score(hmm, 2) = s2;
 
     /* All transitions into state 1 */
     t0 = s1 + hmm_tprob_3st(1, 1);
     t1 = s0 + hmm_tprob_3st(0, 1);
-    if (t0 BETTER_THAN t1) {
+    if (t0 > t1) {
         s1 = t0;
     } else {
         s1 = t1;
         hmm_history(hmm, 1)  = hmm_in_history(hmm);
     }
-    if (s1 WORSE_THAN WORST_SCORE) s1 = WORST_SCORE;
-    if (s1 BETTER_THAN bestScore) bestScore = s1;
+    if (s1 < WORST_SCORE) s1 = WORST_SCORE;
+    if (s1 > bestScore) bestScore = s1;
     hmm_score(hmm, 1) = s1;
 
     /* All transitions into state 0 */
     s0 = s0 + hmm_tprob_3st(0, 0);
-    if (s0 WORSE_THAN WORST_SCORE) s0 = WORST_SCORE;
-    if (s0 BETTER_THAN bestScore) bestScore = s0;
+    if (s0 < WORST_SCORE) s0 = WORST_SCORE;
+    if (s0 > bestScore) bestScore = s0;
     hmm_in_score(hmm) = s0;
 
     hmm_bestscore(hmm) = bestScore;
@@ -609,28 +614,28 @@ hmm_vit_eval_3st_lr(hmm_t * hmm)
 static int32
 hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
 {
-    uint8 const *tp = hmm->ctx->tp[hmm->tmatid][0];
+    int32 const *tp = hmm->ctx->tp[hmm->tmatid][0];
     int16 const *senscore = hmm->ctx->senscore;
-    uint16 * const *sseq = hmm->ctx->sseq;
-    uint16 *ssid = hmm->senid;
+    int16 * const *sseq = hmm->ctx->sseq;
+    int32 *ssid = hmm->s.mpx_ssid;
     int32 bestScore;
     int32 s3, s2, s1, s0, t2, t1, t0;
 
     /* Don't propagate WORST_SCORE */
     t2 = INT_MIN; /* Not used unless skipstate is true */
-    if (ssid[2] == BAD_SSID)
+    if (ssid[2] == -1)
         s2 = t1 = WORST_SCORE;
     else {
         s2 = hmm_score(hmm, 2) + mpx_senscr(2);
         t1 = s2 + hmm_tprob_3st(2, 3);
     }
-    if (ssid[1] == BAD_SSID)
+    if (ssid[1] == -1)
         s1 = WORST_SCORE;
     else {
         s1 = hmm_score(hmm, 1) + mpx_senscr(1);
         t2 = s1 + hmm_tprob_3st(1, 3);
     }
-    if (t1 BETTER_THAN t2) {
+    if (t1 > t2) {
         s3 = t1;
         hmm_out_history(hmm) = hmm_history(hmm, 2);
     }
@@ -638,7 +643,7 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         s3 = t2;
         hmm_out_history(hmm) = hmm_history(hmm, 1);
     }
-    if (s3 WORSE_THAN WORST_SCORE) s3 = WORST_SCORE;
+    if (s3 < WORST_SCORE) s3 = WORST_SCORE;
     hmm_out_score(hmm) = s3;
     bestScore = s3;
 
@@ -651,10 +656,10 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         t0 = s2 + hmm_tprob_3st(2, 2);
     if (s1 != WORST_SCORE)
         t1 = s1 + hmm_tprob_3st(1, 2);
-    if (hmm_tprob_3st(0,2) BETTER_THAN WORST_SCORE)
+    if (hmm_tprob_3st(0,2) > WORST_SCORE)
         t2 = s0 + hmm_tprob_3st(0, 2);
-    if (t0 BETTER_THAN t1) {
-        if (t2 BETTER_THAN t0) {
+    if (t0 > t1) {
+        if (t2 > t0) {
             s2 = t2;
             hmm_history(hmm, 2) = hmm_in_history(hmm);
             ssid[2] = ssid[0];
@@ -663,7 +668,7 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
             s2 = t0;
     }
     else {
-        if (t2 BETTER_THAN t1) {
+        if (t2 > t1) {
             s2 = t2;
             hmm_history(hmm, 2) = hmm_in_history(hmm);
             ssid[2] = ssid[0];
@@ -674,8 +679,8 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
             ssid[2] = ssid[1];
         }
     }
-    if (s2 WORSE_THAN WORST_SCORE) s2 = WORST_SCORE;
-    if (s2 BETTER_THAN bestScore) bestScore = s2;
+    if (s2 < WORST_SCORE) s2 = WORST_SCORE;
+    if (s2 > bestScore) bestScore = s2;
     hmm_score(hmm, 2) = s2;
 
     /* Don't propagate WORST_SCORE */
@@ -683,7 +688,7 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
     if (s1 != WORST_SCORE)
         t0 = s1 + hmm_tprob_3st(1, 1);
     t1 = s0 + hmm_tprob_3st(0, 1);
-    if (t0 BETTER_THAN t1) {
+    if (t0 > t1) {
         s1 = t0;
     }
     else {
@@ -691,14 +696,14 @@ hmm_vit_eval_3st_lr_mpx(hmm_t * hmm)
         hmm_history(hmm, 1) = hmm_in_history(hmm);
         ssid[1] = ssid[0];
     }
-    if (s1 WORSE_THAN WORST_SCORE) s1 = WORST_SCORE;
-    if (s1 BETTER_THAN bestScore) bestScore = s1;
+    if (s1 < WORST_SCORE) s1 = WORST_SCORE;
+    if (s1 > bestScore) bestScore = s1;
     hmm_score(hmm, 1) = s1;
 
     /* State 0 is always active */
     s0 += hmm_tprob_3st(0, 0);
-    if (s0 WORSE_THAN WORST_SCORE) s0 = WORST_SCORE;
-    if (s0 BETTER_THAN bestScore) bestScore = s0;
+    if (s0 < WORST_SCORE) s0 = WORST_SCORE;
+    if (s0 > bestScore) bestScore = s0;
     hmm_in_score(hmm) = s0;
 
     hmm_bestscore(hmm) = bestScore;
@@ -717,7 +722,7 @@ hmm_vit_eval_anytopo(hmm_t * hmm)
     ctx->st_sen_scr[0] = hmm_in_score(hmm) + hmm_senscr(hmm, 0);
     for (from = 1; from < hmm_n_emit_state(hmm); ++from) {
         if ((ctx->st_sen_scr[from] =
-             hmm_score(hmm, from) + hmm_senscr(hmm, from)) WORSE_THAN WORST_SCORE)
+             hmm_score(hmm, from) + hmm_senscr(hmm, from)) < WORST_SCORE)
             ctx->st_sen_scr[from] = WORST_SCORE;
     }
 
@@ -728,9 +733,9 @@ hmm_vit_eval_anytopo(hmm_t * hmm)
     scr = WORST_SCORE;
     bestfrom = -1;
     for (from = to - 1; from >= 0; --from) {
-        if ((hmm_tprob(hmm, from, to) BETTER_THAN WORST_SCORE) &&
+        if ((hmm_tprob(hmm, from, to) > WORST_SCORE) &&
             ((newscr = ctx->st_sen_scr[from]
-              + hmm_tprob(hmm, from, to)) BETTER_THAN scr)) {
+              + hmm_tprob(hmm, from, to)) > scr)) {
             scr = newscr;
             bestfrom = from;
         }
@@ -744,16 +749,16 @@ hmm_vit_eval_anytopo(hmm_t * hmm)
     for (to = final_state - 1; to >= 0; --to) {
         /* Score from self-transition, if any */
         scr =
-            (hmm_tprob(hmm, to, to) BETTER_THAN WORST_SCORE)
+            (hmm_tprob(hmm, to, to) > WORST_SCORE)
             ? ctx->st_sen_scr[to] + hmm_tprob(hmm, to, to)
             : WORST_SCORE;
 
         /* Scores from transitions from other states */
         bestfrom = -1;
         for (from = to - 1; from >= 0; --from) {
-            if ((hmm_tprob(hmm, from, to) BETTER_THAN WORST_SCORE) &&
+            if ((hmm_tprob(hmm, from, to) > WORST_SCORE) &&
                 ((newscr = ctx->st_sen_scr[from]
-                  + hmm_tprob(hmm, from, to)) BETTER_THAN scr)) {
+                  + hmm_tprob(hmm, from, to)) > scr)) {
                 scr = newscr;
                 bestfrom = from;
             }
@@ -770,11 +775,10 @@ hmm_vit_eval_anytopo(hmm_t * hmm)
             if (bestfrom >= 0)
                 hmm_history(hmm, to) = hmm_history(hmm, bestfrom);
         }
-        /* Propagate ssid for multiplex HMMs */
         if (bestfrom >= 0 && hmm_is_mpx(hmm))
-            hmm->senid[to] = hmm->senid[bestfrom];
+            hmm->s.mpx_ssid[to] = hmm->s.mpx_ssid[bestfrom];
 
-        if (bestscr WORSE_THAN scr)
+        if (bestscr < scr)
             bestscr = scr;
     }
 

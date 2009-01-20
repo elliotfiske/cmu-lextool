@@ -49,9 +49,6 @@
 #include <fixpoint.h>
 #include <listelem_alloc.h>
 
-/* PocketSphinx headers. */
-#include <bin_mdef.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,25 +60,16 @@ extern "C" {
 #define SENSCR_SHIFT 10
 
 /**
- * Large "bad" score.
+ * Large negative number.
  *
- * This number must be "bad" enough so that 4 times WORST_SCORE will
- * not overflow. The reason for this is that the search doesn't check
- * the scores in a model before evaluating the model and it may
- * require as many was 4 plies before the new 'good' score can wipe
- * out the initial WORST_SCORE initialization.
+ * This number must be small enough so that
+ * 4 times WORST_SCORE will not overflow. The reason for this is
+ * that the search doesn't check the scores in a model before
+ * evaluating the model and it may require as many was 4 plies
+ * before the new 'good' score can wipe out the initial WORST_SCORE
+ * initialization.
  */
 #define WORST_SCORE		((int)0xE0000000)
-
-/**
- * Is one score better than another?
- */
-#define BETTER_THAN >
-
-/**
- * Is one score worse than another?
- */
-#define WORSE_THAN <
 
 #ifdef FIXED_POINT
 /** Gaussian mean storage type. */
@@ -138,14 +126,23 @@ typedef float32 var_t;
  */
 typedef struct hmm_context_s {
     int32 n_emit_state;     /**< Number of emitting states in this set of HMMs. */
-    uint8 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
+    int32 ** const *tp;	    /**< State transition scores tp[id][from][to] (logs3 values). */
     int16 const *senscore;  /**< State emission scores senscore[senid]
                                (negated scaled logs3 values). */
-    uint16 * const *sseq;   /**< Senone sequence mapping. */
+    int16 * const *sseq;    /**< Senone sequence mapping. */
     int32 *st_sen_scr;      /**< Temporary array of senone scores (for some topologies). */
     listelem_alloc_t *mpx_ssid_alloc; /**< Allocator for senone sequence ID arrays. */
     void *udata;            /**< Whatever you feel like, gosh. */
 } hmm_context_t;
+
+/**
+ * @struct hmm_state_t
+ * @brief A single state in the HMM 
+ */
+typedef struct {
+    int32 score;	/**< State score (path log-likelihood) */
+    int32 history;	/**< History index */
+} hmm_state_t;
 
 /**
  * Hard-coded limit on the number of emitting states.
@@ -157,17 +154,17 @@ typedef struct hmm_context_s {
  * @brief An individual HMM among the HMM search space.
  *
  * An individual HMM among the HMM search space.  An HMM with N
- * emitting states consists of N+1 internal states including the
- * non-emitting exit (out) state.
+ * emitting states consists of N+2 internal states including the
+ * non-emitting entry (in) and exit (out) states.
  */
 typedef struct hmm_s {
-    hmm_context_t *ctx;            /**< Shared context data for this HMM. */
-    int32 score[HMM_MAX_NSTATE];   /**< State scores for emitting states. */
-    int32 history[HMM_MAX_NSTATE]; /**< History indices for emitting states. */
-    int32 out_score;               /**< Score for non-emitting exit state. */
-    int32 out_history;             /**< History index for non-emitting exit state. */
-    uint16 ssid;                   /**< Senone sequence ID (for non-MPX) */
-    uint16 senid[HMM_MAX_NSTATE];  /**< Senone IDs (non-MPX) or sequence IDs (MPX) */
+    hmm_context_t *ctx;   /**< Shared context data for this HMM. */
+    hmm_state_t state[HMM_MAX_NSTATE]; /**< Per-state data for emitting states */
+    hmm_state_t out;      /**< Non-emitting output state */
+    union {
+        int32 *mpx_ssid; /**< Senone sequence IDs for each state (for multiplex HMMs). */
+        int32 ssid;      /**< Senone sequence ID. */
+    } s;
     int32 bestscore;	/**< Best [emitting] state score in current frame (for pruning). */
     int16 tmatid;       /**< Transition matrix ID (see hmm_context_t). */
     int16 frame;	/**< Frame in which this HMM was last active; <0 if inactive */
@@ -178,30 +175,29 @@ typedef struct hmm_s {
 /** Access macros. */
 #define hmm_context(h) (h)->ctx
 #define hmm_is_mpx(h) (h)->mpx
+#define hmm_state(h,st) (h)->state[st]
 
-#define hmm_in_score(h) (h)->score[0]
-#define hmm_score(h,st) (h)->score[st]
-#define hmm_out_score(h) (h)->out_score
+#define hmm_in_score(h) hmm_state(h,0).score
+#define hmm_score(h,st) hmm_state(h,st).score
+#define hmm_out_score(h) (h)->out.score
 
-#define hmm_in_history(h) (h)->history[0]
-#define hmm_history(h,st) (h)->history[st]
-#define hmm_out_history(h) (h)->out_history
+#define hmm_in_history(h) hmm_state(h,0).history
+#define hmm_history(h,st) hmm_state(h,st).history
+#define hmm_out_history(h) (h)->out.history
 
 #define hmm_bestscore(h) (h)->bestscore
 #define hmm_frame(h) (h)->frame
-#define hmm_mpx_ssid(h,st) (h)->senid[st]
-#define hmm_nonmpx_ssid(h) (h)->ssid
-#define hmm_ssid(h,st) (hmm_is_mpx(h)                                   \
-                        ? hmm_mpx_ssid(h,st) : hmm_nonmpx_ssid(h))
-#define hmm_mpx_senid(h,st) ((h)->ctx->sseq[hmm_mpx_ssid(h,st)][st])
-#define hmm_nonmpx_senid(h,st) ((h)->senid[st])
-#define hmm_senid(h,st) (hmm_is_mpx(h)                                  \
-                         ? hmm_mpx_senid(h,st) : hmm_nonmpx_senid(h,st))
-#define hmm_senscr(h,st) (hmm_senid(h,st) == BAD_SENID                  \
+#define hmm_mpx_ssid(h,st) (h)->s.mpx_ssid[st]
+#define hmm_nonmpx_ssid(h) (h)->s.ssid
+#define hmm_ssid(h,st) (hmm_is_mpx(h)                           \
+                        ? hmm_mpx_ssid(h,st) : (h)->s.ssid)
+#define hmm_senid(h,st) (hmm_ssid(h,st) == -1                           \
+                         ? -1 : (h)->ctx->sseq[hmm_ssid(h,st)][st])
+#define hmm_senscr(h,st) (hmm_ssid(h,st) == -1                          \
                           ? WORST_SCORE                                 \
                           : -(h)->ctx->senscore[hmm_senid(h,st)] << SENSCR_SHIFT)
 #define hmm_tmatid(h) (h)->tmatid
-#define hmm_tprob(h,i,j) (-(h)->ctx->tp[hmm_tmatid(h)][i][j] << SENSCR_SHIFT)
+#define hmm_tprob(h,i,j) (h)->ctx->tp[hmm_tmatid(h)][i][j]
 #define hmm_n_emit_state(h) ((h)->n_emit_state)
 #define hmm_n_state(h) ((h)->n_emit_state + 1)
 
@@ -209,9 +205,9 @@ typedef struct hmm_s {
  * Create an HMM context.
  **/
 hmm_context_t *hmm_context_init(int32 n_emit_state,
-                                uint8 ** const *tp,
+                                int32 ** const *tp,
                                 int16 const *senscore,
-                                uint16 * const *sseq);
+                                int16 * const *sseq);
 
 /**
  * Change the senone score array for a context.

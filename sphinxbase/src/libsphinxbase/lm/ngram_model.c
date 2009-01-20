@@ -589,52 +589,6 @@ ngram_model_get_counts(ngram_model_t *model)
   return NULL;
 }
 
-void
-ngram_iter_init(ngram_iter_t *itor, ngram_model_t *model,
-                int m, int successor)
-{
-    itor->model = model;
-    itor->wids = ckd_calloc(m, sizeof(*itor->wids));
-    itor->m = m;
-    itor->successor = successor;
-}
-
-ngram_iter_t *
-ngram_model_mgrams(ngram_model_t *model, int m)
-{
-    return (*model->funcs->mgrams)(model, m);
-}
-
-ngram_iter_t *
-ngram_iter_successors(ngram_iter_t *itor)
-{
-    /* Stop when we are at the highest order N-Gram. */
-    if (itor->m == itor->model->n - 1)
-        return NULL;
-    return (*itor->model->funcs->successors)(itor);
-}
-
-int32 const *
-ngram_iter_get(ngram_iter_t *itor,
-               int32 *out_score,
-               int32 *out_bowt)
-{
-    return (*itor->model->funcs->iter_get)(itor, out_score, out_bowt);
-}
-
-ngram_iter_t *
-ngram_iter_next(ngram_iter_t *itor)
-{
-    return (*itor->model->funcs->iter_next)(itor);
-}
-
-void
-ngram_iter_free(ngram_iter_t *itor)
-{
-    ckd_free(itor->wids);
-    (*itor->model->funcs->iter_free)(itor);
-}
-
 int32
 ngram_wid(ngram_model_t *model, const char *word)
 {
