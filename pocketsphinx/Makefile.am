@@ -6,9 +6,10 @@ SUBDIRS = src \
 	  test \
 	python
 
-EXTRA_DIST = autogen.sh								\
-	pocketsphinx.sln							\
-	pocketsphinx.pc.in							\
+EXTRA_DIST = autogen.sh							\
+	pocketsphinx.sln						\
+	pocketsphinx.pc.in						\
+	build_for_iphone.sh						\
 	win32/pocketsphinx/pocketsphinx.vcproj				\
 	win32/pocketsphinx_batch/pocketsphinx.args			\
 	win32/pocketsphinx_batch/pocketsphinx_batch.vcproj		\
