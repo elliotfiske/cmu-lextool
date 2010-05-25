@@ -1,11 +1,9 @@
 Source: pocketsphinx
 Priority: optional
-Maintainer: Ubuntu MOTU Developers <ubuntu-motu@lists.ubuntu.com>
-Build-Depends: debhelper (>= 5), dpatch, autotools-dev, libsphinxbase-dev,
- libgstreamer0.10-dev, libgstreamer-plugins-base0.10-dev, libasound2-dev,
- python-all-dev, python-all-dbg, python-support (>= 0.3)
-Standards-Version: 3.8.3
-XS-Python-Version: all
+Maintainer: David Huggins-Daines <dhuggins@cs.cmu.edu>
+Build-Depends: debhelper (>= 4), autotools-dev, libsphinxbase-dev,
+ libgstreamer0.10-dev, python2.5-dev
+Standards-Version: 3.7.2
 Section: sound
 
 Package: libpocketsphinx-dev
@@ -114,31 +112,11 @@ Description: Lightweight speech recognition - command-line tools
  This package contains command-line utilities for the PocketSphinx
  recognition engine.
 
-Package: python-pocketsphinx
+Package: python2.5-pocketsphinx
 Section: python
 Architecture: any
-Depends: ${python:Depends}, ${shlibs:Depends}, python-sphinxbase
+Depends: ${python:Depends}, ${shlibs:Depends}, python2.5-sphinxbase
 Provides: ${python:Provides}
-XB-Python-Version: ${python:Versions}
 Description: Lightweight speech recognition - Python module
- PocketSphinx is a lightweight, cross-platform, speaker-independent,
- large-vocabulary continuous speech recognition engine.
- .
  This package contains a Python module which provides access to most
  of the PocketSphinx API.
-
-Package: python-pocketsphinx-dbg
-Section: debug
-Architecture: any
-Priority: extra
-Depends: ${python:Depends}, ${shlibs:Depends}, python-pocketsphinx, python-dbg
-Provides: ${python:Provides}
-XB-Python-Version: ${python:Versions}
-Description: Lightweight speech recognition - Python module (debug version)
- PocketSphinx is a lightweight, cross-platform, speaker-independent,
- large-vocabulary continuous speech recognition engine.
- .
- This package contains a Python module which provides access to most
- of the PocketSphinx API.
- .
- This package contains the extension built for the Python debug interpreter.

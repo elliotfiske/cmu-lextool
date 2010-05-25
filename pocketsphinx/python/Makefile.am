@@ -12,10 +12,10 @@ if BUILD_PYTHON
 all-local: pymod-build-stamp
 
 install-exec-local: pymod-build-stamp
-	$(PYTHON) setup.py install --prefix $(DESTDIR)$(prefix)
+	$(PYTHON) setup.py install --root $(DESTDIR)
 
 uninstall-local:
-	$(PYTHON) setup.py bogus_uninstall --prefix $(DESTDIR)$(prefix)
+	$(PYTHON) setup.py bogus_uninstall --root $(DESTDIR)
 
 clean-local:
 	$(PYTHON) setup.py clean --all

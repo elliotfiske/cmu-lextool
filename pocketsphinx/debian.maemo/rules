@@ -9,6 +9,7 @@
 DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
 DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 
+
 CFLAGS = -Wall -g
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
@@ -21,15 +22,15 @@ ifneq (,$(findstring vfp,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -mfpu=vfp -mfloat-abi=softfp
 endif
 
+
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=/usr --mandir=\$${prefix}/share/man \
 		--infodir=\$${prefix}/share/info \
-		--with-alsa --without-lapack CFLAGS="$(CFLAGS)" \
+		--with-sphinxbase=auto CFLAGS="$(CFLAGS)" \
 		--with-python=python2.5
-
 
 build: build-stamp
 build-stamp:  config.status
@@ -57,6 +58,7 @@ install: build
 	dh_testroot
 	dh_clean -k 
 	dh_installdirs
+
 	# Add here commands to install the package into debian/tmp
 	mkdir -p debian/tmp/usr/lib/python2.5/site-packages
 	PYTHONPATH=$(CURDIR)/debian/tmp/usr/lib/python2.5/site-packages \
