@@ -35,16 +35,16 @@
  *
  */
 
+#include "logmath.h"
+#include "err.h"
+#include "ckd_alloc.h"
+#include "mmio.h"
+#include "bio.h"
+#include "strfuncs.h"
+
 #include <math.h>
 #include <string.h>
 #include <assert.h>
-
-#include "sphinxbase/logmath.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/mmio.h"
-#include "sphinxbase/bio.h"
-#include "sphinxbase/strfuncs.h"
 
 struct logmath_s {
     logadd_t t;
@@ -173,7 +173,7 @@ logmath_read(const char *file_name)
 
     E_INFO("Reading log table file '%s'\n", file_name);
     if ((fp = fopen(file_name, "rb")) == NULL) {
-        E_ERROR("Failed to open log table file '%s' for reading: %s\n", file_name, strerror(errno));
+        E_ERROR("fopen(%s,rb) failed\n", file_name);
         return NULL;
     }
 
@@ -282,7 +282,7 @@ logmath_write(logmath_t *lmath, const char *file_name)
 
     E_INFO("Writing log table file '%s'\n", file_name);
     if ((fp = fopen(file_name, "wb")) == NULL) {
-        E_ERROR("Failed to open logtable file '%s' for writing: %s\n", file_name, strerror(errno));
+        E_ERROR("fopen(%s,wb) failed\n", file_name);
         return -1;
     }
 

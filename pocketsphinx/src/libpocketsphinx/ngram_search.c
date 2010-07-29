@@ -44,9 +44,9 @@
 #include <assert.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/listelem_alloc.h>
-#include <sphinxbase/err.h>
+#include <ckd_alloc.h>
+#include <listelem_alloc.h>
+#include <err.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
@@ -217,11 +217,6 @@ ngram_search_init(cmd_ln_t *config,
             E_ERROR("Failed to initialize language model set\n");
             goto error_out;
         }
-    }
-    if (ngs->lmset != NULL
-        && ngram_wid(ngs->lmset, S3_FINISH_WORD) == ngram_unknown_wid(ngs->lmset)) {
-        E_ERROR("Language model/set does not contain </s>, recognition will fail\n");
-        goto error_out;
     }
 
     /* Create word mappings. */
@@ -610,7 +605,6 @@ ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone)
      * right context table and the bscore_stack. */
     if (pbe->last2_phone == -1) {
         /* No right context for single phone predecessor words. */
-        assert(ngs->bscore_stack[pbe->s_idx] != WORST_SCORE);
         return ngs->bscore_stack[pbe->s_idx];
     }
     else {
@@ -619,8 +613,6 @@ ngram_search_exit_score(ngram_search_t *ngs, bptbl_t *pbe, int rcphone)
          * the first phone of the current word. */
         rssid = dict2pid_rssid(ps_search_dict2pid(ngs),
                                pbe->last_phone, pbe->last2_phone);
-        /* This may be WORST_SCORE, which means that there was no exit
-         * with rcphone as right context. */
         return ngs->bscore_stack[pbe->s_idx + rssid->cimap[rcphone]];
     }
 }
@@ -646,7 +638,13 @@ ngram_compute_seg_score(ngram_search_t *ngs, bptbl_t *be, float32 lwf,
     pbe = ngs->bp_table + be->bp;
     start_score = ngram_search_exit_score(ngs, pbe,
                                  dict_first_phone(ps_search_dict(ngs),be->wid));
-    assert(start_score BETTER_THAN WORST_SCORE);
+
+    /* FIXME: WORST_SCORE shouldn't propagate, but sometimes it
+       does.  We cannot allow it to go any further because that
+       will result in positive acoustic scores.  Tracing the
+       source of this may be a bit involved. */
+    if (start_score == WORST_SCORE)
+        start_score = 0;
 
     /* FIXME: These result in positive acoustic scores when filler
        words have non-filler pronunciations.  That whole business
@@ -711,6 +709,7 @@ dump_bptable(ngram_search_t *ngs)
                     ngs->bp_table[i].frame,
                     ngs->bp_table[i].score,
                     ngs->bp_table[i].bp);
+        /* ngs->bp_table[i].hist_hash); */
     }
 }
 
@@ -827,7 +826,6 @@ ngram_search_bp2itor(ps_seg_t *seg, int bp)
         /* Find ending path score of previous word. */
         start_score = ngram_search_exit_score(ngs, pbe,
                                      dict_first_phone(ps_search_dict(ngs), be->wid));
-        assert(start_score BETTER_THAN WORST_SCORE);
         if (be->wid == ps_search_silence_wid(ngs)) {
             seg->lscr = ngs->silpen;
         }
@@ -1017,7 +1015,6 @@ create_dag_nodes(ngram_search_t *ngs, ps_lattice_t *dag)
 
             node->next = dag->nodes;
             dag->nodes = node;
-            ++dag->n_nodes;
         }
     }
 }
@@ -1071,19 +1068,20 @@ find_end_node(ngram_search_t *ngs, ps_lattice_t *dag, float32 lwf)
     bestscore = WORST_SCORE;
     bestbp = NO_BP;
     for (bp = ngs->bp_table_idx[ef]; bp < ngs->bp_table_idx[ef + 1]; ++bp) {
-        int32 n_used, l_scr, wid, prev_wid;
-        
-        wid = ngs->bp_table[bp].real_wid;
-        prev_wid = ngs->bp_table[bp].prev_real_wid;
-        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs), wid, prev_wid, &n_used);
+        int32 n_used, l_scr;
+        l_scr = ngram_tg_score(ngs->lmset, ps_search_finish_wid(ngs),
+                               ngs->bp_table[bp].real_wid,
+                               ngs->bp_table[bp].prev_real_wid,
+                               &n_used);
         l_scr = l_scr * lwf;
+
         if (ngs->bp_table[bp].score + l_scr BETTER_THAN bestscore) {
             bestscore = ngs->bp_table[bp].score + l_scr;
             bestbp = bp;
         }
     }
     if (bestbp == NO_BP) {
-        E_ERROR("No word exits found in last frame (%d), assuming no recognition\n", ef);
+        E_ERROR("No word exits found in last frame, assuming no recognition\n");
         return NULL;
     }
     E_WARN("</s> not found in last frame, using %s instead\n",
@@ -1111,11 +1109,9 @@ ngram_search_lattice(ps_search_t *search)
     ps_latnode_t *node, *from, *to;
     ngram_search_t *ngs;
     ps_lattice_t *dag;
-    int min_endfr;
     float lwf;
 
     ngs = (ngram_search_t *)search;
-    min_endfr = cmd_ln_int32_r(ps_search_config(search), "-min_endfr");
 
     /* If the best score is WORST_SCORE or worse, there is no way to
      * make a lattice. */
@@ -1160,7 +1156,7 @@ ngram_search_lattice(ps_search_t *search)
 
         /* Find predecessors of to : from->fef+1 <= to->sf <= from->lef+1 */
         for (from = to->next; from; from = from->next) {
-            bptbl_t *from_bpe;
+            bptbl_t *bp_ptr;
 
             ef = ngs->bp_table[from->fef].frame;
             lef = ngs->bp_table[from->lef].frame;
@@ -1168,50 +1164,37 @@ ngram_search_lattice(ps_search_t *search)
             if ((to->sf <= ef) || (to->sf > lef + 1))
                 continue;
 
-            /* Prune nodes with too few endpoints - heuristic
-               borrowed from Sphinx3 */
-            if (lef - ef < min_endfr)
-                continue;
-
             /* Find bptable entry for "from" that exactly precedes "to" */
             i = from->fef;
-            from_bpe = ngs->bp_table + i;
-            for (; i <= from->lef; i++, from_bpe++) {
-                if (from_bpe->wid != from->wid)
+            bp_ptr = ngs->bp_table + i;
+            for (; i <= from->lef; i++, bp_ptr++) {
+                if (bp_ptr->wid != from->wid)
                     continue;
-                if (from_bpe->frame >= to->sf - 1)
+                if (bp_ptr->frame >= to->sf - 1)
                     break;
             }
 
-            if ((i > from->lef) || (from_bpe->frame != to->sf - 1))
+            if ((i > from->lef) || (bp_ptr->frame != to->sf - 1))
                 continue;
 
             /* Find acoustic score from.sf->to.sf-1 with right context = to */
-            /* This gives us from_bpe's best acoustic score. */
-            ngram_compute_seg_score(ngs, from_bpe, lwf,
+            ngram_compute_seg_score(ngs, bp_ptr, lwf,
                                     &ascr, &lscr);
-            /* Now find the exact path score for from->to, including
-             * the appropriate final triphone.  In fact this might not
-             * exist. */
-            score = ngram_search_exit_score(ngs, from_bpe,
-                                            dict_first_phone(ps_search_dict(ngs), to->wid));
-            /* Yup, doesn't exist, just use ascr.  Perhaps we should penalize these? */
-            if (score == WORST_SCORE)
-                score = ascr;
-            /* Adjust the arc score to match the correct triphone. */
-            else
-                score = ascr + (score - from_bpe->score);
+            /* Remove context score calculated above (FIXME: just don't calculate it...) */
+            score = (ngram_search_exit_score(ngs, bp_ptr,
+                                    dict_first_phone(ps_search_dict(ngs), to->wid))
+                     - bp_ptr->score + ascr);
             if (score BETTER_THAN 0) {
                 /* Scores must be negative, or Bad Things will happen.
                    In general, they are, except in corner cases
                    involving filler words.  We don't want to throw any
                    links away so we'll keep these, but with some
                    arbitrarily improbable but recognizable score. */
-                ps_lattice_link(dag, from, to, -424242, from_bpe->frame);
+                ps_lattice_link(dag, from, to, -424242, bp_ptr->frame);
                 from->reachable = TRUE;
             }
             else if (score BETTER_THAN WORST_SCORE) {
-                ps_lattice_link(dag, from, to, score, from_bpe->frame);
+                ps_lattice_link(dag, from, to, score, bp_ptr->frame);
                 from->reachable = TRUE;
             }
         }

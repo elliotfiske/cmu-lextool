@@ -51,9 +51,9 @@
  */
 
 /* SphinxBase headers. */
-#include <sphinxbase/feat.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/cmd_ln.h>
+#include <feat.h>
+#include <logmath.h>
+#include <cmd_ln.h>
 
 /* Local headers. */
 #include "vector.h"

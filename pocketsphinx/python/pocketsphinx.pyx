@@ -243,30 +243,19 @@ cdef class Lattice:
     @type latfile: str
     @param boxed: Boxed pointer from GStreamer containing a lattice
     @type boxed: PyGBoxed
-
     @ivar n_frames: Number of frames of audio covered by this lattice
     @type n_frames: int
-    @ivar start: Start node
-    @type start: LatNode
-    @ivar end: End node
-    @type end: LatNode
     """
     def __init__(self, ps=None, latfile=None, boxed=None):
+        cdef Decoder decoder
         self.dag = NULL
-        if latfile:
-            self.read_dag(ps, latfile)
-        if boxed:
-            self.set_boxed(boxed)
+        if ps and latfile:
+            decoder = ps
+            self.dag = ps_lattice_read(decoder.ps, latfile)
+            if self.dag == NULL:
+                raise RuntimeError, "Failed to read lattice from %s" % latfile
+        if boxed: self.set_boxed(boxed)
 
-    cdef read_dag(Lattice self, Decoder ps, latfile):
-        if ps:
-            self.dag = ps_lattice_read(ps.ps, latfile)
-        else:
-            self.dag = ps_lattice_read(NULL, latfile)
-        self.n_frames = ps_lattice_n_frames(self.dag)
-        if self.dag == NULL:
-            raise RuntimeError, "Failed to read lattice from %s" % latfile
-        
     cdef set_dag(Lattice self, ps_lattice_t *dag):
         ps_lattice_retain(dag)
         ps_lattice_free(self.dag)
@@ -460,25 +449,6 @@ cdef class Decoder:
         else:
             cuttid = uttid
         return ps_decode_raw(self.ps, cfh, cuttid, maxsamps)
-
-    def decode_senscr(self, fh, uttid=None):
-        """
-        Decode senone scores from a file.
-
-        @param fh: Filehandle to read senone scores from.
-        @type fh: file
-        @param uttid: Identifier to give to this utterance.
-        @type uttid: str
-        """
-        cdef FILE *cfh
-        cdef char *cuttid
-
-        cfh = PyFile_AsFile(fh)
-        if uttid == None:
-            cuttid = NULL
-        else:
-            cuttid = uttid
-        return ps_decode_senscr(self.ps, cfh, cuttid)
 
     def start_utt(self, uttid=None):
         """

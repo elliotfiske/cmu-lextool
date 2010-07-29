@@ -99,14 +99,12 @@
 #ifndef _S3_DICT2PID_H_
 #define _S3_DICT2PID_H_
 
-/* System headers. */
+
 #include <stdio.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/bitvec.h>
+#include <logmath.h>
+#include <bitvec.h>
 
-/* Local headers. */
 #include "s3types.h"
 #include "bin_mdef.h"
 #include "dict.h"
@@ -173,6 +171,9 @@ typedef struct {
                                     First dimension: base phone,
                                     Second dimension: left context. 
                                  */
+
+    int32 n_ci;   /**< Number of CI phone in */
+    int32 n_dictsize; /**< Dictionary size */
 } dict2pid_t;
 
 /** Access macros; not designed for arbitrary use */

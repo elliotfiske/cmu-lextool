@@ -38,13 +38,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/yin.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/pio.h>
+#include <cmd_ln.h>
+#include <yin.h>
+#include <ckd_alloc.h>
+#include <byteorder.h>
+#include <strfuncs.h>
+#include <err.h>
+#include <pio.h>
 
 #ifndef WORDS_BIGENDIAN
 #define WORDS_BIGENDIAN 0
@@ -380,7 +380,7 @@ extract_pitch(const char *in, const char *out)
 
     if (out) {
         if ((outfh = fopen(out, "w")) == NULL) {
-            E_ERROR_SYSTEM("Failed to open %s for writing", out);
+            E_ERROR_SYSTEM("Failed to open %s for writing", outfh);
             goto error_out;
         }
     }
@@ -388,7 +388,7 @@ extract_pitch(const char *in, const char *out)
         outfh = stdout;
     }
     if ((infh = fopen(in, "rb")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open %s for reading", in);
+        E_ERROR_SYSTEM("Failed to open %s for reading", infh);
         goto error_out;
     }
 

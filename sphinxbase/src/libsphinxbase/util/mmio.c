@@ -44,6 +44,11 @@
  * 
  *********************************************************************/
 
+#include "prim_type.h"
+#include "err.h"
+#include "mmio.h"
+#include "ckd_alloc.h"
+
 #include <string.h>
 #include <stdlib.h>
 
@@ -64,11 +69,6 @@
 # include <sys/file.h>
 # include <sys/mman.h>
 #endif /* !_WIN32 */
-
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/mmio.h"
-#include "sphinxbase/ckd_alloc.h"
 
 /** Silvio Moioli: slightly updated */
 #if defined(_WIN32_WCE) || defined(GNUWINCE)
@@ -219,7 +219,7 @@ mmio_file_read(const char *filename)
     }
     ptr = mmap(NULL, buf.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (ptr == (void *)-1) {
-        E_ERROR_SYSTEM("Failed to mmap %lld bytes", (unsigned long long)buf.st_size);
+        E_ERROR("Failed to mmap %d bytes", buf.st_size);
         return NULL;
     }
     close(fd);

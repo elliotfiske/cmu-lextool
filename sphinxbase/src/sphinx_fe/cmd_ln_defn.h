@@ -47,8 +47,8 @@
 #ifndef CMD_LN_DEFN_H
 #define CMD_LN_DEFN_H
 
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/fe.h>
+#include "cmd_ln.h"
+#include "fe.h"
 
 const char helpstr[] =
   "Description: \n\
@@ -170,13 +170,6 @@ static arg_t defn[] = {
     "no",
     "Defines input format as Microsoft Wav (RIFF)" },
   
-#ifdef HAVE_SNDFILE_H
-  { "-sndfile",
-    ARG_BOOLEAN,
-    "no",
-    "Use libsndfile to read input data" },
-#endif
-  
   { "-nchans",
     ARG_INT32,
     "1",
@@ -184,8 +177,8 @@ static arg_t defn[] = {
   
   { "-whichchan",
     ARG_INT32,
-    "0",
-    "Channel to process (numbered from 1), or 0 to mix all channels" },
+    "1",
+    "Channel to process" },
   
   { "-ofmt",
     ARG_STRING,

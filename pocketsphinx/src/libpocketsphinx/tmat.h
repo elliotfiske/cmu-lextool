@@ -89,7 +89,7 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/logmath.h>
+#include <logmath.h>
 
 /** \file tmat.h
  *  \brief Transition matrix data structure.

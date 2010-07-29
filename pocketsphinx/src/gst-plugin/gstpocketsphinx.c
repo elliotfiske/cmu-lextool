@@ -43,7 +43,8 @@
 #include <string.h>
 #include <gst/gst.h>
 
-#include <sphinxbase/strfuncs.h>
+#include <sphinx_config.h>
+#include <strfuncs.h>
 
 #include "gstpocketsphinx.h"
 #include "gstvader.h"

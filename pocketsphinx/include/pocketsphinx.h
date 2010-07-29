@@ -49,11 +49,11 @@ extern "C" {
 #include <stdio.h>
 
 /* SphinxBase headers we need. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/fe.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/ngram_model.h>
+#include <cmd_ln.h>
+#include <logmath.h>
+#include <fe.h>
+#include <feat.h>
+#include <ngram_model.h>
 
 /* PocketSphinx headers (not many of them!) */
 #include <pocketsphinx_export.h>
@@ -334,18 +334,6 @@ int ps_add_word(ps_decoder_t *ps,
 POCKETSPHINX_EXPORT
 int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
                   char const *uttid, long maxsamps);
-
-/**
- * Decode a senone score dump file.
- *
- * @param ps Decoder
- * @param fh Previously opened file handle positioned at start of file.
- * @param uttid Utterance ID (or NULL to generate automatically).
- * @return Number of frames read.
- */
-POCKETSPHINX_EXPORT
-int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh,
-                     char const *uttid);
 
 /**
  * Start utterance processing.

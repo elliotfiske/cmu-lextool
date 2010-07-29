@@ -40,19 +40,18 @@
  * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
+#include "ckd_alloc.h"
+#include "ngram_model_dmp.h"
+#include "pio.h"
+#include "err.h"
+#include "byteorder.h"
+#include "listelem_alloc.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
-
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/pio.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/byteorder.h"
-#include "sphinxbase/listelem_alloc.h"
-
-#include "ngram_model_dmp.h"
 
 static const char darpa_hdr[] = "Darpa Trigram LM";
 static ngram_funcs_t ngram_model_dmp_funcs;
@@ -557,8 +556,11 @@ ngram_model_dmp_build(ngram_model_t *base)
             ngram_iter_t *titor;
 
             wids = ngram_iter_get(itor, &prob2, &bo_wt2);
-
-            assert (bgptr - model->lm3g.bigrams < newbase->n_counts[1]);
+            /* FIXME FIXME FIXME: not sure why this happens... */
+            if (bgptr - model->lm3g.bigrams >= newbase->n_counts[1]) {
+                ngram_iter_free(itor);
+                break;
+            }
 
             bgptr->wid = wids[1];
             bgptr->prob2 = sorted_id(&sorted_prob2, &prob2);

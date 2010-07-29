@@ -52,11 +52,11 @@
 #include <assert.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
-#include <sphinxbase/case.h>
-#include <sphinxbase/err.h>
+#include <prim_type.h>
+#include <ckd_alloc.h>
+#include <byteorder.h>
+#include <case.h>
+#include <err.h>
 
 /* Local headers. */
 #include "mdef.h"
@@ -420,7 +420,8 @@ bin_mdef_read(cmd_ln_t *config, const char *filename)
         fseek(fh, pos, SEEK_SET);
         m->ciname[0] = ckd_malloc(end - pos);
         if (fread(m->ciname[0], 1, end - pos, fh) != end - pos)
-            E_FATAL("Failed to read %d bytes of data from %s\n", end - pos, filename);
+            E_FATAL_SYSTEM("Failed to read %d bytes of data from %s\n",
+                           end - pos, filename);
     }
 
     for (i = 1; i < m->n_ciphone; ++i)

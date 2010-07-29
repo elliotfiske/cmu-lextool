@@ -41,13 +41,11 @@
  * 		Started.
  */
 
-/* System headers. */
-#include <assert.h>
-
 /* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
+#include <prim_type.h>
+#include <err.h>
+#include <ckd_alloc.h>
+#include <assert.h>
 
 /* Local headers. */
 #include "blkarray_list.h"

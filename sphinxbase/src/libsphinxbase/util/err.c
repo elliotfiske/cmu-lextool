@@ -39,15 +39,13 @@
  * @brief Somewhat antiquated logging and error interface.
  */
 
-#include "config.h"
-
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 
-#include "sphinxbase/err.h"
+#include "err.h"
+#include "config.h"
 
 #ifdef SPHINX_DEBUG
 static int sphinx_debug_level;
@@ -298,7 +296,7 @@ _E__fatal_sys_error(char const *fmt, ...)
         vfprintf(logfp, fmt, pvar);
         va_end(pvar);
 
-        fprintf(logfp, ": %s\n", strerror(local_errno));
+        fprintf(logfp, "; %s\n", strerror(local_errno));
         fflush(logfp);
     }
 

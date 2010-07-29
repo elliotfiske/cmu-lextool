@@ -50,10 +50,10 @@
 #pragma warning (disable: 4018)
 #endif
 
-#include "sphinxbase/feat.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/bio.h"
-#include "sphinxbase/err.h"
+#include "feat.h"
+#include "ckd_alloc.h"
+#include "bio.h"
+#include "err.h"
 
 #define MATRIX_FILE_VERSION "0.1"
 
@@ -73,12 +73,12 @@ feat_read_lda(feat_t *feat, const char *ldafile, int32 dim)
     }
 
     if ((fh = fopen(ldafile, "rb")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open transform file '%s' for reading: %s\n", ldafile, strerror(errno));
+        E_ERROR_SYSTEM("fopen(%s, rb) failed", ldafile);
         return -1;
     }
 
     if (bio_readhdr(fh, &argname, &argval, &byteswap) < 0) {
-        E_ERROR("Failed to read header from transform file '%s'\n", ldafile);
+        E_ERROR("bio_readhdr(%s) failed\n", ldafile);
         fclose(fh);
         return -1;
     }

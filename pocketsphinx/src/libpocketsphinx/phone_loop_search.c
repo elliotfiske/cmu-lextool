@@ -39,7 +39,7 @@
  * @file phone_loop_search.h Fast and rough context-independent phoneme loop search.
  */
 
-#include <sphinxbase/err.h>
+#include <err.h>
 
 #include "phone_loop_search.h"
 
@@ -205,6 +205,15 @@ evaluate_hmms(phone_loop_search_t *pls, int16 const *senscr, int frame_idx)
         }
     }
     pls->best_score = bs;
+
+    for (i = 0; i < pls->n_phones; ++i) {
+        hmm_t *hmm = (hmm_t *)&pls->phones[i];
+        if (hmm_frame(hmm) < frame_idx)
+            continue;
+        if (hmm_bestscore(hmm) < bs + pls->beam)
+            continue;
+    }
+
     return bs;
 }
 
@@ -295,18 +304,6 @@ phone_loop_search_step(ps_search_t *search, int frame_idx)
     phone_transition(pls, frame_idx);
 
     return 0;
-}
-
-int32
-phone_loop_search_score(phone_loop_search_t *pls, int ciphone)
-{
-    hmm_t *hmm;
-
-    if (pls == NULL)
-        return 0;
-
-    hmm = (hmm_t *)&pls->phones[ciphone];
-    return hmm_bestscore(hmm) - pls->best_score;
 }
 
 static int

@@ -58,7 +58,7 @@
  */
 
 
-#include "sphinxbase/bitvec.h"
+#include "bitvec.h"
 
 size_t
 bitvec_count_set(bitvec_t *vec, size_t len)

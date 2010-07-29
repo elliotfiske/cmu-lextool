@@ -39,11 +39,11 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/pio.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/filename.h>
-#include <sphinxbase/byteorder.h>
+#include <pio.h>
+#include <err.h>
+#include <strfuncs.h>
+#include <filename.h>
+#include <byteorder.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx.h>
@@ -146,18 +146,6 @@ static const arg_t ps_args_def[] = {
       ARG_STRING,
       NULL,
       "Directory for dumping word lattices" },
-    { "-outlatfmt",
-      ARG_STRING,
-      "s3",
-      "Format for dumping word lattices (s3 or htk)" },
-    { "-outlatext",
-      ARG_STRING,
-      ".lat",
-      "Filename extension for dumping word lattices" },
-    { "-outlatbeam",
-      ARG_FLOAT64,
-      "1e-5",
-      "Minimum posterior probability for output lattice nodes" },
     { "-build_outdirs",
       ARG_BOOLEAN,
       "yes",
@@ -267,7 +255,6 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
         return -1;
     }
 
-    E_INFO("Using MLLR: %s\n", file);
     ckd_free(infile);
     return 0;
 }
@@ -308,7 +295,6 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
     ckd_free(lastfile);
     lastfile = ckd_salloc(file);
 
-    E_INFO("Using FSG: %s\n", lastfile);
     fsg_set_add(fsgset, lastfile, fsg);
     fsg_set_select(fsgset, lastfile);
 
@@ -325,40 +311,11 @@ process_lmnamectl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *lmname)
 
     if (lmname == NULL)
         return 0;
-    E_INFO("Using language model: %s\n", lmname);
     if (ngram_model_set_select(lmset, lmname) == NULL) {
         E_ERROR("No such language model: %s\n", lmname);
         return -1;
     }
     ps_update_lmset(ps, lmset);
-    return 0;
-}
-
-static int
-build_outdir_one(cmd_ln_t *config, char const *arg, char const *uttpath)
-{
-    char const *dir;
-
-    if ((dir = cmd_ln_str_r(config, arg)) != NULL) {
-        char *dirname = string_join(dir, "/", uttpath, NULL);
-        build_directory(dirname);
-        ckd_free(dirname);
-    }
-    return 0;
-}
-
-static int
-build_outdirs(cmd_ln_t *config, char const *uttid)
-{
-    char *uttpath = ckd_salloc(uttid);
-
-    path2dirname(uttid, uttpath);
-    build_outdir_one(config, "-outlatdir", uttpath);
-    build_outdir_one(config, "-mfclogdir", uttpath);
-    build_outdir_one(config, "-rawlogdir", uttpath);
-    build_outdir_one(config, "-senlogdir", uttpath);
-    ckd_free(uttpath);
-
     return 0;
 }
 
@@ -389,10 +346,6 @@ process_ctl_line(ps_decoder_t *ps, cmd_ln_t *config,
         ckd_free(infile);
         return -1;
     }
-    /* Build output directories. */
-    if (cmd_ln_boolean_r(config, "-build_outdirs"))
-        build_outdirs(config, uttid);
-
     if (cmd_ln_boolean_r(config, "-adcin")) {
         
         if (ef != -1) {
@@ -432,33 +385,24 @@ static int
 write_lattice(ps_decoder_t *ps, char const *latdir, char const *uttid)
 {
     ps_lattice_t *lat;
-    logmath_t *lmath;
-    cmd_ln_t *config;
     char *outfile;
-    int32 beam;
 
     if ((lat = ps_get_lattice(ps)) == NULL) {
         E_ERROR("Failed to obtain word lattice for utterance %s\n", uttid);
         return -1;
     }
-    config = ps_get_config(ps);
-    outfile = string_join(latdir, "/", uttid,
-                          cmd_ln_str_r(config, "-outlatext"), NULL);
-    /* Prune lattice. */
-    lmath = ps_get_logmath(ps);
-    beam = logmath_log(lmath, cmd_ln_float64_r(config, "-outlatbeam"));
-    ps_lattice_posterior_prune(lat, beam);
-    if (0 == strcmp("htk", cmd_ln_str_r(config, "-outlatfmt"))) {
-        if (ps_lattice_write_htk(lat, outfile) < 0) {
-            E_ERROR("Failed to write lattice to %s\n", outfile);
-            return -1;
-        }
+    outfile = string_join(latdir, "/", uttid, ".lat", NULL);
+    /* Build output directory structure if possible/requested (it is
+     * by default). */
+    if (cmd_ln_boolean_r(ps_get_config(ps), "-build_outdirs")) {
+        char *dirname = ckd_salloc(outfile);
+        path2dirname(outfile, dirname);
+        build_directory(dirname);
+        ckd_free(dirname);
     }
-    else {
-        if (ps_lattice_write(lat, outfile) < 0) {
-            E_ERROR("Failed to write lattice to %s\n", outfile);
-            return -1;
-        }
+    if (ps_lattice_write(lat, outfile) < 0) {
+        E_ERROR("Failed to write lattice to %s\n", outfile);
+        return -1;
     }
     return 0;
 }
@@ -512,7 +456,7 @@ write_ctm(FILE *fh, ps_decoder_t *ps, ps_seg_t *itor, char const *uttid, int32 f
      * correspond to the fields of the STM file.  So if there's a
      * comma in the uttid, take the first two fields as show and
      * channel, and also try to find the start time. */
-    show = dupid = ckd_salloc(uttid ? uttid : "(null)");
+    show = dupid = ckd_salloc(uttid);
     if ((c = strchr(dupid, ',')) != NULL) {
         *c++ = '\0';
         channel = c;
@@ -648,7 +592,7 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                 ckd_free(lmline);
                 goto done;
             }
-            lmname = string_trim(lmline, STRING_BOTH);
+            lmname = string_trim(lmname, STRING_BOTH);
         }
         if (fsgfh) {
             fsgline = fread_line(fsgfh, &len);
@@ -769,7 +713,7 @@ main(int32 argc, char *argv[])
         E_FATAL("-ctl argument not present, nothing to do in batch mode!\n");
     }
     if ((ctlfh = fopen(ctl, "r")) == NULL) {
-        E_FATAL_SYSTEM("Failed to open control file '%s'", ctl);
+        E_FATAL_SYSTEM("Failed to open control file %s", ctl);
     }
     ps = ps_init(config);
     if (ps == NULL) {

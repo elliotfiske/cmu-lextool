@@ -105,7 +105,6 @@ cdef extern from "pocketsphinx.h":
     int ps_add_word(ps_decoder_t *ps, char *word, char *phones, int update)
     int ps_decode_raw(ps_decoder_t *ps, FILE *rawfh,
                       char *uttid, long maxsamps)
-    int ps_decode_senscr(ps_decoder_t *ps, FILE *senfh, char *uttid)
     int ps_start_utt(ps_decoder_t *ps, char *uttid)
     int ps_process_raw(ps_decoder_t *ps, char *data, size_t n_samples,
                        int no_search, int full_utt)
@@ -137,7 +136,6 @@ cdef class Decoder:
 
 cdef class Lattice:
     cdef ps_lattice_t *dag
-    cdef read_dag(Lattice self, Decoder ps, latfile)
     cdef set_dag(Lattice self, ps_lattice_t *dag)
     cdef set_boxed(Lattice self, box)
     cdef readonly n_frames

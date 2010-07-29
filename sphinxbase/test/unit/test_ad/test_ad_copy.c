@@ -1,5 +1,4 @@
 /* -*- c-basic-offset: 4 -*- */
-
 #include "config.h"
 #include "ad.h"
 #include "cont_ad.h"

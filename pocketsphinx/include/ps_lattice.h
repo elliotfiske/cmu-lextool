@@ -43,8 +43,8 @@
 #define __PS_LATTICE_H__
 
 /* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ngram_model.h>
+#include <prim_type.h>
+#include <ngram_model.h>
 
 /* PocketSphinx headers. */
 #include <pocketsphinx_export.h>
@@ -86,7 +86,7 @@ struct ps_decoder_s;
 /**
  * Read a lattice from a file on disk.
  *
- * @param ps Decoder to use for processing this lattice, or NULL.
+ * @param ps Decoder to use for processing this lattice.
  * @param file Path to lattice file.
  * @return Newly created lattice, or NULL for failure.
  */
@@ -121,14 +121,6 @@ int ps_lattice_free(ps_lattice_t *dag);
  */
 POCKETSPHINX_EXPORT
 int ps_lattice_write(ps_lattice_t *dag, char const *filename);
-
-/**
- * Write a lattice to disk in HTK format
- *
- * @return 0 for success, <0 on failure.
- */
-POCKETSPHINX_EXPORT
-int ps_lattice_write_htk(ps_lattice_t *dag, char const *filename);
 
 /**
  * Get the log-math computation object for this lattice
@@ -407,31 +399,6 @@ ps_latlink_t *ps_lattice_bestpath(ps_lattice_t *dag, ngram_model_t *lmset,
 POCKETSPHINX_EXPORT
 int32 ps_lattice_posterior(ps_lattice_t *dag, ngram_model_t *lmset,
                            float32 ascale);
-
-/**
- * Prune all links (and associated nodes) below a certain posterior probability.
- *
- * This function assumes that ps_lattice_posterior() has already been called.
- *
- * @param beam Minimum posterior probability for links. This is
- *         expressed in the log-base used in the decoder.  To convert
- *         from linear floating-point, use
- *         logmath_log(ps_lattice_get_logmath(), prob).
- * @return number of arcs removed.
- */
-POCKETSPHINX_EXPORT
-int32 ps_lattice_posterior_prune(ps_lattice_t *dag, int32 beam);
-
-#ifdef NOT_IMPLEMENTED_YET
-/**
- * Expand lattice using an N-gram language model.
- *
- * This function expands the lattice such that each node represents a
- * unique N-gram history, and adds language model scores to the links.
- */
-POCKETSPHINX_EXPORT
-int32 ps_lattice_ngram_expand(ps_lattice_t *dag, ngram_model_t *lm);
-#endif
 
 /**
  * Get the number of frames in the lattice.

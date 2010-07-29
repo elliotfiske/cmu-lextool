@@ -7,6 +7,7 @@ SUBDIRS = src \
 EXTRA_DIST = autogen.sh					\
 	sphinxbase.sln					\
 	sphinxbase.pc.in				\
+	build_for_iphone.sh				\
 	win32/sphinx_fe/sphinx_fe.vcproj		\
 	win32/sphinxbase/sphinxbase.vcproj		\
 	win32/sphinx_cepview/sphinx_cepview.vcproj	\

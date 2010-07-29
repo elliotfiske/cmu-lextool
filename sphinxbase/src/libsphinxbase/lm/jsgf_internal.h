@@ -43,14 +43,13 @@
  */
 
 #define YY_NO_UNISTD_H 1
+#include <hash_table.h>
+#include <glist.h>
 #include <stdio.h>
-
-#include <sphinxbase/hash_table.h>
-#include <sphinxbase/glist.h>
-#include <sphinxbase/fsg_model.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/jsgf.h>
+#include <fsg_model.h>
+#include <logmath.h>
+#include <strfuncs.h>
+#include <jsgf.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -43,7 +43,7 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/ckd_alloc.h>
+#include <ckd_alloc.h>
 
 /* Local headers. */
 #include "acmod.h"
@@ -59,7 +59,7 @@ ps_mllr_read(char const *regmatfile)
     mllr->refcnt = 1;
 
     if ((fp = fopen(regmatfile, "r")) == NULL) {
-        E_ERROR_SYSTEM("Failed to open MLLR file '%s' for reading: %s\n", regmatfile, strerror(errno));
+        E_ERROR_SYSTEM("fopen(%s,r) failed", regmatfile);
         goto error_out;
     }
     else

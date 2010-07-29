@@ -73,7 +73,7 @@ lm3g_bg_score(NGRAM_MODEL_TYPE *model,
     int32 i, n, b, score;
     bigram_t *bg;
 
-    if (lw1 < 0 || model->base.n < 2) {
+    if (lw1 < 0) {
         *n_used = 1;
         return model->lm3g.unigrams[lw2].prob1.l;
     }
@@ -410,7 +410,7 @@ lm3g_template_successors(ngram_iter_t *bitor)
         break;
     case 1:
         itor->bg = from->bg;
-        
+
         /* This indicates no successors */
         if (((itor->bg + 1) - model->lm3g.bigrams < bitor->model->n_counts[1] &&
     	    FIRST_TG (model, itor->bg - model->lm3g.bigrams) == 
@@ -505,7 +505,7 @@ lm3g_template_iter_next(ngram_iter_t *base)
                 goto done;
             ++itor->ug;
             if (itor->ug == model->lm3g.unigrams + base->model->n_counts[0]) {
-                E_ERROR("Bigram %d has no valid unigram parent\n",
+                E_ERROR("Bigram %d has no vaild unigram parent\n",
                         itor->bg - model->lm3g.bigrams);
                 goto done;
             }
@@ -523,17 +523,16 @@ lm3g_template_iter_next(ngram_iter_t *base)
                 goto done;
             ++itor->bg;
             if (itor->bg == model->lm3g.bigrams + base->model->n_counts[1]) {
-                E_ERROR("Trigram %d has no valid bigram parent\n",
+                E_ERROR("Trigram %d has no vaild bigram parent\n",
                         itor->tg - model->lm3g.trigrams);
-
-               goto done;
+                goto done;
             }
         }
         /* Advance unigram pointer if necessary. */
         while (itor->bg - model->lm3g.bigrams >= itor->ug[1].bigrams) {
             ++itor->ug;
             if (itor->ug == model->lm3g.unigrams + base->model->n_counts[0]) {
-                E_ERROR("Trigram %d has no valid unigram parent\n",
+                E_ERROR("Trigram %d has no vaild unigram parent\n",
                         itor->tg - model->lm3g.trigrams);
                 goto done;
             }

@@ -40,8 +40,7 @@
  * Author: David Huggins-Daines <dhuggins@cs.cmu.edu>
  */
 
-#include "sphinxbase/ckd_alloc.h"
-
+#include "ckd_alloc.h"
 #include "ngram_model_internal.h"
 
 static ngram_funcs_t ngram_model_dmp32_funcs;

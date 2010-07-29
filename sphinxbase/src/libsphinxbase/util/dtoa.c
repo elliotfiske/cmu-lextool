@@ -80,11 +80,11 @@
 #define NO_LONG_LONG
 #endif
 #define Omit_Private_Memory
-#include "sphinxbase/ckd_alloc.h"
+#include "ckd_alloc.h"
 #undef USE_LOCALE
 
 /* Correct totally bogus typedefs in this code. */
-#include "sphinxbase/prim_type.h"
+#include "prim_type.h"
 #define Long int32   /* ZOMG */
 #define ULong uint32 /* WTF */
 

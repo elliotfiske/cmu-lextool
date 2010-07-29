@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <sphinxbase/logmath.h>
+#include "logmath.h"
 
 #define TEST_ASSERT(x) if (!(x)) { fprintf(stderr, "FAIL: %s\n", #x); exit(1); }
 #define TEST_EQUAL(a,b) TEST_ASSERT((a) == (b))

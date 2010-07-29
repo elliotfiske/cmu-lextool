@@ -54,10 +54,9 @@
 #include <assert.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/cmd_ln.h>
+#include <err.h>
+#include <ckd_alloc.h>
+#include <cmd_ln.h>
 
 /* Local headers. */
 #include "pocketsphinx_internal.h"
@@ -171,7 +170,11 @@ fsg_search_init(cmd_ln_t *config,
         /* Take the -toprule if specified. */
         if ((toprule = cmd_ln_str_r(config, "-toprule"))) {
             char *anglerule;
-            anglerule = string_join("<", toprule, ">", NULL);
+
+            anglerule = ckd_calloc(1, strlen(toprule) + 3);
+            anglerule[0] = '<';
+            strcat(anglerule, toprule);
+            strcat(anglerule, ">");
             rule = jsgf_get_rule(fsgs->jsgf, anglerule);
             ckd_free(anglerule);
             if (rule == NULL) {
@@ -343,12 +346,12 @@ fsg_search_add_altpron(fsg_search_t *fsgs, fsg_model_t *fsg)
         wid = dict_wordid(dict, word);
         if (wid != BAD_S3WID) {
             while ((wid = dict_nextalt(dict, wid)) != BAD_S3WID) {
-	        n_alt += fsg_model_add_alt(fsg, word, dict_wordstr(dict, wid));
+	        fsg_model_add_alt(fsg, word, dict_wordstr(dict, wid));
+    	        ++n_alt;
     	    }
     	}
     }
 
-    E_INFO("Added %d alternate word transitions\n", n_alt);
     return n_alt;
 }
 
@@ -726,7 +729,7 @@ fsg_search_null_prop(fsg_search_t *fsgs)
     int32 bpidx, n_entries, thresh, newscore;
     fsg_hist_entry_t *hist_entry;
     fsg_link_t *l;
-    int32 s;
+    int32 s, d;
     fsg_model_t *fsg;
 
     fsg = fsgs->fsg;
@@ -735,7 +738,6 @@ fsg_search_null_prop(fsg_search_t *fsgs)
     n_entries = fsg_history_n_entries(fsgs->history);
 
     for (bpidx = fsgs->bpidx_start; bpidx < n_entries; bpidx++) {
-        fsg_arciter_t *itor;
         hist_entry = fsg_history_entry_get(fsgs->history, bpidx);
 
         l = fsg_hist_entry_fsglink(hist_entry);
@@ -748,25 +750,22 @@ fsg_search_null_prop(fsg_search_t *fsgs)
          * propagate one step, since FSG contains transitive closure of null
          * transitions.)
          */
-        /* Add all links from from_state to dst */
-        for (itor = fsg_model_arcs(fsg, s); itor;
-             itor = fsg_arciter_next(itor)) {
-            fsg_link_t *l = fsg_arciter_get(itor);
+        for (d = 0; d < fsg_model_n_state(fsg); d++) {
+            l = fsg_model_null_trans(fsg, s, d);
 
-            /* FIXME: Need to deal with tag transitions somehow. */
-            if (fsg_link_wid(l) != -1)
-                continue;
-            newscore =
-                fsg_hist_entry_score(hist_entry) +
-                fsg_link_logs2prob(l);
+            if (l) {            /* Propagate history entry through this null transition */
+                newscore =
+                    fsg_hist_entry_score(hist_entry) +
+                    fsg_link_logs2prob(l);
 
-            if (newscore >= thresh) {
-                fsg_history_entry_add(fsgs->history, l,
-                                      fsg_hist_entry_frame(hist_entry),
-                                      newscore,
-                                      bpidx,
-                                      fsg_hist_entry_lc(hist_entry),
-                                      fsg_hist_entry_rc(hist_entry));
+                if (newscore >= thresh) {
+                    fsg_history_entry_add(fsgs->history, l,
+                                          fsg_hist_entry_frame(hist_entry),
+                                          newscore,
+                                          bpidx,
+                                          fsg_hist_entry_lc(hist_entry),
+                                          fsg_hist_entry_rc(hist_entry));
+                }
             }
         }
     }
@@ -1021,6 +1020,16 @@ fsg_search_finish(ps_search_t *search)
          fsgs->n_sen_eval,
          (fsgs->frame > 0) ? fsgs->n_sen_eval / fsgs->frame : 0,
          n_hist, (fsgs->frame > 0) ? n_hist / fsgs->frame : 0);
+
+    /* Sanity check */
+    if (fsgs->n_hmm_eval >
+        fsg_lextree_n_pnode(fsgs->lextree) * fsgs->frame) {
+        E_ERROR
+            ("SANITY CHECK #HMMEval(%d) > %d (#HMMs(%d)*#frames(%d)) FAILED\n",
+             fsgs->n_hmm_eval,
+             fsg_lextree_n_pnode(fsgs->lextree) * fsgs->frame,
+             fsg_lextree_n_pnode(fsgs->lextree), fsgs->frame);
+    }
 
     return 0;
 }
@@ -1357,7 +1366,6 @@ new_node(ps_lattice_t *dag, fsg_model_t *fsg, int sf, int ef, int32 wid, int32 a
 
         node->next = dag->nodes;
         dag->nodes = node;
-        ++dag->n_nodes;
     }
 
     return node;
@@ -1579,10 +1587,10 @@ fsg_search_lattice(ps_search_t *search)
     n = fsg_history_n_entries(fsgs->history);
     for (i = 0; i < n; ++i) {
         fsg_hist_entry_t *fh = fsg_history_entry_get(fsgs->history, i);
-        fsg_arciter_t *itor;
         ps_latnode_t *src, *dest;
         int32 ascr;
         int sf;
+        int j;
 
         /* Skip null transitions. */
         if (fh->fsglink == NULL || fh->fsglink->wid == -1)
@@ -1600,35 +1608,35 @@ fsg_search_lattice(ps_search_t *search)
         }
         src = find_node(dag, fsg, sf, fh->fsglink->wid);
     
+        /*
+         * For each non-epsilon link following this one, look for a
+         * matching node in the lattice and link to it.
+         */
         sf = fh->frame + 1;
-        for (itor = fsg_model_arcs(fsg, fsg_link_to_state(fh->fsglink));
-             itor; itor = fsg_arciter_next(itor)) {
-            fsg_link_t *link = fsg_arciter_get(itor);
+        for (j = 0; j < fsg->n_state; ++j) {
+            gnode_t *gn;
 
-            /* FIXME: Need to figure out what to do about tag transitions. */
-            if (link->wid >= 0) {
-                /*
-                 * For each non-epsilon link following this one, look for a
-                 * matching node in the lattice and link to it.
-                 */
+            for (gn = fsg_model_trans(fsg, fh->fsglink->to_state, j); gn; gn = gnode_next(gn)) {
+                fsg_link_t *link = gnode_ptr(gn);
                 if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
                     ps_lattice_link(dag, src, dest, ascr, fh->frame);
             }
-            else {
-                /*
-                 * Transitive closure on nulls has already been done, so we
-                 * just need to look one link forward from them.
-                 */
-                fsg_arciter_t *itor2;
+
+            /*
+             * Transitive closure on nulls has already been done, so we
+             * just need to look one link forward from them.
+             */
+            if (fsg_model_null_trans(fsg, fh->fsglink->to_state,j)) {
+                gnode_t *gn2;
+                int k;
 
                 /* Add all non-null links out of j. */
-                for (itor2 = fsg_model_arcs(fsg, fsg_link_to_state(link));
-                     itor2; itor2 = fsg_arciter_next(itor2)) {
-                    fsg_link_t *link = fsg_arciter_get(itor2);
-                    if (link->wid == -1)
-                        continue;
-                    if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
-                        ps_lattice_link(dag, src, dest, ascr, fh->frame);
+                for (k = 0; k < fsg->n_state; ++k) {
+                    for (gn2 = fsg_model_trans(fsg, j, k); gn2; gn2 = gnode_next(gn2)) {
+                        fsg_link_t *link = gnode_ptr(gn2);
+                        if ((dest = find_node(dag, fsg, sf, link->wid)) != NULL)
+                            ps_lattice_link(dag, src, dest, ascr, fh->frame);
+                    }
                 }
             }
         }

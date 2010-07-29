@@ -9,17 +9,15 @@ SUBDIRS = src \
 EXTRA_DIST = autogen.sh							\
 	pocketsphinx.sln						\
 	pocketsphinx.pc.in						\
+	build_for_iphone.sh						\
 	win32/pocketsphinx/pocketsphinx.vcproj				\
 	win32/pocketsphinx_batch/pocketsphinx.args			\
 	win32/pocketsphinx_batch/pocketsphinx_batch.vcproj		\
 	win32/pocketsphinx_continuous/pocketsphinx.args			\
 	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcproj	\
-	swig/Makefile							\
-	swig/Android.mk							\
-	swig/pocketsphinx.i						\
-	m4/pkg.m4							\
-	group/ABLD.BAT							\
-	group/bld.inf							\
+	m4/pkg.m4								\
+	group/ABLD.BAT								\
+	group/bld.inf								\
 	group/pocketsphinx.mmp
 
 pkgconfigdir = $(libdir)/pkgconfig

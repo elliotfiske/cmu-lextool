@@ -93,10 +93,10 @@
 #pragma warning (disable: 4018)
 #endif
 
-#include "sphinxbase/hash_table.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/case.h"
+#include "hash_table.h"
+#include "err.h"
+#include "ckd_alloc.h"
+#include "case.h"
 
 
 #if 0
@@ -591,10 +591,8 @@ hash_table_display(hash_table_t * h, int32 showdisplay)
             E_INFOCONT("|key:");
             if (showdisplay)
                 E_INFOCONT("%s", e->key);
-            else
-                E_INFOCONT("%p", e->key);
 
-            E_INFOCONT("|len:%d|val=%ld|->", e->len, (long)e->val);
+            E_INFOCONT("|len:%d|val=%d|->", e->len, e->val);
             if (e->next == NULL) {
                 E_INFOCONT("NULL\n");
             }
@@ -605,7 +603,7 @@ hash_table_display(hash_table_t * h, int32 showdisplay)
                 if (showdisplay)
                     E_INFOCONT("%s", e->key);
 
-                E_INFOCONT("|len:%d|val=%ld|->", e->len, (long)e->val);
+                E_INFOCONT("|len:%d|val=%d|->", e->len, e->val);
                 if (e->next == NULL) {
                     E_INFOCONT("NULL\n");
                 }
@@ -695,9 +693,6 @@ hash_table_free(hash_table_t * h)
 {
     hash_entry_t *e, *e2;
     int32 i;
-
-    if (h == NULL)
-        return;
 
     /* Free additional entries created for key collision cases */
     for (i = 0; i < h->size; i++) {

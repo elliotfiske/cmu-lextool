@@ -54,9 +54,9 @@
 #pragma warning (disable: 4244)
 #endif
 
-#include "sphinxbase/ckd_alloc.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/cmn.h"
+#include "ckd_alloc.h"
+#include "err.h"
+#include "cmn.h"
 
 void
 cmn_prior_set(cmn_t *cmn, mfcc_t const * vec)

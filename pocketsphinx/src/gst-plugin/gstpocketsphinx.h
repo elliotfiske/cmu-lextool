@@ -40,6 +40,7 @@
 #define __GST_POCKETSPHINX_H__
 
 #include <gst/gst.h>
+#include <sphinx_config.h>
 #include <pocketsphinx.h>
 
 G_BEGIN_DECLS

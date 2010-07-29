@@ -118,21 +118,14 @@ cdef class LogMath:
         """
         return logmath_log10_to_log(self.lmath, x)
 
-# Unfortunately, Cython doesn't actually export enums to Python...
-AUTO = NGRAM_AUTO
-ARPA = NGRAM_ARPA
-DMP = NGRAM_DMP
-UPPER = NGRAM_UPPER
-LOWER = NGRAM_LOWER
-
 cdef class NGramModel:
     """
     N-Gram language model class.
 
     This class provides access to N-Gram language models stored on
     disk.  These can be in ARPABO text format or Sphinx DMP format.
-    Methods are provided for scoring N-Grams based on the model
-    and looking up words in the model.
+    Methods are provided for scoring N-Grams based on the model,
+    looking up words in the model, and adding words to the model.
 
     @param file: Path to an N-Gram model file.
     @type file: string
@@ -191,7 +184,7 @@ cdef class NGramModel:
 
     def get_size(self):
         """
-        Get the order of this model (i.e. the 'N' in 'N-gram')
+        Get the order of this model (i.e. the "N" in "N-gram")
 
         @return: Order of this model
         @rtype: int
@@ -209,33 +202,13 @@ cdef class NGramModel:
         counts = ngram_model_get_counts(self.lm)
         return tuple([counts[i] for i in range(ngram_model_get_size(self.lm))])
 
-    def unknown_wid(self):
-        """
-        Get the ID for an unknown word.
-
-        In the case of a closed-vocabulary language model this will be -1.
-
-        @return: Word ID for the unknown word.
-        @rtype: int
-        """
-        return ngram_unknown_wid(self.lm)
-
-    def zero(self):
-        """
-        Get the log-zero value for this language model.
-
-        @return: Log value used to represent zero.
-        @rtype: float
-        """
-        return logmath_log_to_ln(self.lmath, ngram_zero(self.lm))
-
     def wid(self, word):
         """
         Get the internal ID for a word.
         
         @param word: Word in question
         @type word: string
-        @return: Internal ID for word, or -1 if not present
+        @return: Internal ID for word
         @rtype: int
         """
         return ngram_wid(self.lm, word)
@@ -246,7 +219,7 @@ cdef class NGramModel:
         
         @param word: Word ID in question
         @type word: int
-        @return: String for word, or None if not present
+        @return: String for word
         @rtype: string
         """
         return ngram_word(self.lm, wid)
@@ -258,10 +231,10 @@ cdef class NGramModel:
 
         The argument list consists of the history words (as
         null-terminated strings) of the N-Gram, in reverse order.
-        Therefore, if you wanted to get the N-Gram score for 'a whole
-        joy', you would call::
+        Therefore, if you wanted to get the N-Gram score for "a whole
+        joy", you would call::
 
-         score, n_used = model.score('joy', 'whole', 'a')
+         score, n_used = model.score("joy", "whole", "a")
 
         This function returns a tuple, consisting of the score and the
         number of words used in computing it (i.e. the effective size
@@ -277,7 +250,7 @@ cdef class NGramModel:
 
         For a closed-vocabulary model, unknown words are impossible
         and thus have zero probability.  Therefore, if C{word} is
-        unknown, this function will return a 'zero' log-probability,
+        unknown, this function will return a "zero" log-probability,
         i.e. a large negative number.
         """
         cdef int32 wid
@@ -301,7 +274,7 @@ cdef class NGramModel:
 
         This works effectively the same way as L{score}, except that
         any weights (language weight, insertion penalty) applied to
-        the language model are ignored and the 'raw' probability value
+        the language model are ignored and the "raw" probability value
         is returned.
         """
         cdef int32 wid
@@ -365,27 +338,6 @@ cdef class NGramModel:
         itor.set_iter(ngram_ng_iter(self.lm, wid, hist, n_hist))
         ckd_free(hist)
         return itor
-
-    def add_word(self, word, weight=1.0):
-        return ngram_model_add_word(self.lm, word, weight)
-
-    def recode(self, frum, too):
-        cdef int rv
-        rv = ngram_model_recode(self.lm, frum, too)
-        if rv == -1:
-            raise ValueError, "Recode from %s to %s failed" % (frum, too)
-
-    def casefold(self, kase):
-        cdef int rv
-        rv = ngram_model_casefold(self.lm, kase)
-        if rv == -1:
-            raise ValueError, "Casefolding failed"
-
-    def write(self, file_name, format=NGRAM_AUTO):
-        cdef int rv
-        rv = ngram_model_write(self.lm, file_name, format)
-        if rv == -1:
-            raise ValueError, "Write %s to file failed" % file_name
 
 cdef class NGramIter:
     """

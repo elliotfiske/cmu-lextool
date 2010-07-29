@@ -37,7 +37,7 @@
 #ifndef FE_WARP_AFFINE_H
 #define FE_WARP_AFFINE_H
 
-#include "sphinxbase/fe.h"
+#include "fe.h"
 
 
 #ifdef __cplusplus

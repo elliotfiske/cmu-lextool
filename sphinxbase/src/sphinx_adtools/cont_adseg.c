@@ -49,10 +49,10 @@
 #include <assert.h>
 #include <math.h>
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ad.h>
-#include <sphinxbase/cont_ad.h>
-#include <sphinxbase/err.h>
+#include <prim_type.h>
+#include <ad.h>
+#include <cont_ad.h>
+#include <err.h>
 
 /*
  * Segment raw A/D input data into utterances whenever silence region of given
@@ -110,7 +110,7 @@ main(int32 argc, char **argv)
         uttno++;
         sprintf(file, "%04d.raw", uttno);
         if ((fp = fopen(file, "wb")) == NULL)
-            E_FATAL("Failed to open '%s' for reading: %s\n", file, strerror(errno));
+            E_FATAL("fopen(%s,wb) failed\n", file);
         fwrite(buf, sizeof(int16), k, fp);
         uttlen = k;
         printf("Utterance %04d, logging to %s\n", uttno, file);

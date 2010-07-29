@@ -96,14 +96,14 @@
 #include <string.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/bio.h>
+#include <logmath.h>
+#include <err.h>
+#include <ckd_alloc.h>
 
 /* Local headers. */
 #include "tmat.h"
 #include "hmm.h"
+#include "bio.h"
 #include "vector.h"
 
 #define TMAT_PARAM_VERSION		"1.0"
@@ -209,11 +209,11 @@ tmat_init(char const *file_name, logmath_t *lmath, float64 tpfloor, int32 brepor
     t = (tmat_t *) ckd_calloc(1, sizeof(tmat_t));
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open transition file '%s' for reading", file_name);
+        E_FATAL_SYSTEM("fopen(%s,rb) failed\n", file_name);
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
-        E_FATAL("Failed to read header from file '%s'\n", file_name);
+        E_FATAL("bio_readhdr(%s) failed\n", file_name);
 
     /* Parse argument-value list */
     chksum_present = 0;

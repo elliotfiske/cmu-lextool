@@ -47,12 +47,12 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/fe.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/bitvec.h>
-#include <sphinxbase/err.h>
+#include <cmd_ln.h>
+#include <logmath.h>
+#include <fe.h>
+#include <feat.h>
+#include <bitvec.h>
+#include <err.h>
 
 /* Local headers. */
 #include "ps_mllr.h"
@@ -69,11 +69,6 @@ typedef enum acmod_state_e {
     ACMOD_PROCESSING,   /**< Utterance in progress. */
     ACMOD_ENDED         /**< Utterance ended, still buffering. */
 } acmod_state_t;
-
-/**
- * Dummy senone score value for unintentionally active states.
- */
-#define SENSCR_DUMMY 0x7fff
 
 /**
  * Feature space linear transform structure.
@@ -173,15 +168,12 @@ struct acmod_s {
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
     FILE *rawfh;        /**< File for writing raw audio data. */
     FILE *mfcfh;        /**< File for writing acoustic feature data. */
-    FILE *senfh;        /**< File for writing senone score data. */
-    FILE *insenfh;	/**< Input senone score file. */
-    long *framepos;     /**< File positions of recent frames in senone file. */
 
     /* A whole bunch of flags and counters: */
     uint8 state;        /**< State of utterance processing. */
     uint8 compallsen;   /**< Compute all senones? */
     uint8 grow_feat;    /**< Whether to grow feat_buf. */
-    uint8 insen_swap;   /**< Whether to swap input senone score. */
+    uint8 reserved;
     int16 output_frame; /**< Index of next frame of dynamic features. */
     int16 n_mfc_alloc;  /**< Number of frames allocated in mfc_buf */
     int16 n_mfc_frame;  /**< Number of frames active in mfc_buf */
@@ -222,15 +214,6 @@ acmod_t *acmod_init(cmd_ln_t *config, logmath_t *lmath, fe_t *fe, feat_t *fcb);
  *         NULL on failure.
  */
 ps_mllr_t *acmod_update_mllr(acmod_t *acmod, ps_mllr_t *mllr);
-
-/**
- * Start logging senone scores to a filehandle.
- *
- * @param acmod Acoustic model object.
- * @param logfh Filehandle to log to.
- * @return 0 for success, <0 on error.
- */
-int acmod_set_senfh(acmod_t *acmod, FILE *senfh);
 
 /**
  * Start logging MFCCs to a filehandle.
@@ -356,35 +339,9 @@ int acmod_process_feat(acmod_t *acmod,
                        mfcc_t **feat);
 
 /**
- * Set up a senone score dump file for input.
- *
- * @param insenfh File handle of dump file
- * @return 0 for success, <0 for failure
- */
-int acmod_set_insenfh(acmod_t *acmod, FILE *insenfh);
-
-/**
- * Read one frame of scores from senone score dump file.
- *
- * @return Number of frames read or <0 on error.
- */
-int acmod_read_scores(acmod_t *acmod);
-
-/**
- * Get a frame of dynamic feature data.
- *
- * @param inout_frame_idx Input: frame index to get, or NULL
- *                        to obtain features for the most recent frame.
- *                        Output: frame index corresponding to this
- *                        set of features.
- * @return Feature array, or NULL if requested frame is not available.
- */
-mfcc_t **acmod_get_frame(acmod_t *acmod, int *inout_frame_idx);
-
-/**
  * Score one frame of data.
  *
- * @param inout_frame_idx Input: frame index to score, or NULL
+ * @param inout_frame_idx Input: frame index to score, or -1 or NULL
  *                        to obtain scores for the most recent frame.
  *                        Output: frame index corresponding to this
  *                        set of scores.
@@ -396,18 +353,6 @@ mfcc_t **acmod_get_frame(acmod_t *acmod, int *inout_frame_idx);
  */
 int16 const *acmod_score(acmod_t *acmod,
                          int *inout_frame_idx);
-
-/**
- * Write senone dump file header.
- */
-int acmod_write_senfh_header(acmod_t *acmod, FILE *logfh);
-
-/**
- * Write a frame of senone scores to a dump file.
- */
-int acmod_write_scores(acmod_t *acmod, int n_active, uint8 const *active,
-                       int16 const *senscr, FILE *senfh);
-
 
 /**
  * Get best score and senone index for current frame.

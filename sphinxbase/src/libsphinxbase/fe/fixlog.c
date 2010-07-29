@@ -45,10 +45,9 @@
 #include <config.h>
 #endif
 
-#include "sphinxbase/prim_type.h"
-#include "sphinxbase/fixpoint.h"
-
+#include "prim_type.h"
 #include "fe_internal.h"
+#include "fixpoint.h"
 
 /* Table of log2(x/64)*(1<<DEFAULT_RADIX) */
 /* perl -e 'for (0..63) {my $x = 1 + $_/64; print "\t(uint32)(", log($x)/log(2), "*(1<<DEFAULT_RADIX)),\n"}' */
@@ -135,8 +134,7 @@ fixlog2(uint32 x)
   __asm__("cntlzw %0, %1\n": "=r"(y):"r"(x));
     x <<= y;
     y = 31 - y;
-#elif ((defined(__ARM_ARCH_5__) || defined(__ARM_ARCH_5T__) || \
-        defined(__ARM_ARCH_5TE__)) && !defined(__thumb__))
+#elif defined __ARM_ARCH_5__ || defined __ARM_ARCH_5T__ || defined __ARM_ARCH_5TE__
   __asm__("clz %0, %1\n": "=r"(y):"r"(x));
     x <<= y;
     y = 31 - y;

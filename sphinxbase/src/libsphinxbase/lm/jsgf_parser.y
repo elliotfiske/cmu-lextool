@@ -38,18 +38,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sphinxbase/hash_table.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/err.h>
+#include <hash_table.h>
+#include <ckd_alloc.h>
+#include <err.h>
 
 #include "jsgf_internal.h"
 #include "jsgf_parser.h"
 #include "jsgf_scanner.h"
-
-/* Suppress warnings from generated code */
-#if defined _MSC_VER
-#pragma warning(disable: 4273)
-#endif
 
 void yyerror(yyscan_t lex, jsgf_t *jsgf, const char *s);
 

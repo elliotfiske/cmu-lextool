@@ -63,7 +63,7 @@
 #include <sys/resource.h>
 #endif
 
-#include "sphinxbase/unlimit.h"
+#include "unlimit.h"
 
 
 /*

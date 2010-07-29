@@ -72,6 +72,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strfuncs.h>
 
 #ifdef _WIN32
 #pragma warning (disable: 4996) 
@@ -81,14 +82,15 @@
 #include <config.h>
 #endif
 
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/info.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/bio.h>
-#include <sphinxbase/pio.h>
+#include "prim_type.h"
+#include "cmd_ln.h"
+#include "ckd_alloc.h"
+#include "info.h"
+#include "err.h"
+#include "bio.h"
+
+/* Silvio Moioli: switched to stat_reply that's Windows CE friendly. */
+#include "pio.h"
 
 /** \file main_cepview.c
     \brief Main driver of cepview
@@ -242,7 +244,7 @@ read_cep(char const *file, float ***cep, int *numframes, int cepsize)
     }
 
     if ((fp = fopen(file, "rb")) == NULL) {
-        printf("Failed to open '%s' for reading: %s\n", file, strerror(errno));
+        printf("fopen(%s, rb) failed\n", file);
         return IO_ERR;
     }
 

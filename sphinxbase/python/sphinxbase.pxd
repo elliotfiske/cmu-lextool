@@ -20,7 +20,7 @@ cdef extern from "Python.h":
     void PyMem_Free(void *p)
     object PyString_FromStringAndSize(char *v, Py_ssize_t len)
 
-cdef extern from "sphinxbase/logmath.h":
+cdef extern from "logmath.h":
     ctypedef struct logmath_t
     logmath_t *logmath_init(float64 base, int shift, int use_table)
     logmath_t *logmath_retain(logmath_t *lmath)
@@ -39,7 +39,7 @@ cdef extern from "sphinxbase/logmath.h":
 
     int logmath_get_zero(logmath_t *lmath)
 
-cdef extern from "sphinxbase/cmd_ln.h":
+cdef extern from "cmd_ln.h":
     ctypedef struct cmd_ln_t
     ctypedef struct arg_t
     cmd_ln_t *cmd_ln_parse_r(cmd_ln_t *inout_cmdln, arg_t * defn,
@@ -50,23 +50,20 @@ cdef extern from "sphinxbase/cmd_ln.h":
     int cmd_ln_boolean_r(cmd_ln_t *cmdln, char *key)
     char *cmd_ln_str_r(cmd_ln_t *cmdln, char *key)
 
-cdef extern from "sphinxbase/ckd_alloc.h":
+cdef extern from "ckd_alloc.h":
     void *ckd_calloc(int n, int size)
     char *ckd_salloc(char *str)
     void ckd_free(void *ptr)
 
-cdef extern from "sphinxbase/fsg_model.h":
+cdef extern from "fsg_model.h":
     ctypedef struct fsg_model_t
 
-cdef extern from "sphinxbase/ngram_model.h":
+cdef extern from "ngram_model.h":
     ctypedef enum ngram_file_type_t:
         NGRAM_AUTO
         NGRAM_ARPA
         NGRAM_DMP
         NGRAM_DMP32
-    ctypedef enum ngram_case_t:
-        NGRAM_UPPER
-        NGRAM_LOWER
     ctypedef struct ngram_model_t
     ngram_model_t *ngram_model_read(cmd_ln_t *config,
                                     char *file_name,
@@ -78,11 +75,6 @@ cdef extern from "sphinxbase/ngram_model.h":
     ngram_model_t *ngram_model_retain(ngram_model_t *model)
     int ngram_model_free(ngram_model_t *model)
 
-    int ngram_model_recode(ngram_model_t *model, char *frum, char *too)
-    int ngram_model_casefold(ngram_model_t *model, ngram_case_t kase)
-    int ngram_model_write(ngram_model_t *model, char *file_name,
-                          ngram_file_type_t format)
-
     int ngram_model_apply_weights(ngram_model_t *model,
                                   float32 lw, float32 wip, float32 uw)
     float32 ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip,
@@ -90,16 +82,11 @@ cdef extern from "sphinxbase/ngram_model.h":
 
     int32 ngram_wid(ngram_model_t *model, char *word)
     char *ngram_word(ngram_model_t *model, int32 wid)
-    int32 ngram_unknown_wid(ngram_model_t *model)
-    int32 ngram_zero(ngram_model_t *model)
 
     int32 ngram_ng_score(ngram_model_t *model, int32 wid,
                          int32 *history, int32 n_hist, int32 *n_used)
     int32 ngram_ng_prob(ngram_model_t *model, int32 wid,
                         int32 *history, int32 n_hist, int32 *n_used)
-
-    int32 ngram_model_add_word(ngram_model_t *model,
-                               char *word, float32 weight)
 
     int32 ngram_model_get_size(ngram_model_t *model)
     int32 *ngram_model_get_counts(ngram_model_t *model)
@@ -114,7 +101,7 @@ cdef extern from "sphinxbase/ngram_model.h":
     ngram_iter_t *ngram_iter_successors(ngram_iter_t *itor)
     void ngram_iter_free(ngram_iter_t *itor)
 
-cdef extern from "sphinxbase/huff_code.h":
+cdef extern from "huff_code.h":
     ctypedef struct huff_code_t
     huff_code_t *huff_code_build_int(int *values, int *frequencies, int nvals)
     huff_code_t *huff_code_build_str(char **values, int *frequencies, int nvals)

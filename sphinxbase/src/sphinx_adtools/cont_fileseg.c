@@ -98,10 +98,10 @@
 #include <assert.h>
 #include <math.h>
 
-#include <sphinxbase/prim_type.h>
-#include <sphinxbase/ad.h>
-#include <sphinxbase/cont_ad.h>
-#include <sphinxbase/err.h>
+#include <prim_type.h>
+#include <ad.h>
+#include <cont_ad.h>
+#include <err.h>
 
 static FILE *infp;              /* File being segmented */
 static int32 swap;
@@ -353,7 +353,7 @@ main(int32 argc, char **argv)
     }
 
     if ((infp = fopen(infile, "rb")) == NULL)
-        E_FATAL("Failed to open '%s' for reading: %s\n", infile, strerror(errno));
+        E_FATAL("fopen(%s,rb) failed\n", infile);
 
     /*
      * Associate continuous listening module with opened input file and read function.
@@ -381,8 +381,8 @@ main(int32 argc, char **argv)
     /* Enable writing raw input to output by the cont module if specified */
     if (copyfile) {
         if ((rawfp = fopen(copyfile, "wb")) == NULL)
-            E_ERROR("Failed to open raw output file '%s' for writing: %s\n",
-                    copyfile, strerror(errno));
+            E_ERROR("fopen(%s,wb) failed; not dumping raw file\n",
+                    copyfile);
         else
             cont_ad_set_rawfp(cont, rawfp);
     }
@@ -513,7 +513,7 @@ main(int32 argc, char **argv)
                 else
                     strcpy(segfile, NULL_DEVICE);
                 if ((fp = fopen(segfile, "wb")) == NULL)
-                    E_FATAL("Failed to open segmentation file '%s' for writing: %s\n", segfile, strerror(errno));
+                    E_FATAL("fopen(%s,wb) failed\n", segfile);
 
                 starttime = cont->read_ts - k;
                 uttlen = 0;

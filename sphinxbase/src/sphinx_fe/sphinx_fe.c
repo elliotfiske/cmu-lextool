@@ -44,18 +44,14 @@
 #include <config.h>
 #endif
 
-#ifdef HAVE_SNDFILE_H
-#include <sndfile.h>
-#endif
-
-#include <sphinxbase/fe.h>
-#include <sphinxbase/strfuncs.h>
-#include <sphinxbase/pio.h>
-#include <sphinxbase/filename.h>
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/byteorder.h>
+#include "fe.h"
+#include "strfuncs.h"
+#include "pio.h"
+#include "filename.h"
+#include "cmd_ln.h"
+#include "err.h"
+#include "ckd_alloc.h"
+#include "byteorder.h"
 
 #include "sphinx_wave2feat.h"
 #include "cmd_ln_defn.h"
@@ -87,9 +83,6 @@ struct sphinx_wave2feat_s {
     int veclen;       /**< Length of each output vector. */
     int in_veclen;    /**< Length of each input vector (for cep<->spec). */
     int byteswap;     /**< Whether byteswapping is necessary. */
-#ifdef HAVE_SNDFILE_H
-    SNDFILE *insfh;   /**< Input sndfile handle. */
-#endif
     output_type_t const *ot;/**< Output type object. */
 };
 
@@ -130,10 +123,8 @@ detect_riff(sphinx_wave2feat_t *wtf, char const *infile)
         return -1;
     }
     /* Make sure it is actually a RIFF file. */
-    if (0 != memcmp(hdr.rifftag, "RIFF", 4)) {
-        fclose(fh);
+    if (0 != memcmp(hdr.rifftag, "RIFF", 4))
         return FALSE;
-    }
 
     /* Get relevant information. */
     cmd_ln_set_int32_r(wtf->config, "-nchans", hdr.numchannels);
@@ -188,7 +179,7 @@ detect_nist(sphinx_wave2feat_t *wtf, char const *infile)
             cmd_ln_set_float32_r(wtf->config, "-samprate", atof_c(words[2]));
         }
         if (0 == strcmp(words[0], "channel_count")) {
-            cmd_ln_set_int32_r(wtf->config, "-nchans", atoi(words[2]));
+            cmd_ln_set_float32_r(wtf->config, "-nchans", atoi(words[2]));
         }
         if (0 == strcmp(words[0], "sample_byte_format")) {
             cmd_ln_set_str_r(wtf->config, "-input_endian",
@@ -284,108 +275,6 @@ detect_sphinx_mfc(sphinx_wave2feat_t *wtf, char const *infile)
     return TRUE;
 }
 
-int
-mixnpick_channels(int16 *buf, int32 nsamp, int32 nchans, int32 whichchan)
-{
-    int i, j;
-
-    if (whichchan > 0) {
-        for (i = whichchan - 1; i < nsamp; i += nchans)
-            buf[i/nchans] = buf[i];
-    }
-    else {
-        for (i = 0; i < nsamp; i += nchans) {
-            float64 tmp = 0.0;
-            for (j = 0; j < nchans && i + j < nsamp; ++j) {
-                tmp += buf[i + j];
-            }
-            buf[i/nchans] = (int16)(tmp / nchans);
-        }
-    }
-    return i/nchans;
-}
-
-#ifdef HAVE_SNDFILE_H
-/**
- * Detect a file supported by libsndfile and parse its header if detected.
- *
- * @return TRUE if it's a supported file, FALSE if not, -1 if an error occurred.
- */
-static int
-detect_sndfile(sphinx_wave2feat_t *wtf, char const *infile)
-{
-    SNDFILE *sf;
-    SF_INFO sfinfo;
-
-    memset(&sfinfo, 0, sizeof(sfinfo));
-    /* We let other detectors catch I/O errors, since there is
-       no way to tell them from format errors when opening :( */
-    if ((sf = sf_open(infile, SFM_READ, &sfinfo)) == NULL) {
-        return FALSE;
-    }
-    /* Get relevant information. */
-    cmd_ln_set_int32_r(wtf->config, "-nchans", sfinfo.channels);
-    cmd_ln_set_float32_r(wtf->config, "-samprate", sfinfo.samplerate);
-    wtf->infile = ckd_salloc(infile);
-    wtf->insfh = sf;
-    wtf->infh = NULL;
-
-    return TRUE;
-}
-
-/**
- * Process PCM audio from a libsndfile file.  FIXME: looks a lot like
- * decode_pcm!  Also needs stereo support (as does decode_pcm).
- */
-static int
-decode_sndfile(sphinx_wave2feat_t *wtf)
-{
-    size_t nsamp;
-    int32 nfr, nchans, whichchan;
-    int nfloat, n;
-
-    nchans = cmd_ln_int32_r(wtf->config, "-nchans");
-    whichchan = cmd_ln_int32_r(wtf->config, "-whichchan");
-    fe_start_utt(wtf->fe);
-    nfloat = 0;
-    while ((nsamp = sf_read_short(wtf->insfh,
-                                  wtf->audio,
-                                  wtf->blocksize)) != 0) {
-        int16 const *inspeech;
-        size_t nvec;
-
-        /* Mix or pick channels. */
-        if (nchans > 1)
-            nsamp = mixnpick_channels(wtf->audio, nsamp, nchans, whichchan);
-
-        inspeech = wtf->audio;
-        nvec = wtf->featsize;
-        /* Consume all samples. */
-        while (nsamp) {
-            nfr = nvec;
-            fe_process_frames(wtf->fe, &inspeech, &nsamp, wtf->feat, &nfr);
-            if (nfr) {
-                if ((n = (*wtf->ot->output_frames)(wtf, wtf->feat, nfr)) < 0)
-                    return -1;
-                nfloat += n;
-            }
-        }
-        inspeech = wtf->audio;
-    }
-    /* Now process any leftover audio frames. */
-    fe_end_utt(wtf->fe, wtf->feat[0], &nfr);
-    if (nfr) {
-        if ((n = (*wtf->ot->output_frames)(wtf, wtf->feat, nfr)) < 0)
-            return -1;
-        nfloat += n;
-    }
-
-    sf_close(wtf->insfh);
-    wtf->insfh = NULL;
-    return nfloat;
-}
-#endif /* HAVE_SNDFILE_H */
-
 /**
  * Process PCM audio from a filehandle.  Assume that wtf->infh is
  * positioned just after the file header.
@@ -394,11 +283,9 @@ static int
 decode_pcm(sphinx_wave2feat_t *wtf)
 {
     size_t nsamp;
-    int32 nfr, nchans, whichchan;
+    int32 nfr;
     int nfloat, n;
 
-    nchans = cmd_ln_int32_r(wtf->config, "-nchans");
-    whichchan = cmd_ln_int32_r(wtf->config, "-whichchan");
     fe_start_utt(wtf->fe);
     nfloat = 0;
     while ((nsamp = fread(wtf->audio, 2, wtf->blocksize, wtf->infh)) != 0) {
@@ -410,10 +297,6 @@ decode_pcm(sphinx_wave2feat_t *wtf)
             for (n = 0; n < nsamp; ++n)
                 SWAP_INT16(wtf->audio + n);
         }
-
-        /* Mix or pick channels. */
-        if (nchans > 1)
-            nsamp = mixnpick_channels(wtf->audio, nsamp, nchans, whichchan);
             
         inspeech = wtf->audio;
         nvec = wtf->featsize;
@@ -493,11 +376,11 @@ decode_sphinx_mfc(sphinx_wave2feat_t *wtf)
 }
 
 static const audio_type_t types[] = {
-#ifdef HAVE_SNDFILE_H
-    { "-sndfile", &detect_sndfile, &decode_sndfile },
-#endif
     { "-mswav", &detect_riff, &decode_pcm },
     { "-nist", &detect_nist, &decode_pcm },
+#ifdef HAVE_SNDFILE
+    { "-sndfile", &detect_sndfile, &decode_sndfile },
+#endif
     { "-raw", &detect_raw, &decode_pcm }
 };
 static const int ntypes = sizeof(types)/sizeof(types[0]);
@@ -742,7 +625,7 @@ detect_audio_type(sphinx_wave2feat_t *wtf, char const *infile)
         || cmd_ln_boolean_r(wtf->config, "-cep2spec")) {
         int rv = mfcc_type.detect(wtf, infile);
         if (rv == -1)
-            goto error_out;
+            return NULL;
         return &mfcc_type;
     }
 
@@ -753,9 +636,8 @@ detect_audio_type(sphinx_wave2feat_t *wtf, char const *infile)
         if (cmd_ln_boolean_r(wtf->config, atype->name)) {
             rv = (*atype->detect)(wtf, infile);
             if (rv == -1)
-                goto error_out;
-            else if (rv == TRUE)
-                break;
+                return NULL;
+            break;
         }
     }
     if (i == ntypes) {
@@ -765,26 +647,21 @@ detect_audio_type(sphinx_wave2feat_t *wtf, char const *infile)
             atype = &types[i];
             rv = (*atype->detect)(wtf, infile);
             if (rv == -1)
-                goto error_out;
+                return NULL;
             else if (rv == TRUE)
-                break;
+            break;
         }
         if (i == ntypes)
-            goto error_out;
+            atype = NULL;
     }
     return atype;
- error_out:
-    if (wtf->infh)
-        fclose(wtf->infh);
-    wtf->infh = NULL;
-    return NULL;
 }
 
 int
 sphinx_wave2feat_convert_file(sphinx_wave2feat_t *wtf,
                               char const *infile, char const *outfile)
 {
-    int nchans, minfft, nfft, nfloat, veclen;
+    int minfft, nfft, nfloat, veclen;
     audio_type_t const *atype;
     int fshift, fsize;
 
@@ -818,19 +695,15 @@ sphinx_wave2feat_convert_file(sphinx_wave2feat_t *wtf,
 
     /* Set up the input and output buffers. */
     fe_get_input_size(wtf->fe, &fshift, &fsize);
-    /* Want to get at least a whole frame plus shift in here.  Also we
-       will either pick or mix multiple channels so we need to read
-       them all at once. */
-    nchans = cmd_ln_int32_r(wtf->config, "-nchans");
-    wtf->blocksize = cmd_ln_int32_r(wtf->config, "-blocksize") * nchans;
-    if (wtf->blocksize < (fsize + fshift) * nchans) {
+    /* Want to get at least a whole frame plus shift in here. */
+    wtf->blocksize = cmd_ln_int32_r(wtf->config, "-blocksize");
+    if (wtf->blocksize < fsize + fshift) {
         E_INFO("Block size of %d too small, increasing to %d\n",
-               wtf->blocksize,
-               (fsize + fshift) * nchans);
-        wtf->blocksize = (fsize + fshift) * nchans;
+               wtf->blocksize, fsize + fshift);
+        wtf->blocksize = fsize + fshift;
     }
     wtf->audio = ckd_calloc(wtf->blocksize, sizeof(*wtf->audio));
-    wtf->featsize = (wtf->blocksize / nchans - fsize) / fshift;
+    wtf->featsize = (wtf->blocksize - fsize) / fshift;
 
     /* Use the maximum of the input and output frame sizes to allocate this. */
     veclen = wtf->veclen;

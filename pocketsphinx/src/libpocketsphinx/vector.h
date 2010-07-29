@@ -53,7 +53,7 @@
 #include <stdio.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/prim_type.h>
+#include <prim_type.h>
 
 typedef float32 *vector_t;
 

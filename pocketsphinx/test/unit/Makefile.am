@@ -31,13 +31,6 @@ check_PROGRAMS = \
 	test_jsgf \
 	test_lm_read \
 	test_dict \
-	test_dict2pid \
-	test_glextree \
-	test_fsg2_search \
-	test_tokentree \
-	test_senfh \
-	test_alignment \
-	test_state_align \
 	$(gst_programs)
 
 TESTS = $(check_PROGRAMS)
@@ -60,4 +53,4 @@ LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la \
 	-lsphinxbase
 
-CLEANFILES = *.log *.out *.lat *.mfc *.raw *.dic *.sen
+CLEANFILES = *.log *.out *.lat *.mfc *.raw *.dic

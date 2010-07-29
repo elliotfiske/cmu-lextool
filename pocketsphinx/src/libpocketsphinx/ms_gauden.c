@@ -119,9 +119,9 @@
 #include <float.h>
 
 /* SphinxBase headers. */
-#include <sphinxbase/bio.h>
-#include <sphinxbase/err.h>
-#include <sphinxbase/ckd_alloc.h>
+#include <bio.h>
+#include <err.h>
+#include <ckd_alloc.h>
 
 /* Local headesr. */
 #include "ms_gauden.h"
@@ -198,11 +198,11 @@ gauden_param_read(float32 ***** out_param,      /* Alloc space iff *out_param ==
     E_INFO("Reading mixture gaussian parameter: %s\n", file_name);
 
     if ((fp = fopen(file_name, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open file '%s' for reading", file_name);
+        E_FATAL_SYSTEM("fopen(%s,rb) failed\n", file_name);
 
     /* Read header, including argument-value info and 32-bit byteorder magic */
     if (bio_readhdr(fp, &argname, &argval, &byteswap) < 0)
-        E_FATAL("Failed to read header from file '%s'\n", file_name);
+        E_FATAL("bio_readhdr(%s) failed\n", file_name);
 
     /* Parse argument-value list */
     chksum_present = 0;

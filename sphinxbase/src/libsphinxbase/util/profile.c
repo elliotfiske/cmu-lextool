@@ -81,9 +81,9 @@
 #pragma warning (disable: 4996)
 #endif
 
-#include "sphinxbase/profile.h"
-#include "sphinxbase/err.h"
-#include "sphinxbase/ckd_alloc.h"
+#include "profile.h"
+#include "err.h"
+#include "ckd_alloc.h"
 
 /* Silvio Moioli: updated to use Unicode */
 #ifdef _WIN32_WCE
@@ -302,7 +302,7 @@ host_endian(void)
     file = "/tmp/__EnDiAn_TeSt__";
 
     if ((fp = fopen(file, "wb")) == NULL) {
-        E_ERROR("Failed to open file '%s' for writing: %s\n", file, strerror(errno));
+        E_ERROR("fopen(%s,wb) failed\n", file);
         return -1;
     }
 
@@ -310,7 +310,7 @@ host_endian(void)
 
     k = (int32) BYTE_ORDER_MAGIC;
     if (fwrite(&k, sizeof(int32), 1, fp) != 1) {
-        E_ERROR("Failed to write to file '%s'\n", file);
+        E_ERROR("fwrite(%s) failed\n", file);
         fclose(fp);
         unlink(file);
         return -1;
@@ -318,12 +318,12 @@ host_endian(void)
 
     fclose(fp);
     if ((fp = fopen(file, "rb")) == NULL) {
-        E_ERROR("Failed to open file '%s' for reading: %s\n", file, strerror(errno));
+        E_ERROR("fopen(%s,rb) failed\n", file);
         unlink(file);
         return -1;
     }
     if (fread(buf, 1, sizeof(int32), fp) != sizeof(int32)) {
-        E_ERROR("Failed to read from file '%s'\n", file);
+        E_ERROR("fread(%s) failed\n", file);
         fclose(fp);
         unlink(file);
         return -1;

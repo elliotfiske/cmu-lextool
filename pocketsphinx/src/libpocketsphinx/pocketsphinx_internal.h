@@ -45,11 +45,11 @@
 #define __POCKETSPHINX_INTERNAL_H__
 
 /* SphinxBase headers. */
-#include <sphinxbase/cmd_ln.h>
-#include <sphinxbase/logmath.h>
-#include <sphinxbase/fe.h>
-#include <sphinxbase/feat.h>
-#include <sphinxbase/profile.h>
+#include <cmd_ln.h>
+#include <logmath.h>
+#include <fe.h>
+#include <feat.h>
+#include <profile.h>
 
 /* Local headers. */
 #include "pocketsphinx.h"
@@ -192,8 +192,6 @@ struct ps_decoder_s {
 
     /* Search modules. */
     glist_t searches;        /**< List of search modules. */
-    /* TODO: Convert this to a stack of searches each with their own
-     * lookahead value. */
     ps_search_t *search;     /**< Currently active search module. */
     ps_search_t *phone_loop; /**< Phone loop search for lookahead. */
     int pl_window;           /**< Window size for phoneme lookahead. */
@@ -205,7 +203,6 @@ struct ps_decoder_s {
     uint32 n_frame;     /**< Total number of frames processed. */
     char const *mfclogdir; /**< Log directory for MFCC files. */
     char const *rawlogdir; /**< Log directory for audio files. */
-    char const *senlogdir; /**< Log directory for senone score files. */
 };
 
 #endif /* __POCKETSPHINX_INTERNAL_H__ */

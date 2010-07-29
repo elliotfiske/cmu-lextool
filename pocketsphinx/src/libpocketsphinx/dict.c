@@ -35,14 +35,10 @@
  *
  */
 
-/* System headers. */
 #include <string.h>
 
-/* SphinxBase headers. */
-#include <sphinxbase/pio.h>
-#include <sphinxbase/strfuncs.h>
-
-/* Local headers. */
+#include "pio.h"
+#include "strfuncs.h"
 #include "dict.h"
 
 
@@ -203,10 +199,8 @@ dict_read(FILE * fp, dict_t * d)
                 E_ERROR
                     ("Line %d: dict_add_word (%s) failed (duplicate?); ignored\n",
                      lineno, wptr[0]);
-            else {
-                stralloc += strlen(d->word[w].word);
-                phnalloc += d->word[w].pronlen * sizeof(s3cipid_t);
-            }
+            stralloc += strlen(d->word[w].word);
+            phnalloc += d->word[w].pronlen * sizeof(s3cipid_t);
         }
     }
     E_INFO("Allocated %d KiB for strings, %d KiB for phones\n",
@@ -256,34 +250,28 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
     lineiter_t *li;
     dict_t *d;
     s3cipid_t sil;
-    char const *dictfile = NULL, *fillerfile = NULL;
-
-    if (config) {
-        dictfile = cmd_ln_str_r(config, "-dict");
-        fillerfile = cmd_ln_str_r(config, "-fdict");
-    }
+    char const *dictfile = cmd_ln_str_r(config, "-dict");
+    char const *fillerfile = cmd_ln_str_r(config, "-fdict");
 
     /*
      * First obtain #words in dictionary (for hash table allocation).
      * Reason: The PC NT system doesn't like to grow memory gradually.  Better to allocate
      * all the required memory in one go.
      */
-    fp = NULL;
+    if ((fp = fopen(dictfile, "r")) == NULL)
+        E_FATAL_SYSTEM("fopen(%s,r) failed\n", dictfile);
     n = 0;
-    if (dictfile) {
-        if ((fp = fopen(dictfile, "r")) == NULL)
-            E_FATAL_SYSTEM("Failed to open dictionary file '%s' for reading", dictfile);
-        for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
-            if (li->buf[0] != '#')
-                n++;
-        }
-        rewind(fp);
+    for (li = lineiter_start(fp); li; li = lineiter_next(li)) {
+        if (li->buf[0] != '#')
+            n++;
     }
+    rewind(fp);
 
     fp2 = NULL;
     if (fillerfile) {
         if ((fp2 = fopen(fillerfile, "r")) == NULL)
-            E_FATAL_SYSTEM("Failed to open filler dictionary file '%s' for reading", fillerfile);
+            E_FATAL_SYSTEM("fopen(%s,r) failed\n", fillerfile);
+
         for (li = lineiter_start(fp2); li; li = lineiter_next(li)) {
             if (li->buf[0] != '#')
                 n++;
@@ -308,21 +296,17 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
            d->max_words * sizeof(dictword_t) / 1024);
     d->word = (dictword_t *) ckd_calloc(d->max_words, sizeof(dictword_t));      /* freed in dict_free() */
     d->n_word = 0;
-    if (mdef)
-        d->mdef = bin_mdef_retain(mdef);
+    d->mdef = bin_mdef_retain(mdef);
 
     /* Create new hash table for word strings; case-insensitive word strings */
-    if (config && cmd_ln_exists_r(config, "-dictcase"))
-        d->nocase = cmd_ln_boolean_r(config, "-dictcase");
+    d->nocase = cmd_ln_boolean_r(config, "-dictcase");
     d->ht = hash_table_new(d->max_words, d->nocase);
 
     /* Digest main dictionary file */
-    if (fp) {
-        E_INFO("Reading main dictionary: %s\n", dictfile);
-        dict_read(fp, d);
-        fclose(fp);
-        E_INFO("%d words read\n", d->n_word);
-    }
+    E_INFO("Reading main dictionary: %s\n", dictfile);
+    dict_read(fp, d);
+    fclose(fp);
+    E_INFO("%d words read\n", d->n_word);
 
     /* Now the filler dictionary file, if it exists */
     d->filler_start = d->n_word;
@@ -332,10 +316,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
         fclose(fp2);
         E_INFO("%d words read\n", d->n_word - d->filler_start);
     }
-    if (mdef)
-        sil = bin_mdef_silphone(mdef);
-    else
-        sil = 0;
+    sil = bin_mdef_silphone(mdef);
     if (dict_wordid(d, S3_START_WORD) == BAD_S3WID) {
         dict_add_word(d, S3_START_WORD, &sil, 1);
     }
@@ -365,7 +346,7 @@ dict_init(cmd_ln_t *config, bin_mdef_t * mdef)
 
 
 s3wid_t
-dict_wordid(dict_t *d, const char *word)
+dict_wordid(dict_t * d, const char *word)
 {
     int32 w;
 
@@ -379,7 +360,7 @@ dict_wordid(dict_t *d, const char *word)
 
 
 int
-dict_filler_word(dict_t *d, s3wid_t w)
+dict_filler_word(dict_t * d, s3wid_t w)
 {
     assert(d);
     assert((w >= 0) && (w < d->n_word));
@@ -393,7 +374,7 @@ dict_filler_word(dict_t *d, s3wid_t w)
 }
 
 int
-dict_real_word(dict_t *d, s3wid_t w)
+dict_real_word(dict_t * d, s3wid_t w)
 {
     assert(d);
     assert((w >= 0) && (w < d->n_word));
@@ -457,8 +438,7 @@ dict_free(dict_t * d)
         ckd_free((void *) d->word);
     if (d->ht)
         hash_table_free(d->ht);
-    if (d->mdef)
-        bin_mdef_free(d->mdef);
+    bin_mdef_free(d->mdef);
     ckd_free((void *) d);
 
     return 0;

@@ -46,7 +46,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\../../bin/Release/sphinxbase.tlb"
+				TypeLibraryName=".\../../lib/Release/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -100,7 +100,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../bin/Release/sphinxbase.bsc"
+				OutputFile=".\../../lib/Release/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -140,7 +140,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\../../bin/Debug/sphinxbase.tlb"
+				TypeLibraryName=".\../../lib/Debug/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -195,7 +195,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../bin/Debug/sphinxbase.bsc"
+				OutputFile=".\../../lib/Debug/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -235,7 +235,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\../../bin/Release/sphinxbase.tlb"
+				TypeLibraryName=".\../../lib/Release/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -269,11 +269,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="winmm.lib"
-				OutputFile=".\../../bin/Release/sphinxbase.dll"
+				OutputFile=".\../../lib/Release/sphinxbase.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\../../bin/Release/sphinxbase.pdb"
-				ImportLibrary=".\../../bin/Release/sphinxbase.lib"
+				ProgramDatabaseFile=".\../../lib/Release/sphinxbase.pdb"
+				ImportLibrary=".\../../lib/Release/sphinxbase.lib"
 				TargetMachine="0"
 			/>
 			<Tool
@@ -285,7 +285,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../bin/Release/sphinxbase.bsc"
+				OutputFile=".\../../lib/Release/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCCodeSignTool"
@@ -330,7 +330,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\../../bin/Debug/sphinxbase.tlb"
+				TypeLibraryName=".\../../lib/Debug/sphinxbase.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -363,12 +363,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="winmm.lib"
-				OutputFile=".\../../bin/Debug/sphinxbase.dll"
+				OutputFile=".\../../lib/Debug/sphinxbase.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\../../bin/Debug/sphinxbase.pdb"
-				ImportLibrary=".\../../bin/Debug/sphinxbase.lib"
+				ProgramDatabaseFile=".\../../lib/Debug/sphinxbase.pdb"
+				ImportLibrary=".\../../lib/Debug/sphinxbase.lib"
 				TargetMachine="0"
 			/>
 			<Tool
@@ -380,7 +380,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../../bin/Debug/sphinxbase.bsc"
+				OutputFile=".\../../lib/Debug/sphinxbase.bsc"
 			/>
 			<Tool
 				Name="VCCodeSignTool"
