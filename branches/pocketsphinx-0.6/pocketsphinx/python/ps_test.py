@@ -1,6 +1,8 @@
 import pocketsphinx as ps
 
-decoder = ps.Decoder()
+decoder = ps.Decoder(hmm="../model/hmm/en_US/hub4wsj_sc_8k",
+                     lm="../model/lm/en_US/hub4.5000.DMP",
+                     dict="../model/lm/en_US/cmu07a.dic")
 fh = open("../test/data/goforward.raw", "rb")
 nsamp = decoder.decode_raw(fh)
 print "Decoded %d samples" % nsamp

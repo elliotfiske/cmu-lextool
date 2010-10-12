@@ -6,7 +6,7 @@ except:
 import os
 
 sb_includes = ['../../sphinxbase/include', '../../sphinxbase/win32/include']
-sb_libdirs = ['../../sphinxbase/lib/debug']
+sb_libdirs = ['../../sphinxbase/lib/debug','../../sphinxbase/bin/debug']
 
 setup(name = 'PocketSphinx',
       version = '0.6',
