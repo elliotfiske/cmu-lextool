@@ -30,6 +30,7 @@ check_PROGRAMS = \
 	test_fsg3 \
 	test_jsgf \
 	test_lm_read \
+	test_lm_pizza \
 	test_dict \
 	test_dict2pid \
 	test_senfh \

@@ -202,6 +202,10 @@
       ARG_STRING,									\
       NULL,										\
       "Word trigram language model input file" },					\
+{ "-pizza",										\
+      ARG_BOOLEAN,									\
+      "no",										\
+      "Use the pizza language model" },					\
 { "-lmctl",										\
       ARG_STRING,									\
       NULL,										\

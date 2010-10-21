@@ -45,6 +45,7 @@
 
 /* SphinxBase headers. */
 #include <sphinxbase/ckd_alloc.h>
+#include <sphinxbase/ngram_model_pizza.h>
 #include <sphinxbase/listelem_alloc.h>
 #include <sphinxbase/err.h>
 
@@ -187,7 +188,22 @@ ngram_search_init(cmd_ln_t *config,
                                           sizeof(**ngs->active_word_list));
 
     /* Load language model(s) */
-    if ((path = cmd_ln_str_r(config, "-lmctl"))) {
+    if (cmd_ln_boolean_r(config, "-pizza")) {
+        static const char *name = "pizza";
+        ngram_model_t *lm;
+
+        /* Create the pizza language model. */
+        lm = ngram_model_pizza_init(config, acmod->lmath);
+        /* Add it to the language model set. */
+        ngs->lmset = ngram_model_set_init(config,
+                                          &lm, (char **)&name,
+                                          NULL, 1);
+        if (ngs->lmset == NULL) {
+            E_ERROR("Failed to initialize language model set\n");
+            goto error_out;
+        }
+    }
+    else if ((path = cmd_ln_str_r(config, "-lmctl"))) {
         ngs->lmset = ngram_model_set_read(config, path, acmod->lmath);
         if (ngs->lmset == NULL) {
             E_ERROR("Failed to read language model control file: %s\n",
