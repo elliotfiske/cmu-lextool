@@ -43,6 +43,7 @@ main(int argc, char *argv[])
 		perror("Could not open goforward.raw");
 		return 1;
 	}
+	fseek(rawfh, 42, SEEK_SET);
 	TEST_ASSERT(ps_decode_raw(ps, rawfh, "goforward", -1));
 	hyp = ps_get_hyp(ps, &score, &uttid);
 	printf("%s: %s (%d)\n", uttid, hyp, score);
