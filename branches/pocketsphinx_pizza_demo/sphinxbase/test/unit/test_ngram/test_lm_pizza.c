@@ -15,15 +15,16 @@ main(int argc, char *argv[])
 	lmath = logmath_init(1.0001, 0, 0);
 	/* Create the pizza language model. */
 	model = ngram_model_pizza_init(NULL, lmath);
-	/* Score a word sequence with it. */
+	ngram_model_apply_weights(model, 42, 1.0, 1.0);
+	/* Score a word with history using it. */
 	score = ngram_score(model, "spinach", "olives",
 			    "pepperoni", "extra_cheese", NULL);
-	printf("score = %d\n", score);
-	TEST_ASSERT(score == -19460);
+	printf("score = %d = %g\n", score, logmath_exp(lmath, score));
+	TEST_ASSERT(score == -19460 * 42);
 	score = ngram_prob(model, "spinach", "olives",
 			   "pepperoni", "extra_cheese", NULL);
-	printf("score = %d\n", score);
-	TEST_ASSERT(score == -100);
+	printf("score = %d = %g\n", score, logmath_exp(lmath, score));
+	TEST_ASSERT(score == -19460);
 	/* Free it. */
 	ngram_model_free(model);
 	/* Free the log-arithmetic object. */
