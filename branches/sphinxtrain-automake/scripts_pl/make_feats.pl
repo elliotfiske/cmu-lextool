@@ -147,7 +147,6 @@ EOP
 	 "-eo \"$ST::CFG_FEATFILE_EXTENSION\"".
 	 " @ARGV");
 
-
 __END__
 
 =head1 NAME
