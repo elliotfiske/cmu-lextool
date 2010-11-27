@@ -1,4 +1,6 @@
-nobase_pkglib_SCRIPTS = \
+scriptsdir=$(pkglibdir)/scripts_pl
+
+nobase_scripts_SCRIPTS = \
 	00.verify/verify_all.pl \
 	01.lda_train/baum_welch.pl \
 	01.lda_train/lda_train.pl \
@@ -79,7 +81,6 @@ nobase_pkglib_SCRIPTS = \
 	new_experiment.pl \
 	RunAll.pl \
 	setup_SphinxTrain.pl \
-	setup_tutorial.pl \
 	sphinxDocGen.sh.in \
 	texFormat.pl \
 	tune_senones.pl

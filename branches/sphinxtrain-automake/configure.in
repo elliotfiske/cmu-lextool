@@ -204,6 +204,7 @@ src/programs/printp/Makefile
 src/programs/prunetree/Makefile
 src/programs/tiestate/Makefile
 src/programs/wave2feat/Makefile
+src/programs/sphinxtrain
 test/Makefile
 ])
 

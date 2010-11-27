@@ -1,3 +1,7 @@
+bin_SCRIPTS = sphinxtrain
+
+EXTRA_DIST = sphinxtrain.in
+
 SUBDIRS = \
 agg_seg \
 bldtree \
