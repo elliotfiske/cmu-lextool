@@ -54,7 +54,8 @@ $end = 100 unless defined($end);
 
 # What pieces would you like to compute.
 my @steps =
-    ("$ST::CFG_SCRIPT_DIR/00.verify/verify_all.pl",
+    ("$ST::CFG_SCRIPT_DIR/make_feats.pl",
+     "$ST::CFG_SCRIPT_DIR/00.verify/verify_all.pl",
      "$ST::CFG_SCRIPT_DIR/01.lda_train/slave_lda.pl",
      "$ST::CFG_SCRIPT_DIR/02.mllt_train/slave_mllt.pl",
      "$ST::CFG_SCRIPT_DIR/05.vector_quantize/slave.VQ.pl",

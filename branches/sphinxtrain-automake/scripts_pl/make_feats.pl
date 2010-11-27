@@ -42,11 +42,6 @@ use lib catdir(dirname($0), 'lib');
 use SphinxTrain::Config;
 use SphinxTrain::Util;
 
-
-if ($#ARGV == -1) {
-  pod2usage(2);
-}
-
 Getopt::Long::Configure('no_auto_abbrev', 'pass_through');
 
 GetOptions('help|h' => \$help,
@@ -116,10 +111,12 @@ EOP
   $params = join (" ", @params);
 }
 
-if (defined $ctl) {
-  if (! -s "$cfg_file") {
+ if (! -s "$cfg_file") {
     print ("unable to find default configuration file, use -cfg file.cfg or create etc/sphinx_train.cfg for default\n");
     exit -3;
+ }
+  if (! defined $ctl) {
+    $ctl = $ST::CFG_LISTOFFILES;
   }
 
   require $cfg_file;
@@ -144,21 +141,12 @@ if (defined $ctl) {
   }
   close CTL;
 
-  system("bin/wave2feat -verbose yes $params -c \"$ctl\" -$ST::CFG_WAVFILE_TYPE yes " .
+  system("\"$ST::CFG_BIN_DIR\"/wave2feat -verbose yes $params -c \"$ctl\" -$ST::CFG_WAVFILE_TYPE yes " .
 	 "-di \"$ST::CFG_WAVFILES_DIR\" -ei \"$ST::CFG_WAVFILE_EXTENSION\" ".
 	 "-do \"$ST::CFG_FEATFILES_DIR\" " .
 	 "-eo \"$ST::CFG_FEATFILE_EXTENSION\"".
 	 " @ARGV");
 
-} else {
-  system("bin/wave2feat @ARGV");
-  open PARAM, ">$param_file" or die "Failed to open param file $param_file for writing: $!";
-  while (@ARGV) {
-      ($k, $v) = splice @ARGV, 0, 2;
-      print PARAM "$k $v\n";
-  }
-  close PARAM;
-}
 
 __END__
 
