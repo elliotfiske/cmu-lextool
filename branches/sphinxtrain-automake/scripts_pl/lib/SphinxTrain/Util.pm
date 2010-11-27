@@ -292,7 +292,7 @@ sub RunTool {
       # doesn't work in Windows. We use the next best thing, "-e"
       foreach ("", ".exe") {
 	  if (-e "$fcmd$_") {
-	      $cmd .= $_;
+	      $cmd = "$fcmd$_";
 	      last;
 	  }
       }
