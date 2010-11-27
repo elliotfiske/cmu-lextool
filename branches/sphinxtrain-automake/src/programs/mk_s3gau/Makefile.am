@@ -1,4 +1,4 @@
-bin_PROGRAMS = mk_s3gau
+pkglibexec_PROGRAMS = mk_s3gau
 
 mk_s3gau_SOURCES = mk_s3gau.c parse_cmd_ln.c parse_cmd_ln.h 
 

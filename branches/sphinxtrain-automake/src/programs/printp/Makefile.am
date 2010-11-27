@@ -1,4 +1,4 @@
-bin_PROGRAMS = printp
+pkglibexec_PROGRAMS = printp
 
 printp_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

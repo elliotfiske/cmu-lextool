@@ -1,4 +1,4 @@
-bin_PROGRAMS = kdtree
+pkglibexec_PROGRAMS = kdtree
 
 kdtree_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

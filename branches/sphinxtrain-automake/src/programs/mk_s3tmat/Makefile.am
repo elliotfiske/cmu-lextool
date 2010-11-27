@@ -1,4 +1,4 @@
-bin_PROGRAMS = mk_s3tmat
+pkglibexec_PROGRAMS = mk_s3tmat
 
 mk_s3tmat_SOURCES = mk_s3tmat.c parse_cmd_ln.c parse_cmd_ln.h 
 

@@ -1,4 +1,4 @@
-bin_PROGRAMS = mk_mllr_class
+pkglibexec_PROGRAMS = mk_mllr_class
 
 mk_mllr_class_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

@@ -1,4 +1,4 @@
-bin_PROGRAMS = mk_ts2cb
+pkglibexec_PROGRAMS = mk_ts2cb
 
 mk_ts2cb_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

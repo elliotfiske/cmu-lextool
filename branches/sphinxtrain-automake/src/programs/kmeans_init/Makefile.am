@@ -1,4 +1,4 @@
-bin_PROGRAMS = kmeans_init
+pkglibexec_PROGRAMS = kmeans_init
 
 kmeans_init_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

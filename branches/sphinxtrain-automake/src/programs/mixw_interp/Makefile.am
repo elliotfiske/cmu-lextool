@@ -1,4 +1,4 @@
-bin_PROGRAMS = mixw_interp
+pkglibexec_PROGRAMS = mixw_interp
 
 mixw_interp_SOURCES = cmd_ln_defn.h main.c parse_cmd_ln.c parse_cmd_ln.h 
 

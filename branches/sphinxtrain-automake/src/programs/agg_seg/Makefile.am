@@ -1,4 +1,4 @@
-bin_PROGRAMS = agg_seg
+pkglibexec_PROGRAMS = agg_seg
 
 agg_seg_SOURCES = \
 	 add_seg.h \

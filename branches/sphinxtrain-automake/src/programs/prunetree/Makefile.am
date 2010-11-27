@@ -1,4 +1,4 @@
-bin_PROGRAMS = prunetree
+pkglibexec_PROGRAMS = prunetree
 
 prunetree_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

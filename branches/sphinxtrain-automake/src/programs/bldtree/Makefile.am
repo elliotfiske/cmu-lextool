@@ -1,4 +1,4 @@
-bin_PROGRAMS = bldtree
+pkglibexec_PROGRAMS = bldtree
 
 bldtree_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

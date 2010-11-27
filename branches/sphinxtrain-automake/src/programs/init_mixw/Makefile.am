@@ -1,4 +1,4 @@
-bin_PROGRAMS = init_mixw
+pkglibexec_PROGRAMS = init_mixw
 
 init_mixw_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

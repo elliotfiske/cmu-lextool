@@ -1,4 +1,4 @@
-bin_PROGRAMS = make_quests
+pkglibexec_PROGRAMS = make_quests
 
 EXTRA_DIST = make_tree.c new_quest.c
 

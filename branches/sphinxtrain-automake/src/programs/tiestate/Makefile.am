@@ -1,4 +1,4 @@
-bin_PROGRAMS = tiestate
+pkglibexec_PROGRAMS = tiestate
 
 tiestate_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

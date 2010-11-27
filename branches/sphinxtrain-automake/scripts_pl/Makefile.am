@@ -1,4 +1,4 @@
-EXTRA_DIST = \
+nobase_pkglib_SCRIPTS = \
 	00.verify/verify_all.pl \
 	01.lda_train/baum_welch.pl \
 	01.lda_train/lda_train.pl \

@@ -1,4 +1,4 @@
-bin_PROGRAMS = mk_s3mixw
+pkglibexec_PROGRAMS = mk_s3mixw
 
 mk_s3mixw_SOURCES = mk_s3mixw.c parse_cmd_ln.c parse_cmd_ln.h 
 

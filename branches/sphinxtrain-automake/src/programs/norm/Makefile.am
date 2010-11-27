@@ -1,4 +1,4 @@
-bin_PROGRAMS = norm
+pkglibexec_PROGRAMS = norm
 
 norm_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 

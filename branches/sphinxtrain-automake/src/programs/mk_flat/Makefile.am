@@ -1,4 +1,4 @@
-bin_PROGRAMS = mk_flat
+pkglibexec_PROGRAMS = mk_flat
 
 mk_flat_SOURCES = main.c parse_cmd_ln.c parse_cmd_ln.h 
 
