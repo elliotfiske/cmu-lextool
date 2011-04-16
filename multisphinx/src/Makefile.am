@@ -1,4 +1,0 @@
-SUBDIRS = \
-	libsphinxbase \
-	libpocketsphinx \
-	programs
