@@ -66,6 +66,7 @@
 
 #include <s3/corpus.h>
 
+#include <sphinxbase/pio.h>
 #include <sphinxbase/ckd_alloc.h>
 #include <s3/read_line.h>
 #include <s3/prefetch.h>
@@ -114,8 +115,6 @@ corpus_read_next_lsn_line(char **trans);
 
 #define N_DATA_TYPE	9
 
-#define MAX_LSN_LINE	8192
-
 /* The root directory for the speech corpus.  Each line of the control
  * file is appended to this directory */
 static const char *data_dir[N_DATA_TYPE];
@@ -134,7 +133,7 @@ static const char *lsn_filename = NULL;
 static FILE *lsn_fp = NULL;
 
 /* The current LSN transcript */
-static char lsn_line[MAX_LSN_LINE];
+static lineiter_t *lsn_lineiter = NULL;
 
 
 /* The current mllr tranform */
@@ -1340,7 +1339,16 @@ corpus_next_utt()
      *       behind ctl_fp. */
 
     if (lsn_fp) {
-	if (read_line(lsn_line, MAX_LSN_LINE, NULL, lsn_fp) == NULL) {
+        if (lsn_lineiter == NULL) {
+            lsn_lineiter = lineiter_start(lsn_fp);
+        } else {
+            lsn_lineiter = lineiter_next(lsn_lineiter);
+        }
+        
+        if ((lsn_lineiter == NULL) || (lsn_lineiter->buf == NULL)) {
+            if (lsn_lineiter) {
+                lineiter_free(lsn_lineiter);
+            }
 	    /* ahem! */
 	    E_FATAL("File length mismatch at line %d in %s\n", n_proc, lsn_filename);
 	}
@@ -1677,7 +1685,7 @@ corpus_read_next_lsn_line(char **trans)
     char *s;
 
     /* look for a close paren in the line */
-    s = strrchr(lsn_line, ')');
+    s = strrchr(lsn_lineiter->buf, ')');
 
     if (s != NULL) {
 	int nspace;
@@ -1689,7 +1697,7 @@ corpus_read_next_lsn_line(char **trans)
 	    *s = '\0';		/* terminate the string at the paren */
 
 	    /* search for a matching open paren */
-	    for (s--; (s >= lsn_line) && (*s != '('); s--);
+	    for (s--; (s >= lsn_lineiter->buf) && (*s != '('); s--);
 
 	    if (*s == '(') {
 		/* found a matching open paren */
@@ -1717,16 +1725,16 @@ corpus_read_next_lsn_line(char **trans)
 
 		/* look for the first non-whitespace character before
 		   the open paren */
-		for (--s; (s >= lsn_line) && isspace((int)*s); s--);
-		if (s < lsn_line) {
-		  E_FATAL("Utterance transcription is empty: %s\n", lsn_line);
+		for (--s; (s >= lsn_lineiter->buf) && isspace((int)*s); s--);
+		if (s < lsn_lineiter->buf) {
+		  E_FATAL("Utterance transcription is empty: %s\n", lsn_lineiter->buf);
 		}
 		++s;
 		*s = '\0';	/* terminate the string at the first whitespace character
 				   following the first non-whitespace character found above */
 	    }
 	    else {
-		E_ERROR("Expected open paren after ending close paren in line:\n%s", lsn_line);
+		E_ERROR("Expected open paren after ending close paren in line:\n%s", lsn_lineiter->buf);
 		return S3_ERROR;
 	    }
 	}
@@ -1742,7 +1750,7 @@ corpus_read_next_lsn_line(char **trans)
 	   for the ordering of the LSN file */
     }
 
-    *trans = strdup(lsn_line);
+    *trans = strdup(lsn_lineiter->buf);
     
     return S3_SUCCESS;
 }
