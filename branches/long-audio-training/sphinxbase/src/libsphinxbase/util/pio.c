@@ -252,14 +252,15 @@ fopen_compchk(const char *file, int32 * ispipe)
 }
 
 lineiter_t *
-lineiter_init(FILE *fh)
+lineiter_init(lineiter_t *li, FILE *fh)
 {
-    lineiter_t *li;
-
-    li = ckd_calloc(1, sizeof(*li));
-    li->buf = ckd_malloc(128);
+    if (li == NULL) {
+        li = ckd_calloc(1, sizeof(*li));
+        li->buf = ckd_malloc(128);
+        li->bsiz = 128;
+    }
+    
     li->buf[0] = '\0';
-    li->bsiz = 128;
     li->len = 0;
     li->fh = fh;
     
@@ -271,7 +272,7 @@ lineiter_start(FILE *fh)
 {
     lineiter_t *li;
 
-    li = lineiter_init(fh);
+    li = lineiter_init(NULL, fh);
 
     li = lineiter_next(li);
     
@@ -320,17 +321,13 @@ lineiter_next(lineiter_t *li)
 
 /* michal */
 lineiter_t *
-lineiter_next2(lineiter_t *li)
+lineiter_trim(lineiter_t *li)
 {
     char *start;
     char *end;
     
     if (li == NULL)
         return NULL;
-        
-    do {
-        li = lineiter_next(li);
-    } while (li && (li->buf[0] == '#'));
     
     start = li->buf;
     end = li->buf + strlen(li->buf) - 1;
@@ -349,6 +346,20 @@ lineiter_next2(lineiter_t *li)
     *(++end) = 0;
     
     memmove(li->buf, start, end - start + 1);
+    
+    return li;
+}
+
+/* michal */
+lineiter_t *
+lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped)
+{
+    while ((li != NULL) && (li->buf[0] == '#')) {
+        li = lineiter_next(li);
+        
+        if (n_skipped != NULL)
+            (*n_skipped)++;
+    }
     
     return li;
 }

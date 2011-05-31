@@ -115,8 +115,11 @@ corpus_read_next_lsn_line(char **trans);
 
 #define N_DATA_TYPE	9
 
-/* michal */
-#define LINEITER_READLINE(iter,fp) (iter = (((iter) == NULL) ? lineiter_start(fp) : lineiter_next(iter)))
+/* Returns first line that is not a comment, trimms leading and trailing whitespaces and '\n' characters.
+ * n_skipped is increased by count of commented lines skipped.
+ */
+#define LI_NEXT_SKIP_TRIM_COUNT(iter,fp,n_skipped) lineiter_trim(lineiter_skip_comments(LINEITER_READLINE((iter),(fp)), (n_skipped)))
+#define LI_NEXT_SKIP_TRIM(iter,fp) LI_NEXT_SKIP_TRIM_COUNT((iter), (fp), NULL)
 
 /* The root directory for the speech corpus.  Each line of the control
  * file is appended to this directory */
@@ -158,13 +161,9 @@ static FILE *ctl_fp = NULL;
  *
  */
 
-/*static char ctl_line_a[8192] = "";
-static char ctl_line_b[8192] = ""; michal */
-
 #define NO_FRAME	0xffffffff
 
 /* The current line from a control file */
-/*static char *cur_ctl_line = ctl_line_a; michal */
 static lineiter_t *cur_ctl_lineiter = NULL;
 
 /* The current path from a control file */
@@ -179,7 +178,6 @@ static uint32 cur_ctl_ef = NO_FRAME;
 /* The current utt id (NULL indicates NONE) from a control file */
 static char *cur_ctl_utt_id = NULL;
 
-/*static char *next_ctl_line = ctl_line_b; michal */
 static lineiter_t *next_ctl_lineiter = NULL;
 
 static char *next_ctl_path = NULL;
@@ -355,9 +353,7 @@ corpus_set_ctl_filename(const char *ctl_filename)
 	return S3_ERROR;
     }
 
-    /* michal */
-    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
-/*    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL) {*/
+    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -468,11 +464,8 @@ corpus_reset()
     if (sil_fp)
 	rewind(sil_fp);
 
-    /* michal */
-/*    cur_ctl_line[0] = '\0';*/
-    cur_ctl_lineiter = lineiter_init(ctl_fp);
-    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
-/*    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL) {*/
+    cur_ctl_lineiter = lineiter_init(cur_ctl_lineiter, ctl_fp);
+    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -580,6 +573,7 @@ corpus_set_partition(uint32 r,
 {
     uint32 lineno;
 /*    char ignore[MAXPATHLEN+1];*/
+    lineiter_t *ignore = NULL;
     uint32 run_len;
     uint32 n_skip;
 
@@ -590,13 +584,11 @@ corpus_set_partition(uint32 r,
     }
 
 /*    for (lineno = 0; read_line(ignore, MAXPATHLEN + 1, &lineno, ctl_fp););*/
-    for (lineno = 0; LINEITER_READLINE(next_ctl_lineiter, ctl_fp); lineno++) fprintf(stderr, "MICHAL: %s\n", next_ctl_lineiter->buf);
+    for (lineno = 0; (ignore = LI_NEXT_SKIP_TRIM_COUNT(ignore, ctl_fp, &lineno)); lineno++); /* michal - FIX lines counting*/
 
     rewind(ctl_fp);
 
-    /* michal */
-    /*read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp);*/
-    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
+    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
 
     run_len = lineno / of_s;
 
@@ -1225,12 +1217,23 @@ corpus_set_mllr_filename(const char *fn)
 int
 corpus_init()
 {
-    /* Currently, just do some sanity checking */
+    /* Do some sanity checking,
+     * initialize cur_ctl_lineiter and next_ctl_lineiter, which could not be NULL, unless they were initializer before.
+     * (GLITCH WARNING - this function probably should be responsible for initialization
+     *  but next_ctl_lineiter is already initialized and re-initialization causes program fail.
+     *  - Michal)
+     */
 
     if (ctl_fp == NULL) {
 	E_ERROR("Control file not given before corpus_init() called\n");
 
 	return S3_ERROR;
+	
+    } else {
+        if (cur_ctl_lineiter == NULL)
+            cur_ctl_lineiter = lineiter_init(cur_ctl_lineiter, ctl_fp);
+        if (next_ctl_lineiter == NULL)
+            next_ctl_lineiter = lineiter_init(next_ctl_lineiter, ctl_fp);
     }
 
     if (requires_sent &&
@@ -1304,9 +1307,8 @@ corpus_init()
 int
 corpus_next_utt()
 {
-    /* michal */
     lineiter_t *tt;
-
+    
     tt = cur_ctl_lineiter;
     cur_ctl_lineiter = next_ctl_lineiter;
     next_ctl_lineiter = tt;
@@ -1360,7 +1362,7 @@ corpus_next_utt()
         } else {
             lsn_lineiter = lineiter_next(lsn_lineiter);
         }*/
-        LINEITER_READLINE(lsn_lineiter, lsn_fp);
+        LI_NEXT_SKIP_TRIM(lsn_lineiter, lsn_fp);
         
         if ((lsn_lineiter == NULL) || (lsn_lineiter->buf == NULL)) {
             if (lsn_lineiter) {
@@ -1371,12 +1373,9 @@ corpus_next_utt()
 	}
     }  
 
-    /* michal */
-    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
-/*    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL)*/
+    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
     if (next_ctl_lineiter == NULL)
-/*	next_ctl_line[0] = '\0';*/
-        next_ctl_lineiter = lineiter_init(ctl_fp);
+        next_ctl_lineiter = lineiter_init(next_ctl_lineiter, ctl_fp);
 
     return TRUE;
 }
@@ -1522,7 +1521,7 @@ corpus_read_next_sent_file(char **trans)
     /* open the current file */
     fp = open_file_for_reading(DATA_TYPE_SENT);
 
-    LINEITER_READLINE(li, fp);
+    LI_NEXT_SKIP_TRIM(li, fp);
 /*    if (read_line(big_str, 8192, NULL, fp) == NULL) {*/
     if (li == NULL) {
 	E_ERROR("Unable to read data in sent file %s\n",

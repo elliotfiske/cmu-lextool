@@ -109,6 +109,11 @@ extern "C" {
 }
 #endif
 
+
+/* michal */
+#define LINEITER_READLINE(iter,fp) ((iter) = (((iter) == NULL) ? lineiter_start(fp) : lineiter_next(iter)))
+
+
 /**
  * Like fopen, but use popen and zcat if it is determined that "file" is compressed
  * (i.e., has a .z, .Z, .gz, or .GZ extension).
@@ -185,7 +190,7 @@ typedef struct lineiter_t {
  * Init lineiter structure without reading from file.
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_init(FILE *fh);
+lineiter_t *lineiter_init(lineiter_t *li, FILE *fh);
 
 /**
  * Start reading lines from a file.
@@ -200,10 +205,17 @@ SPHINXBASE_EXPORT
 lineiter_t *lineiter_next(lineiter_t *li);
 
 /**
- * Move to the next line in the file.
+ * Strip leading and trailing whitespaces.
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_next2(lineiter_t *li);
+lineiter_t *lineiter_trim(lineiter_t *li);
+
+/**
+ * If the line is a comment iterate until a non-comment line is found.
+ * If not NULL, n_skipped is increased by the amount of skipped commented lines.
+ */
+SPHINXBASE_EXPORT
+lineiter_t *lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped);
 
 /**
  * Stop reading lines from a file.
