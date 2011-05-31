@@ -182,6 +182,12 @@ typedef struct lineiter_t {
 } lineiter_t;
 
 /**
+ * Init lineiter structure without reading from file.
+ */
+SPHINXBASE_EXPORT
+lineiter_t *lineiter_init(FILE *fh);
+
+/**
  * Start reading lines from a file.
  */
 SPHINXBASE_EXPORT
@@ -192,6 +198,12 @@ lineiter_t *lineiter_start(FILE *fh);
  */
 SPHINXBASE_EXPORT
 lineiter_t *lineiter_next(lineiter_t *li);
+
+/**
+ * Move to the next line in the file.
+ */
+SPHINXBASE_EXPORT
+lineiter_t *lineiter_next2(lineiter_t *li);
 
 /**
  * Stop reading lines from a file.

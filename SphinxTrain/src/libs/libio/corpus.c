@@ -115,6 +115,9 @@ corpus_read_next_lsn_line(char **trans);
 
 #define N_DATA_TYPE	9
 
+/* michal */
+#define LINEITER_READLINE(iter,fp) (iter = (((iter) == NULL) ? lineiter_start(fp) : lineiter_next(iter)))
+
 /* The root directory for the speech corpus.  Each line of the control
  * file is appended to this directory */
 static const char *data_dir[N_DATA_TYPE];
@@ -155,13 +158,14 @@ static FILE *ctl_fp = NULL;
  *
  */
 
-static char ctl_line_a[8192] = "";
-static char ctl_line_b[8192] = "";
+/*static char ctl_line_a[8192] = "";
+static char ctl_line_b[8192] = ""; michal */
 
 #define NO_FRAME	0xffffffff
 
 /* The current line from a control file */
-static char *cur_ctl_line = ctl_line_a;
+/*static char *cur_ctl_line = ctl_line_a; michal */
+static lineiter_t *cur_ctl_lineiter = NULL;
 
 /* The current path from a control file */
 static char *cur_ctl_path = NULL;
@@ -175,7 +179,8 @@ static uint32 cur_ctl_ef = NO_FRAME;
 /* The current utt id (NULL indicates NONE) from a control file */
 static char *cur_ctl_utt_id = NULL;
 
-static char *next_ctl_line = ctl_line_b;
+/*static char *next_ctl_line = ctl_line_b; michal */
+static lineiter_t *next_ctl_lineiter = NULL;
 
 static char *next_ctl_path = NULL;
 
@@ -350,13 +355,16 @@ corpus_set_ctl_filename(const char *ctl_filename)
 	return S3_ERROR;
     }
 
-    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL) {
+    /* michal */
+    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
+/*    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL) {*/
+    if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
 	return S3_ERROR;
     }
 
-    parse_ctl_line(next_ctl_line,
+    parse_ctl_line(next_ctl_lineiter->buf,
 		   &next_ctl_path,
 		   NULL,
 		   NULL,
@@ -460,14 +468,18 @@ corpus_reset()
     if (sil_fp)
 	rewind(sil_fp);
 
-    cur_ctl_line[0] = '\0';
-    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL) {
+    /* michal */
+/*    cur_ctl_line[0] = '\0';*/
+    cur_ctl_lineiter = lineiter_init(ctl_fp);
+    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
+/*    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL) {*/
+    if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
 	return S3_ERROR;
     }
 
-    parse_ctl_line(next_ctl_line,
+    parse_ctl_line(next_ctl_lineiter->buf,
 		   &next_ctl_path,
 		   NULL,
 		   NULL,
@@ -567,7 +579,7 @@ corpus_set_partition(uint32 r,
 		     uint32 of_s)
 {
     uint32 lineno;
-    char ignore[MAXPATHLEN+1];
+/*    char ignore[MAXPATHLEN+1];*/
     uint32 run_len;
     uint32 n_skip;
 
@@ -577,11 +589,14 @@ corpus_set_partition(uint32 r,
 	return S3_ERROR;
     }
 
-    for (lineno = 0; read_line(ignore, MAXPATHLEN + 1, &lineno, ctl_fp););
+/*    for (lineno = 0; read_line(ignore, MAXPATHLEN + 1, &lineno, ctl_fp););*/
+    for (lineno = 0; LINEITER_READLINE(next_ctl_lineiter, ctl_fp); lineno++) fprintf(stderr, "MICHAL: %s\n", next_ctl_lineiter->buf);
 
     rewind(ctl_fp);
 
-    read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp);
+    /* michal */
+    /*read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp);*/
+    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
 
     run_len = lineno / of_s;
 
@@ -1289,11 +1304,12 @@ corpus_init()
 int
 corpus_next_utt()
 {
-    char *tt;
+    /* michal */
+    lineiter_t *tt;
 
-    tt = cur_ctl_line;
-    cur_ctl_line = next_ctl_line;
-    next_ctl_line = tt;
+    tt = cur_ctl_lineiter;
+    cur_ctl_lineiter = next_ctl_lineiter;
+    next_ctl_lineiter = tt;
 
     if (cur_ctl_path) {
 	free(cur_ctl_path);
@@ -1303,7 +1319,7 @@ corpus_next_utt()
 	free(cur_ctl_utt_id);
 	cur_ctl_utt_id = NULL;
     }
-    parse_ctl_line(cur_ctl_line,
+    parse_ctl_line(cur_ctl_lineiter->buf,
 		   &cur_ctl_path,
 		   &cur_ctl_sf,
 		   &cur_ctl_ef,
@@ -1313,7 +1329,7 @@ corpus_next_utt()
 	free(next_ctl_path);
 	next_ctl_path = NULL;
     }
-    parse_ctl_line(next_ctl_line,
+    parse_ctl_line(next_ctl_lineiter->buf,
 		   &next_ctl_path,
 		   NULL,
 		   NULL,
@@ -1327,7 +1343,7 @@ corpus_next_utt()
 
     ++n_proc;
 
-    if (strlen(cur_ctl_line) == 0)
+    if (strlen(cur_ctl_lineiter->buf) == 0)
 	/* this means that the prior call reached the ctl file EOF */
 	return FALSE;
 
@@ -1339,11 +1355,12 @@ corpus_next_utt()
      *       behind ctl_fp. */
 
     if (lsn_fp) {
-        if (lsn_lineiter == NULL) {
+/*        if (lsn_lineiter == NULL) {
             lsn_lineiter = lineiter_start(lsn_fp);
         } else {
             lsn_lineiter = lineiter_next(lsn_lineiter);
-        }
+        }*/
+        LINEITER_READLINE(lsn_lineiter, lsn_fp);
         
         if ((lsn_lineiter == NULL) || (lsn_lineiter->buf == NULL)) {
             if (lsn_lineiter) {
@@ -1354,8 +1371,12 @@ corpus_next_utt()
 	}
     }  
 
-    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL)
-	next_ctl_line[0] = '\0';
+    /* michal */
+    LINEITER_READLINE(next_ctl_lineiter, ctl_fp);
+/*    if (read_line(next_ctl_line, MAXPATHLEN, NULL, ctl_fp) == NULL)*/
+    if (next_ctl_lineiter == NULL)
+/*	next_ctl_line[0] = '\0';*/
+        next_ctl_lineiter = lineiter_init(ctl_fp);
 
     return TRUE;
 }
@@ -1491,7 +1512,8 @@ static int
 corpus_read_next_sent_file(char **trans)
 {
     FILE *fp;
-    char big_str[8192];
+/*    char big_str[8192];*/
+    lineiter_t *li;
 
     /* start prefetching the next file, if one. */
     if (strlen(next_ctl_path) > 0)
@@ -1500,7 +1522,9 @@ corpus_read_next_sent_file(char **trans)
     /* open the current file */
     fp = open_file_for_reading(DATA_TYPE_SENT);
 
-    if (read_line(big_str, 8192, NULL, fp) == NULL) {
+    LINEITER_READLINE(li, fp);
+/*    if (read_line(big_str, 8192, NULL, fp) == NULL) {*/
+    if (li == NULL) {
 	E_ERROR("Unable to read data in sent file %s\n",
 		mk_filename(DATA_TYPE_SENT, cur_ctl_path));
 	
@@ -1509,7 +1533,9 @@ corpus_read_next_sent_file(char **trans)
 
     fclose(fp);
 
-    *trans = strdup(big_str);
+/*    *trans = strdup(big_str);*/
+    *trans = strdup(li->buf);
+    lineiter_free(li);
 
     return S3_SUCCESS;
 }

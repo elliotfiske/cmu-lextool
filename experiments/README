@@ -1,0 +1,8 @@
+etc-rita
+	new language models, phonetic dictionary etc.
+
+logdir-an4, logdir-rita
+	original logs from the current version of SphinxTrain
+
+logdir-an4-mod1, logdir-rita-mod1
+	logs from the modified SphinxTrain (this branch)
