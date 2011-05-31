@@ -1,0 +1,113 @@
+        INFO: main.c(194): Compiled on May 31 2011 at 10:26:21
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/bin/bw \
+	-moddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_architecture/rita.ci.mdef \
+	-ts2cbfn .cont. \
+	-mixwfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/mixture_weights \
+	-mwfloor 1e-08 \
+	-tmatfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/transition_matrices \
+	-meanfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/means \
+	-varfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/variances \
+	-ltsoov no \
+	-dictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.dic \
+	-fdictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.filler \
+	-ctlfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.fileids \
+	-part 1 \
+	-npart 1 \
+	-cepdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/feat \
+	-cepext mfc \
+	-lsnfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.transcription \
+	-accumdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/bwaccumdir/rita_buff_1 \
+	-varfloor 0.0001 \
+	-topn 1 \
+	-abeam 1e-90 \
+	-bbeam 1e-10 \
+	-agc none \
+	-cmn current \
+	-varnorm no \
+	-meanreest yes \
+	-varreest yes \
+	-2passvar no \
+	-tmatreest yes \
+	-fullvar no \
+	-diagfull no \
+	-feat 1s_c_d_dd \
+	-ceplen 13 \
+	-timing no 
+
+Current configuration:
+[NAME]			[DEFLT]		[VALUE]
+-2passvar		no		no
+-abeam			1e-100		1.000000e-90
+-accumdir				/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/bwaccumdir/rita_buff_1
+-agc			none		none
+-agcthresh		2.0		2.000000e+00
+-bbeam			1e-100		1.000000e-10
+-cb2mllrfn		.1cls.		.1cls.
+-cepdir					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/feat
+-cepext			.mfc		mfc
+-ceplen			13		13
+-ckptintv				0
+-cmn			current		current
+-cmninit		8.0		8.0
+-ctlfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.fileids
+-diagfull		no		no
+-dictfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.dic
+-example		no		no
+-fdictfn				/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.filler
+-feat			1s_c_d_dd	1s_c_d_dd
+-fullsuffixmatch	no		no
+-fullvar		no		no
+-help			no		no
+-hmmdir					
+-latdir					
+-latext					
+-lda					
+-ldaaccum		no		no
+-ldadim			0		0
+-lsnfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.transcription
+-ltsoov			no		no
+-lw			11.5		1.150000e+01
+-maxuttlen		0		0
+-meanfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/means
+-meanreest		yes		yes
+-mixwfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/mixture_weights
+-mixwreest		yes		yes
+-mllrmat				
+-mmie			no		no
+-mmie_type		rand		rand
+-moddeffn				/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_architecture/rita.ci.mdef
+-mwfloor		0.00001		1.000000e-08
+-npart					1
+-nskip					0
+-outphsegdir				
+-outputfullpath		no		no
+-part					1
+-pdumpdir				
+-phsegdir				
+-phsegext		phseg		phseg
+-runlen			-1		-1
+-sentdir				
+-sentext		sent		sent
+-spthresh		0.0		0.000000e+00
+-svspec					
+-timing			yes		no
+-tmatfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/transition_matrices
+-tmatreest		yes		yes
+-topn			4		1
+-tpfloor		0.0001		1.000000e-04
+-ts2cbfn				.cont.
+-varfloor		0.00001		1.000000e-04
+-varfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/variances
+-varnorm		no		no
+-varreest		yes		yes
+-viterbi		no		no
+
+INFO: feat.c(697): Initializing feature stream to type: '1s_c_d_dd', ceplen=13, CMN='current', VARNORM='no', AGC='none'
+INFO: cmn.c(142): mean[0]= 12.00, mean[1..12]= 0.0
+INFO: main.c(283): Reading /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_architecture/rita.ci.mdef
+INFO: model_def_io.c(587): Model definition info:
+INFO: model_def_io.c(588): 51 total models defined (51 base, 0 tri)
+INFO: model_def_io.c(589): 204 total states
+INFO: model_def_io.c(590): 153 total tied states
+INFO: model_def_io.c(591): 153 total tied CI 

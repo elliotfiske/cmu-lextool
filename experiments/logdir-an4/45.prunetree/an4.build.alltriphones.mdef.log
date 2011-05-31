@@ -1,0 +1,45 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/mk_mdef_gen \
+	-phnlstfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.phonelist \
+	-oalltphnmdef /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef \
+	-dictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic \
+	-fdictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler \
+	-n_state_pm 3 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-dictfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic
+-example	no	no
+-fdictfn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler
+-help		no	no
+-ignorewpos	no	no
+-inCDmdef		
+-inCImdef		
+-lsnfn			
+-maxtriphones	100000	100000
+-minocc		1	1
+-n_state_pm	3	3
+-oalltphnmdef		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef
+-ocimdef		
+-ocountfn		
+-ountiedmdef		
+-phnlstfn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.phonelist
+-triphnlstfn		
+
+INFO: main.c(93): Will write alltriphone mdef file /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef
+INFO: mk_mdef_gen.c(186): 0 single word triphones in input phone list
+INFO: mk_mdef_gen.c(187): 0 word beginning triphones in input phone list
+INFO: mk_mdef_gen.c(188): 0 word internal triphones in input phone list
+INFO: mk_mdef_gen.c(189): 0 word ending triphones in input phone list
+INFO: mk_mdef_gen.c(276): Reading dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic
+INFO: mk_mdef_gen.c(313): 130 words in dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic
+INFO: mk_mdef_gen.c(276): Reading dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler
+INFO: mk_mdef_gen.c(313): 3 words in dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler
+INFO: mk_mdef_gen.c(432): 133 words in dictionary
+INFO: mk_mdef_gen.c(433): 2900 unique single word triphones in dictionary
+INFO: mk_mdef_gen.c(434): 1420 unique word beginning triphones in dictionary
+INFO: mk_mdef_gen.c(435): 167 unique word internal triphones in dictionary
+INFO: mk_mdef_gen.c(436): 1885 unique word ending triphones in dictionary
+INFO: mk_mdef_gen.c(878): 34 n_base, 6372 n_tri
+INFO: mk_mdef_gen.c(950): Wrote mdef file /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef
+Tue May 31 10:46:08 2011

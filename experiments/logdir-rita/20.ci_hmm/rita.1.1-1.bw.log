@@ -1,0 +1,160 @@
+        INFO: main.c(194): Compiled on May 31 2011 at 10:44:15
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/bin/bw \
+	-moddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_architecture/rita.ci.mdef \
+	-ts2cbfn .cont. \
+	-mixwfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/mixture_weights \
+	-mwfloor 1e-08 \
+	-tmatfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/transition_matrices \
+	-meanfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/means \
+	-varfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/variances \
+	-ltsoov no \
+	-dictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.dic \
+	-fdictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.filler \
+	-ctlfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.fileids \
+	-part 1 \
+	-npart 1 \
+	-cepdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/feat \
+	-cepext mfc \
+	-lsnfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.transcription \
+	-accumdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/bwaccumdir/rita_buff_1 \
+	-varfloor 0.0001 \
+	-topn 1 \
+	-abeam 1e-90 \
+	-bbeam 1e-10 \
+	-agc none \
+	-cmn current \
+	-varnorm no \
+	-meanreest yes \
+	-varreest yes \
+	-2passvar no \
+	-tmatreest yes \
+	-fullvar no \
+	-diagfull no \
+	-feat 1s_c_d_dd \
+	-ceplen 13 \
+	-timing no 
+
+Current configuration:
+[NAME]			[DEFLT]		[VALUE]
+-2passvar		no		no
+-abeam			1e-100		1.000000e-90
+-accumdir				/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/bwaccumdir/rita_buff_1
+-agc			none		none
+-agcthresh		2.0		2.000000e+00
+-bbeam			1e-100		1.000000e-10
+-cb2mllrfn		.1cls.		.1cls.
+-cepdir					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/feat
+-cepext			.mfc		mfc
+-ceplen			13		13
+-ckptintv				0
+-cmn			current		current
+-cmninit		8.0		8.0
+-ctlfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.fileids
+-diagfull		no		no
+-dictfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.dic
+-example		no		no
+-fdictfn				/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.filler
+-feat			1s_c_d_dd	1s_c_d_dd
+-fullsuffixmatch	no		no
+-fullvar		no		no
+-help			no		no
+-hmmdir					
+-latdir					
+-latext					
+-lda					
+-ldaaccum		no		no
+-ldadim			0		0
+-lsnfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita_train.transcription
+-ltsoov			no		no
+-lw			11.5		1.150000e+01
+-maxuttlen		0		0
+-meanfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/means
+-meanreest		yes		yes
+-mixwfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/mixture_weights
+-mixwreest		yes		yes
+-mllrmat				
+-mmie			no		no
+-mmie_type		rand		rand
+-moddeffn				/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_architecture/rita.ci.mdef
+-mwfloor		0.00001		1.000000e-08
+-npart					1
+-nskip					0
+-outphsegdir				
+-outputfullpath		no		no
+-part					1
+-pdumpdir				
+-phsegdir				
+-phsegext		phseg		phseg
+-runlen			-1		-1
+-sentdir				
+-sentext		sent		sent
+-spthresh		0.0		0.000000e+00
+-svspec					
+-timing			yes		no
+-tmatfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/transition_matrices
+-tmatreest		yes		yes
+-topn			4		1
+-tpfloor		0.0001		1.000000e-04
+-ts2cbfn				.cont.
+-varfloor		0.00001		1.000000e-04
+-varfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/variances
+-varnorm		no		no
+-varreest		yes		yes
+-viterbi		no		no
+
+INFO: feat.c(697): Initializing feature stream to type: '1s_c_d_dd', ceplen=13, CMN='current', VARNORM='no', AGC='none'
+INFO: cmn.c(142): mean[0]= 12.00, mean[1..12]= 0.0
+INFO: main.c(283): Reading /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_architecture/rita.ci.mdef
+INFO: model_def_io.c(587): Model definition info:
+INFO: model_def_io.c(588): 51 total models defined (51 base, 0 tri)
+INFO: model_def_io.c(589): 204 total states
+INFO: model_def_io.c(590): 153 total tied states
+INFO: model_def_io.c(591): 153 total tied CI states
+INFO: model_def_io.c(592): 51 total tied transition matrices
+INFO: model_def_io.c(593): 4 max state/model
+INFO: model_def_io.c(594): 4 min state/model
+INFO: s3mixw_io.c(116): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/mixture_weights [153x1x1 array]
+INFO: s3tmat_io.c(115): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/transition_matrices [51x3x4 array]
+INFO: mod_inv.c(300): inserting tprob floor 1.000000e-04 and renormalizing
+INFO: s3gau_io.c(166): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/means [153x1x1 array]
+INFO: s3gau_io.c(166): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/model_parameters/rita.ci_cont_flatinitial/variances [153x1x1 array]
+INFO: gauden.c(180): 153 total mgau
+INFO: gauden.c(154): 1 feature streams (|0|=39 )
+INFO: gauden.c(191): 1 total densities
+INFO: gauden.c(97): min_var=1.000000e-04
+INFO: gauden.c(169): compute 1 densities/frame
+INFO: main.c(395): Will reestimate mixing weights.
+INFO: main.c(397): Will reestimate means.
+INFO: main.c(399): Will reestimate variances.
+INFO: main.c(407): Will reestimate transition matrices
+INFO: main.c(420): Reading main lexicon: /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.dic
+INFO: lexicon.c(233): 7539 entries added from /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.dic
+INFO: main.c(432): Reading filler lexicon: /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.filler
+INFO: lexicon.c(233): 11 entries added from /home/xkrajnan/Plocha/GSoC/PocketSphinx/rita/etc/rita.filler
+INFO: corpus.c(1281): Will process all remaining utts starting at 0
+INFO: main.c(639): Reestimation: Baum-Welch
+column defns
+	<seq>
+	<id>
+	<n_frame_in>
+	<n_frame_del>
+	<n_state_shmm>
+	<avg_states_alpha>
+	<avg_states_beta>
+	<avg_states_reest>
+	<avg_posterior_prune>
+	<frame_log_lik>
+	<utt_log_lik>
+	... timing info ... 
+utt>     0 16k_prideandprejudice_01_austen_64kb 32811INFO: cmn.c(175): CMN: 10.46 -0.32 -0.18  0.10 -0.27 -0.31 -0.25 -0.16 -0.10 -0.15 -0.04 -0.18 -0.04 
+    0INFO: cvt2triphone.c(199): no multiphones defined, no conversion done
+ 12968 2809  359 719 8.987637e-11 -9.118822e+00 -2.991977e+05
+utt>     1 16k_prideandprejudice_02_austen_64kb 29596INFO: cmn.c(175): CMN: 10.37 -0.33 -0.17  0.10 -0.27 -0.30 -0.25 -0.15 -0.10 -0.15 -0.04 -0.18 -0.03 
+    0 12204 2668 ERROR: "backward.c", line 430: Failed to align audio to trancript: final state of the search is not reached
+ERROR: "baum_welch.c", line 331: klett/16k_prideandprejudice_02_austen_64kb ignored
+
+WARNING: "read_line.c", line 80: line 1 may be truncated because it's longer than max_len 8192
+utt>     2 16k_prideandprejudice_03_austen_64kb 58594INFO: cmn.c(175): CMN: 11.00 -0.35 -0.18  0.08 -0.30 -0.23 -0.23 -0.24 -0.12 -0.11 -0.13 -0.14 -0.00 
+    0WARNING: "mk_phone_list.c", line 173: Unable to lookup word 'FOLLOWE' in the lexicon
+WARNING: "next_utt_states.c", line 79: Tue May 31 10:47:23 2011

@@ -1,0 +1,6 @@
+MODULE: DECODE Decoding using models previously trained
+        Decoding 130 segments starting at 0 (part 1 of 1) 
+        0% 
+WARNING: This step had 0 ERROR messages and 1 WARNING messages.  Please check the log file for details.
+        Aligning results to find error rate
+        SENTENCE ERROR: 76.2% (99/130)   WORD ERROR RATE: 33.9% (261/773)
