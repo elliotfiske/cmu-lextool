@@ -252,7 +252,7 @@ fopen_compchk(const char *file, int32 * ispipe)
 }
 
 lineiter_t *
-lineiter_start(FILE *fh)
+lineiter_init(FILE *fh)
 {
     lineiter_t *li;
 
@@ -262,6 +262,16 @@ lineiter_start(FILE *fh)
     li->bsiz = 128;
     li->len = 0;
     li->fh = fh;
+    
+    return li;
+}
+
+lineiter_t *
+lineiter_start(FILE *fh)
+{
+    lineiter_t *li;
+
+    li = lineiter_init(fh);
 
     li = lineiter_next(li);
     
@@ -305,6 +315,41 @@ lineiter_next(lineiter_t *li)
     }
 
     /* Shouldn't get here. */
+    return li;
+}
+
+/* michal */
+lineiter_t *
+lineiter_next2(lineiter_t *li)
+{
+    char *start;
+    char *end;
+    
+    if (li == NULL)
+        return NULL;
+        
+    do {
+        li = lineiter_next(li);
+    } while (li && (li->buf[0] == '#'));
+    
+    start = li->buf;
+    end = li->buf + strlen(li->buf) - 1;
+
+    while (*start == ' ' || 
+	   *start == '\t') {
+	start++;
+    }
+
+    while ((end >= start) &&
+	   (*end == ' ' || 
+           *end == '\t' ||
+	   *end == '\r' ||
+	   *end == '\n'))
+	end--;
+    *(++end) = 0;
+    
+    memmove(li->buf, start, end - start + 1);
+    
     return li;
 }
 
