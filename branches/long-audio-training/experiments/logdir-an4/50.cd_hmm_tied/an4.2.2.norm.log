@@ -1,0 +1,43 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/norm \
+	-accumdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1 \
+	-mixwfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/mixture_weights \
+	-tmatfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/transition_matrices \
+	-meanfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/means \
+	-varfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/variances \
+	-fullvar no 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-accumdir		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1,
+-constE		3.0	3.000000e+00
+-dcountfn		
+-example	no	no
+-fullvar	no	no
+-help		no	no
+-inmeanfn		
+-inmixwfn		
+-invarfn		
+-meanfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/means
+-mixwfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/mixture_weights
+-mmie		no	no
+-oaccumdir		
+-regmatfn		
+-tiedvar	no	no
+-tmatfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/transition_matrices
+-varfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/variances
+
+INFO: main.c(223): Reading and accumulating counts from /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1
+INFO: s3mixw_io.c(116): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/mixw_counts [1102x1x2 array]
+INFO: s3tmat_io.c(115): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/tmat_counts [34x3x4 array]
+INFO: s3gau_io.c(379): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/gauden_counts with means with vars (2pass) [1102x1x2 vector arrays]
+INFO: main.c(337): -2passvar yes
+INFO: main.c(433): Normalizing mean for n_mgau= 1102, n_stream= 1, n_density= 2
+INFO: main.c(457): Normalizing var
+INFO: s3mixw_io.c(232): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/mixture_weights [1102x1x2 array]
+INFO: s3tmat_io.c(174): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/transition_matrices [34x3x4 array]
+INFO: s3gau_io.c(226): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/means [1102x1x2 array]
+INFO: s3gau_io.c(226): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_1000/variances [1102x1x2 array]
+Tue May 31 10:46:23 2011
+Current Overall Likelihood Per Frame = 3.06184829826318
+Convergence ratio = 0.79814846934351

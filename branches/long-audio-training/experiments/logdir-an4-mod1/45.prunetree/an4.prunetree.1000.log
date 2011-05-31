@@ -1,0 +1,237 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/prunetree \
+	-itreedir /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/trees/an4.unpruned \
+	-nseno 1000 \
+	-otreedir /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/trees/an4.1000 \
+	-moddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef \
+	-psetfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions \
+	-minocc 0 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-allphones	no	no
+-example	no	no
+-help		no	no
+-itreedir		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/trees/an4.unpruned
+-minocc		0.0	0.000000e+00
+-moddeffn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef
+-nseno			1000
+-otreedir		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/trees/an4.1000
+-psetfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions
+
+INFO: main.c(76): Reading: /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef
+INFO: model_def_io.c(587): Model definition info:
+INFO: model_def_io.c(588): 6406 total models defined (34 base, 6372 tri)
+INFO: model_def_io.c(589): 25624 total states
+INFO: model_def_io.c(590): 19218 total tied states
+INFO: model_def_io.c(591): 102 total tied CI states
+INFO: model_def_io.c(592): 34 total tied transition matrices
+INFO: model_def_io.c(593): 4 max state/model
+INFO: model_def_io.c(594): 4 min state/model
+INFO: main.c(82): Reading: /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions
+INFO: main.c(183): AA-0	16 [0 < 0.000000e+00]
+INFO: main.c(183): AA-1	16 [0 < 0.000000e+00]
+INFO: main.c(183): AA-2	16 [0 < 0.000000e+00]
+INFO: main.c(183): AE-0	5 [0 < 0.000000e+00]
+INFO: main.c(183): AE-1	5 [0 < 0.000000e+00]
+INFO: main.c(183): AE-2	5 [0 < 0.000000e+00]
+INFO: main.c(183): AH-0	82 [0 < 0.000000e+00]
+INFO: main.c(183): AH-1	82 [0 < 0.000000e+00]
+INFO: main.c(183): AH-2	82 [0 < 0.000000e+00]
+INFO: main.c(183): AO-0	1 [0 < 0.000000e+00]
+INFO: main.c(183): AO-1	1 [0 < 0.000000e+00]
+INFO: main.c(183): AO-2	1 [0 < 0.000000e+00]
+INFO: main.c(183): AW-0	2 [0 < 0.000000e+00]
+INFO: main.c(183): AW-1	2 [0 < 0.000000e+00]
+INFO: main.c(183): AW-2	2 [0 < 0.000000e+00]
+INFO: main.c(183): AY-0	77 [0 < 0.000000e+00]
+INFO: main.c(183): AY-1	77 [0 < 0.000000e+00]
+INFO: main.c(183): AY-2	77 [0 < 0.000000e+00]
+INFO: main.c(183): B-0	15 [0 < 0.000000e+00]
+INFO: main.c(183): B-1	15 [0 < 0.000000e+00]
+INFO: main.c(183): B-2	15 [0 < 0.000000e+00]
+INFO: main.c(183): CH-0	20 [0 < 0.000000e+00]
+INFO: main.c(183): CH-1	20 [0 < 0.000000e+00]
+INFO: main.c(183): CH-2	20 [0 < 0.000000e+00]
+INFO: main.c(183): D-0	34 [0 < 0.000000e+00]
+INFO: main.c(183): D-1	34 [0 < 0.000000e+00]
+INFO: main.c(183): D-2	34 [0 < 0.000000e+00]
+INFO: main.c(183): EH-0	77 [0 < 0.000000e+00]
+INFO: main.c(183): EH-1	77 [0 < 0.000000e+00]
+INFO: main.c(183): EH-2	77 [0 < 0.000000e+00]
+INFO: main.c(183): ER-0	18 [0 < 0.000000e+00]
+INFO: main.c(183): ER-1	18 [0 < 0.000000e+00]
+INFO: main.c(183): ER-2	18 [0 < 0.000000e+00]
+INFO: main.c(183): EY-0	56 [0 < 0.000000e+00]
+INFO: main.c(183): EY-1	56 [0 < 0.000000e+00]
+INFO: main.c(183): EY-2	56 [0 < 0.000000e+00]
+INFO: main.c(183): F-0	56 [0 < 0.000000e+00]
+INFO: main.c(183): F-1	56 [0 < 0.000000e+00]
+INFO: main.c(183): F-2	56 [0 < 0.000000e+00]
+INFO: main.c(183): G-0	2 [0 < 0.000000e+00]
+INFO: main.c(183): G-1	2 [0 < 0.000000e+00]
+INFO: main.c(183): G-2	2 [0 < 0.000000e+00]
+INFO: main.c(183): HH-0	19 [0 < 0.000000e+00]
+INFO: main.c(183): HH-1	19 [0 < 0.000000e+00]
+INFO: main.c(183): HH-2	19 [0 < 0.000000e+00]
+INFO: main.c(183): IH-0	9 [0 < 0.000000e+00]
+INFO: main.c(183): IH-1	9 [0 < 0.000000e+00]
+INFO: main.c(183): IH-2	9 [0 < 0.000000e+00]
+INFO: main.c(183): IY-0	200 [0 < 0.000000e+00]
+INFO: main.c(183): IY-1	200 [0 < 0.000000e+00]
+INFO: main.c(183): IY-2	200 [0 < 0.000000e+00]
+INFO: main.c(183): JH-0	13 [0 < 0.000000e+00]
+INFO: main.c(183): JH-1	13 [0 < 0.000000e+00]
+INFO: main.c(183): JH-2	13 [0 < 0.000000e+00]
+INFO: main.c(183): K-0	16 [0 < 0.000000e+00]
+INFO: main.c(183): K-1	16 [0 < 0.000000e+00]
+INFO: main.c(183): K-2	16 [0 < 0.000000e+00]
+INFO: main.c(183): L-0	22 [0 < 0.000000e+00]
+INFO: main.c(183): L-1	22 [0 < 0.000000e+00]
+INFO: main.c(183): L-2	22 [0 < 0.000000e+00]
+INFO: main.c(183): M-0	20 [0 < 0.000000e+00]
+INFO: main.c(183): M-1	20 [0 < 0.000000e+00]
+INFO: main.c(183): M-2	20 [0 < 0.000000e+00]
+INFO: main.c(183): N-0	76 [0 < 0.000000e+00]
+INFO: main.c(183): N-1	76 [0 < 0.000000e+00]
+INFO: main.c(183): N-2	76 [0 < 0.000000e+00]
+INFO: main.c(183): OW-0	100 [0 < 0.000000e+00]
+INFO: main.c(183): OW-1	100 [0 < 0.000000e+00]
+INFO: main.c(183): OW-2	100 [0 < 0.000000e+00]
+INFO: main.c(183): P-0	16 [0 < 0.000000e+00]
+INFO: main.c(183): P-1	16 [0 < 0.000000e+00]
+INFO: main.c(183): P-2	16 [0 < 0.000000e+00]
+INFO: main.c(183): R-0	38 [0 < 0.000000e+00]
+INFO: main.c(183): R-1	38 [0 < 0.000000e+00]
+INFO: main.c(183): R-2	38 [0 < 0.000000e+00]
+INFO: main.c(183): S-0	90 [0 < 0.000000e+00]
+INFO: main.c(183): S-1	90 [0 < 0.000000e+00]
+INFO: main.c(183): S-2	90 [0 < 0.000000e+00]
+INFO: main.c(183): T-0	66 [0 < 0.000000e+00]
+INFO: main.c(183): T-1	66 [0 < 0.000000e+00]
+INFO: main.c(183): T-2	66 [0 < 0.000000e+00]
+INFO: main.c(183): TH-0	36 [0 < 0.000000e+00]
+INFO: main.c(183): TH-1	36 [0 < 0.000000e+00]
+INFO: main.c(183): TH-2	36 [0 < 0.000000e+00]
+INFO: main.c(183): UW-0	29 [0 < 0.000000e+00]
+INFO: main.c(183): UW-1	29 [0 < 0.000000e+00]
+INFO: main.c(183): UW-2	29 [0 < 0.000000e+00]
+INFO: main.c(183): V-0	27 [0 < 0.000000e+00]
+INFO: main.c(183): V-1	27 [0 < 0.000000e+00]
+INFO: main.c(183): V-2	27 [0 < 0.000000e+00]
+INFO: main.c(183): W-0	14 [0 < 0.000000e+00]
+INFO: main.c(183): W-1	14 [0 < 0.000000e+00]
+INFO: main.c(183): W-2	14 [0 < 0.000000e+00]
+INFO: main.c(183): Y-0	15 [0 < 0.000000e+00]
+INFO: main.c(183): Y-1	15 [0 < 0.000000e+00]
+INFO: main.c(183): Y-2	15 [0 < 0.000000e+00]
+INFO: main.c(183): Z-0	19 [0 < 0.000000e+00]
+INFO: main.c(183): Z-1	19 [0 < 0.000000e+00]
+INFO: main.c(183): Z-2	19 [0 < 0.000000e+00]
+INFO: main.c(270): Prior to pruning n_seno= 3858
+INFO: main.c(278): n_twig= 1230
+INFO: main.c(308): Pruning 2858 nodes
+INFO: main.c(340): Root node extracted (G 2) from heap
+INFO: main.c(340): Root node extracted (AE 2) from heap
+INFO: main.c(340): Root node extracted (AE 1) from heap
+INFO: main.c(340): Root node extracted (JH 1) from heap
+INFO: main.c(386): AA-0	11
+INFO: main.c(386): AA-1	9
+INFO: main.c(386): AA-2	19
+INFO: main.c(386): AE-0	3
+INFO: main.c(386): AE-1	1
+INFO: main.c(386): AE-2	1
+INFO: main.c(386): AH-0	27
+INFO: main.c(386): AH-1	15
+INFO: main.c(386): AH-2	61
+INFO: main.c(386): AO-0	1
+INFO: main.c(386): AO-1	1
+INFO: main.c(386): AO-2	1
+INFO: main.c(386): AW-0	3
+INFO: main.c(386): AW-1	3
+INFO: main.c(386): AW-2	3
+INFO: main.c(386): AY-0	25
+INFO: main.c(386): AY-1	59
+INFO: main.c(386): AY-2	25
+INFO: main.c(386): B-0	9
+INFO: main.c(386): B-1	7
+INFO: main.c(386): B-2	5
+INFO: main.c(386): CH-0	3
+INFO: main.c(386): CH-1	3
+INFO: main.c(386): CH-2	5
+INFO: main.c(386): D-0	23
+INFO: main.c(386): D-1	9
+INFO: main.c(386): D-2	5
+INFO: main.c(386): EH-0	43
+INFO: main.c(386): EH-1	35
+INFO: main.c(386): EH-2	53
+INFO: main.c(386): ER-0	3
+INFO: main.c(386): ER-1	5
+INFO: main.c(386): ER-2	17
+INFO: main.c(386): EY-0	21
+INFO: main.c(386): EY-1	45
+INFO: main.c(386): EY-2	15
+INFO: main.c(386): F-0	27
+INFO: main.c(386): F-1	21
+INFO: main.c(386): F-2	11
+INFO: main.c(386): G-0	3
+INFO: main.c(386): G-1	3
+INFO: main.c(386): G-2	1
+INFO: main.c(386): HH-0	17
+INFO: main.c(386): HH-1	11
+INFO: main.c(386): HH-2	11
+INFO: main.c(386): IH-0	9
+INFO: main.c(386): IH-1	9
+INFO: main.c(386): IH-2	9
+INFO: main.c(386): IY-0	39
+INFO: main.c(386): IY-1	43
+INFO: main.c(386): IY-2	235
+INFO: main.c(386): JH-0	11
+INFO: main.c(386): JH-1	1
+INFO: main.c(386): JH-2	3
+INFO: main.c(386): K-0	11
+INFO: main.c(386): K-1	9
+INFO: main.c(386): K-2	3
+INFO: main.c(386): L-0	11
+INFO: main.c(386): L-1	15
+INFO: main.c(386): L-2	15
+INFO: main.c(386): M-0	11
+INFO: main.c(386): M-1	5
+INFO: main.c(386): M-2	17
+INFO: main.c(386): N-0	33
+INFO: main.c(386): N-1	47
+INFO: main.c(386): N-2	33
+INFO: main.c(386): OW-0	37
+INFO: main.c(386): OW-1	79
+INFO: main.c(386): OW-2	27
+INFO: main.c(386): P-0	13
+INFO: main.c(386): P-1	5
+INFO: main.c(386): P-2	3
+INFO: main.c(386): R-0	37
+INFO: main.c(386): R-1	31
+INFO: main.c(386): R-2	31
+INFO: main.c(386): S-0	37
+INFO: main.c(386): S-1	43
+INFO: main.c(386): S-2	25
+INFO: main.c(386): T-0	25
+INFO: main.c(386): T-1	37
+INFO: main.c(386): T-2	25
+INFO: main.c(386): TH-0	15
+INFO: main.c(386): TH-1	5
+INFO: main.c(386): TH-2	5
+INFO: main.c(386): UW-0	13
+INFO: main.c(386): UW-1	23
+INFO: main.c(386): UW-2	23
+INFO: main.c(386): V-0	11
+INFO: main.c(386): V-1	11
+INFO: main.c(386): V-2	17
+INFO: main.c(386): W-0	11
+INFO: main.c(386): W-1	7
+INFO: main.c(386): W-2	7
+INFO: main.c(386): Y-0	13
+INFO: main.c(386): Y-1	11
+INFO: main.c(386): Y-2	9
+INFO: main.c(386): Z-0	9
+INFO: main.c(386): Z-1	5
+INFO: main.c(386): Z-2	3
+Tue May 31 10:28:24 2011

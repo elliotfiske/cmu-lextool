@@ -1,0 +1,46 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/norm \
+	-accumdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1 \
+	-mixwfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/mixture_weights \
+	-tmatfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/transition_matrices \
+	-meanfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/means \
+	-varfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/variances \
+	-fullvar no 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-accumdir		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1,
+-constE		3.0	3.000000e+00
+-dcountfn		
+-example	no	no
+-fullvar	no	no
+-help		no	no
+-inmeanfn		
+-inmixwfn		
+-invarfn		
+-meanfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/means
+-mixwfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/mixture_weights
+-mmie		no	no
+-oaccumdir		
+-regmatfn		
+-tiedvar	no	no
+-tmatfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/transition_matrices
+-varfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/variances
+
+INFO: main.c(223): Reading and accumulating counts from /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1
+INFO: s3mixw_io.c(116): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/mixw_counts [4854x1x1 array]
+INFO: s3tmat_io.c(115): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/tmat_counts [34x3x4 array]
+INFO: s3gau_io.c(379): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/gauden_counts with means with vars (2pass) [4854x1x1 vector arrays]
+INFO: main.c(337): -2passvar yes
+INFO: main.c(433): Normalizing mean for n_mgau= 4854, n_stream= 1, n_density= 1
+WARNING: "gauden.c", line 1554: (mgau= 1602, feat= 0, density= 0) never observed
+WARNING: "gauden.c", line 1554: (mgau= 1603, feat= 0, density= 0) never observed
+WARNING: "gauden.c", line 1554: (mgau= 1604, feat= 0, density= 0) never observed
+INFO: main.c(457): Normalizing var
+INFO: s3mixw_io.c(232): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/mixture_weights [4854x1x1 array]
+INFO: s3tmat_io.c(174): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/transition_matrices [34x3x4 array]
+INFO: s3gau_io.c(226): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/means [4854x1x1 array]
+INFO: s3gau_io.c(226): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.cd_cont_untied/variances [4854x1x1 array]
+Tue May 31 10:27:44 2011
+Current Overall Likelihood Per Frame = 3.32931715341857
+Convergence ratio = 7.93919496673028

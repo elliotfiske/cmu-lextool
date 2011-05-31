@@ -1,0 +1,35 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/norm \
+	-accumdir /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1 \
+	-fullvar no \
+	-varfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/globalvar 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-accumdir		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1,
+-constE		3.0	3.000000e+00
+-dcountfn		
+-example	no	no
+-fullvar	no	no
+-help		no	no
+-inmeanfn		
+-inmixwfn		
+-invarfn		
+-meanfn			
+-mixwfn			
+-mmie		no	no
+-oaccumdir		
+-regmatfn		
+-tiedvar	no	no
+-tmatfn			
+-varfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/globalvar
+
+INFO: main.c(161): No -mixwfn specified, will skip if any
+INFO: main.c(164): No -tmatfn specified, will skip if any
+INFO: main.c(167): No -meanfn specified, will skip if any
+INFO: main.c(223): Reading and accumulating counts from /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1
+INFO: s3gau_io.c(379): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bwaccumdir/an4_buff_1/gauden_counts with vars (2pass) [1x1x1 vector arrays]
+INFO: main.c(337): -2passvar yes
+INFO: main.c(457): Normalizing var
+INFO: s3gau_io.c(226): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/globalvar [1x1x1 array]
+Tue May 31 10:44:54 2011

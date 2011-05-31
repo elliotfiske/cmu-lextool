@@ -1,0 +1,59 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/mk_mdef_gen \
+	-phnlstfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.phone \
+	-dictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic \
+	-fdictfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler \
+	-lsnfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4_train.transcription \
+	-ountiedmdef /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.untied.mdef \
+	-n_state_pm 3 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-dictfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic
+-example	no	no
+-fdictfn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler
+-help		no	no
+-ignorewpos	no	no
+-inCDmdef		
+-inCImdef		
+-lsnfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4_train.transcription
+-maxtriphones	100000	100000
+-minocc		1	1
+-n_state_pm	3	3
+-oalltphnmdef		
+-ocimdef		
+-ocountfn		
+-ountiedmdef		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.untied.mdef
+-phnlstfn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.phone
+-triphnlstfn		
+
+INFO: main.c(94): Will write untied mdef file /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.untied.mdef
+INFO: mk_mdef_gen.c(186): 0 single word triphones in input phone list
+INFO: mk_mdef_gen.c(187): 0 word beginning triphones in input phone list
+INFO: mk_mdef_gen.c(188): 0 word internal triphones in input phone list
+INFO: mk_mdef_gen.c(189): 0 word ending triphones in input phone list
+INFO: mk_mdef_gen.c(276): Reading dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic
+INFO: mk_mdef_gen.c(313): 130 words in dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.dic
+INFO: mk_mdef_gen.c(276): Reading dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler
+INFO: mk_mdef_gen.c(313): 3 words in dict /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/etc/an4.filler
+INFO: mk_mdef_gen.c(432): 133 words in dictionary
+INFO: mk_mdef_gen.c(433): 2900 unique single word triphones in dictionary
+INFO: mk_mdef_gen.c(434): 1420 unique word beginning triphones in dictionary
+INFO: mk_mdef_gen.c(435): 167 unique word internal triphones in dictionary
+INFO: mk_mdef_gen.c(436): 1885 unique word ending triphones in dictionary
+INFO: mk_mdef_gen.c(468): Out of vocabulary words in transcript will be mapped to SIL!
+INFO: mk_mdef_gen.c(574): 8286 words in transcripts
+INFO: mk_mdef_gen.c(575): 851 single word triphones in transcripts
+INFO: mk_mdef_gen.c(576): 4591 word beginning triphones in transcripts
+INFO: mk_mdef_gen.c(577): 4280 word internal triphones in transcripts
+INFO: mk_mdef_gen.c(578): 4591 word ending triphones in transcripts
+INFO: mk_mdef_gen.c(621): 14313 triphones extracted from transcripts
+INFO: mk_mdef_gen.c(622): 1584 unique triphones extracted from transcripts
+INFO: mk_mdef_gen.c(623): 473 triphones occur once in the transcripts
+INFO: mk_mdef_gen.c(624): 263 triphones occur twice in the transcripts
+INFO: mk_mdef_gen.c(625): 175 triphones occur thrice in the transcripts
+INFO: mk_mdef_gen.c(626): The rest of the triphones occur more than three times
+INFO: mk_mdef_gen.c(627): Count threshold is 1
+INFO: mk_mdef_gen.c(878): 34 n_base, 1584 n_tri
+INFO: mk_mdef_gen.c(950): Wrote mdef file /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.untied.mdef
+Tue May 31 10:27:39 2011

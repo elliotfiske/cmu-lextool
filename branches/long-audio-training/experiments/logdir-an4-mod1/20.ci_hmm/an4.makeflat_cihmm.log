@@ -1,0 +1,33 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/mk_flat \
+	-moddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.ci.mdef \
+	-topo /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.topology \
+	-mixwfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/mixture_weights \
+	-tmatfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/transition_matrices \
+	-nstream 1 \
+	-ndensity 1 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-example	no	no
+-help		no	no
+-mixwfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/mixture_weights
+-moddeffn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.ci.mdef
+-ndensity	256	1
+-nstream	4	1
+-tmatfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/transition_matrices
+-topo			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.topology
+
+main.c(85): Reading model definition file /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.ci.mdef
+INFO: model_def_io.c(587): Model definition info:
+INFO: model_def_io.c(588): 34 total models defined (34 base, 0 tri)
+INFO: model_def_io.c(589): 136 total states
+INFO: model_def_io.c(590): 102 total tied states
+INFO: model_def_io.c(591): 102 total tied CI states
+INFO: model_def_io.c(592): 34 total tied transition matrices
+INFO: model_def_io.c(593): 4 max state/model
+INFO: model_def_io.c(594): 4 min state/model
+main.c(92): 34 models defined
+INFO: s3tmat_io.c(174): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/transition_matrices [34x3x4 array]
+INFO: s3mixw_io.c(232): Wrote /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont_flatinitial/mixture_weights [102x1x1 array]
+Tue May 31 10:27:12 2011

@@ -1,0 +1,127 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/tiestate \
+	-imoddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef \
+	-omoddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.1000.mdef \
+	-treedir /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/trees/an4.1000 \
+	-psetfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions 
+
+Current configuration:
+[NAME]		[DEFLT]	[VALUE]
+-allphones	no	no
+-example	no	no
+-help		no	no
+-imoddeffn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.alltriphones.mdef
+-omoddeffn		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.1000.mdef
+-psetfn			/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions
+-treedir		/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/trees/an4.1000
+
+INFO: model_def_io.c(587): Model definition info:
+INFO: model_def_io.c(588): 6406 total models defined (34 base, 6372 tri)
+INFO: model_def_io.c(589): 25624 total states
+INFO: model_def_io.c(590): 19218 total tied states
+INFO: model_def_io.c(591): 102 total tied CI states
+INFO: model_def_io.c(592): 34 total tied transition matrices
+INFO: model_def_io.c(593): 4 max state/model
+INFO: model_def_io.c(594): 4 min state/model
+INFO: main.c(92): Reading: /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions
+INFO: main.c(122): AA-0: offset 102
+INFO: main.c(122): AA-1: offset 108
+INFO: main.c(122): AA-2: offset 113
+INFO: main.c(122): AE-0: offset 123
+INFO: main.c(122): AE-1: offset 125
+INFO: main.c(122): AE-2: offset 126
+INFO: main.c(122): AH-0: offset 127
+INFO: main.c(122): AH-1: offset 141
+INFO: main.c(122): AH-2: offset 149
+INFO: main.c(122): AO-0: offset 180
+INFO: main.c(122): AO-1: offset 181
+INFO: main.c(122): AO-2: offset 182
+INFO: main.c(122): AW-0: offset 183
+INFO: main.c(122): AW-1: offset 185
+INFO: main.c(122): AW-2: offset 187
+INFO: main.c(122): AY-0: offset 189
+INFO: main.c(122): AY-1: offset 202
+INFO: main.c(122): AY-2: offset 232
+INFO: main.c(122): B-0: offset 245
+INFO: main.c(122): B-1: offset 250
+INFO: main.c(122): B-2: offset 254
+INFO: main.c(122): CH-0: offset 257
+INFO: main.c(122): CH-1: offset 259
+INFO: main.c(122): CH-2: offset 261
+INFO: main.c(122): D-0: offset 264
+INFO: main.c(122): D-1: offset 276
+INFO: main.c(122): D-2: offset 281
+INFO: main.c(122): EH-0: offset 284
+INFO: main.c(122): EH-1: offset 306
+INFO: main.c(122): EH-2: offset 324
+INFO: main.c(122): ER-0: offset 351
+INFO: main.c(122): ER-1: offset 353
+INFO: main.c(122): ER-2: offset 356
+INFO: main.c(122): EY-0: offset 365
+INFO: main.c(122): EY-1: offset 376
+INFO: main.c(122): EY-2: offset 399
+INFO: main.c(122): F-0: offset 407
+INFO: main.c(122): F-1: offset 421
+INFO: main.c(122): F-2: offset 432
+INFO: main.c(122): G-0: offset 438
+INFO: main.c(122): G-1: offset 440
+INFO: main.c(122): G-2: offset 442
+INFO: main.c(122): HH-0: offset 443
+INFO: main.c(122): HH-1: offset 452
+INFO: main.c(122): HH-2: offset 458
+INFO: main.c(122): IH-0: offset 464
+INFO: main.c(122): IH-1: offset 469
+INFO: main.c(122): IH-2: offset 474
+INFO: main.c(122): IY-0: offset 479
+INFO: main.c(122): IY-1: offset 499
+INFO: main.c(122): IY-2: offset 521
+INFO: main.c(122): JH-0: offset 639
+INFO: main.c(122): JH-1: offset 645
+INFO: main.c(122): JH-2: offset 646
+INFO: main.c(122): K-0: offset 648
+INFO: main.c(122): K-1: offset 654
+INFO: main.c(122): K-2: offset 659
+INFO: main.c(122): L-0: offset 661
+INFO: main.c(122): L-1: offset 667
+INFO: main.c(122): L-2: offset 675
+INFO: main.c(122): M-0: offset 683
+INFO: main.c(122): M-1: offset 689
+INFO: main.c(122): M-2: offset 692
+INFO: main.c(122): N-0: offset 701
+INFO: main.c(122): N-1: offset 718
+INFO: main.c(122): N-2: offset 742
+INFO: main.c(122): OW-0: offset 759
+INFO: main.c(122): OW-1: offset 778
+INFO: main.c(122): OW-2: offset 818
+INFO: main.c(122): P-0: offset 832
+INFO: main.c(122): P-1: offset 839
+INFO: main.c(122): P-2: offset 842
+INFO: main.c(122): R-0: offset 844
+INFO: main.c(122): R-1: offset 863
+INFO: main.c(122): R-2: offset 879
+INFO: main.c(122): S-0: offset 895
+INFO: main.c(122): S-1: offset 914
+INFO: main.c(122): S-2: offset 936
+INFO: main.c(122): T-0: offset 949
+INFO: main.c(122): T-1: offset 962
+INFO: main.c(122): T-2: offset 981
+INFO: main.c(122): TH-0: offset 994
+INFO: main.c(122): TH-1: offset 1002
+INFO: main.c(122): TH-2: offset 1005
+INFO: main.c(122): UW-0: offset 1008
+INFO: main.c(122): UW-1: offset 1015
+INFO: main.c(122): UW-2: offset 1027
+INFO: main.c(122): V-0: offset 1039
+INFO: main.c(122): V-1: offset 1045
+INFO: main.c(122): V-2: offset 1051
+INFO: main.c(122): W-0: offset 1060
+INFO: main.c(122): W-1: offset 1066
+INFO: main.c(122): W-2: offset 1070
+INFO: main.c(122): Y-0: offset 1074
+INFO: main.c(122): Y-1: offset 1081
+INFO: main.c(122): Y-2: offset 1087
+INFO: main.c(122): Z-0: offset 1092
+INFO: main.c(122): Z-1: offset 1097
+INFO: main.c(122): Z-2: offset 1100
+INFO: main.c(144): n_seno= 1102
+Tue May 31 10:28:24 2011

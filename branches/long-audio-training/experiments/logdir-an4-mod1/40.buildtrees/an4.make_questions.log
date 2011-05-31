@@ -1,0 +1,51 @@
+INFO: cmd_ln.c(691): Parsing command line:
+/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/bin/make_quests \
+	-moddeffn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.ci.mdef \
+	-meanfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/means \
+	-varfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/variances \
+	-fullvar no \
+	-mixwfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/mixture_weights \
+	-npermute 12 \
+	-niter 1 \
+	-qstperstt 20 \
+	-questfn /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions \
+	-type .cont. 
+
+Current configuration:
+[NAME]		[DEFLT]			[VALUE]
+-example	no			no
+-fullvar	no			no
+-help		no			no
+-meanfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/means
+-mixwfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/mixture_weights
+-moddeffn				/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.ci.mdef
+-niter		0			1
+-npermute	6			12
+-qstperstt	8			20
+-questfn				/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions
+-tempfn		/tmp/TEMP.QUESTS	/tmp/TEMP.QUESTS
+-type					.cont.
+-varfloor	1.0e-08			1.000000e-08
+-varfn					/home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/variances
+
+INFO: main.c(791): Reading: /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.ci.mdef
+INFO: model_def_io.c(587): Model definition info:
+INFO: model_def_io.c(588): 34 total models defined (34 base, 0 tri)
+INFO: model_def_io.c(589): 136 total states
+INFO: model_def_io.c(590): 102 total tied states
+INFO: model_def_io.c(591): 102 total tied CI states
+INFO: model_def_io.c(592): 34 total tied transition matrices
+INFO: model_def_io.c(593): 4 max state/model
+INFO: model_def_io.c(594): 4 min state/model
+INFO: main.c(810): Reading: /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/mixture_weights
+INFO: s3mixw_io.c(116): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/mixture_weights [102x1x1 array]
+INFO: s3gau_io.c(166): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/means [102x1x1 array]
+INFO: s3gau_io.c(166): Read /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_parameters/an4.ci_cont/variances [102x1x1 array]
+INFO: main.c(1108): Done building questions using state 0
+INFO: main.c(1109):  21 questions from state 0
+INFO: main.c(1108): Done building questions using state 1
+INFO: main.c(1109):  21 questions from state 1
+INFO: main.c(1108): Done building questions using state 2
+INFO: main.c(1109):  21 questions from state 2
+INFO: main.c(1114): Stored questions in /home/xkrajnan/Plocha/GSoC/PocketSphinx/an4/model_architecture/an4.tree_questions
+Tue May 31 10:27:49 2011
