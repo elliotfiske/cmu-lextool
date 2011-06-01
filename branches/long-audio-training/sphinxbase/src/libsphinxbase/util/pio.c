@@ -251,10 +251,20 @@ fopen_compchk(const char *file, int32 * ispipe)
 #endif /* HAVE_POPEN */
 }
 
+/* michal - DEBUG */
+static int init_call_count = 0;
+static int free_call_count = 0;
+void printCallCount() {
+        fprintf(stderr, "MICHAL: init/free count: %d / %d\n", init_call_count, free_call_count);
+}
+
 lineiter_t *
 lineiter_init(lineiter_t *li, FILE *fh)
 {
     if (li == NULL) {
+        init_call_count++;
+        printCallCount();
+        
         li = ckd_calloc(1, sizeof(*li));
         li->buf = ckd_malloc(128);
         li->bsiz = 128;
@@ -319,7 +329,9 @@ lineiter_next(lineiter_t *li)
     return li;
 }
 
-/* michal */
+/* Trimms leading and trailing whitespaces and '\n' characters.
+ * Implementation is taken from read_line in SphinxTrain.
+ */
 lineiter_t *
 lineiter_trim(lineiter_t *li)
 {
@@ -350,7 +362,9 @@ lineiter_trim(lineiter_t *li)
     return li;
 }
 
-/* michal */
+/* Skipps lines that are comments and counts skipped lines.
+ * Implementation is taken from read_line in SphinxTrain.
+ */
 lineiter_t *
 lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped)
 {
@@ -369,6 +383,10 @@ lineiter_free(lineiter_t *li)
 {
     if (li == NULL)
         return;
+    
+    free_call_count++;
+    printCallCount();
+    
     ckd_free(li->buf);
     ckd_free(li);
 }

@@ -44,7 +44,7 @@
  *********************************************************************/
 
 
-#include <s3/read_line.h>
+#include <sphinxbase/pio.h>
 #include <s3/acmod_set.h>
 #include <s3/model_def_io.h>
 #include <sphinxbase/ckd_alloc.h>
@@ -54,7 +54,6 @@
 
 #include <string.h>
 
-#define BIG_STR_LEN	4096
 #define NO_NUMBER	(0xffffffff)
 
 
@@ -162,19 +161,24 @@ parse_base_line(acmod_id_t *acmod_id,
 		uint32 *n_read,
 		FILE *fp)
 {
-    char buf[BIG_STR_LEN];
+    lineiter_t *li = NULL;
     char *tok;
     unsigned int n;
     const char **attrib;
 
-    if (read_line(buf, BIG_STR_LEN, n_read, fp) == NULL)
+/*    if (read_line(li, BIG_STR_LEN, n_read, fp) == NULL)*/
+    li = LI_READ_SKIP_TRIM_COUNT(li, fp, n_read);
+    if (li == NULL) {
+        lineiter_free(li);
 	return S3_ERROR;
+    }
 
-    tok = strtok(buf, " \t");
+    tok = strtok(li->buf, " \t");
 
     if (acmod_set_name2id(acmod_set, tok) != NO_ACMOD) {
 	E_ERROR("%s multiply defined at line %d\n", tok, *n_read);
-
+	
+	lineiter_free(li);
 	return S3_ERROR;
     }
 
@@ -186,16 +190,19 @@ parse_base_line(acmod_id_t *acmod_id,
 		__FILE__, __LINE__,
 		tok, *n_read);
 	fflush(stderr);
-
+	
+	lineiter_free(li);
 	return S3_ERROR;
     }
 
     if (parse_rem(&attrib, tmat, state, n_state, *n_read) != S3_SUCCESS) {
-	return S3_ERROR;
+        fflush(stderr);
+        return S3_ERROR;
     }
 
     *acmod_id = acmod_set_add_ci(acmod_set, tok, attrib);
-
+    
+    lineiter_free(li);
     return S3_SUCCESS;
 }
 
@@ -208,7 +215,7 @@ parse_tri_line(acmod_id_t *acmod_id,
 	       uint32 *n_read,
 	       FILE *fp)
 {
-    char buf[BIG_STR_LEN];
+    lineiter_t *li = NULL;
     char *tok;
     unsigned int i;
     uint32 id;
@@ -217,15 +224,20 @@ parse_tri_line(acmod_id_t *acmod_id,
     acmod_id_t base, left, right;
     word_posn_t posn;
 
-    if (read_line(buf, BIG_STR_LEN, n_read, fp) == NULL)
+/*    if (read_line(li, BIG_STR_LEN, n_read, fp) == NULL)*/
+    li = LI_READ_SKIP_TRIM_COUNT(li, fp, n_read);
+    if (li == NULL) {
+        lineiter_free(li);
 	return S3_ERROR;
+    }
 
-    tok = strtok(buf, " \t");
+    tok = strtok(li->buf, " \t");
 
     if ((id = acmod_set_name2id(acmod_set, tok)) == NO_ACMOD) {
 	E_ERROR("%s is an undefined base phone at line %d\n",
 		tok, *n_read);
-
+	
+	lineiter_free(li);
 	return S3_ERROR;
     }
 
@@ -237,6 +249,7 @@ parse_tri_line(acmod_id_t *acmod_id,
 	E_ERROR("%s is an undefined base phone at line %d\n",
 		tok, *n_read);
 
+        lineiter_free(li);
 	return S3_ERROR;
     }
 
@@ -248,6 +261,7 @@ parse_tri_line(acmod_id_t *acmod_id,
 	E_ERROR("%s is an undefined base phone at line %d\n",
 		tok, *n_read);
 
+        lineiter_free(li);
 	return S3_ERROR;
     }
 
@@ -266,18 +280,22 @@ parse_tri_line(acmod_id_t *acmod_id,
 	E_ERROR("Unknown word posn %s found at line %d\n",
 		tok, *n_read);
 
+        lineiter_free(li);
 	return S3_ERROR;
     }
 
     if (parse_rem(&attrib, tmat, state, n_state, *n_read) != S3_SUCCESS) {
+        lineiter_free(li);
 	return S3_ERROR;
     }
     
     *acmod_id = acmod_set_add_tri(acmod_set, base, left, right, posn, attrib);
     if (*acmod_id == NO_ACMOD) {
+        lineiter_free(li);
 	return S3_ERROR;
     }
 
+    lineiter_free(li);
     return S3_SUCCESS;
 }
 
@@ -405,7 +423,7 @@ int32
 model_def_read(model_def_t **out_model_def,
 	       const char *file_name)
 {
-    char buf[BIG_STR_LEN];
+    lineiter_t *li = NULL;
     uint32 n;
     char tag[32];
     acmod_set_t *acmod_set;
@@ -439,44 +457,51 @@ model_def_read(model_def_t **out_model_def,
 	return S3_ERROR;
     }
 	
-    if (read_line(buf, BIG_STR_LEN, &n_read, fp) == NULL) {
+/*    if (read_line(li, BIG_STR_LEN, &n_read, fp) == NULL) {*/
+    li = LI_READ_SKIP_TRIM_COUNT(li, fp, &n_read);
+    if (li == NULL) {
 	E_ERROR("ERROR not even a version number in %s!?\n",
 		file_name);
 
 	fclose(fp);
 
+        lineiter_free(li);
 	return S3_ERROR;
     }
 
-    if (strcmp(buf, MODEL_DEF_VERSION) != 0) {
+    if (strcmp(li->buf, MODEL_DEF_VERSION) != 0) {
 	E_ERROR("ERROR version(%s) == \"%s\", but expected %s at line %d.\n",
-		file_name, buf, MODEL_DEF_VERSION, n_read);
+		file_name, li->buf, MODEL_DEF_VERSION, n_read);
 
 	fclose(fp);
 	
-	if (strcmp(buf, "0.1") == 0) {
+	if (strcmp(li->buf, "0.1") == 0) {
 	    E_ERROR("You must add an attribute field to all the model records.  See SPHINX-III File Formats manual\n");
 	}
 	
-	if (strcmp(buf, "0.2") == 0) {
+	if (strcmp(li->buf, "0.2") == 0) {
 	    E_ERROR("You must add n_tied_state, n_tied_ci_state and n_tied_tmat definitions at the head of the file.  See /net/alf19/usr2/eht/s3/cvtmdef.csh\n");
 	}
 	
+        lineiter_free(li);
 	return S3_ERROR;
     }
 
     n_tri = n_base = n_total_map = n_tied_state = n_tied_ci_state = n_tied_tmat = NO_NUMBER;
     for ( i = 0; i < 6; i++) {
-	if (read_line(buf, BIG_STR_LEN, &n_read, fp) == NULL) {
+/*	if (read_line(li, BIG_STR_LEN, &n_read, fp) == NULL) {*/
+        li = LI_READ_SKIP_TRIM_COUNT(li, fp, &n_read);
+        if (li == NULL) {
 	    E_ERROR("Incomplete count information in %s!?\n",
 		    file_name);
 	    
 	    fclose(fp);
 
+            lineiter_free(li);
 	    return S3_ERROR;
 	}
 
-	sscanf(buf, "%u %s", &n, tag);
+	sscanf(li->buf, "%u %s", &n, tag);
 
 	if (strcmp(tag, "n_base") == 0) {
 	    n_base = n;
@@ -502,6 +527,7 @@ model_def_read(model_def_t **out_model_def,
 	    	    
 	    fclose(fp);
 
+            lineiter_free(li);
 	    return S3_ERROR;
 	}
     }
@@ -540,7 +566,8 @@ model_def_read(model_def_t **out_model_def,
 
 	    fclose(fp);
 
-	    return S3_ERROR;
+            lineiter_free(li);
+            return S3_ERROR;
 	}
 
 	mdef[i].p = acmod_id;
@@ -566,6 +593,7 @@ model_def_read(model_def_t **out_model_def,
 			   fp) != S3_SUCCESS) {
 	    fclose(fp);
 
+            lineiter_free(li);
 	    return S3_ERROR;
 	}
 
@@ -595,6 +623,7 @@ model_def_read(model_def_t **out_model_def,
 
     fclose(fp);
 
+    lineiter_free(li);
     return S3_SUCCESS;
 }
 

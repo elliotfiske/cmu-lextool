@@ -45,7 +45,7 @@
 #include <s3/acmod_set.h>
 #include <s3/model_def_io.h>
 #include <sphinxbase/ckd_alloc.h>
-#include <s3/read_line.h>
+#include <sphinxbase/pio.h>
 
 #include <sphinxbase/cmd_ln.h>
 #include <s3/err.h>
@@ -61,7 +61,7 @@
 #include "heap.h"
 #include "hash.h"
 
-#define MAXLINESIZE 10000
+#define MAXLINESIZE   10000   /* michal - get rid of it */
 #define CEILING   10000  
 #define IS_FILLER(X)	((X[0]=='+'||strcmp(X,"SIL")==0) ? 1 : 0)
 
@@ -103,7 +103,8 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
 				    int32 *NCDphones)
 {
     char  bphn[1024],lctx[1024], rctx[1024], wdpos[1024]; 
-    char  line[MAXLINESIZE], **cilist, *silence="SIL";
+    char  **cilist, *silence="SIL";
+    lineiter_t *line = NULL;
     heapelement_t **heap=NULL, *addciphone;
     hashelement_t **tphnhash, *tphnptr;
     phnhashelement_t  **phnhash, *phnptr;
@@ -122,12 +123,13 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
     swdtphs = bwdtphs = ewdtphs = iwdtphs = 0;
     /* Always install SIL in phonelist */
     phninstall(silence,phnhash);
-    while (read_line(line, MAXLINESIZE, NULL, fp) != NULL){
-        nwds = sscanf(line,"%s %s %s %s",bphn,lctx,rctx,wdpos);
+/*    while (read_line(line, MAXLINESIZE, NULL, fp) != NULL){*/
+    while ((line = LI_READ_SKIP_TRIM(line, fp)) != NULL){
+        nwds = sscanf(line->buf,"%s %s %s %s",bphn,lctx,rctx,wdpos);
         if (nwds != 1 && nwds != 3 &&  nwds != 4)
-	    E_FATAL("Incorrect format in triphone file %s\n%s\n",phnlist,line);
+	    E_FATAL("Incorrect format in triphone file %s\n%s\n",phnlist,line->buf);
         if (strcmp(bphn,"-") == 0)
-	    E_FATAL("Bad entry triphone file %s\n%s\n",phnlist,line);
+	    E_FATAL("Bad entry triphone file %s\n%s\n",phnlist,line->buf);
 	    
         if (nwds == 1 || (!strcmp(lctx,"-") && !strcmp(rctx,"-"))) {
 	    phnsize = strlen(bphn);
@@ -137,11 +139,11 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
         else {
             if (nwds == 3) strcpy(wdpos,"i"); /* default */
             if (!strcmp(lctx,"-") && !strcmp(rctx,"-") && !strcmp(wdpos,"-")){
-	        E_WARN("Bad entry triphone file %s\n%s\n",phnlist,line);
+	        E_WARN("Bad entry triphone file %s\n%s\n",phnlist,line->buf);
 		continue;
 	    }
 	    if (IS_FILLER(lctx) || IS_FILLER(rctx)){
-		E_WARN("Fillers in triphone, skipping:\n%s\n",line);
+		E_WARN("Fillers in triphone, skipping:\n%s\n",line->buf);
 		continue;
 	    }
             if (!strcmp(wdpos,"i") && !strcmp(wdpos,"b") && 
@@ -191,6 +193,7 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
     *CDhash = tphnhash;
     *NCDphones = swdtphs + bwdtphs + iwdtphs + ewdtphs;
 
+    lineiter_free(line);
     return S3_SUCCESS;
 }
 
@@ -255,7 +258,8 @@ int32 make_ci_list_cd_hash_frm_mdef(char  *mdeffile,
 int32  read_dict(char *dictfile, char *fillerdict, 
 		 dicthashelement_t ***dicthash)
 {
-    char  dictentry[MAXLINESIZE], dictsent[MAXLINESIZE], *dictfn[2];
+    char   *dictsent, *dictfn[2];
+    lineiter_t *dictentry = NULL;
     char  *dictword, *word, *phone, *tphn;
     dicthashelement_t   **lhash, *sptr;
     int32  maxphnlen, vocabsiz=0, nphns, numdicts, idict;
@@ -279,13 +283,15 @@ int32  read_dict(char *dictfile, char *fillerdict,
 
         vocabsiz = 0;
 	n_read = 0;
-        while (read_line(dictentry,MAXLINESIZE,&n_read,dict) != NULL)
+/*        while (read_line(dictentry,MAXLINESIZE,&n_read,dict) != NULL)*/
+        while ((dictentry = LI_READ_SKIP_TRIM_COUNT(dictentry, dict, &n_read)) != NULL)
         {
-	    if (dictentry[0] == 0) {
+	    if (dictentry->buf[0] == 0) {
 		E_WARN ("Empty line %d in the dictionary file %s\n", n_read, dictfn[idict]);
 		continue;
 	    }
-            strcpy(dictsent,dictentry); /* HACK */
+/*            strcpy(dictsent,dictentry->buf);*/ /* HACK */
+            dictsent = strdup(dictentry->buf);
             if ((dictword = strtok(dictsent," \t\n")) == NULL)
                 E_FATAL("Empty line in dictionary!\n");
             if ((sptr = dictinstall(dictword,lhash)) == NULL)
@@ -303,11 +309,14 @@ int32  read_dict(char *dictfile, char *fillerdict,
             sptr->nphns = nphns; maxphnlen++;
             sptr->phones = (char**)ckd_calloc_2d(nphns,maxphnlen,sizeof(char));
 
-            word = strtok(dictentry," \t\n");
+            word = strtok(dictentry->buf," \t\n");
             for(nphns=0;(phone = strtok(NULL," \t\n")) != NULL;nphns++)
 	        strcpy(sptr->phones[nphns],phone);
 	
             ++vocabsiz;
+            
+            /* michal */
+            free(dictsent);
         }
         fclose(dict);
         E_INFO("%d words in dict %s\n",vocabsiz,dictfn[idict]);
@@ -315,6 +324,7 @@ int32  read_dict(char *dictfile, char *fillerdict,
 
     *dicthash = lhash;
 
+    lineiter_free(dictentry);
     return(vocabsiz);
 }
 

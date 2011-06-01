@@ -68,7 +68,6 @@
 
 #include <sphinxbase/pio.h>
 #include <sphinxbase/ckd_alloc.h>
-#include <s3/read_line.h>
 #include <s3/prefetch.h>
 #include <s3/mllr_io.h>
 #include <sys_compat/file.h>
@@ -114,12 +113,6 @@ corpus_read_next_lsn_line(char **trans);
 #define DATA_TYPE_PHSEG 8
 
 #define N_DATA_TYPE	9
-
-/* Returns first line that is not a comment, trimms leading and trailing whitespaces and '\n' characters.
- * n_skipped is increased by count of commented lines skipped.
- */
-#define LI_NEXT_SKIP_TRIM_COUNT(iter,fp,n_skipped) lineiter_trim(lineiter_skip_comments(LINEITER_READLINE((iter),(fp)), (n_skipped)))
-#define LI_NEXT_SKIP_TRIM(iter,fp) LI_NEXT_SKIP_TRIM_COUNT((iter), (fp), NULL)
 
 /* The root directory for the speech corpus.  Each line of the control
  * file is appended to this directory */
@@ -353,7 +346,7 @@ corpus_set_ctl_filename(const char *ctl_filename)
 	return S3_ERROR;
     }
 
-    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -465,7 +458,7 @@ corpus_reset()
 	rewind(sil_fp);
 
     cur_ctl_lineiter = lineiter_init(cur_ctl_lineiter, ctl_fp);
-    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -583,12 +576,11 @@ corpus_set_partition(uint32 r,
 	return S3_ERROR;
     }
 
-/*    for (lineno = 0; read_line(ignore, MAXPATHLEN + 1, &lineno, ctl_fp););*/
-    for (lineno = 0; (ignore = LI_NEXT_SKIP_TRIM_COUNT(ignore, ctl_fp, &lineno)); lineno++); /* michal - FIX lines counting*/
+    for (lineno = 0; (ignore = LI_READ_SKIP_TRIM_COUNT(ignore, ctl_fp, &lineno)););
 
     rewind(ctl_fp);
 
-    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
 
     run_len = lineno / of_s;
 
@@ -1362,7 +1354,7 @@ corpus_next_utt()
         } else {
             lsn_lineiter = lineiter_next(lsn_lineiter);
         }*/
-        LI_NEXT_SKIP_TRIM(lsn_lineiter, lsn_fp);
+        lsn_lineiter = LI_READ_SKIP_TRIM(lsn_lineiter, lsn_fp);
         
         if ((lsn_lineiter == NULL) || (lsn_lineiter->buf == NULL)) {
             if (lsn_lineiter) {
@@ -1373,7 +1365,7 @@ corpus_next_utt()
 	}
     }  
 
-    LI_NEXT_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
     if (next_ctl_lineiter == NULL)
         next_ctl_lineiter = lineiter_init(next_ctl_lineiter, ctl_fp);
 
@@ -1521,7 +1513,7 @@ corpus_read_next_sent_file(char **trans)
     /* open the current file */
     fp = open_file_for_reading(DATA_TYPE_SENT);
 
-    LI_NEXT_SKIP_TRIM(li, fp);
+    li = LI_READ_SKIP_TRIM(li, fp);
 /*    if (read_line(big_str, 8192, NULL, fp) == NULL) {*/
     if (li == NULL) {
 	E_ERROR("Unable to read data in sent file %s\n",

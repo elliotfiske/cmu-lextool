@@ -44,7 +44,7 @@
  *********************************************************************/
 
 #include <s3/uttfile.h>
-#include <s3/read_line.h>
+#include <sphinxbase/pio.h>
 #include <sphinxbase/ckd_alloc.h>
 
 #include <s3/err.h>
@@ -57,7 +57,7 @@ uttfile_t *
 uttfile_open(const char *fn)
 {
     uttfile_t *uf;
-    char tmp[32000];
+    lineiter_t *tmp;
     uint32 i;
 
     uf = (uttfile_t *)ckd_calloc(1, sizeof(uttfile_t));
@@ -71,7 +71,8 @@ uttfile_open(const char *fn)
 	return NULL;
     }
 
-    for (i = 0; read_line(tmp, 32000, &i, uf->fp) != NULL;);
+    for (i = 0; (tmp = LI_READ_SKIP_TRIM_COUNT(tmp, uf->fp, &i)) != NULL;);
+    lineiter_free(tmp);
 
     uf->len = i;
 
@@ -91,7 +92,7 @@ uttfile_close(uttfile_t *uf)
 }
 
 int
-uttfile_data_at(uttfile_t *uf, uint32 off, char *buf, uint32 max_sz)
+uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf)
 {
     uint32 i;
 
@@ -108,7 +109,7 @@ uttfile_data_at(uttfile_t *uf, uint32 off, char *buf, uint32 max_sz)
     }
 
     if (off == uf->off) {
-	if (read_line(buf, max_sz, NULL, uf->fp) == NULL) {
+	if (((*buf) = LI_READ_SKIP_TRIM(*buf, uf->fp)) == NULL) {
 	    E_ERROR("Unable to read data at offset %u\n", off);
 
 	    return S3_ERROR;
@@ -119,7 +120,7 @@ uttfile_data_at(uttfile_t *uf, uint32 off, char *buf, uint32 max_sz)
     }
     else {
 	for (i = off; i < uf->off; i++) {
-	    if (read_line(buf, max_sz, NULL, uf->fp) == NULL) {
+	    if (((*buf) = LI_READ_SKIP_TRIM(*buf, uf->fp)) == NULL) {
 		E_ERROR("Unable to read data at offset %u\n", off);		
 		return S3_ERROR;
 	    }
@@ -130,9 +131,9 @@ uttfile_data_at(uttfile_t *uf, uint32 off, char *buf, uint32 max_sz)
 }
 
 int
-uttfile_data_next(uttfile_t *uf, char *buf, uint32 max_sz)
+uttfile_data_next(uttfile_t *uf, lineiter_t **buf)
 {
-    if (read_line(buf, max_sz, &uf->off, uf->fp) != NULL)
+    if (((*buf) = LI_READ_SKIP_TRIM_COUNT(*buf, uf->fp, &uf->off)) != NULL)
 	return 1;
     return 0;
 }
@@ -163,13 +164,13 @@ id_of(const char *buf)
 } 
 
 int
-uttfile_data_for(uttfile_t *uf, const char *id, char *buf, uint32 max_sz)
+uttfile_data_for(uttfile_t *uf, const char *id, lineiter_t **buf)
 {
     uint32 off, i;
 
     off = uf->off;
     for (i = off; i < uf->len; i++) {
-	if (uttfile_data_at(uf, i, buf, max_sz) != S3_SUCCESS) {
+	if (uttfile_data_at(uf, i, buf) != S3_SUCCESS) {
 	    return S3_ERROR;
 	}
 	if (strcmp(id_of(buf), id) == 0) {
@@ -177,7 +178,7 @@ uttfile_data_for(uttfile_t *uf, const char *id, char *buf, uint32 max_sz)
 	}
     }
     for (i = 0; i < off; i++) {
-	if (uttfile_data_at(uf, i, buf, max_sz) != S3_SUCCESS) {
+	if (uttfile_data_at(uf, i, buf) != S3_SUCCESS) {
 	    return S3_ERROR;
 	}
 	if (strcmp(id_of(buf), id) == 0) {
