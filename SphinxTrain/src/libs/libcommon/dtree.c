@@ -49,7 +49,7 @@
 #include <s3/two_class.h>
 
 #include <sphinxbase/ckd_alloc.h>
-#include <s3/read_line.h>
+#include <sphinxbase/pio.h>
 #include <s3/quest.h>
 #include <s3/div.h>
 #include <s3/err.h>
@@ -262,7 +262,8 @@ read_final_tree(FILE *fp,
     dtree_t *out;
     dtree_node_t *node;
     uint32  n_node;
-    char ln[4096], *s, str[128];
+    char *s, str[128];
+    lineiter_t *ln = NULL;
     uint32 n_read, n_scan;
     uint32 i, node_id, node_id_y, node_id_n;
     comp_quest_t *q;
@@ -273,9 +274,10 @@ read_final_tree(FILE *fp,
     out = ckd_calloc(1, sizeof(dtree_t));
 
     n_read = 0;
-    read_line(ln, 4096, &n_read, fp);
+/*    read_line(ln, 4096, &n_read, fp);*/
+    ln = LI_READ_SKIP_TRIM_COUNT(ln, fp, &n_read);
 
-    s = ln;
+    s = ln->buf;
     sscanf(s, "%s%n", str, &n_scan);
     if (strcmp(str, "n_node") == 0) {
 	s += n_scan;
@@ -293,8 +295,9 @@ read_final_tree(FILE *fp,
     
     err = FALSE;
     
-    while (read_line(ln, 4096, &n_read, fp)) {
-	s = ln;
+/*    while (read_line(ln, 4096, &n_read, fp)) {*/
+    while ((ln = LI_READ_SKIP_TRIM_COUNT(ln, fp, &n_read))) {
+	s = ln->buf;
 
 	sscanf(s, "%u%n", &node_id, &n_scan);
 	s += n_scan;
@@ -354,6 +357,7 @@ read_final_tree(FILE *fp,
 	out = NULL;
     }
 
+    lineiter_free(ln);
     return out;
 }
 
