@@ -161,6 +161,7 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
 	}
     }
     fclose(fp);
+    lineiter_free(line);
 
     /* Heap sort CI phones */
     heapsize = 0;
@@ -191,7 +192,6 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
     *CDhash = tphnhash;
     *NCDphones = swdtphs + bwdtphs + iwdtphs + ewdtphs;
 
-    lineiter_free(line);
     return S3_SUCCESS;
 }
 
@@ -287,8 +287,8 @@ int32  read_dict(char *dictfile, char *fillerdict,
 		E_WARN ("Empty line %d in the dictionary file %s\n", n_read, dictfn[idict]);
 		continue;
 	    }
-/*            strcpy(dictsent,dictentry->buf);*/ /* HACK */
-            dictsent = strdup(dictentry->buf);
+
+            dictsent = strdup(dictentry->buf); /* HACK */
             if ((dictword = strtok(dictsent," \t\n")) == NULL)
                 E_FATAL("Empty line in dictionary!\n");
             if ((sptr = dictinstall(dictword,lhash)) == NULL)
@@ -312,7 +312,6 @@ int32  read_dict(char *dictfile, char *fillerdict,
 	
             ++vocabsiz;
             
-            /* michal */
             free(dictsent);
         }
         fclose(dict);
@@ -458,7 +457,7 @@ int32  count_triphones (char *transfile,
 {
     int32  nbwdtphns, newdtphns, niwdtphns, nswdtphns;
     int32  nwords, lnphns, n_totalwds;
-    lineiter_t *line;
+    lineiter_t *line = NULL;
     char *tline;
     char   *word, *basephone, *lctxt, *rctxt; 
     char   silencephn[4];
@@ -481,7 +480,10 @@ int32  count_triphones (char *transfile,
     nbwdtphns = newdtphns = niwdtphns = nswdtphns = 0;
     while ((line = LINEITER_READNEXT(line, fp)) != NULL){
 	tline = strdup(line->buf);
-	if (strtok(tline," \t\n") == NULL) continue; /* Empty line */
+	if (strtok(tline," \t\n") == NULL) {
+	    free(tline);
+	    continue; /* Empty line */
+	}
         /* Count number of phones in pronunciation */
         for(nwords=1; strtok(NULL," \t\n") != NULL; nwords++);
 	n_totalwds += nwords;
@@ -575,8 +577,10 @@ int32  count_triphones (char *transfile,
 	    }
 	}
         free(wordarr);
+        free(tline);
     }
     fclose(fp);
+    lineiter_free(line);
 
     *phnhash = lphnhash;
     E_INFO("%d words in transcripts\n",n_totalwds);
@@ -585,8 +589,6 @@ int32  count_triphones (char *transfile,
     E_INFO("%d word internal triphones in transcripts\n",niwdtphns);
     E_INFO("%d word ending triphones in transcripts\n",newdtphns);
 
-    free(tline);
-    lineiter_free(line);
     return S3_SUCCESS;
 }
 
