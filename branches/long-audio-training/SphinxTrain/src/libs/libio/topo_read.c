@@ -121,7 +121,7 @@ topo_read(float32 ***tmat,
 	goto error;
     }
     
-    li = LI_READ_SKIP_TRIM_COUNT(li, fp, &n_read);
+    li = lineiter_readline(li, fp, &n_read);
     if (li == NULL) {
 	E_ERROR("EOF encounted while reading version number in %s!?\n", topo_file_name);
 
@@ -135,7 +135,7 @@ topo_read(float32 ***tmat,
 	goto error;
     }
 
-    li = LI_READ_SKIP_TRIM_COUNT(li, fp, &n_read);
+    li = lineiter_readline(li, fp, &n_read);
     if (li == NULL) {
 	E_ERROR("EOF encountered while reading n_state in %s!?\n", topo_file_name);
 
@@ -187,13 +187,13 @@ topo_read(float32 ***tmat,
     *tmat = out;
     *n_state_pm = n_state;
 
-    lineiter_free(li);
     fclose(fp);
+    lineiter_free(li);
     return S3_SUCCESS;
 
 error:    
-    lineiter_free(li);
     if (fp) fclose(fp);
+    lineiter_free(li);
     return S3_ERROR;
 }
 

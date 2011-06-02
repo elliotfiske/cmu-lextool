@@ -274,8 +274,7 @@ read_final_tree(FILE *fp,
     out = ckd_calloc(1, sizeof(dtree_t));
 
     n_read = 0;
-/*    read_line(ln, 4096, &n_read, fp);*/
-    ln = LI_READ_SKIP_TRIM_COUNT(ln, fp, &n_read);
+    ln = lineiter_readline(ln, fp, &n_read);
 
     s = ln->buf;
     sscanf(s, "%s%n", str, &n_scan);
@@ -295,8 +294,7 @@ read_final_tree(FILE *fp,
     
     err = FALSE;
     
-/*    while (read_line(ln, 4096, &n_read, fp)) {*/
-    while ((ln = LI_READ_SKIP_TRIM_COUNT(ln, fp, &n_read))) {
+    while ((ln = lineiter_readline(ln, fp, &n_read))) {
 	s = ln->buf;
 
 	sscanf(s, "%u%n", &node_id, &n_scan);

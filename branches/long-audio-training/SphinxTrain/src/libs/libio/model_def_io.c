@@ -166,8 +166,7 @@ parse_base_line(acmod_id_t *acmod_id,
     unsigned int n;
     const char **attrib;
 
-/*    if (read_line(li, BIG_STR_LEN, n_read, fp) == NULL)*/
-    li = LI_READ_SKIP_TRIM_COUNT(li, fp, n_read);
+    li = lineiter_readline(li, fp, n_read);
     if (li == NULL) {
         lineiter_free(li);
 	return S3_ERROR;
@@ -197,6 +196,8 @@ parse_base_line(acmod_id_t *acmod_id,
 
     if (parse_rem(&attrib, tmat, state, n_state, *n_read) != S3_SUCCESS) {
         fflush(stderr);
+        
+	lineiter_free(li);
         return S3_ERROR;
     }
 
@@ -224,8 +225,7 @@ parse_tri_line(acmod_id_t *acmod_id,
     acmod_id_t base, left, right;
     word_posn_t posn;
 
-/*    if (read_line(li, BIG_STR_LEN, n_read, fp) == NULL)*/
-    li = LI_READ_SKIP_TRIM_COUNT(li, fp, n_read);
+    li = lineiter_readline(li, fp, n_read);
     if (li == NULL) {
         lineiter_free(li);
 	return S3_ERROR;
@@ -457,8 +457,7 @@ model_def_read(model_def_t **out_model_def,
 	return S3_ERROR;
     }
 	
-/*    if (read_line(li, BIG_STR_LEN, &n_read, fp) == NULL) {*/
-    li = LI_READ_SKIP_TRIM_COUNT(li, fp, &n_read);
+    li = lineiter_readline(li, fp, &n_read);
     if (li == NULL) {
 	E_ERROR("ERROR not even a version number in %s!?\n",
 		file_name);
@@ -489,8 +488,7 @@ model_def_read(model_def_t **out_model_def,
 
     n_tri = n_base = n_total_map = n_tied_state = n_tied_ci_state = n_tied_tmat = NO_NUMBER;
     for ( i = 0; i < 6; i++) {
-/*	if (read_line(li, BIG_STR_LEN, &n_read, fp) == NULL) {*/
-        li = LI_READ_SKIP_TRIM_COUNT(li, fp, &n_read);
+        li = lineiter_readline(li, fp, &n_read);
         if (li == NULL) {
 	    E_ERROR("Incomplete count information in %s!?\n",
 		    file_name);

@@ -378,6 +378,25 @@ lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped)
     return li;
 }
 
+/* Reads a line in the file. Skipps commented lines and trimms leading and trailing whitespaces including the '\n' character from returned line.
+ * This was written to substitute SphinxTrain read_line function and the implementation of trimming and comments skipping is adopted from there.
+ */
+lineiter_t *
+lineiter_readline(lineiter_t *li, FILE *fp, uint32 *n_read)
+{
+    li = LINEITER_READNEXT(li, fp);
+    
+    if (li != NULL) {
+        if (n_read)
+            (*n_read)++;
+        
+        li = lineiter_skip_comments(li, n_read);
+        li = lineiter_trim(li);
+    }
+    
+    return li;
+}
+
 void
 lineiter_free(lineiter_t *li)
 {

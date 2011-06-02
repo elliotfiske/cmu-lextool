@@ -61,7 +61,6 @@
 #include "heap.h"
 #include "hash.h"
 
-#define MAXLINESIZE   10000   /* michal - get rid of it */
 #define CEILING   10000  
 #define IS_FILLER(X)	((X[0]=='+'||strcmp(X,"SIL")==0) ? 1 : 0)
 
@@ -123,8 +122,7 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
     swdtphs = bwdtphs = ewdtphs = iwdtphs = 0;
     /* Always install SIL in phonelist */
     phninstall(silence,phnhash);
-/*    while (read_line(line, MAXLINESIZE, NULL, fp) != NULL){*/
-    while ((line = LI_READ_SKIP_TRIM(line, fp)) != NULL){
+    while ((line = lineiter_readline(line, fp, NULL)) != NULL){
         nwds = sscanf(line->buf,"%s %s %s %s",bphn,lctx,rctx,wdpos);
         if (nwds != 1 && nwds != 3 &&  nwds != 4)
 	    E_FATAL("Incorrect format in triphone file %s\n%s\n",phnlist,line->buf);
@@ -283,8 +281,7 @@ int32  read_dict(char *dictfile, char *fillerdict,
 
         vocabsiz = 0;
 	n_read = 0;
-/*        while (read_line(dictentry,MAXLINESIZE,&n_read,dict) != NULL)*/
-        while ((dictentry = LI_READ_SKIP_TRIM_COUNT(dictentry, dict, &n_read)) != NULL)
+        while ((dictentry = lineiter_readline(dictentry, dict, &n_read)) != NULL)
         {
 	    if (dictentry->buf[0] == 0) {
 		E_WARN ("Empty line %d in the dictionary file %s\n", n_read, dictfn[idict]);
@@ -461,7 +458,8 @@ int32  count_triphones (char *transfile,
 {
     int32  nbwdtphns, newdtphns, niwdtphns, nswdtphns;
     int32  nwords, lnphns, n_totalwds;
-    char   line[MAXLINESIZE], tline[MAXLINESIZE];
+    lineiter_t *line;
+    char *tline;
     char   *word, *basephone, *lctxt, *rctxt; 
     char   silencephn[4];
     const char* wpos;
@@ -481,14 +479,14 @@ int32  count_triphones (char *transfile,
 
     n_totalwds = 0;
     nbwdtphns = newdtphns = niwdtphns = nswdtphns = 0;
-    while (fgets(line,MAXLINESIZE,fp) != NULL){
-	strcpy(tline,line);
+    while ((line = LINEITER_READNEXT(line, fp)) != NULL){
+	tline = strdup(line->buf);
 	if (strtok(tline," \t\n") == NULL) continue; /* Empty line */
         /* Count number of phones in pronunciation */
         for(nwords=1; strtok(NULL," \t\n") != NULL; nwords++);
 	n_totalwds += nwords;
 	wordarr = (dicthashelement_t **)ckd_calloc(nwords+2,sizeof(dicthashelement_t*));
-        word = strtok(line," \t\n"); 
+        word = strtok(line->buf," \t\n"); 
         if ((wordarr[1] = dictlookup(word,dicthash)) == NULL) {
             E_WARN("Word %s not found in dictionary. Mapping to SIL.\n", word);
         }
@@ -587,6 +585,8 @@ int32  count_triphones (char *transfile,
     E_INFO("%d word internal triphones in transcripts\n",niwdtphns);
     E_INFO("%d word ending triphones in transcripts\n",newdtphns);
 
+    free(tline);
+    lineiter_free(line);
     return S3_SUCCESS;
 }
 
