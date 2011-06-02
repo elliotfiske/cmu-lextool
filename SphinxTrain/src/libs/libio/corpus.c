@@ -346,7 +346,7 @@ corpus_set_ctl_filename(const char *ctl_filename)
 	return S3_ERROR;
     }
 
-    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -458,7 +458,7 @@ corpus_reset()
 	rewind(sil_fp);
 
     cur_ctl_lineiter = lineiter_init(cur_ctl_lineiter, ctl_fp);
-    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -576,11 +576,11 @@ corpus_set_partition(uint32 r,
 	return S3_ERROR;
     }
 
-    for (lineno = 0; (ignore = LI_READ_SKIP_TRIM_COUNT(ignore, ctl_fp, &lineno)););
+    for (lineno = 0; (ignore = lineiter_readline(ignore, ctl_fp, &lineno)););
 
     rewind(ctl_fp);
 
-    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
 
     run_len = lineno / of_s;
 
@@ -1354,7 +1354,7 @@ corpus_next_utt()
         } else {
             lsn_lineiter = lineiter_next(lsn_lineiter);
         }*/
-        lsn_lineiter = LI_READ_SKIP_TRIM(lsn_lineiter, lsn_fp);
+        lsn_lineiter = lineiter_readline(lsn_lineiter, lsn_fp, NULL);
         
         if ((lsn_lineiter == NULL) || (lsn_lineiter->buf == NULL)) {
             if (lsn_lineiter) {
@@ -1365,7 +1365,7 @@ corpus_next_utt()
 	}
     }  
 
-    next_ctl_lineiter = LI_READ_SKIP_TRIM(next_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
     if (next_ctl_lineiter == NULL)
         next_ctl_lineiter = lineiter_init(next_ctl_lineiter, ctl_fp);
 
@@ -1513,8 +1513,7 @@ corpus_read_next_sent_file(char **trans)
     /* open the current file */
     fp = open_file_for_reading(DATA_TYPE_SENT);
 
-    li = LI_READ_SKIP_TRIM(li, fp);
-/*    if (read_line(big_str, 8192, NULL, fp) == NULL) {*/
+    li = lineiter_readline(li, fp, NULL);
     if (li == NULL) {
 	E_ERROR("Unable to read data in sent file %s\n",
 		mk_filename(DATA_TYPE_SENT, cur_ctl_path));

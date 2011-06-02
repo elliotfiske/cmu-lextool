@@ -109,16 +109,9 @@ extern "C" {
 }
 #endif
 
-/* Reads a line from the file and returns the iterator. */
-#define LINEITER_READLINE(iter,fp) (((iter) == NULL) ? lineiter_start(fp) : lineiter_next(iter))
 
-/* Returns first line that is not a comment, trimms leading and trailing whitespaces and '\n' characters.
- * If not NULL, n_read is increased by count of lines read. lineiter_skip_comments counts only skipped lines,
- * therefore the n_read is incerased once more to comply with the original read_line function behavior.
- */
-#define LI_READ_SKIP_TRIM_COUNT(iter,fp,n_read) lineiter_trim(lineiter_skip_comments(LINEITER_READLINE((iter),(fp)), (((n_read) && ((*((uint32 *)(n_read)))++)), (n_read))))
-/*#define LI_READ_SKIP_TRIM(iter,fp) lineiter_trim(lineiter_skip_comments(LINEITER_READLINE((iter),(fp)), NULL))*/
-#define LI_READ_SKIP_TRIM(iter,fp) LI_READ_SKIP_TRIM_COUNT(iter, fp, NULL)
+/* Reads a line from the file and returns the iterator. */
+#define LINEITER_READNEXT(iter,fp) (((iter) == NULL) ? lineiter_start(fp) : lineiter_next(iter))
 
 
 /**
@@ -197,7 +190,7 @@ typedef struct lineiter_t {
 void printCallCount();
 
 /**
- * Init lineiter structure without reading from file.
+ * Init lineiter structure without reading from file. If li is not NULL, memory is not reallocated.
  */
 SPHINXBASE_EXPORT
 lineiter_t *lineiter_init(lineiter_t *li, FILE *fh);
@@ -226,6 +219,13 @@ lineiter_t *lineiter_trim(lineiter_t *li);
  */
 SPHINXBASE_EXPORT
 lineiter_t *lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped);
+
+/**
+ * Reads a line in the file. Skipps commented lines and trimms leading and trailing whitespaces including the '\n' character from returned line.
+ * This was written to substitute SphinxTrain read_line function and the implementation of trimming and comments skipping is adopted from there.
+ */
+SPHINXBASE_EXPORT
+lineiter_t *lineiter_readline(lineiter_t *li, FILE *fp, uint32 *n_read);
 
 /**
  * Stop reading lines from a file.

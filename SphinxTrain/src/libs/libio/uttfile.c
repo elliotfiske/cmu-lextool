@@ -71,7 +71,7 @@ uttfile_open(const char *fn)
 	return NULL;
     }
 
-    for (i = 0; (tmp = LI_READ_SKIP_TRIM_COUNT(tmp, uf->fp, &i)) != NULL;);
+    for (i = 0; (tmp = lineiter_readline(tmp, uf->fp, &i)) != NULL;);
     lineiter_free(tmp);
 
     uf->len = i;
@@ -109,7 +109,7 @@ uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf)
     }
 
     if (off == uf->off) {
-	if (((*buf) = LI_READ_SKIP_TRIM(*buf, uf->fp)) == NULL) {
+	if (((*buf) = lineiter_readline(*buf, uf->fp, NULL)) == NULL) {
 	    E_ERROR("Unable to read data at offset %u\n", off);
 
 	    return S3_ERROR;
@@ -120,7 +120,7 @@ uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf)
     }
     else {
 	for (i = off; i < uf->off; i++) {
-	    if (((*buf) = LI_READ_SKIP_TRIM(*buf, uf->fp)) == NULL) {
+	    if (((*buf) = lineiter_readline(*buf, uf->fp, NULL)) == NULL) {
 		E_ERROR("Unable to read data at offset %u\n", off);		
 		return S3_ERROR;
 	    }
@@ -133,7 +133,7 @@ uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf)
 int
 uttfile_data_next(uttfile_t *uf, lineiter_t **buf)
 {
-    if (((*buf) = LI_READ_SKIP_TRIM_COUNT(*buf, uf->fp, &uf->off)) != NULL)
+    if (((*buf) = lineiter_readline(*buf, uf->fp, &uf->off)) != NULL)
 	return 1;
     return 0;
 }
