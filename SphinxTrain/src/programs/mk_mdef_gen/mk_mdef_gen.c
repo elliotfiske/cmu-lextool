@@ -122,7 +122,8 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
     swdtphs = bwdtphs = ewdtphs = iwdtphs = 0;
     /* Always install SIL in phonelist */
     phninstall(silence,phnhash);
-    while ((line = lineiter_readline(line, fp, NULL)) != NULL){
+    line = lineiter_init_clean(NULL, fp);
+    while ((line = lineiter_next(line, NULL)) != NULL){
         nwds = sscanf(line->buf,"%s %s %s %s",bphn,lctx,rctx,wdpos);
         if (nwds != 1 && nwds != 3 &&  nwds != 4)
 	    E_FATAL("Incorrect format in triphone file %s\n%s\n",phnlist,line->buf);
@@ -279,9 +280,11 @@ int32  read_dict(char *dictfile, char *fillerdict,
         if ((dict = fopen(dictfn[idict],"r")) == NULL)
             E_FATAL("Unable to open dictionary %s\n",dictfile);
 
+        dictentry = lineiter_init_clean(dictentry, dict);
+
         vocabsiz = 0;
 	n_read = 0;
-        while ((dictentry = lineiter_readline(dictentry, dict, &n_read)) != NULL)
+        while ((dictentry = lineiter_next(dictentry, &n_read)) != NULL)
         {
 	    if (dictentry->buf[0] == 0) {
 		E_WARN ("Empty line %d in the dictionary file %s\n", n_read, dictfn[idict]);
@@ -478,7 +481,8 @@ int32  count_triphones (char *transfile,
 
     n_totalwds = 0;
     nbwdtphns = newdtphns = niwdtphns = nswdtphns = 0;
-    while ((line = LINEITER_READNEXT(line, fp)) != NULL){
+    line = lineiter_init(NULL, fp);
+    while ((line = lineiter_next(line, NULL)) != NULL){
 	tline = strdup(line->buf);
 	if (strtok(tline," \t\n") == NULL) {
 	    free(tline);

@@ -57,7 +57,7 @@ uttfile_t *
 uttfile_open(const char *fn)
 {
     uttfile_t *uf;
-    lineiter_t *tmp;
+    lineiter_t *tmp = NULL;
     uint32 i;
 
     uf = (uttfile_t *)ckd_calloc(1, sizeof(uttfile_t));
@@ -71,8 +71,8 @@ uttfile_open(const char *fn)
 	return NULL;
     }
 
-    for (i = 0; (tmp = lineiter_readline(tmp, uf->fp, &i)) != NULL;);
-    lineiter_free(tmp);
+    tmp = lineiter_init_clean(NULL, uf->fp);
+    for (i = 0; (tmp = lineiter_next(tmp, &i)) != NULL;);
 
     uf->len = i;
 
@@ -92,9 +92,10 @@ uttfile_close(uttfile_t *uf)
 }
 
 int
-uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf)
+uttfile_data_at(uttfile_t *uf, uint32 off, char **buf)
 {
     uint32 i;
+    lineiter_t *li = NULL;
 
     if (off >= uf->len) {
 	E_ERROR("Offset past end of file\n");
@@ -108,33 +109,44 @@ uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf)
 	uf->off = 0;
     }
 
+    li = lineiter_init_clean(NULL, uf->fp);
     if (off == uf->off) {
-	if (((*buf) = lineiter_readline(*buf, uf->fp, NULL)) == NULL) {
+	if ((li = lineiter_next(li, NULL)) == NULL) {
 	    E_ERROR("Unable to read data at offset %u\n", off);
-
 	    return S3_ERROR;
 	}
 	else {
+	    (*buf) = strdup(li->buf);
+            lineiter_free(li);
 	    return 1;
 	}
     }
     else {
 	for (i = off; i < uf->off; i++) {
-	    if (((*buf) = lineiter_readline(*buf, uf->fp, NULL)) == NULL) {
+	    if ((li = lineiter_next(li, NULL)) == NULL) {
 		E_ERROR("Unable to read data at offset %u\n", off);		
 		return S3_ERROR;
 	    }
 	}
 
+        (*buf) = strdup(li->buf);
+        lineiter_free(li);
 	return 1;
     }
 }
 
 int
-uttfile_data_next(uttfile_t *uf, lineiter_t **buf)
+uttfile_data_next(uttfile_t *uf, char **buf)
 {
-    if (((*buf) = lineiter_readline(*buf, uf->fp, &uf->off)) != NULL)
+    lineiter_t *li = NULL;
+    
+    li = lineiter_init_clean(NULL, uf->fp);
+    if ((li = lineiter_next(li, &uf->off)) != NULL) {
+        (*buf) = strdup(li->buf);
+        lineiter_free(li);
 	return 1;
+    }
+    
     return 0;
 }
 
@@ -164,7 +176,7 @@ id_of(const char *buf)
 } 
 
 int
-uttfile_data_for(uttfile_t *uf, const char *id, lineiter_t **buf)
+uttfile_data_for(uttfile_t *uf, const char *id, char **buf)
 {
     uint32 off, i;
 

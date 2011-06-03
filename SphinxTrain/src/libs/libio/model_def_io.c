@@ -166,7 +166,8 @@ parse_base_line(acmod_id_t *acmod_id,
     unsigned int n;
     const char **attrib;
 
-    li = lineiter_readline(li, fp, n_read);
+    li = lineiter_init_clean(NULL, fp);
+    li = lineiter_next(li, n_read);
     if (li == NULL) {
         lineiter_free(li);
 	return S3_ERROR;
@@ -225,7 +226,8 @@ parse_tri_line(acmod_id_t *acmod_id,
     acmod_id_t base, left, right;
     word_posn_t posn;
 
-    li = lineiter_readline(li, fp, n_read);
+    li = lineiter_init_clean(NULL, fp);
+    li = lineiter_next(li, n_read);
     if (li == NULL) {
         lineiter_free(li);
 	return S3_ERROR;
@@ -456,8 +458,9 @@ model_def_read(model_def_t **out_model_def,
 
 	return S3_ERROR;
     }
-	
-    li = lineiter_readline(li, fp, &n_read);
+    
+    li = lineiter_init_clean(NULL, fp);
+    li = lineiter_next(li, &n_read);
     if (li == NULL) {
 	E_ERROR("ERROR not even a version number in %s!?\n",
 		file_name);
@@ -488,7 +491,7 @@ model_def_read(model_def_t **out_model_def,
 
     n_tri = n_base = n_total_map = n_tied_state = n_tied_ci_state = n_tied_tmat = NO_NUMBER;
     for ( i = 0; i < 6; i++) {
-        li = lineiter_readline(li, fp, &n_read);
+        li = lineiter_next(li, &n_read);
         if (li == NULL) {
 	    E_ERROR("Incomplete count information in %s!?\n",
 		    file_name);

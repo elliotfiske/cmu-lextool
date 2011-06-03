@@ -110,10 +110,6 @@ extern "C" {
 #endif
 
 
-/* Reads a line from the file and returns the iterator. */
-#define LINEITER_READNEXT(iter,fp) (((iter) == NULL) ? lineiter_start(fp) : lineiter_next(iter))
-
-
 /**
  * Like fopen, but use popen and zcat if it is determined that "file" is compressed
  * (i.e., has a .z, .Z, .gz, or .GZ extension).
@@ -184,10 +180,9 @@ typedef struct lineiter_t {
 	size_t bsiz;
 	size_t len;
 	FILE *fh;
+	int clean;
+	int start;
 } lineiter_t;
-
-/* michal - DEBUG */
-void printCallCount();
 
 /**
  * Init lineiter structure without reading from file. If li is not NULL, memory is not reallocated.
@@ -196,39 +191,21 @@ SPHINXBASE_EXPORT
 lineiter_t *lineiter_init(lineiter_t *li, FILE *fh);
 
 /**
- * Start reading lines from a file.
+ * Same as lineiter_init but causes subsequent calls of lineiter_next to skipp commented lines
+ * and trimm leading and trailing whitespaces (including '\n' character).
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_start(FILE *fh);
+lineiter_t *lineiter_init_clean(lineiter_t *li, FILE *fh);
 
 /**
- * Move to the next line in the file.
+ * Reads the next line from the file. Optionally skipps commented lines and trimms whitespaces at the beginning and end of the line
+ * (according to settings of the iterator at the creation - lineiter_init / lineiter_init_clean.
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_next(lineiter_t *li);
+lineiter_t *lineiter_next(lineiter_t *li, uint32 *n_read);
 
 /**
- * Strip leading and trailing whitespaces.
- */
-SPHINXBASE_EXPORT
-lineiter_t *lineiter_trim(lineiter_t *li);
-
-/**
- * If the line is a comment iterate until a non-comment line is found.
- * If not NULL, n_skipped is increased by the amount of skipped commented lines.
- */
-SPHINXBASE_EXPORT
-lineiter_t *lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped);
-
-/**
- * Reads a line in the file. Skipps commented lines and trimms leading and trailing whitespaces including the '\n' character from returned line.
- * This was written to substitute SphinxTrain read_line function and the implementation of trimming and comments skipping is adopted from there.
- */
-SPHINXBASE_EXPORT
-lineiter_t *lineiter_readline(lineiter_t *li, FILE *fp, uint32 *n_read);
-
-/**
- * Stop reading lines from a file.
+ * Finish reading lines from a file.
  */
 SPHINXBASE_EXPORT
 void lineiter_free(lineiter_t *li);

@@ -345,8 +345,9 @@ corpus_set_ctl_filename(const char *ctl_filename)
 
 	return S3_ERROR;
     }
-
-    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
+    next_ctl_lineiter = lineiter_init_clean(next_ctl_lineiter, ctl_fp);
+    
+    next_ctl_lineiter = lineiter_next(next_ctl_lineiter, NULL);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -457,8 +458,8 @@ corpus_reset()
     if (sil_fp)
 	rewind(sil_fp);
 
-    cur_ctl_lineiter = lineiter_init(cur_ctl_lineiter, ctl_fp);
-    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
+    cur_ctl_lineiter = lineiter_init_clean(cur_ctl_lineiter, ctl_fp);
+    next_ctl_lineiter = lineiter_next(next_ctl_lineiter, NULL);
     if (next_ctl_lineiter == NULL) {
 	E_ERROR("Must be at least one line in the control file\n");
 
@@ -576,11 +577,11 @@ corpus_set_partition(uint32 r,
 	return S3_ERROR;
     }
 
-    for (lineno = 0; (ignore = lineiter_readline(ignore, ctl_fp, &lineno)););
+    for (lineno = 0; (ignore = lineiter_next(ignore, &lineno)););
 
     rewind(ctl_fp);
 
-    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
+    next_ctl_lineiter = lineiter_next(next_ctl_lineiter, NULL);
 
     run_len = lineno / of_s;
 
@@ -1212,8 +1213,7 @@ corpus_init()
     /* Do some sanity checking,
      * initialize cur_ctl_lineiter and next_ctl_lineiter, which could not be NULL, unless they were initializer before.
      * (GLITCH WARNING - this function probably should be responsible for initialization
-     *  but next_ctl_lineiter is already initialized and re-initialization causes program fail.
-     *  - Michal)
+     *  but next_ctl_lineiter is already initialized and re-initialization causes program fail.)
      */
 
     if (ctl_fp == NULL) {
@@ -1223,9 +1223,9 @@ corpus_init()
 	
     } else {
         if (cur_ctl_lineiter == NULL)
-            cur_ctl_lineiter = lineiter_init(cur_ctl_lineiter, ctl_fp);
+            cur_ctl_lineiter = lineiter_init_clean(cur_ctl_lineiter, ctl_fp);
         if (next_ctl_lineiter == NULL)
-            next_ctl_lineiter = lineiter_init(next_ctl_lineiter, ctl_fp);
+            next_ctl_lineiter = lineiter_init_clean(next_ctl_lineiter, ctl_fp);
     }
 
     if (requires_sent &&
@@ -1349,12 +1349,11 @@ corpus_next_utt()
      *       behind ctl_fp. */
 
     if (lsn_fp) {
-/*        if (lsn_lineiter == NULL) {
-            lsn_lineiter = lineiter_start(lsn_fp);
-        } else {
-            lsn_lineiter = lineiter_next(lsn_lineiter);
-        }*/
-        lsn_lineiter = lineiter_readline(lsn_lineiter, lsn_fp, NULL);
+        if (lsn_lineiter == NULL) {
+            lsn_lineiter = lineiter_init_clean(lsn_lineiter, lsn_fp);
+        }
+        
+        lsn_lineiter = lineiter_next(lsn_lineiter, NULL);
         
         if ((lsn_lineiter == NULL) || (lsn_lineiter->buf == NULL)) {
             if (lsn_lineiter) {
@@ -1365,9 +1364,9 @@ corpus_next_utt()
 	}
     }  
 
-    next_ctl_lineiter = lineiter_readline(next_ctl_lineiter, ctl_fp, NULL);
+    next_ctl_lineiter = lineiter_next(next_ctl_lineiter, NULL);
     if (next_ctl_lineiter == NULL)
-        next_ctl_lineiter = lineiter_init(next_ctl_lineiter, ctl_fp);
+        next_ctl_lineiter = lineiter_init_clean(next_ctl_lineiter, ctl_fp);
 
     return TRUE;
 }
@@ -1503,7 +1502,6 @@ static int
 corpus_read_next_sent_file(char **trans)
 {
     FILE *fp;
-/*    char big_str[8192];*/
     lineiter_t *li;
 
     /* start prefetching the next file, if one. */
@@ -1512,8 +1510,9 @@ corpus_read_next_sent_file(char **trans)
 
     /* open the current file */
     fp = open_file_for_reading(DATA_TYPE_SENT);
+    li = lineiter_init_clean(NULL, fp);
 
-    li = lineiter_readline(li, fp, NULL);
+    li = lineiter_next(li, NULL);
     if (li == NULL) {
 	E_ERROR("Unable to read data in sent file %s\n",
 		mk_filename(DATA_TYPE_SENT, cur_ctl_path));

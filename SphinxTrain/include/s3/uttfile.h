@@ -53,7 +53,6 @@ extern "C" {
 #endif
 
 #include <sphinxbase/prim_type.h>
-#include <sphinxbase/pio.h>
 
 #include <stdio.h>
 
@@ -70,13 +69,13 @@ void
 uttfile_close(uttfile_t *uf);
 
 int
-uttfile_data_at(uttfile_t *uf, uint32 off, lineiter_t **buf);
+uttfile_data_at(uttfile_t *uf, uint32 off, char **buf);
 
 int
-uttfile_data_next(uttfile_t *uf, lineiter_t **buf);
+uttfile_data_next(uttfile_t *uf, char **buf);
 
 int
-uttfile_data_for(uttfile_t *uf, const char *id, lineiter_t **buf);
+uttfile_data_for(uttfile_t *uf, const char *id, char **buf);
 
 #ifdef __cplusplus
 }
