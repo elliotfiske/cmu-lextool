@@ -251,20 +251,10 @@ fopen_compchk(const char *file, int32 * ispipe)
 #endif /* HAVE_POPEN */
 }
 
-/* michal - DEBUG */
-static int init_call_count = 0;
-static int free_call_count = 0;
-void printCallCount() {
-        fprintf(stderr, "MICHAL: init/free count: %d / %d\n", init_call_count, free_call_count);
-}
-
 lineiter_t *
-lineiter_init(lineiter_t *li, FILE *fh)
+lineiter_init_common(lineiter_t *li, FILE *fh)
 {
     if (li == NULL) {
-        init_call_count++;
-        printCallCount();
-        
         li = ckd_calloc(1, sizeof(*li));
         li->buf = ckd_malloc(128);
         li->bsiz = 128;
@@ -273,37 +263,53 @@ lineiter_init(lineiter_t *li, FILE *fh)
     li->buf[0] = '\0';
     li->len = 0;
     li->fh = fh;
+    li->start = TRUE;
     
     return li;
 }
 
 lineiter_t *
-lineiter_start(FILE *fh)
+lineiter_init(lineiter_t *li, FILE *fh)
 {
-    lineiter_t *li;
-
-    li = lineiter_init(NULL, fh);
-
-    li = lineiter_next(li);
+    li = lineiter_init_common(li, fh);
     
-    /* Strip the UTF-8 BOM */
-    
-    if (0 == strncmp(li->buf, "\xef\xbb\xbf", 3)) {
-	memmove(li->buf, li->buf + 3, strlen(li->buf + 1));
-	li->len -= 3;
+    if (li != NULL) {
+        li->clean = FALSE;
     }
     
     return li;
 }
 
 lineiter_t *
-lineiter_next(lineiter_t *li)
+lineiter_init_clean(lineiter_t *li, FILE *fh)
+{
+    li = lineiter_init_common(li, fh);
+    
+    if (li != NULL) {
+        li->clean = TRUE;
+    }
+    
+    return li;
+}
+
+lineiter_t *
+lineiter_read(lineiter_t *li)
 {
     /* Read a line and check for EOF. */
     if (fgets(li->buf, li->bsiz, li->fh) == NULL) {
         lineiter_free(li);
         return NULL;
     }
+    
+    if (li->start) {
+        /* Strip the UTF-8 BOM */
+        if (0 == strncmp(li->buf, "\xef\xbb\xbf", 3)) {
+            memmove(li->buf, li->buf + 3, strlen(li->buf + 1));
+            li->len -= 3;
+        }
+        li->start = FALSE;
+    }
+
     /* If we managed to read the whole thing, then we are done
      * (this will be by far the most common result). */
     li->len = strlen(li->buf);
@@ -338,8 +344,9 @@ lineiter_trim(lineiter_t *li)
     char *start;
     char *end;
     
-    if (li == NULL)
+    if (li == NULL) {
         return NULL;
+    }
     
     start = li->buf;
     end = li->buf + strlen(li->buf) - 1;
@@ -369,10 +376,11 @@ lineiter_t *
 lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped)
 {
     while ((li != NULL) && (li->buf[0] == '#')) {
-        li = lineiter_next(li);
+        li = lineiter_read(li);
         
-        if (n_skipped != NULL)
+        if (n_skipped != NULL) {
             (*n_skipped)++;
+        }
     }
     
     return li;
@@ -382,14 +390,23 @@ lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped)
  * This was written to substitute SphinxTrain read_line function and the implementation of trimming and comments skipping is adopted from there.
  */
 lineiter_t *
-lineiter_readline(lineiter_t *li, FILE *fp, uint32 *n_read)
+lineiter_next(lineiter_t *li, uint32 *n_read)
 {
-    li = LINEITER_READNEXT(li, fp);
+    if (li == NULL) {
+        return NULL;
+    }
+
+    if ((li = lineiter_read(li)) == NULL) {
+        return NULL;
+    }
     
-    if (li != NULL) {
-        if (n_read)
-            (*n_read)++;
+    /* increase line counter by 1 */
+    if (n_read) {
+        (*n_read)++;
+    }
         
+    /* clean the line? */
+    if (li->clean) {
         li = lineiter_skip_comments(li, n_read);
         li = lineiter_trim(li);
     }
@@ -400,11 +417,9 @@ lineiter_readline(lineiter_t *li, FILE *fp, uint32 *n_read)
 void
 lineiter_free(lineiter_t *li)
 {
-    if (li == NULL)
+    if (li == NULL) {
         return;
-    
-    free_call_count++;
-    printCallCount();
+    }
     
     ckd_free(li->buf);
     ckd_free(li);

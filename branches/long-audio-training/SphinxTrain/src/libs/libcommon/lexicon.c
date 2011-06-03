@@ -174,8 +174,9 @@ lexicon_t *lexicon_read(lexicon_t *prior_lex,
     if (lex->phone_set == NULL)
 	lex->phone_set = acmod_set;
     
+    line = lineiter_init_clean(NULL, lex_fp);
     for (start_wid = wid = lex->entry_cnt;
-        line = lineiter_readline(line, lex_fp, &lineno);
+        line = lineiter_next(line, &lineno);
 	 /* wid incremented in body of loop */ ) {
 	if (line->buf[0] == 0) {
 	    E_WARN("Lexicon %s has a blank line at line %d\n",
