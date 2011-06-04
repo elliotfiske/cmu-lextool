@@ -17,16 +17,16 @@ import edu.cmu.sphinx.util.StringNormaliser;
 import edu.cmu.sphinx.util.props.ConfigurationManagerUtils;
 
 public class AllWordDictionary extends FastDictionary {
-	
+
 	// take input from ConfigurationManager later
 	/** Path to G2P model file */
 	public static final String G2P_MODEL = "file:./resource/models/cmudict04_lts.bin";
-	private boolean addSilEndingPronunciation;	
-	
+	private boolean addSilEndingPronunciation;
+
 	public AllWordDictionary() {
-		
+
 	}
-	
+
 	public AllWordDictionary(String wordDictionaryFile,
 			String fillerDictionaryFile, List<URL> addendaUrlList,
 			boolean addSilEndingPronunciation, String wordReplacement,
@@ -50,9 +50,10 @@ public class AllWordDictionary extends FastDictionary {
 		this.addendaUrlList = addendaUrlList;
 
 		this.addSilEndingPronunciation = addSilEndingPronunciation;
-	
+
 		this.unitManager = unitManager;
 	}
+
 	/**
 	 * Returns a Word object based on the spelling and its classification. The
 	 * behavior of this method is also affected by the properties
@@ -73,91 +74,92 @@ public class AllWordDictionary extends FastDictionary {
 		}
 
 		String word = dictionary.get(text);
-		if (word == null) { 
-				//String line = text + "\t";
-				StringNormaliser sn;
-				try {
-					sn = new StringNormaliser(new URL("file:./resource/models/abbrev.txt"),new URL("file:./resource/models/num.txt"),G2P_MODEL);
-					sn.loadModels();
-					LinkedList<String>pronunciations=sn.toPhone(text);
-					//System.out.println("Pronunciation for "+text+" found as"+pronunciations.getFirst());
-					Iterator<String> iter= pronunciations.iterator();
-					int count=0;
-					while(iter.hasNext()){
-						String onePronunciation=iter.next();
-						String entry=text+"\t";
-						if(count >1){
-							entry=text+'('+count+')'+"\t";
-						}
-						String line=entry+onePronunciation;
-						//System.out.println(entry+"="+line);
-						dictionary.put(text.toLowerCase(), line.toUpperCase());
-						count ++;
+		if (word == null) {
+			// String line = text + "\t";
+			StringNormaliser sn;
+			try {
+				sn = new StringNormaliser(new URL(
+						"file:./resource/models/abbrev.txt"), new URL(
+						"file:./resource/models/num.txt"), G2P_MODEL);
+				sn.loadModels();
+				LinkedList<String> pronunciations = sn.toPhone(text);
+				Iterator<String> iter = pronunciations.iterator();
+				int count = 0;
+				while (iter.hasNext()) {
+					String onePronunciation = iter.next();
+					String entry = text + "\t";
+					if (count > 1) {
+						entry = text + '(' + count + ')' + "\t";
 					}
-						
-				} catch (Exception e) {
-					
-					System.out.println(e.getMessage());
+					String line = entry + onePronunciation;
+					dictionary.put(text.toLowerCase(), line.toUpperCase());
+					count++;
 				}
-							
-		}				
+
+			} catch (Exception e) {
+
+				System.out.println(e.getMessage());
+			}
+
+		}
 		wordObject = processEntry(text);
 		return wordObject;
 	}
-	
+
 	/**
-     * Processes a dictionary entry. When loaded the dictionary just loads each line of the dictionary into the hash
-     * table, assuming that most words are not going to be used. Only when a word is actually used is its pronunciations
-     * massaged into an array of pronunciations.
-     */
-    private Word processEntry(String word) {
-        List<Pronunciation> pList = new LinkedList<Pronunciation>();
-        String line;
-        int count = 0;
-        boolean isFiller = false;
+	 * Processes a dictionary entry. When loaded the dictionary just loads each
+	 * line of the dictionary into the hash table, assuming that most words are
+	 * not going to be used. Only when a word is actually used is its
+	 * pronunciations massaged into an array of pronunciations.
+	 */
+	private Word processEntry(String word) {
+		List<Pronunciation> pList = new LinkedList<Pronunciation>();
+		String line;
+		int count = 0;
+		boolean isFiller = false;
 
-        do {
-            count++;
-            String lookupWord = word;
-            if (count > 1) {
-                lookupWord = lookupWord + '(' + count + ')';
-            }
-            line = (String) dictionary.get(lookupWord);
-            
-            if (line != null) {
-                StringTokenizer st = new StringTokenizer(line);
+		do {
+			count++;
+			String lookupWord = word;
+			if (count > 1) {
+				lookupWord = lookupWord + '(' + count + ')';
+			}
+			line = (String) dictionary.get(lookupWord);
 
-                String tag = st.nextToken();
-                isFiller = tag.startsWith(FILLER_TAG);
-                int unitCount = st.countTokens();
+			if (line != null) {
+				StringTokenizer st = new StringTokenizer(line);
 
-                Unit[] units = new Unit[unitCount];
-                for (int i = 0; i < units.length; i++) {
-                    String unitName = st.nextToken();
-                    units[i] = getCIUnit(unitName, isFiller);
-                }
+				String tag = st.nextToken();
+				isFiller = tag.startsWith(FILLER_TAG);
+				int unitCount = st.countTokens();
 
-                if (!isFiller && addSilEndingPronunciation) {
-                    units = Arrays.copyOf(units, unitCount + 1);
-                    units[unitCount] = UnitManager.SILENCE;
-                }
-                pList.add(new Pronunciation(units, null, null, 1.f));
-            }
-        } while (line != null);
+				Unit[] units = new Unit[unitCount];
+				for (int i = 0; i < units.length; i++) {
+					String unitName = st.nextToken();
+					units[i] = getCIUnit(unitName, isFiller);
+				}
 
-        Pronunciation[] pronunciations = new Pronunciation[pList.size()];
-        pList.toArray(pronunciations);
-        Word wordObject = createWord(word, pronunciations, isFiller);
+				if (!isFiller && addSilEndingPronunciation) {
+					units = Arrays.copyOf(units, unitCount + 1);
+					units[unitCount] = UnitManager.SILENCE;
+				}
+				pList.add(new Pronunciation(units, null, null, 1.f));
+			}
+		} while (line != null);
 
-        for (Pronunciation pronunciation : pronunciations) {
-            pronunciation.setWord(wordObject);
-        }
-        wordDictionary.put(word, wordObject);
+		Pronunciation[] pronunciations = new Pronunciation[pList.size()];
+		pList.toArray(pronunciations);
+		Word wordObject = createWord(word, pronunciations, isFiller);
 
-        return wordObject;
-    }
-    
-    /**
+		for (Pronunciation pronunciation : pronunciations) {
+			pronunciation.setWord(wordObject);
+		}
+		wordDictionary.put(word, wordObject);
+
+		return wordObject;
+	}
+
+	/**
 	 * Create a Word object with the given spelling and pronunciations, and
 	 * insert it into the dictionary.
 	 * 
@@ -175,5 +177,5 @@ public class AllWordDictionary extends FastDictionary {
 		dictionary.put(text, word.toString());
 		return word;
 	}
-	
+
 }
