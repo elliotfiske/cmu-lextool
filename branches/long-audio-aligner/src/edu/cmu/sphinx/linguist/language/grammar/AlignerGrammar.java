@@ -84,7 +84,7 @@ public class AlignerGrammar extends Grammar {
 		initialNode.add(branchNode, LogMath.getLogOne());
 
 		for (int i = 0; i < wordGrammarNodes.size(); i++) {
-			final GrammarNode wordNode = wordGrammarNodes.get(i);
+			final GrammarNode wordNode = wordGrammarNodes.get(i);		
 
 			float branchScore = logMath.linearToLog(1.0);
 			if (i == 0)

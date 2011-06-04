@@ -35,16 +35,14 @@ public class LongAudioAligner {
 		while ((tempInput = reader.readLine()) != null) {
 			input = input.concat(tempInput + " ");
 		}
-
 		String Input = "";
-
 		StringTokenizer tok = new StringTokenizer(input, ".");
 		while (tok.hasMoreTokens()) {
 			Input = Input.concat(tok.nextToken() + " ");
 		}
-
-		long startTime = System.currentTimeMillis();		
 		System.out.println(Input);
+		long startTime = System.currentTimeMillis();
+
 		grammar.setText(Input);
 
 		recognizer.allocate();
@@ -58,11 +56,9 @@ public class LongAudioAligner {
 		while ((result = recognizer.recognize()) != null) {
 			String resultText = result.getBestFinalResultNoFiller();
 			String timedResult = result.getTimedBestResult(false, true);
-			// System.out.println(resultText);
 			untimed = untimed.concat(resultText + " ");
 			System.out.println(timedResult);
-		}
-		// System.out.println(untimed);
+		}		
 		System.out.println("Time to align:"
 				+ (System.currentTimeMillis() - startTime) / 1000 + "secs");
 

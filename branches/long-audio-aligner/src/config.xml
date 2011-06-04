@@ -6,7 +6,7 @@
 
 	<property name="absoluteBeamWidth" value="-1" />
 	<property name="relativeBeamWidth" value="1E-200" />
-	<property name="wordInsertionProbability" value="1" />
+	<property name="wordInsertionProbability" value="0.7" />
 	<property name="languageWeight" value="7" />
 
 	<property name="frontend" value="epFrontEnd" />
@@ -81,10 +81,7 @@
 	<component name="epFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
 		<propertylist name="pipeline">
 			<item>audioFileDataSource </item>
-			<item>dataBlocker </item>
-			<!--item>speechClassifier </item-->
-			<!--item>speechMarker </item-->
-			<!--item>nonSpeechDataFilter </item-->
+			<item>dataBlocker </item>			
 			<item>preemphasizer </item>
 			<item>windower </item>
 			<item>fft </item>
