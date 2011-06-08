@@ -153,71 +153,50 @@ parse_rem(const char ***attrib,
 }
 
 static int32
-parse_base_line(acmod_id_t *acmod_id,
+parse_base_line(char *line,
+		int lineno,
+		acmod_id_t *acmod_id,
 		uint32 *tmat,
 		uint32 *state,
 		uint32 *n_state,
-		acmod_set_t *acmod_set,
-		uint32 *n_read,
-		FILE *fp)
+		acmod_set_t *acmod_set)
 {
-    lineiter_t *li = NULL;
     char *tok;
     unsigned int n;
     const char **attrib;
 
-    li = lineiter_init_clean(NULL, fp);
-    li = lineiter_next(li, n_read);
-    if (li == NULL) {
-        lineiter_free(li);
-	return S3_ERROR;
-    }
-
-    tok = strtok(li->buf, " \t");
+    tok = strtok(line, " \t");
 
     if (acmod_set_name2id(acmod_set, tok) != NO_ACMOD) {
-	E_ERROR("%s multiply defined at line %d\n", tok, *n_read);
-	
-	lineiter_free(li);
+	E_ERROR("%s multiply defined at line %d\n", tok, lineno);
 	return S3_ERROR;
     }
 
     for (n = 0; (n < 3) && (strcmp("-", strtok(NULL, " \t")) == 0); n++);
 
     if (n < 3) {
-	fflush(stdout);
-	fprintf(stderr, "%s(%d): expected l, r and posn to be \"-\" for ci phone %s at line %d\n",
-		__FILE__, __LINE__,
-		tok, *n_read);
-	fflush(stderr);
-	
-	lineiter_free(li);
+	E_ERROR("Expected l, r and posn to be \"-\" for ci phone %s at line %d, currently '%s'\n", tok, lineno, line);
 	return S3_ERROR;
     }
 
-    if (parse_rem(&attrib, tmat, state, n_state, *n_read) != S3_SUCCESS) {
-        fflush(stderr);
-        
-	lineiter_free(li);
+    if (parse_rem(&attrib, tmat, state, n_state, lineno) != S3_SUCCESS) {
         return S3_ERROR;
     }
 
     *acmod_id = acmod_set_add_ci(acmod_set, tok, attrib);
     
-    lineiter_free(li);
     return S3_SUCCESS;
 }
 
 static int32
-parse_tri_line(acmod_id_t *acmod_id,
+parse_tri_line(char *line,
+	       int lineno,
+	       acmod_id_t *acmod_id,
 	       uint32 *tmat,
 	       uint32 *state,
 	       uint32 *n_state,
-	       acmod_set_t *acmod_set,
-	       uint32 *n_read,
-	       FILE *fp)
+	       acmod_set_t *acmod_set)
 {
-    lineiter_t *li = NULL;
     char *tok;
     unsigned int i;
     uint32 id;
@@ -226,20 +205,11 @@ parse_tri_line(acmod_id_t *acmod_id,
     acmod_id_t base, left, right;
     word_posn_t posn;
 
-    li = lineiter_init_clean(NULL, fp);
-    li = lineiter_next(li, n_read);
-    if (li == NULL) {
-        lineiter_free(li);
-	return S3_ERROR;
-    }
-
-    tok = strtok(li->buf, " \t");
+    tok = strtok(line, " \t");
 
     if ((id = acmod_set_name2id(acmod_set, tok)) == NO_ACMOD) {
 	E_ERROR("%s is an undefined base phone at line %d\n",
-		tok, *n_read);
-	
-	lineiter_free(li);
+		tok, lineno);
 	return S3_ERROR;
     }
 
@@ -249,9 +219,7 @@ parse_tri_line(acmod_id_t *acmod_id,
 
     if ((id = acmod_set_name2id(acmod_set, tok)) == NO_ACMOD) {
 	E_ERROR("%s is an undefined base phone at line %d\n",
-		tok, *n_read);
-
-        lineiter_free(li);
+		tok, lineno);
 	return S3_ERROR;
     }
 
@@ -261,9 +229,7 @@ parse_tri_line(acmod_id_t *acmod_id,
 
     if ((id = acmod_set_name2id(acmod_set, tok)) == NO_ACMOD) {
 	E_ERROR("%s is an undefined base phone at line %d\n",
-		tok, *n_read);
-
-        lineiter_free(li);
+		tok, lineno);
 	return S3_ERROR;
     }
 
@@ -280,24 +246,19 @@ parse_tri_line(acmod_id_t *acmod_id,
     }
     else {
 	E_ERROR("Unknown word posn %s found at line %d\n",
-		tok, *n_read);
-
-        lineiter_free(li);
+		tok, lineno);
 	return S3_ERROR;
     }
 
-    if (parse_rem(&attrib, tmat, state, n_state, *n_read) != S3_SUCCESS) {
-        lineiter_free(li);
+    if (parse_rem(&attrib, tmat, state, n_state, lineno) != S3_SUCCESS) {
 	return S3_ERROR;
     }
     
     *acmod_id = acmod_set_add_tri(acmod_set, base, left, right, posn, attrib);
     if (*acmod_id == NO_ACMOD) {
-        lineiter_free(li);
 	return S3_ERROR;
     }
 
-    lineiter_free(li);
     return S3_SUCCESS;
 }
 
@@ -440,7 +401,6 @@ model_def_read(model_def_t **out_model_def,
     uint32 n_tied_ci_state;
     uint32 n_tied_tmat;
     uint32 state[MAX_N_STATE];
-    uint32 n_read = 0;
     uint32 n_total;
     model_def_t *omd;
     model_def_entry_t *mdef;
@@ -459,8 +419,8 @@ model_def_read(model_def_t **out_model_def,
 	return S3_ERROR;
     }
     
-    li = lineiter_init_clean(NULL, fp);
-    li = lineiter_next(li, &n_read);
+    li = lineiter_start_clean(fp);
+
     if (li == NULL) {
 	E_ERROR("ERROR not even a version number in %s!?\n",
 		file_name);
@@ -473,7 +433,7 @@ model_def_read(model_def_t **out_model_def,
 
     if (strcmp(li->buf, MODEL_DEF_VERSION) != 0) {
 	E_ERROR("ERROR version(%s) == \"%s\", but expected %s at line %d.\n",
-		file_name, li->buf, MODEL_DEF_VERSION, n_read);
+		file_name, li->buf, MODEL_DEF_VERSION, lineiter_lineno(li));
 
 	fclose(fp);
 	
@@ -491,13 +451,12 @@ model_def_read(model_def_t **out_model_def,
 
     n_tri = n_base = n_total_map = n_tied_state = n_tied_ci_state = n_tied_tmat = NO_NUMBER;
     for ( i = 0; i < 6; i++) {
-        li = lineiter_next(li, &n_read);
+        li = lineiter_next(li);
         if (li == NULL) {
 	    E_ERROR("Incomplete count information in %s!?\n",
 		    file_name);
 	    
 	    fclose(fp);
-
             lineiter_free(li);
 	    return S3_ERROR;
 	}
@@ -524,7 +483,7 @@ model_def_read(model_def_t **out_model_def,
 	}
 	else {
 	    E_ERROR("Unknown tag %s in file at line %d\n",
-		    tag, n_read);
+		    tag, lineiter_lineno(li));
 	    	    
 	    fclose(fp);
 
@@ -532,6 +491,7 @@ model_def_read(model_def_t **out_model_def,
 	    return S3_ERROR;
 	}
     }
+    li = lineiter_next(li);
 
     *out_model_def = omd = ckd_calloc(1, sizeof(model_def_t));
     omd->acmod_set = acmod_set = acmod_set_new();
@@ -557,16 +517,15 @@ model_def_read(model_def_t **out_model_def,
     for (i = 0, j = 0, max_state = 0, max_ci_state = 0, max_tmat = 0;
 	 i < n_base; i++, j += n_state) {
 	n_state = MAX_N_STATE;
-	if (parse_base_line(&acmod_id,
+	if (parse_base_line(li->buf,
+			    lineiter_lineno(li),
+	                    &acmod_id,
 			    &tmat,
 			    state,
 			    &n_state,
-			    acmod_set,
-			    &n_read,
-			    fp) != S3_SUCCESS) {
+			    acmod_set) != S3_SUCCESS) {
 
 	    fclose(fp);
-
             lineiter_free(li);
             return S3_ERROR;
 	}
@@ -580,20 +539,21 @@ model_def_read(model_def_t **out_model_def,
 	       n_state * sizeof(uint32));
 
 	update_totals(omd, &mdef[i]);
+
+	li = lineiter_next(li);
     }
 
     for (; i < n_total; i++, j += n_state) {
 	n_state = MAX_N_STATE;
 
-	if (parse_tri_line(&acmod_id,
+	if (parse_tri_line(li->buf,
+			   lineiter_lineno(li),
+			   &acmod_id,
 			   &tmat,
 			   state,
 			   &n_state,
-			   acmod_set,
-			   &n_read,
-			   fp) != S3_SUCCESS) {
+			   acmod_set) != S3_SUCCESS) {
 	    fclose(fp);
-
             lineiter_free(li);
 	    return S3_ERROR;
 	}
@@ -607,6 +567,7 @@ model_def_read(model_def_t **out_model_def,
 	       n_state * sizeof(uint32));
 
 	update_totals(omd, &mdef[i]);
+	li = lineiter_next(li);
     }
 
     omd->n_defn = n_total;
@@ -628,8 +589,6 @@ model_def_read(model_def_t **out_model_def,
     return S3_SUCCESS;
 }
 
-/* the following function is for preventing memory leak
-   lqin 2010-03 */
 int32
 model_def_free(model_def_t *mdef)
 {
@@ -719,33 +678,4 @@ model_def_free(model_def_t *mdef)
 
   return S3_SUCCESS;
 }
-/* end */
 
-
-/*
- * Log record.  Maintained by RCS.
- *
- * $Log$
- * Revision 1.5  2004/07/21  18:05:40  egouvea
- * Changed the license terms to make it the same as sphinx2 and sphinx3.
- * 
- * Revision 1.4  2002/06/12 03:30:36  egouvea
- * Fixed minor typing mistakes in scripts and c code.
- *
- * Revision 1.3  2001/04/05 20:02:31  awb
- * *** empty log message ***
- *
- * Revision 1.2  2000/09/29 22:35:13  awb
- * *** empty log message ***
- *
- * Revision 1.1  2000/09/24 21:38:31  awb
- * *** empty log message ***
- *
- * Revision 1.2  97/07/16  11:36:22  eht
- * *** empty log message ***
- * 
- * Revision 1.1  97/03/17  15:01:49  eht
- * Initial revision
- * 
- *
- */

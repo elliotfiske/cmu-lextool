@@ -252,64 +252,62 @@ fopen_compchk(const char *file, int32 * ispipe)
 }
 
 lineiter_t *
-lineiter_init_common(lineiter_t *li, FILE *fh)
+lineiter_start(FILE *fh)
 {
-    if (li == NULL) {
-        li = ckd_calloc(1, sizeof(*li));
-        li->buf = ckd_malloc(128);
-        li->bsiz = 128;
-    }
-    
+    lineiter_t *li;
+
+    li = ckd_calloc(1, sizeof(*li));
+    li->buf = ckd_malloc(128);
     li->buf[0] = '\0';
+    li->bsiz = 128;
     li->len = 0;
     li->fh = fh;
-    li->start = TRUE;
-    
-    return li;
-}
 
-lineiter_t *
-lineiter_init(lineiter_t *li, FILE *fh)
-{
-    li = lineiter_init_common(li, fh);
+    li = lineiter_next(li);
     
-    if (li != NULL) {
-        li->clean = FALSE;
+    /* Strip the UTF-8 BOM */
+    
+    if (li && 0 == strncmp(li->buf, "\xef\xbb\xbf", 3)) {
+	memmove(li->buf, li->buf + 3, strlen(li->buf + 1));
+	li->len -= 3;
     }
     
     return li;
 }
 
 lineiter_t *
-lineiter_init_clean(lineiter_t *li, FILE *fh)
+lineiter_start_clean(FILE *fh)
 {
-    li = lineiter_init_common(li, fh);
+    lineiter_t *li;
     
-    if (li != NULL) {
-        li->clean = TRUE;
+    li = lineiter_start(fh);
+    
+    if (li == NULL)
+	return li;
+    
+    li->clean = TRUE;
+    
+    if (li->buf && li->buf[0] == '#') {
+	li = lineiter_next(li);
+    } else {
+	string_trim(li->buf, STRING_BOTH);
     }
     
     return li;
 }
 
-lineiter_t *
-lineiter_read(lineiter_t *li)
+
+static lineiter_t *
+lineiter_next_plain(lineiter_t *li)
 {
+    /* We are reading the next line */
+    li->lineno++;
+    
     /* Read a line and check for EOF. */
     if (fgets(li->buf, li->bsiz, li->fh) == NULL) {
         lineiter_free(li);
         return NULL;
     }
-    
-    if (li->start) {
-        /* Strip the UTF-8 BOM */
-        if (0 == strncmp(li->buf, "\xef\xbb\xbf", 3)) {
-            memmove(li->buf, li->buf + 3, strlen(li->buf + 1));
-            li->len -= 3;
-        }
-        li->start = FALSE;
-    }
-
     /* If we managed to read the whole thing, then we are done
      * (this will be by far the most common result). */
     li->len = strlen(li->buf);
@@ -335,92 +333,32 @@ lineiter_read(lineiter_t *li)
     return li;
 }
 
-/* Trimms leading and trailing whitespaces and '\n' characters.
- * Implementation is taken from read_line in SphinxTrain.
- */
+
 lineiter_t *
-lineiter_trim(lineiter_t *li)
+lineiter_next(lineiter_t *li)
 {
-    char *start;
-    char *end;
+    if (!li->clean)
+	return lineiter_next_plain(li);
     
-    if (li == NULL) {
-        return NULL;
+    for (li = lineiter_next_plain(li); li; li = lineiter_next_plain(li)) {
+	if (li->buf && li->buf[0] != '#') {
+	    li->buf = string_trim(li->buf, STRING_BOTH);
+	    break;
+	}
     }
-    
-    start = li->buf;
-    end = li->buf + strlen(li->buf) - 1;
-
-    while (*start == ' ' || 
-	   *start == '\t') {
-	start++;
-    }
-
-    while ((end >= start) &&
-	   (*end == ' ' || 
-           *end == '\t' ||
-	   *end == '\r' ||
-	   *end == '\n'))
-	end--;
-    *(++end) = 0;
-    
-    memmove(li->buf, start, end - start + 1);
-    
     return li;
 }
 
-/* Skipps lines that are comments and counts skipped lines.
- * Implementation is taken from read_line in SphinxTrain.
- */
-lineiter_t *
-lineiter_skip_comments(lineiter_t *li, uint32 *n_skipped)
+int lineiter_lineno(lineiter_t *li)
 {
-    while ((li != NULL) && (li->buf[0] == '#')) {
-        li = lineiter_read(li);
-        
-        if (n_skipped != NULL) {
-            (*n_skipped)++;
-        }
-    }
-    
-    return li;
-}
-
-/* Reads a line in the file. Skipps commented lines and trimms leading and trailing whitespaces including the '\n' character from returned line.
- * This was written to substitute SphinxTrain read_line function and the implementation of trimming and comments skipping is adopted from there.
- */
-lineiter_t *
-lineiter_next(lineiter_t *li, uint32 *n_read)
-{
-    if (li == NULL) {
-        return NULL;
-    }
-
-    if ((li = lineiter_read(li)) == NULL) {
-        return NULL;
-    }
-    
-    /* increase line counter by 1 */
-    if (n_read) {
-        (*n_read)++;
-    }
-        
-    /* clean the line? */
-    if (li->clean) {
-        li = lineiter_skip_comments(li, n_read);
-        li = lineiter_trim(li);
-    }
-    
-    return li;
+    return li->lineno;
 }
 
 void
 lineiter_free(lineiter_t *li)
 {
-    if (li == NULL) {
+    if (li == NULL)
         return;
-    }
-    
     ckd_free(li->buf);
     ckd_free(li);
 }
@@ -453,7 +391,6 @@ fread_line(FILE *stream, size_t *out_len)
     if (out_len) *out_len = outptr - output;
     return output;
 }
-
 
 #define FREAD_RETRY_COUNT	60
 

@@ -71,7 +71,7 @@ ReadNgramCounts(lineiter_t **li, int32 * n_ug, int32 * n_bg, int32 * n_tg)
         string_trim((*li)->buf, STRING_BOTH);
         if (strcmp((*li)->buf, "\\data\\") == 0)
             break;
-        *li = lineiter_next(*li, NULL);
+        *li = lineiter_next(*li);
     }
     if (*li == NULL || strcmp((*li)->buf, "\\data\\") != 0) {
         E_INFO("No \\data\\ mark in LM file\n");
@@ -79,7 +79,7 @@ ReadNgramCounts(lineiter_t **li, int32 * n_ug, int32 * n_bg, int32 * n_tg)
     }
 
     *n_ug = *n_bg = *n_tg = 0;
-    while ((*li = lineiter_next(*li, NULL))) {
+    while ((*li = lineiter_next(*li))) {
         if (sscanf((*li)->buf, "ngram %d=%d", &ngram, &ngram_cnt) != 2)
             break;
         switch (ngram) {
@@ -103,7 +103,7 @@ ReadNgramCounts(lineiter_t **li, int32 * n_ug, int32 * n_bg, int32 * n_tg)
     }
 
     /* Position iterator to the unigrams header '\1-grams:\' */
-    while ((*li = lineiter_next(*li, NULL))) {
+    while ((*li = lineiter_next(*li))) {
         string_trim((*li)->buf, STRING_BOTH);
         if (strcmp((*li)->buf, "\\1-grams:") == 0)
             break;
@@ -135,7 +135,7 @@ ReadUnigrams(lineiter_t **li, ngram_model_arpa_t * model)
     E_INFO("Reading unigrams\n");
 
     wcnt = 0;
-    while ((*li = lineiter_next(*li, NULL))) {
+    while ((*li = lineiter_next(*li))) {
         char *wptr[3], *name;
         float32 bo_wt = 0.0f;
         int n;
@@ -198,7 +198,7 @@ ReadBigrams(lineiter_t **li, ngram_model_arpa_t * model)
     bgptr = model->lm3g.bigrams;
     prev_w1 = -1;
 
-    while ((*li = lineiter_next(*li, NULL))) {
+    while ((*li = lineiter_next(*li))) {
         float32 p, bo_wt = 0.0f;
         int32 p2, bo_wt2;
         char *wptr[4], *word1, *word2;
@@ -298,7 +298,7 @@ ReadTrigrams(lineiter_t **li, ngram_model_arpa_t * model)
     prev_bg = -1;
     prev_seg = -1;
 
-    while ((*li = lineiter_next(*li, NULL))) {
+    while ((*li = lineiter_next(*li))) {
         float32 p;
         int32 p3;
         char *wptr[4], *word1, *word2, *word3;
@@ -466,8 +466,7 @@ ngram_model_arpa_read(cmd_ln_t *config,
         E_ERROR("File %s not found\n", file_name);
         return NULL;
     }
-    li = lineiter_init(NULL, fp);
-    li = lineiter_next(li, NULL);
+    li = lineiter_start(fp);
  
     /* Read #unigrams, #bigrams, #trigrams from file */
     if (ReadNgramCounts(&li, &n_unigram, &n_bigram, &n_trigram) == -1) {

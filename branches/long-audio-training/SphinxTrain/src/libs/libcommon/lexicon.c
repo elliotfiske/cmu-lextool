@@ -173,11 +173,10 @@ lexicon_t *lexicon_read(lexicon_t *prior_lex,
 	lex = lexicon_new();
     if (lex->phone_set == NULL)
 	lex->phone_set = acmod_set;
-    
-    line = lineiter_init_clean(NULL, lex_fp);
-    for (start_wid = wid = lex->entry_cnt;
-        line = lineiter_next(line, &lineno);
-	 /* wid incremented in body of loop */ ) {
+
+    start_wid = wid = lex->entry_cnt;
+    for (line = lineiter_start_clean(lex_fp); line; line = lineiter_next(line)) {
+
 	if (line->buf[0] == 0) {
 	    E_WARN("Lexicon %s has a blank line at line %d\n",
 		   filename, lineno);

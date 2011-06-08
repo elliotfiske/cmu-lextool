@@ -109,7 +109,6 @@ topo_read(float32 ***tmat,
     lineiter_t *li = NULL;
     uint32 n_state;
     uint32 i, j;
-    uint32 n_read;
     float32 row_sum;
 
     assert(topo_file_name != NULL);
@@ -121,9 +120,8 @@ topo_read(float32 ***tmat,
 	goto error;
     }
     
-    li = lineiter_init_clean(NULL, fp);
+    li = lineiter_start_clean(fp);
     
-    li = lineiter_next(li, &n_read);
     if (li == NULL) {
 	E_ERROR("EOF encounted while reading version number in %s!?\n", topo_file_name);
 
@@ -137,7 +135,7 @@ topo_read(float32 ***tmat,
 	goto error;
     }
 
-    li = lineiter_next(li, &n_read);
+    li = lineiter_next(li);
     if (li == NULL) {
 	E_ERROR("EOF encountered while reading n_state in %s!?\n", topo_file_name);
 
