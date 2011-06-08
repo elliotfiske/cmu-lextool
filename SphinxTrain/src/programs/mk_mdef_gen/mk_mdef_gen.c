@@ -122,9 +122,11 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
     swdtphs = bwdtphs = ewdtphs = iwdtphs = 0;
     /* Always install SIL in phonelist */
     phninstall(silence,phnhash);
-    line = lineiter_init_clean(NULL, fp);
-    while ((line = lineiter_next(line, NULL)) != NULL){
+
+    for (line = lineiter_start_clean(fp); line; line = lineiter_next(line)) {
+
         nwds = sscanf(line->buf,"%s %s %s %s",bphn,lctx,rctx,wdpos);
+
         if (nwds != 1 && nwds != 3 &&  nwds != 4)
 	    E_FATAL("Incorrect format in triphone file %s\n%s\n",phnlist,line->buf);
         if (strcmp(bphn,"-") == 0)
@@ -162,7 +164,6 @@ int32 make_ci_list_cd_hash_frm_phnlist(char  *phnlist,
 	}
     }
     fclose(fp);
-    lineiter_free(line);
 
     /* Heap sort CI phones */
     heapsize = 0;
@@ -257,13 +258,12 @@ int32 make_ci_list_cd_hash_frm_mdef(char  *mdeffile,
 int32  read_dict(char *dictfile, char *fillerdict, 
 		 dicthashelement_t ***dicthash)
 {
-    char   *dictsent, *dictfn[2];
-    lineiter_t *dictentry = NULL;
+    char *dictsent, *dictfn[2];
+    lineiter_t *liter = NULL;
     char  *dictword, *word, *phone, *tphn;
     dicthashelement_t   **lhash, *sptr;
     int32  maxphnlen, vocabsiz=0, nphns, numdicts, idict;
     FILE   *dict;
-    uint32 n_read;
 
     numdicts = 1;  dictfn[0] = dictfile;
     if (fillerdict != NULL){
@@ -278,24 +278,24 @@ int32  read_dict(char *dictfile, char *fillerdict,
     for (idict = 0; idict < numdicts; idict++){
 	E_INFO("Reading dict %s\n",dictfn[idict]);
         if ((dict = fopen(dictfn[idict],"r")) == NULL)
-            E_FATAL("Unable to open dictionary %s\n",dictfile);
-
-        dictentry = lineiter_init_clean(dictentry, dict);
+            E_FATAL_SYSTEM("Unable to open dictionary %s", dictfile);
 
         vocabsiz = 0;
-	n_read = 0;
-        while ((dictentry = lineiter_next(dictentry, &n_read)) != NULL)
-        {
-	    if (dictentry->buf[0] == 0) {
-		E_WARN ("Empty line %d in the dictionary file %s\n", n_read, dictfn[idict]);
+        for (liter = lineiter_start_clean(dict); liter; liter = lineiter_next(liter)) {
+
+	    if (liter->buf[0] == 0) {
+		E_WARN("Empty line %d in the dictionary file %s\n", 
+			lineiter_lineno(liter), dictfn[idict]);
 		continue;
 	    }
 
-            dictsent = strdup(dictentry->buf); /* HACK */
-            if ((dictword = strtok(dictsent," \t\n")) == NULL)
+	    dictsent = strdup(liter->buf);
+            if ((dictword = strtok(dictsent, " \t\n")) == NULL)
                 E_FATAL("Empty line in dictionary!\n");
+
             if ((sptr = dictinstall(dictword,lhash)) == NULL)
                 E_FATAL("Unable to install dict word %s\n",dictword);
+
             if (sptr->nphns != 0)
                 E_FATAL("Duplicate entry for %s in dictionary\n",dictword);
 
@@ -309,7 +309,7 @@ int32  read_dict(char *dictfile, char *fillerdict,
             sptr->nphns = nphns; maxphnlen++;
             sptr->phones = (char**)ckd_calloc_2d(nphns,maxphnlen,sizeof(char));
 
-            word = strtok(dictentry->buf," \t\n");
+            word = strtok(liter->buf," \t\n");
             for(nphns=0;(phone = strtok(NULL," \t\n")) != NULL;nphns++)
 	        strcpy(sptr->phones[nphns],phone);
 	
@@ -318,12 +318,12 @@ int32  read_dict(char *dictfile, char *fillerdict,
             free(dictsent);
         }
         fclose(dict);
-        E_INFO("%d words in dict %s\n",vocabsiz,dictfn[idict]);
+        E_INFO("%d words in dict %s\n", vocabsiz, dictfn[idict]);
     }
 
     *dicthash = lhash;
 
-    lineiter_free(dictentry);
+    lineiter_free(liter);
     return(vocabsiz);
 }
 
@@ -481,13 +481,15 @@ int32  count_triphones (char *transfile,
 
     n_totalwds = 0;
     nbwdtphns = newdtphns = niwdtphns = nswdtphns = 0;
-    line = lineiter_init(NULL, fp);
-    while ((line = lineiter_next(line, NULL)) != NULL){
+
+    for (line = lineiter_start_clean(fp); line; line = lineiter_next(line)) {
+
 	tline = strdup(line->buf);
-	if (strtok(tline," \t\n") == NULL) {
-	    free(tline);
-	    continue; /* Empty line */
-	}
+        if (strtok(tline," \t\n") == NULL) {
+           free(tline);
+    	   continue;
+        }
+
         /* Count number of phones in pronunciation */
         for(nwords=1; strtok(NULL," \t\n") != NULL; nwords++);
 	n_totalwds += nwords;

@@ -204,8 +204,7 @@ evaluate_file(ngram_model_t *lm, logmath_t *lmath, const char *lsnfn)
 	log_to_log2 = log(logmath_get_base(lmath)) / log(2);
 	nccs = noovs = nwords = 0;
 	ch = 0.0;
-	litor = lineiter_init(NULL, fh);
-        for (litor = lineiter_next(fh, NULL); litor; litor = lineiter_next(litor, NULL)) {
+        for (litor = lineiter_start(fh); litor; litor = lineiter_next(litor)) {
 		char **words;
 		int32 n, tmp_ch, tmp_noovs, tmp_nccs, tmp_lscr;
 

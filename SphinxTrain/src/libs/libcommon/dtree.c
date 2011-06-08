@@ -264,7 +264,7 @@ read_final_tree(FILE *fp,
     uint32  n_node;
     char *s, str[128];
     lineiter_t *ln = NULL;
-    uint32 n_read, n_scan;
+    uint32 n_scan;
     uint32 i, node_id, node_id_y, node_id_n;
     comp_quest_t *q;
     float64 ent;
@@ -273,10 +273,8 @@ read_final_tree(FILE *fp,
 
     out = ckd_calloc(1, sizeof(dtree_t));
 
-    n_read = 0;
-    ln = lineiter_init_clean(NULL, fp);
-    ln = lineiter_next(ln, &n_read);
-
+    ln = lineiter_start_clean(fp);
+    
     s = ln->buf;
     sscanf(s, "%s%n", str, &n_scan);
     if (strcmp(str, "n_node") == 0) {
@@ -295,7 +293,7 @@ read_final_tree(FILE *fp,
     
     err = FALSE;
     
-    while ((ln = lineiter_next(ln, &n_read))) {
+    while ((ln = lineiter_next(ln))) {
 	s = ln->buf;
 
 	sscanf(s, "%u%n", &node_id, &n_scan);
@@ -1582,10 +1580,9 @@ cluster_leaves(dtree_t *tr,
     uint32 *node_id;
     dtree_node_t *root;
     uint32 i;
-/* ADDITION FOR CONTINUOUS_TREES */
     float32 ****means=0;
     float32 ****vars=0;
-    char*  type;
+    const char*  type;
     uint32 continuous, sumveclen;
 
     type = cmd_ln_str("-ts2cbfn");
@@ -1596,20 +1593,16 @@ cluster_leaves(dtree_t *tr,
     else
         continuous = 0;
 
-/* END ADDITIONS FOR CONTINUOUS_TREES */
-
     root = &tr->node[0];
 
     /* determine the # of leaf nodes in the simple tree */
     n_leaf = cnt_leaf(root);
 
-/* ADDITION FOR CONTINUOUS_TREES */
     if (continuous == 1) {
         for (i=0,sumveclen=0; i < n_stream; i++) sumveclen += veclen[i];
         means = (float32 ****)ckd_calloc_4d(n_leaf, n_state, n_stream, sumveclen, sizeof(float32));
         vars = (float32 ****)ckd_calloc_4d(n_leaf, n_state, n_stream, sumveclen, sizeof(float32));
     }
-/* END ADDITIONS FOR CONTINUOUS_TREES */
 
     /* Alloc space for:
      *  - leaf node distribution array

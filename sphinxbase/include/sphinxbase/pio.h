@@ -109,7 +109,6 @@ extern "C" {
 }
 #endif
 
-
 /**
  * Like fopen, but use popen and zcat if it is determined that "file" is compressed
  * (i.e., has a .z, .Z, .gz, or .GZ extension).
@@ -180,35 +179,39 @@ typedef struct lineiter_t {
 	size_t bsiz;
 	size_t len;
 	FILE *fh;
-	int clean;
-	int start;
+	int32 clean;
+	int32 lineno;
 } lineiter_t;
 
 /**
- * Init lineiter structure without reading from file. If li is not NULL, memory is not reallocated.
+ * Start reading lines from a file.
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_init(lineiter_t *li, FILE *fh);
+lineiter_t *lineiter_start(FILE *fh);
 
 /**
- * Same as lineiter_init but causes subsequent calls of lineiter_next to skipp commented lines
- * and trimm leading and trailing whitespaces (including '\n' character).
+ * Start reading lines from a file, skip comments and trim lines.
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_init_clean(lineiter_t *li, FILE *fh);
+lineiter_t *lineiter_start_clean(FILE *fh);
 
 /**
- * Reads the next line from the file. Optionally skipps commented lines and trimms whitespaces at the beginning and end of the line
- * (according to settings of the iterator at the creation - lineiter_init / lineiter_init_clean.
+ * Move to the next line in the file.
  */
 SPHINXBASE_EXPORT
-lineiter_t *lineiter_next(lineiter_t *li, uint32 *n_read);
+lineiter_t *lineiter_next(lineiter_t *li);
 
 /**
- * Finish reading lines from a file.
+ * Stop reading lines from a file.
  */
 SPHINXBASE_EXPORT
 void lineiter_free(lineiter_t *li);
+
+/**
+ * Returns current line number.
+ */
+SPHINXBASE_EXPORT
+int lineiter_lineno(lineiter_t *li);
 
 
 #ifdef _WIN32_WCE

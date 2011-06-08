@@ -50,7 +50,6 @@ SRCS = \
   fp_cache.c \
   fread_retry.c \
   model_def_io.c \
-  read_line.c \
   s3_open.c \
   s3cb2mllr_io.c \
   s3gau_io.c \
@@ -67,8 +66,8 @@ SRCS = \
   segdmp.c \
   share_ctl.c \
   swap.c \
-  topo_read.c \
-  uttfile.c
+  topo_read.c
+
 H =
 
 FILES = Makefile $(SRCS) $(H)

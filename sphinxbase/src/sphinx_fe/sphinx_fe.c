@@ -170,8 +170,7 @@ open_nist_file(sphinx_wave2feat_t *wtf, char const *infile, FILE **out_fh)
     }
     /* Rewind, parse lines. */
     fseek(fh, 0, SEEK_SET);
-    li = lineiter_init(NULL, fh);
-    for (li = lineiter_next(li, NULL); li; li = lineiter_next(li, NULL)) {
+    for (li = lineiter_start(fh); li; li = lineiter_next(li)) {
         char **words;
         int nword;
 
@@ -999,8 +998,7 @@ run_control_file(sphinx_wave2feat_t *wtf, char const *ctlfile)
         /* Count lines in the file. */
         int partlen, part, nlines = 0;
         part = cmd_ln_int32_r(wtf->config, "-part");
-        li = lineiter_init(NULL, ctlfh);
-        for (li = lineiter_next(ctlfh, NULL); li; li = lineiter_next(li, NULL))
+        for (li = lineiter_start(ctlfh); li; li = lineiter_next(li))
             ++nlines;
         fseek(ctlfh, 0, SEEK_SET);
         partlen = nlines / npart;
@@ -1018,8 +1016,7 @@ run_control_file(sphinx_wave2feat_t *wtf, char const *ctlfile)
         E_INFO("Processing all remaining utterances at position %d\n", nskip);
         files = hash_table_new(1000, HASH_CASE_YES);
     }
-    li = lineiter_init(NULL, ctlfh);
-    for (li = lineiter_next(ctlfh, NULL); li; li = lineiter_next(li, NULL)) {
+    for (li = lineiter_start(ctlfh); li; li = lineiter_next(li)) {
         char *c, *infile, *outfile;
 
         if (nskip-- > 0)
