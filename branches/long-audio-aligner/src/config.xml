@@ -45,10 +45,10 @@
 	<component name="flatLinguist" type="edu.cmu.sphinx.linguist.flat.FlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="AlignerGrammar" />
-		<property name="acousticModel" value="wsj" />
+		<property name="acousticModel" value="wsj" />		
 		<property name="wordInsertionProbability" value="${wordInsertionProbability}" />
 		<property name="languageWeight" value="${languageWeight}" />
-		<property name="unitManager" value="unitManager" />
+		<property name="unitManager" value="unitManager" />		
 	</component>
 
 	<component name="AlignerGrammar" type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
@@ -81,7 +81,7 @@
 	<component name="epFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
 		<propertylist name="pipeline">
 			<item>audioFileDataSource </item>
-			<item>dataBlocker </item>			
+			<item>dataBlocker </item>
 			<item>preemphasizer </item>
 			<item>windower </item>
 			<item>fft </item>

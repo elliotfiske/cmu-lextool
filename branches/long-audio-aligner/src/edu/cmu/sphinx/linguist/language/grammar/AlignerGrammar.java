@@ -18,7 +18,8 @@ public class AlignerGrammar extends Grammar {
 	public final static String PROP_LOG_MATH = "logMath";
 	private LogMath logMath;
 	private int start;
-
+	private double selfLoopProbability = 0.000001;
+	private double backwardTransitionProbability = 0.000000001;
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();
 
@@ -84,12 +85,12 @@ public class AlignerGrammar extends Grammar {
 		initialNode.add(branchNode, LogMath.getLogOne());
 
 		for (int i = 0; i < wordGrammarNodes.size(); i++) {
-			final GrammarNode wordNode = wordGrammarNodes.get(i);		
+			final GrammarNode wordNode = wordGrammarNodes.get(i);
 
 			float branchScore = logMath.linearToLog(1.0);
-			if (i == 0)
+			if (i <= 1)
 				branchNode.add(wordNode, branchScore);
-			if (i + 1 == wordGrammarNodes.size())
+			if (i + 2 >= wordGrammarNodes.size())
 				wordNode
 						.add(
 								finalNode,
@@ -97,16 +98,20 @@ public class AlignerGrammar extends Grammar {
 										.linearToLog(1.0 / ((wordGrammarNodes
 												.size() - i) * (wordGrammarNodes
 												.size() - i))));
-
+			// allowing word repetitions: probability is still under test.
+			wordNode.add(wordNode, logMath.linearToLog(selfLoopProbability));
 			// add connections to close words
 			for (int j = i + 1; j < i + 2; j++) {
 				if (0 <= j && j < wordGrammarNodes.size()) {
 					final GrammarNode neighbour = wordGrammarNodes.get(j);
 					wordNode.add(neighbour, logMath.linearToLog(1.0));
+					// allowing backward grammar transitions: Probability is
+					// still under test
+					neighbour.add(wordNode, logMath
+							.linearToLog(backwardTransitionProbability));
 				}
 			}
 		}
-
 		return initialNode;
 	}
 
