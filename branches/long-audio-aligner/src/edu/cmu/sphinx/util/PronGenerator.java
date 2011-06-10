@@ -1,3 +1,14 @@
+/*
+ * Copyright 1999-2004 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ *
+ */
 package edu.cmu.sphinx.util;
 
 import java.io.BufferedReader;
@@ -17,7 +28,7 @@ import com.sun.speech.freetts.lexicon.LetterToSoundImpl;
 /*
  * Normalises string tokens which are abbreviations or numbers represented in base 10
  */
-public class StringNormaliser {
+public class PronGenerator {
 	private URL abbrevFile;
 	private URL numberFile;
 	protected HashMap<String, LinkedList<String>> abbrevMap;
@@ -27,11 +38,11 @@ public class StringNormaliser {
 	protected String G2P_MODEL;
 	protected Logger logger;
 
-	public StringNormaliser() {
+	public PronGenerator() {
 
 	}
 
-	public StringNormaliser(URL abbrevFile, URL numberFile, String g2p_model) {
+	public PronGenerator(URL abbrevFile, URL numberFile, String g2p_model) {
 		this.abbrevFile = abbrevFile;
 		this.numberFile = numberFile;
 		this.G2P_MODEL = g2p_model;
@@ -212,13 +223,12 @@ public class StringNormaliser {
 			throws MalformedURLException, IOException {
 		LetterToSoundImpl g2p = new LetterToSoundImpl(new URL(G2P_MODEL), true);
 		LinkedList<String> textResult = null;
-		LinkedList<String> phoneResult = new LinkedList<String>();
+		LinkedList<String> phoneResult = new LinkedList<String>();		
 		if (isAbbrev(word)) {
 			textResult = decode_Abb(word);
 
 		} else if (isNum(word)) {
 			textResult = decode_num(word);
-
 		}
 		if (textResult == null) {
 			phoneResult.add(wordPronunciation(word, g2p));

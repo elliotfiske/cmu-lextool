@@ -1,3 +1,14 @@
+/*
+ * Copyright 1999-2004 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ *
+ */
 package edu.cmu.sphinx.linguist.language.grammar;
 
 import java.util.List;
@@ -18,8 +29,8 @@ public class AlignerGrammar extends Grammar {
 	public final static String PROP_LOG_MATH = "logMath";
 	private LogMath logMath;
 	private int start;
-	private double selfLoopProbability = 0.000001;
-	private double backwardTransitionProbability = 0.000000001;
+	private double selfLoopProbability = 0.0000000000000001;
+	private double backwardTransitionProbability = 0.000000000000001;
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();
 
@@ -75,9 +86,11 @@ public class AlignerGrammar extends Grammar {
 		final int end = tokens.size();
 
 		for (final String word : tokens.subList(start, end)) {
+			
 			// System.out.println ("Creating grammar from " + word);
 			final GrammarNode wordNode = createGrammarNode(word.toLowerCase());
 			wordGrammarNodes.add(wordNode);
+			
 			// System.out.println(word);
 		}
 
@@ -90,7 +103,7 @@ public class AlignerGrammar extends Grammar {
 			float branchScore = logMath.linearToLog(1.0);
 			if (i <= 1)
 				branchNode.add(wordNode, branchScore);
-			if (i + 2 >= wordGrammarNodes.size())
+			if (i + 1 >= wordGrammarNodes.size())
 				wordNode
 						.add(
 								finalNode,
@@ -98,13 +111,16 @@ public class AlignerGrammar extends Grammar {
 										.linearToLog(1.0 / ((wordGrammarNodes
 												.size() - i) * (wordGrammarNodes
 												.size() - i))));
+			
 			// allowing word repetitions: probability is still under test.
 			wordNode.add(wordNode, logMath.linearToLog(selfLoopProbability));
+			
 			// add connections to close words
 			for (int j = i + 1; j < i + 2; j++) {
 				if (0 <= j && j < wordGrammarNodes.size()) {
 					final GrammarNode neighbour = wordGrammarNodes.get(j);
 					wordNode.add(neighbour, logMath.linearToLog(1.0));
+					
 					// allowing backward grammar transitions: Probability is
 					// still under test
 					neighbour.add(wordNode, logMath

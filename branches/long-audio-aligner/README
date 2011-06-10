@@ -1,0 +1,14 @@
+Long Audio Alignment
+--------------------
+This package contains the basic framework for testing Audio aligners , 
+as well as some utils to do string manipulations for removing unaccounted 
+characters from transcription files and pronunciation generator for OOV
+words.
+
+For running current version of aligner, compile and run
+
+src/edu/cmu/sphinx/demo/aligner/LongAudioAligner.java 
+
+
+
+

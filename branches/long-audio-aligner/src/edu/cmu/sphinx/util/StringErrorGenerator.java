@@ -145,8 +145,6 @@ public class StringErrorGenerator {
 				double random = rand.nextGaussian();
 				if (random <= dr / 2 && random >= -dr / 2) {
 					// Delete word from here
-					System.out.println("Removing word: "
-							+ words.remove(currIndex));
 					iter = words.listIterator(currIndex);
 					deletionCount++;
 					currIndex--;

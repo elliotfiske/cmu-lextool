@@ -1,3 +1,14 @@
+/*
+ * Copyright 1999-2004 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ *
+ */
 package edu.cmu.sphinx.demo.aligner;
 
 import java.awt.List;
@@ -17,29 +28,28 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 
 import edu.cmu.sphinx.util.NISTAlign;
+import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.StringErrorGenerator;
 
 public class LongAudioAligner {
-	public static void main(String Args[]) throws IOException {
+	public static void main(String Args[]) throws IOException {		
 		// Read Configuration file
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("AlignerGrammar");
-
-		// Read input transcription from transcription file
+		// Read raw input transcription from file
 		String input = "";
 		String line;
 		BufferedReader reader = new BufferedReader(new FileReader(
-				"./resource/transcription/black_cat1.txt"));
+				"./resource/transcription/bc1.txt"));
 		while ((line = reader.readLine()) != null) {
 			input = input.concat(line + " ");
 		}
-		StringTokenizer tok = new StringTokenizer(input, ".");
-		input = "";
-		while (tok.hasMoreTokens()) {
-			String nextTok = tok.nextToken();
-			input = input.concat(nextTok + " ");
-		}
+		
+		// Clean-up the file to be suitable for making grammar
+		StringCustomise sc= new StringCustomise();
+		input=sc.customise(input);
+		
 		// Corrupt the input using StringErrorGenerator
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		StringErrorGenerator seg = new StringErrorGenerator(0.03,
@@ -53,15 +63,16 @@ public class LongAudioAligner {
 
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
-		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
+		dataSource.setAudioFile(new URL("file:./resource/wav/bc1.wav"), null);
 
 		Result result;
 		String untimed = "";
+		System.out.print("Result :");
 		while ((result = recognizer.recognize()) != null) {
-			String resultText = result.getBestFinalResultNoFiller();
+			String resultText = result.getBestResultNoFiller();
 			String timedResult = result.getTimedBestResult(false, true);
 			untimed = untimed.concat(resultText + " ");
-			System.out.println(timedResult);
+			//System.out.println(timedResult);
 			System.out.println(untimed);
 		}
 		System.out.println("Time to align:"
@@ -75,7 +86,6 @@ public class LongAudioAligner {
 		System.out.println("Insertions:" + nistalign.getTotalInsertions());
 		System.out.println("Deletions:" + nistalign.getTotalDeletions());
 		System.out.println("Subs:" + nistalign.getTotalSubstitutions());
-
 	}
 
 }

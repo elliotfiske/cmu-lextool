@@ -1,3 +1,14 @@
+/*
+ * Copyright 1999-2004 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ *
+ */
 package edu.cmu.sphinx.linguist.dictionary;
 
 import java.net.MalformedURLException;
@@ -13,7 +24,7 @@ import com.sun.speech.freetts.lexicon.LetterToSoundImpl;
 
 import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.acoustic.UnitManager;
-import edu.cmu.sphinx.util.StringNormaliser;
+import edu.cmu.sphinx.util.PronGenerator;
 import edu.cmu.sphinx.util.props.ConfigurationManagerUtils;
 
 public class AllWordDictionary extends FastDictionary {
@@ -65,8 +76,8 @@ public class AllWordDictionary extends FastDictionary {
 	 * @see edu.cmu.sphinx.linguist.dictionary.Word
 	 */
 	@Override
-	public Word getWord(String text) {
-		text = text.toLowerCase();
+	public Word getWord(String text) {		
+		text = text.toLowerCase();		
 		Word wordObject = wordDictionary.get(text);
 
 		if (wordObject != null) {
@@ -75,14 +86,15 @@ public class AllWordDictionary extends FastDictionary {
 
 		String word = dictionary.get(text);
 		if (word == null) {
+			
 			// String line = text + "\t";
-			StringNormaliser sn;
+			PronGenerator pg;
 			try {
-				sn = new StringNormaliser(new URL(
+				pg = new PronGenerator(new URL(
 						"file:./resource/models/abbrev.txt"), new URL(
 						"file:./resource/models/num.txt"), G2P_MODEL);
-				sn.loadModels();
-				LinkedList<String> pronunciations = sn.toPhone(text);
+				pg.loadModels();
+				LinkedList<String> pronunciations = pg.toPhone(text);
 				Iterator<String> iter = pronunciations.iterator();
 				int count = 0;
 				while (iter.hasNext()) {
@@ -125,7 +137,6 @@ public class AllWordDictionary extends FastDictionary {
 				lookupWord = lookupWord + '(' + count + ')';
 			}
 			line = (String) dictionary.get(lookupWord);
-
 			if (line != null) {
 				StringTokenizer st = new StringTokenizer(line);
 
