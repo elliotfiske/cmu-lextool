@@ -28,7 +28,7 @@ import com.sun.speech.freetts.lexicon.LetterToSoundImpl;
 /*
  * Normalises string tokens which are abbreviations or numbers represented in base 10
  */
-public class PronGenerator {
+public class PronunciationGenerator {
 	private URL abbrevFile;
 	private URL numberFile;
 	protected HashMap<String, LinkedList<String>> abbrevMap;
@@ -38,11 +38,11 @@ public class PronGenerator {
 	protected String G2P_MODEL;
 	protected Logger logger;
 
-	public PronGenerator() {
+	public PronunciationGenerator() {
 
 	}
 
-	public PronGenerator(URL abbrevFile, URL numberFile, String g2p_model) {
+	public PronunciationGenerator(URL abbrevFile, URL numberFile, String g2p_model) {
 		this.abbrevFile = abbrevFile;
 		this.numberFile = numberFile;
 		this.G2P_MODEL = g2p_model;

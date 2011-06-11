@@ -5,9 +5,86 @@ as well as some utils to do string manipulations for removing unaccounted
 characters from transcription files and pronunciation generator for OOV
 words.
 
-For running current version of aligner, compile and run
+For running current version of aligner, we recommend the use of ANT.
+Following should be your directory structure:
 
-src/edu/cmu/sphinx/demo/aligner/LongAudioAligner.java 
+Parent Directory/
+	|
+	|-------Project_Directory/
+	|	|
+	|	|-------bin/
+	|	|	
+	|	|-------build/
+	|	|
+	|	|-------resource/
+	|	|	|
+	|	|	|-------models/
+	|	|	|	|
+	|	|	|	|-------abbrev.txt
+	|	|	|	|
+	|	|	|	|-------cmudict04_lts.bin
+	|	|	|	|
+	|	|	|	|-------num.txt
+	|	|	|	|
+	|	|	|	|-------wordFile.txt
+	|	|	|
+	|	|	|-------transcription/
+	|	|	|
+	|	|	|-------wav/
+	|	|
+	|	|-------src/
+	|	|	|
+	|	|	|-------config.xml
+	|	|	|
+	|	|	|-------MANIFEST.MF
+	|	|	|
+	|	|	|-------edu/
+	|	|	|	|
+	|	|	|	|-------cmu/
+	|	|	|	|	|
+	|	|	|	|	|-------sphinx
+	|	|	|	|	|	|
+	|	|	|	|	|	|-------demo
+	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|-------aligner
+	|	|	|	|	|	|	|	|----LongAudioAligner.java
+	|	|	|	|	|	|
+	|	|	|	|	|	|-------linguist
+	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|-------dictionary
+	|	|	|	|	|	|	|	|-------AllWordDictionary
+	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|-------language
+	|	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|	|-------grammar
+	|	|	|	|	|	|	|	|	|-------AlignerGrammar
+	|	|	|	|	|	|
+	|	|	|	|	|	|-------util
+	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|-------PronunciationGenerator.java
+	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|-------StringCustomise.java
+	|	|	|	|	|	|	|
+	|	|	|	|	|	|	|-------StringErrorGenerator.java
+	|	|
+	|	|-------build.xml
+	|
+	|-------SphinxLib
+	|	|
+	|	|-------freetts.jar
+	|	|
+	|	|-------sphinx4.jar	
+	|	|
+	|	|-------WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar
+
+
+Instructions to compile and run the demo
+i) change you working directory to Project_Directory
+ii) run the command: ant all
+
+The project should be compiled and a jar file should now be present in your ./build/ directory.
+iii) To run the program, without changing your working directory 
+	java -jar build/aligner.jar
 
 
 
