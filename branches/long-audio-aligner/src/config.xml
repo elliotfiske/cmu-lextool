@@ -8,6 +8,7 @@
 	<property name="relativeBeamWidth" value="1E-200" />
 	<property name="wordInsertionProbability" value="0.7" />
 	<property name="languageWeight" value="7" />
+	<!--property name="outOfGrammarProbability" value="1E-250"/-->
 
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
@@ -48,7 +49,12 @@
 		<property name="acousticModel" value="wsj" />		
 		<property name="wordInsertionProbability" value="${wordInsertionProbability}" />
 		<property name="languageWeight" value="${languageWeight}" />
-		<property name="unitManager" value="unitManager" />		
+		<property name="unitManager" value="unitManager" />	
+		<!-- additions start-->
+		<!--property name="addOutOfGrammarBranch" value="true"/>
+		<property name="phoneLoopAcousticModel" value="WSJ"/>
+		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/-->
+		<!-- additions end --> 	
 	</component>
 
 	<component name="AlignerGrammar" type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
@@ -77,6 +83,20 @@
 	</component>
 
 	<component name="unitManager" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" />
+	<!-- additions start-->
+	<!--component name="WSJ" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel">
+		<property name="loader" value="WsjLoader" />
+		<property name="unitManager" value="unitManager" />
+	</component>
+
+	<component name="WsjLoader" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
+		<property name="logMath" value="logMath" />
+		<property name="unitManager" value="UnitManager" />
+		<property name="location" value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz" />
+	</component>
+
+	<component name="UnitManager" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" /-->
+	<!-- additions end -->
 
 	<component name="epFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
 		<propertylist name="pipeline">

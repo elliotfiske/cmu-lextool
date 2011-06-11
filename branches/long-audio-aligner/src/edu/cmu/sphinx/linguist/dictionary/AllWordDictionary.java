@@ -24,7 +24,7 @@ import com.sun.speech.freetts.lexicon.LetterToSoundImpl;
 
 import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.acoustic.UnitManager;
-import edu.cmu.sphinx.util.PronGenerator;
+import edu.cmu.sphinx.util.PronunciationGenerator;
 import edu.cmu.sphinx.util.props.ConfigurationManagerUtils;
 
 public class AllWordDictionary extends FastDictionary {
@@ -88,9 +88,9 @@ public class AllWordDictionary extends FastDictionary {
 		if (word == null) {
 			
 			// String line = text + "\t";
-			PronGenerator pg;
+			PronunciationGenerator pg;
 			try {
-				pg = new PronGenerator(new URL(
+				pg = new PronunciationGenerator(new URL(
 						"file:./resource/models/abbrev.txt"), new URL(
 						"file:./resource/models/num.txt"), G2P_MODEL);
 				pg.loadModels();

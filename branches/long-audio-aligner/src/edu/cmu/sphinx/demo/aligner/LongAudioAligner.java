@@ -18,9 +18,6 @@ import java.io.IOException;
 
 import java.net.URL;
 
-import java.util.LinkedList;
-import java.util.StringTokenizer;
-
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
 import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.result.Result;
@@ -41,7 +38,7 @@ public class LongAudioAligner {
 		String input = "";
 		String line;
 		BufferedReader reader = new BufferedReader(new FileReader(
-				"./resource/transcription/bc1.txt"));
+				"./resource/transcription/black_cat1.txt"));
 		while ((line = reader.readLine()) != null) {
 			input = input.concat(line + " ");
 		}
@@ -63,7 +60,7 @@ public class LongAudioAligner {
 
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
-		dataSource.setAudioFile(new URL("file:./resource/wav/bc1.wav"), null);
+		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
 
 		Result result;
 		String untimed = "";

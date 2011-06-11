@@ -63,8 +63,8 @@ public class StringCustomise {
 			if ((c.compareTo('a') >= 0 && c.compareTo('z') <= 0)
 					|| (c.compareTo('0') >= 0) && (c.compareTo('9') <= 0)) {
 				
-				// if character is in [a - z],
-				processedWord=processedWord.concat(c.toString());
+				// if character is in [a - z], [0 - 9]
+				processedWord = processedWord.concat(c.toString());
 				notBlank=true;
 			} else {
 
