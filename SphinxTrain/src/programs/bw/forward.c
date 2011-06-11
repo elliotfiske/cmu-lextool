@@ -334,6 +334,8 @@ forward(float64 **active_alpha,
     /* insert the initial state in the active list */
     active[n_active] = 0;
     n_active++;
+    
+    aalpha_alloc = n_active;
 
     /* Compute scaled alpha over all remaining time in the utterance */
     for (t = 1; t < n_obs; t++) {
@@ -347,15 +349,14 @@ forward(float64 **active_alpha,
 
 	/* assume next active state set about the same size as current;
 	   adjust to actual size as necessary later */
-	active_alpha[t] = (float64 *)ckd_calloc(n_active, sizeof(float64));
+	active_alpha[t] = (float64 *)ckd_calloc(aalpha_alloc, sizeof(float64));
 	if (bp) {
-	    bp[t] = (uint32 *)ckd_calloc(n_active, sizeof(uint32));
+	    bp[t] = (uint32 *)ckd_calloc(aalpha_alloc, sizeof(uint32));
 	    /* reallocate the best score array and zero it out */
 	    if (n_active > aalpha_alloc)
-		best_pred = (float64 *)ckd_realloc(best_pred, n_active * sizeof(float64));
-	    memset(best_pred, 0, n_active * sizeof(float64));
+		best_pred = (float64 *)ckd_realloc(best_pred, aalpha_alloc * sizeof(float64));
+	    memset(best_pred, 0, aalpha_alloc * sizeof(float64));
 	}
-	aalpha_alloc = n_active;
 
 	/* For all active states at the previous frame, activate their
 	   successors in this frame and compute codebooks. */
@@ -415,22 +416,19 @@ forward(float64 **active_alpha,
 			++n_next_active;
 
 			if (n_next_active == aalpha_alloc) {
-			    /* Need to reallocate the active_alpha array */
-			    aalpha_alloc += ACHK;
+			    aalpha_alloc *= 2;
+			    
 			    active_alpha[t] = ckd_realloc(active_alpha[t],
 							  sizeof(float64) * aalpha_alloc);
-			    /* And the backpointer array */
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
-				/* And the best score array */
 				best_pred = (float64 *)ckd_realloc(best_pred,
 								   sizeof(float64) * aalpha_alloc);
-				/* Make sure the new stuff is zero */
-				memset(bp[t] + aalpha_alloc - ACHK,
-				       0, sizeof(uint32) * ACHK);
-				memset(best_pred + aalpha_alloc - ACHK,
-				       0, sizeof(float64) * ACHK);
+				memset(bp[t] + aalpha_alloc / 2,
+				       0, sizeof(uint32) * (aalpha_alloc / 2));
+				memset(best_pred + aalpha_alloc / 2,
+				       0, sizeof(float64) * (aalpha_alloc / 2));
 			    }
 			}
 		    }
@@ -536,7 +534,8 @@ forward(float64 **active_alpha,
 			++n_next_active;
 
 			if (n_next_active == aalpha_alloc) {
-			    aalpha_alloc += ACHK;
+			    aalpha_alloc = aalpha_alloc * 2;
+			    
 			    active_alpha[t] = ckd_realloc(active_alpha[t],
 							  sizeof(float64) * aalpha_alloc);
 			    if (bp) {
@@ -544,10 +543,10 @@ forward(float64 **active_alpha,
 						    sizeof(uint32) * aalpha_alloc);
 				best_pred = (float64 *)ckd_realloc(best_pred,
 								   sizeof(float64) * aalpha_alloc);
-				memset(bp[t] + aalpha_alloc - ACHK,
-				       0, sizeof(uint32) * ACHK);
-				memset(best_pred + aalpha_alloc - ACHK,
-				       0, sizeof(float64) * ACHK);
+				memset(bp[t] + aalpha_alloc / 2,
+				       0, sizeof(uint32) * (aalpha_alloc / 2));
+				memset(best_pred + aalpha_alloc / 2,
+				       0, sizeof(float64) * (aalpha_alloc / 2));
 			    }
 			}
 			if (bp) {
