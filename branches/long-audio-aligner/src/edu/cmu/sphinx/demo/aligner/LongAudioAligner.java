@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
+import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
 import edu.cmu.sphinx.linguist.language.grammar.TextAlignerGrammar;
 import edu.cmu.sphinx.recognizer.Recognizer;
@@ -38,9 +39,9 @@ public class LongAudioAligner {
 		// Read Configuration file
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");		
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
-		
+		FlatLinguist flatLinguist = (FlatLinguist) cm.lookup("flatLinguist");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("AlignerGrammar");
-		grammar.setGrammarType("MODEL_BACKWARD_JUMPS|MODEL_REPETITIONS");
+		grammar.setGrammarType("");
 		
 		// Read raw input transcription from file
 		String input = "";
@@ -60,6 +61,7 @@ public class LongAudioAligner {
 		AlignerTestCase testCase = new AlignerTestCase(input, 0.03, pathToWordFile);
 		String corruptedInput = testCase.getCorruptedText();	
 		// System.out.println("CorruptedInput="+corruptedInput);
+		//corruptedInput = "This is a sample input";
 		grammar.setText(corruptedInput);
 		
 		recognizer.allocate();
@@ -79,14 +81,26 @@ public class LongAudioAligner {
 			untimed = untimed.concat(resultText + " ");
 			//System.out.println(timedResult);
 			//System.out.println(untimed);
-		}		
-
+		}
 		NISTAlign nistalign = new NISTAlign(true, true);
 		nistalign.align(input, untimed);
-		System.out.println("WER:" + nistalign.getTotalWordErrorRate());
-				
+		System.out.println("=======Force Aligned=========");
+		System.out.println("WER:" + nistalign.getTotalWordErrorRate());	
+		flatLinguist.deallocate();
+
 		// change grammar Configurations
-		
+		System.out.println("=======Modified Grammar======");
+		grammar.setGrammarType("MODEL_BACKWARD_JUMPS|MODEL_REPETITIONS");
+		flatLinguist.allocate();
+		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
+		untimed = "";
+		while ((result = recognizer.recognize()) != null) {
+			String resultText = result.getBestResultNoFiller();
+			String timedResult = result.getTimedBestResult(false, true);
+			untimed = untimed.concat(resultText + " ");
+		}
+		nistalign.align(input, untimed);
+		System.out.println("WER:" + nistalign.getTotalWordErrorRate());
 	}
 
 }
