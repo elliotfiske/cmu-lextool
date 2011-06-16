@@ -57,6 +57,7 @@ backtrace(state_t *state, uint32 fs_id, uint32 *n_vit_sseq);
 
 int32
 forward(float64 **active_alpha,
+        float64 **reduced_alpha,
 	uint32 **active_astate,
 	uint32 *n_active_astate,
 	uint32 **bp,

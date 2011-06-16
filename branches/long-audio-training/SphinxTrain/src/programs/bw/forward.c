@@ -176,6 +176,7 @@
 
 int32
 forward(float64 **active_alpha,
+        float64 **reduced_alpha,
 	uint32 **active_astate,
 	uint32 *n_active_astate,
 	uint32 **bp,
@@ -222,6 +223,10 @@ forward(float64 **active_alpha,
     /* Can we prune this frame using phseg? */
     int can_prune_phseg;
     float64 *best_pred = NULL;
+    
+    uint32 sqrt_pos;
+    float64 *active_alpha_t = NULL;
+    float64 *active_alpha_p = NULL;
     
     /* Get the CPU timer associated with mixture Gaussian evaluation */
     gau_timer = timing_get("gau");
@@ -309,7 +314,12 @@ forward(float64 **active_alpha,
      * Allocate space for the initial state in the alpha
      * and active state arrays
      */
+    sqrt_pos = 0;
+    active_alpha_t = ckd_calloc(1, sizeof(float64));
+    active_alpha_p = ckd_calloc(1, sizeof(float64));
+    
     active_alpha[0] = ckd_calloc(1, sizeof(float64));
+    reduced_alpha[0] = ckd_calloc(1, sizeof(float64));
     active_astate[0] = ckd_calloc(1, sizeof(uint32));
     if (bp)
 	bp[0] = ckd_calloc(1, sizeof(uint32)); /* Unused, actually */
@@ -325,6 +335,8 @@ forward(float64 **active_alpha,
     scale[0] = 1.0 / outprob[0];
 
     /* set the scaled alpha variable for the initial state */
+    reduced_alpha[0][0] = 1.0;
+    active_alpha_t[0] = active_alpha_p[0] = 1.0;
     active_alpha[0][0] = 1.0;
     /* put the initial state in the active state array for t == 0 */
     active_astate[0][0] = 0;
@@ -339,6 +351,9 @@ forward(float64 **active_alpha,
 
     /* Compute scaled alpha over all remaining time in the utterance */
     for (t = 1; t < n_obs; t++) {
+    
+        float64 *active_temp;
+        
 	/* Find active phone for this timepoint. */
 	if (phseg) {
 	    /* Move the pointer forward if necessary. */
@@ -350,6 +365,14 @@ forward(float64 **active_alpha,
 	/* assume next active state set about the same size as current;
 	   adjust to actual size as necessary later */
 	active_alpha[t] = (float64 *)ckd_calloc(aalpha_alloc, sizeof(float64));
+	
+	active_temp = active_alpha_t;
+	active_alpha_t = active_alpha_p;
+	active_alpha_p = active_temp;
+	
+	active_alpha_t = ckd_realloc(active_alpha_t, sizeof(float64) * aalpha_alloc);
+	active_alpha_p = ckd_realloc(active_alpha_p, sizeof(float64) * aalpha_alloc);
+	
 	if (bp) {
 	    bp[t] = (uint32 *)ckd_calloc(aalpha_alloc, sizeof(uint32));
 	    /* reallocate the best score array and zero it out */
@@ -409,6 +432,7 @@ forward(float64 **active_alpha,
 
 			/* Initialize the alpha variable to zero */
 			active_alpha[t][n_next_active] = 0;
+			active_alpha_t[n_next_active] = 0;
 
 			/* Map active state list index to sentence HMM index */
 			next_active[n_next_active] = j;
@@ -420,6 +444,9 @@ forward(float64 **active_alpha,
 			    
 			    active_alpha[t] = ckd_realloc(active_alpha[t],
 							  sizeof(float64) * aalpha_alloc);
+			    active_alpha_t = ckd_realloc(active_alpha_t, sizeof(float64) * aalpha_alloc);
+			    active_alpha_p = ckd_realloc(active_alpha_p, sizeof(float64) * aalpha_alloc);
+                            
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
@@ -454,7 +481,7 @@ forward(float64 **active_alpha,
 	    tprob = state_seq[i].next_tprob;
 
 	    /* the scaled alpha value for i at t-1 */
-	    prior_alpha = active_alpha[t-1][s];
+	    prior_alpha = active_alpha_p[s];
 
 	    /* For all emitting states j adjacent to i, update their
 	     * alpha values.  */
@@ -488,6 +515,7 @@ forward(float64 **active_alpha,
 		    
 		    /* update the unscaled alpha[t][j] */
 		    active_alpha[t][amap[j]] += x * outprob[j];
+		    active_alpha_t[amap[j]] += x * outprob[j];
 		}
 		else {
 		    /* already done below in the prior time frame */
@@ -521,7 +549,7 @@ forward(float64 **active_alpha,
 #if FORWARD_DEBUG
 		    E_INFO("In non-emitting state update, active state %d, next state %d\n",i,j);
 #endif
-		    x = active_alpha[t][s] * tprob[u];
+		    x = active_alpha_t[s] * tprob[u];
 
 #if FORWARD_DEBUG
 		    E_INFO("In non-emitting state update, active_alpha[t][s]: %f,tprob[u]:  %f\n",active_alpha[t][s],tprob[u]);
@@ -530,6 +558,7 @@ forward(float64 **active_alpha,
 		    if (amap[j] == INACTIVE) {
 			amap[j] = n_next_active;
 			active_alpha[t][n_next_active] = 0;
+			active_alpha_t[n_next_active] = 0;
 			next_active[n_next_active] = j;
 			++n_next_active;
 
@@ -538,6 +567,9 @@ forward(float64 **active_alpha,
 			    
 			    active_alpha[t] = ckd_realloc(active_alpha[t],
 							  sizeof(float64) * aalpha_alloc);
+			    active_alpha_t = ckd_realloc(active_alpha_t, sizeof(float64) * aalpha_alloc);
+			    active_alpha_p = ckd_realloc(active_alpha_p, sizeof(float64) * aalpha_alloc);
+                            
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
@@ -563,6 +595,7 @@ forward(float64 **active_alpha,
 		    }
 		    /* update its alpha value */
 		    active_alpha[t][amap[j]] += x;
+		    active_alpha_t[amap[j]] += x;
 		}
 	    }
 	}
@@ -584,8 +617,8 @@ forward(float64 **active_alpha,
 	balpha = 0;
 	/* also take the argmax to find the best backtrace */
 	for (s = 0; s < n_next_active; s++) {
-	    if (balpha < active_alpha[t][s]) {
-		balpha = active_alpha[t][s];
+	    if (balpha < active_alpha_t[s]) {
+		balpha = active_alpha_t[s];
 	    }
 	}
 
@@ -673,6 +706,7 @@ forward(float64 **active_alpha,
 		if (acmod_set_base_phone(as, state_seq[next_active[s]].phn)
 		    == acmod_set_base_phone(as, phseg->phone)) {
 		    active_alpha[t][n_active] = active_alpha[t][s] * scale[t];
+		    active_alpha_t[n_active] = active_alpha_t[s] * scale[t];
 		    active[n_active] = active_astate[t][n_active] = next_active[s];
 		    if (bp)
 			bp[t][n_active] = bp[t][s];
@@ -686,6 +720,7 @@ forward(float64 **active_alpha,
 	    else {
 		if (active_alpha[t][s] > pthresh) {
 		    active_alpha[t][n_active] = active_alpha[t][s] * scale[t];
+		    active_alpha_t[n_active] = active_alpha_t[s] * scale[t];
 		    active[n_active] = active_astate[t][n_active] = next_active[s];
 		    if (bp)
 			bp[t][n_active] = bp[t][s];
@@ -715,11 +750,39 @@ forward(float64 **active_alpha,
 	n_next_active = 0;
 
 	n_sum_active += n_active;
+
+        if (fmod(t, sqrt(n_obs)) < 1) {
+            sqrt_pos++;
+            
+            reduced_alpha[sqrt_pos] = (float64 *)ckd_calloc(n_active_astate, sizeof(float64));
+            for (s = 0; s < n_active_astate[sqrt_pos]; ++s) {
+                reduced_alpha[sqrt_pos][s] = active_alpha_t[s];
+            }
+        }
     }
     if (!mmi_train)
 	printf(" %u ", n_sum_active / n_obs);
-    
+
 cleanup:
+/*
+    fprintf(stderr, "MICHAL: reduced---------------------\n");
+    for (t = 0; t < ceil(sqrt(n_obs)); t++) {
+        fprintf(stderr, "MICHAL: %d | ", (uint32)(sqrt(n_obs) * t));
+        for (s = 0; s < n_active_astate[(uint32)(sqrt(n_obs) * t)]; s++) {
+            fprintf(stderr, "%ld ", reduced_alpha[t][s]);
+        }
+        fprintf(stderr, "\n");
+    }
+
+    fprintf(stderr, "MICHAL: full ---------------------\n");
+    for (t = 0; t < n_obs; t++) {
+        fprintf(stderr, "MICHAL: %d | ", t);
+        for (s = 0; s < n_active_astate[t]; s++) {
+            fprintf(stderr, "%ld ", active_alpha[t][s]);
+        }
+        fprintf(stderr, "\n");
+    }
+*/
     ckd_free(active_a);
     ckd_free(active_b);
     ckd_free(amap);
