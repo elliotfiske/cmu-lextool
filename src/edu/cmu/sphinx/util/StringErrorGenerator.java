@@ -21,7 +21,7 @@ public class StringErrorGenerator {
 	// or substituted.
 
 	private int numWords = 0; // total number of words in the text
-	private List<String> words;
+	private List<Word> words;
 	private URL pathToWordFile;
 
 	public StringErrorGenerator() {
@@ -59,14 +59,14 @@ public class StringErrorGenerator {
 	 * Allocates Error Generator by assigning text dependent variables. Throws
 	 * error when text is not set
 	 */
-	public void allocate() throws IOException {
+	public void process() throws IOException {
 		rand = new Random();
 		if (text != null) {
 			String[] wordTokens = text.split(" ");
-			words = new LinkedList<String>();
+			words = new LinkedList<Word>();
 			for (int i = 0; i < wordTokens.length; i++) {
 				if (wordTokens[i].compareTo("") != 0) {
-					words.add(wordTokens[i]);
+					words.add(new Word(wordTokens[i]));
 				}
 			}
 			numWords = words.size();
@@ -82,26 +82,32 @@ public class StringErrorGenerator {
 		} else {
 			throw new Error("ERROR: Can not allocate on a <null> text. ");
 		}
-	}
-
-	public String generateTranscription() {
+		// Check for compatible word error rates
+		check_compatible();
+		
+		// process errors
 		processDeletions();
 		processInsertions();
 		processSubstitution();
-		Iterator<String> iter = words.iterator();
-		String result = "";
-		while (iter.hasNext()) {
-			result = result.concat(iter.next() + " ");
+	}
+	
+	// Throws error if error rates exceed acceptable bounds
+	private void check_compatible() {
+		if( wer > 1.0 || wer < 0) {
+			throw new Error("Error: wer should be between 0 and 1.0");
+		} else if (ir > 1.0 || ir < 0 ||
+				   dr >1.0  || dr < 0 ||
+				   sr >1.0  || sr < 0) {
+			throw new Error("Error: insertion/deletion/substitution rates must be b/w 0 and 1.0");
 		}
-		// System.out.println(result);
-		return result;
+		
 	}
 
 	private void processSubstitution() {
 		double numSubstitutions = sr * numWords;
 		int substitutionCount = 0;
 		int currIndex = 0;
-		Iterator<String> iter = words.listIterator(0);
+		Iterator<Word> iter = words.listIterator(0);
 		// while number of substitution is less than total number of required
 		// substitutioniterate over the list and substitute word at random
 		// locations with another one.
@@ -110,9 +116,12 @@ public class StringErrorGenerator {
 				double random = rand.nextGaussian();
 				if (random <= sr / 2 && random >= -sr / 2) {
 					// Substitute a word here
-					words.remove(currIndex);
-					words.add(currIndex, wordsToInsert.get(rand
-							.nextInt(wordsToInsert.size())));
+					words.get(currIndex).delete();
+					String wordToInsert= wordsToInsert.get(rand
+							.nextInt(wordsToInsert.size()));
+					Word word = new Word(wordToInsert);
+					word.insert();
+					words.add(currIndex,word);
 					iter = words.listIterator(currIndex);
 					substitutionCount++;
 					currIndex--;
@@ -136,7 +145,7 @@ public class StringErrorGenerator {
 		double numDeletions = dr * numWords;
 		int deletionCount = 0;
 		int currIndex = 0;
-		Iterator<String> iter = words.listIterator(0);
+		Iterator<Word> iter = words.listIterator(0);
 		// while number of deletions is less than total number of required
 		// deletions
 		// iterate over the list and delete word from random locations.
@@ -145,6 +154,7 @@ public class StringErrorGenerator {
 				double random = rand.nextGaussian();
 				if (random <= dr / 2 && random >= -dr / 2) {
 					// Delete word from here
+					words.get(currIndex).delete();
 					iter = words.listIterator(currIndex);
 					deletionCount++;
 					currIndex--;
@@ -168,7 +178,7 @@ public class StringErrorGenerator {
 		double numInsertions = ir * numWords;
 		int insertionCount = 0;
 		int currIndex = 0;
-		Iterator<String> iter = words.iterator();
+		Iterator<Word> iter = words.iterator();
 		// while number of insertions is less than total number of required
 		// insertions iterate over the list and insert random word at random
 		// locations.
@@ -177,8 +187,11 @@ public class StringErrorGenerator {
 				double random = rand.nextGaussian();
 				if (random <= ir / 2 && random >= -ir / 2) {
 					// Insert a new word here
-					words.add(currIndex, wordsToInsert.get(rand
-							.nextInt(wordsToInsert.size())));
+					String wordToInsert= wordsToInsert.get(rand
+							.nextInt(wordsToInsert.size()));
+					Word word = new Word(wordToInsert);
+					word.insert();
+					words.add(currIndex, word );
 					iter = words.listIterator(currIndex);
 					insertionCount = insertionCount + 1;
 				}
@@ -192,4 +205,8 @@ public class StringErrorGenerator {
 			}
 		}
 	}
+	public List<Word> getTranscription() {
+		return words;
+	}
+	
 }
