@@ -125,14 +125,14 @@ public class AlignerGrammar extends Grammar {
 		
 		if(model_repetitions == true) {
 			
-			selfLoopProbability = 0.0000000001; 	// penalty for repetition
+			selfLoopProbability = 0.0000008; 	// penalty for repetition
 		} else {
 			selfLoopProbability = 0.0;
 		}
 		
 		if (model_deletions ==  true) {
 			
-			forwardJumpProbability = 0.0000000001; 	// penality for forward skips
+			forwardJumpProbability = 0.000000001; 	// penality for forward skips
 		} else {
 			forwardJumpProbability = 0.0;
 		}
@@ -147,6 +147,10 @@ public class AlignerGrammar extends Grammar {
 			// TODO CIPL
 			
 		}
+		//System.out.println("Self Loop Probability:"+selfLoopProbability);
+		//System.out.println("forward jump Probability: "+forwardJumpProbability);
+		//System.out.println("Backward Jump Probability:"+backwardTransitionProbability);
+		
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode.setFinalNode(true);
@@ -165,35 +169,48 @@ public class AlignerGrammar extends Grammar {
 
 		for (int i = 0; i < wordGrammarNodes.size(); i++) {
 			final GrammarNode wordNode = wordGrammarNodes.get(i);
-
-			float branchScore = logMath.linearToLog(1.0);
-			if (i <= numAllowedWordJumps)
-				branchNode.add(wordNode, branchScore);
-			if (i + numAllowedWordJumps+1 >= wordGrammarNodes.size())
-				wordNode
-						.add(
-								finalNode,
-								logMath
-										.linearToLog(1.0 / ((wordGrammarNodes
-												.size() - i) * (wordGrammarNodes
-												.size() - i))));
+			
+			// Link first word nodes with branch node
+			if (i <= numAllowedWordJumps) {
+				if(i != 0) {
+					
+					// case when first word can be skipped
+					branchNode.add(wordNode, logMath.linearToLog(forwardJumpProbability));
+				} else {
+					branchNode.add(wordNode, logMath.getLogOne());
+				}
+			}
+			
+			// Link last nodes with final node
+			if (i + numAllowedWordJumps+1 >= wordGrammarNodes.size()) {
+				if(i+1 != wordGrammarNodes.size()) {
+					wordNode.add(finalNode, logMath.linearToLog(forwardJumpProbability));
+				} else {
+					wordNode.add(finalNode, logMath.getLogOne());
+				}
+			}
 			
 			// allowing word repetitions: probability is still under test.
 			wordNode.add(wordNode, logMath.linearToLog(selfLoopProbability));
 			
 			// add connections to close words
 			for (int j = i + 1; j <= i + 1+ numAllowedWordJumps; j++) {
-				if (0 <= j && j < wordGrammarNodes.size()) {
+				if (j < wordGrammarNodes.size()) {
 					final GrammarNode neighbour = wordGrammarNodes.get(j);
-					wordNode.add(neighbour, logMath.linearToLog(1.0));
-					
-					// allowing backward grammar transitions: Probability is
-					// still under test
+					if(j!=i+1) {						
+						wordNode.add(neighbour, logMath.linearToLog(forwardJumpProbability));
+						
+					} else {
+						
+						// immediate neighbour
+						wordNode.add(neighbour, logMath.getLogOne());
+					}
 					neighbour.add(wordNode, logMath
 							.linearToLog(backwardTransitionProbability));
 				}
 			}
 		}
+		//initialNode.dumpDot("./graph.dot");
 		return initialNode;
 	}
 
