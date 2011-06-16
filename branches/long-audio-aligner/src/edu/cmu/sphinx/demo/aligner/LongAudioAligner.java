@@ -17,13 +17,17 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import java.net.URL;
+import java.util.Map;
 
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
+import edu.cmu.sphinx.linguist.language.grammar.TextAlignerGrammar;
 import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.result.Result;
+import edu.cmu.sphinx.util.props.Configurable;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 
+import edu.cmu.sphinx.util.AlignerTestCase;
 import edu.cmu.sphinx.util.NISTAlign;
 import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.StringErrorGenerator;
@@ -31,9 +35,11 @@ import edu.cmu.sphinx.util.StringErrorGenerator;
 public class LongAudioAligner {
 	public static void main(String Args[]) throws IOException {		
 		// Read Configuration file
-		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
+		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");		
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
+		
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("AlignerGrammar");
+		
 		// Read raw input transcription from file
 		String input = "";
 		String line;
@@ -49,31 +55,29 @@ public class LongAudioAligner {
 		
 		// Corrupt the input using StringErrorGenerator
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
-		StringErrorGenerator seg = new StringErrorGenerator(0.03,
-				pathToWordFile);
-		seg.setText(input);
-		seg.allocate();
-		String corruptedInput = seg.generateTranscription();
-		long startTime = System.currentTimeMillis();
+		AlignerTestCase testCase = new AlignerTestCase(input, 0.03, pathToWordFile);
+		String corruptedInput = testCase.getCorruptedText();	
+		System.out.println("CorruptedInput="+corruptedInput);
 		grammar.setText(corruptedInput);
+		
 		recognizer.allocate();
 
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
+		
 		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
-
+		
 		Result result;
 		String untimed = "";
-		System.out.print("Result :");
+		System.out.print("Original Aligner :");
+		
 		while ((result = recognizer.recognize()) != null) {
 			String resultText = result.getBestResultNoFiller();
 			String timedResult = result.getTimedBestResult(false, true);
 			untimed = untimed.concat(resultText + " ");
 			//System.out.println(timedResult);
 			System.out.println(untimed);
-		}
-		System.out.println("Time to align:"
-				+ (System.currentTimeMillis() - startTime) / 1000 + "secs");
+		}		
 
 		NISTAlign nistalign = new NISTAlign(true, true);
 		nistalign.align(input, untimed);
