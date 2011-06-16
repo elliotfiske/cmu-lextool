@@ -153,6 +153,7 @@ baum_welch_update(float64 *log_forw_prob,
     float64 *scale = NULL;
     float64 **dscale = NULL;
     float64 **active_alpha;
+    float64 **reduced_alpha;
     uint32 **active_astate;
     uint32 **bp;
     uint32 *n_active_astate;
@@ -179,6 +180,7 @@ baum_welch_update(float64 *log_forw_prob,
     dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
     n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
     active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
+    reduced_alpha  = (float64 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(float64 *));
     active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
 
@@ -191,7 +193,7 @@ baum_welch_update(float64 *log_forw_prob,
  * Debug?
  *   E_INFO("Before Forward search\n");
  */
-    ret = forward(active_alpha, active_astate, n_active_astate, bp,
+    ret = forward(active_alpha, reduced_alpha, active_astate, n_active_astate, bp,
 		  scale, dscale,
 		  feature, n_obs, state, n_state,
 		  inv, a_beam, phseg, 0);
@@ -305,7 +307,11 @@ baum_welch_update(float64 *log_forw_prob,
 	ckd_free((void *)dscale[i]);
 	ckd_free((void *)bp[i]);
     }
+    for (i = 0; i < ceil(sqrt(n_obs)); i++) {
+        ckd_free((void *)reduced_alpha[i]);
+    }
     ckd_free((void *)active_alpha);
+    ckd_free((void *)reduced_alpha);
     ckd_free((void *)active_astate);
     ckd_free((void **)dscale);
 
