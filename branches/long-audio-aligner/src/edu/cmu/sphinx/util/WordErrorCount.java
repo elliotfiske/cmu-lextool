@@ -254,7 +254,7 @@ public class WordErrorCount {
 	}
 	
 	public class BackTraceObj {
-		public int match;	// 0 if matches, 1 if doesn't match
+		public int match;	// 0 if doesn't match, 1 if matches
 		public int longestMatchLength; 	
 		public boolean refUsed;		// true if currRef was used to 
 									// get longest match
