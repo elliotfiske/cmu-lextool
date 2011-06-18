@@ -21,7 +21,7 @@ public class StringErrorGenerator {
 	// or substituted.
 
 	private int numWords = 0; // total number of words in the text
-	private List<Word> words;
+	private LinkedList<Word> words;
 	private URL pathToWordFile;
 
 	public StringErrorGenerator() {
@@ -205,7 +205,7 @@ public class StringErrorGenerator {
 			}
 		}
 	}
-	public List<Word> getTranscription() {
+	public LinkedList<Word> getTranscription() {
 		return words;
 	}
 	

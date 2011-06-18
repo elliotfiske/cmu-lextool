@@ -33,9 +33,10 @@ import edu.cmu.sphinx.util.AlignerTestCase;
 import edu.cmu.sphinx.util.NISTAlign;
 import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.StringErrorGenerator;
+import edu.cmu.sphinx.util.WordErrorCount;
 
 public class LongAudioAligner {
-	public static void main(String Args[]) throws IOException {		
+	public static void main(String Args[]) throws IOException {
 		// Read Configuration file
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");		
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
@@ -61,7 +62,6 @@ public class LongAudioAligner {
 		AlignerTestCase testCase = new AlignerTestCase(input, 0.03, pathToWordFile);
 		String corruptedInput = testCase.getCorruptedText();	
 		// System.out.println("CorruptedInput="+corruptedInput);
-		//corruptedInput = "This is a sample input";
 		grammar.setText(corruptedInput);
 		
 		recognizer.allocate();
@@ -79,15 +79,20 @@ public class LongAudioAligner {
 			String resultText = result.getBestResultNoFiller();
 			String timedResult = result.getTimedBestResult(false, true);
 			untimed = untimed.concat(resultText + " ");
-			//System.out.println(timedResult);
-			//System.out.println(untimed);
 		}
+		
 		NISTAlign nistalign = new NISTAlign(true, true);
 		nistalign.align(input, untimed);
 		System.out.println("=======Force Aligned=========");
-		System.out.println("WER:" + nistalign.getTotalWordErrorRate());	
+		System.out.println("Deletions:"+nistalign.getTotalDeletions());
+		System.out.println("Insertions:"+nistalign.getTotalInsertions());
+		System.out.println("Substitution:"+nistalign.getTotalSubstitutions());
+		
+		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), untimed);
+		wec.align();
+		wec.printStats();
+		
 		flatLinguist.deallocate();
-
 		// change grammar Configurations
 		System.out.println("=======Modified Grammar======");
 		grammar.setGrammarType("MODEL_BACKWARD_JUMPS|MODEL_REPETITIONS");
@@ -101,6 +106,6 @@ public class LongAudioAligner {
 		}
 		nistalign.align(input, untimed);
 		System.out.println("WER:" + nistalign.getTotalWordErrorRate());
-	}
+	}		
 
 }

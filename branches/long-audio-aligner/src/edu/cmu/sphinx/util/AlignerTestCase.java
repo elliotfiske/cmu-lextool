@@ -14,7 +14,7 @@ package edu.cmu.sphinx.util;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedList;
 
 // An aligner test case contains:
 // i) the original transcription
@@ -22,7 +22,7 @@ import java.util.List;
 // iii) positions of injected errors
 public class AlignerTestCase {
 	private final String originalTranscription;
-	private List<Word> corruptedTranscription;
+	private LinkedList<Word> corruptedTranscription;
 	
 	public AlignerTestCase (String Text) {
 		originalTranscription = Text;		
@@ -31,7 +31,6 @@ public class AlignerTestCase {
 	public AlignerTestCase (String Text, double wer,URL pathToWordFile ) 
 	throws IOException {
 		this(Text);
-		
 		
 		StringErrorGenerator seg = new StringErrorGenerator(wer, pathToWordFile);
 		seg.setText(originalTranscription);
@@ -63,5 +62,8 @@ public class AlignerTestCase {
 		}
 		// System.out.println(result);
 		return result;
+	}
+	public LinkedList<Word> getWordList() {
+		return corruptedTranscription;
 	}
 }

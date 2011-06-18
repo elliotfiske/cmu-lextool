@@ -41,8 +41,14 @@ public class Word {
 	public boolean isInserted() {
 		if(FLAG.compareTo("insert")==0) {
 			return true;
-		}
-		else
+		}else
 			return false;
+	}
+	public boolean isDeleted() {
+		if(FLAG.compareTo("delete")== 0) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
