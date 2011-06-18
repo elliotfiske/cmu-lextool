@@ -23,13 +23,8 @@
 	</path>
 	
 	<target name="all"
-	            depends="clean, compile, run"
+	            depends="compile, run"
 	            description="Compiles and jars the demos"/>
-
-	<target name="clean" description="Clean all classes and jars for a fresh compilation">
-		<delete dir="${build_dir}"/>
-		<delete dir="${bin_dir}"/>
-	</target>
 	
 	<target name="compile">
 			<mkdir dir="${build_dir}"/>
@@ -43,7 +38,6 @@
 	               includes="**/*.java">
 	            <classpath refid="libs"/>
 	        </javac>
-		<mkdir dir="${bin_dir}"/>
 	        <jar destfile="${bin_dir}/aligner.jar"
 	             manifest="${src_dir}/MANIFEST.MF"
 	             basedir="${build_dir}"
