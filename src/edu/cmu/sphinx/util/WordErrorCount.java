@@ -20,32 +20,34 @@ public class WordErrorCount {
 	private LinkedList<Word> reference;	// contains words that are reference transcription
 	private LinkedList<Word> allWordReference; // contains all words in reference
 										// i.e. including the ones inserted and deleted.
-	private LinkedList<String> hypothesis;
+	private LinkedList<Word> hypothesis;
 	private LinkedList<Word> alignedList; // contains the final aligned Result
 	
 	private int totalNumWords;
 	private int totalInsertions;
-	private int totalDeletions;
+	private int totalDeletionsAndSubs;
 	private int artificialInsertions;	// keeps count of the number of words 
 										// inserted due to corrupted transcription
 	
 	private int correctedDeletions;	// keeps count of the number of words
 										// deleted due to corrupted transcription
+	private int correctedSubstitutions;
 	private Double wer;
 	
 	public WordErrorCount() {
 		totalNumWords = 0;
 		totalInsertions= 0;
-		totalDeletions = 0;
+		totalDeletionsAndSubs = 0;
 		wer = 0.0;
 		artificialInsertions = 0;
 		correctedDeletions = 0;
+		correctedSubstitutions = 0;
 	}
 	public WordErrorCount(LinkedList<Word> reference, String hypothesis) {
 		this();
 		this.allWordReference = reference;
 		this.reference = new LinkedList<Word>();
-		this.hypothesis = new LinkedList<String>();
+		this.hypothesis = new LinkedList<Word>();
 		generateRef();
 		setHypothesis(hypothesis);
 	}
@@ -68,7 +70,14 @@ public class WordErrorCount {
 		while(st.hasMoreTokens()) {
 			String word = st.nextToken();
 			if(word.compareTo("")!= 0) {
-				hypothesis.add(word);
+				//hypothesis.add(word);
+				String textPart = word.substring(0,word.indexOf("("));
+				String timedPart = word.substring(word.indexOf("(") + 1,
+								word.indexOf(")"));
+				String startTime = timedPart.substring(0,timedPart.indexOf(","));
+				String endTime = timedPart.substring(timedPart.indexOf(",")+1);					
+				hypothesis.add(new Word(textPart, Double.valueOf(startTime),
+									Double.valueOf(endTime),0.1));
 			}
 		}
 	}
@@ -84,7 +93,7 @@ public class WordErrorCount {
 		
 		// Now use traceback info to add all those words from ref 
 		// that match and you are done.
-		alignedList = traceBack(lattice);	
+		alignedList = traceBack(lattice);
 		
 		generateStats();
 	}
@@ -107,8 +116,7 @@ public class WordErrorCount {
 		for(int j= 1; j< hypothesis.size()+ 1; j++) {
 			for(int i = 1; i < reference.size()+ 1; i++) {
 				Word currRef =  reference.get(i-1);
-				if( currRef.getWord().
-						compareToIgnoreCase(hypothesis.get(j-1))== 0) {
+				if( currRef.isEqual(hypothesis.get(j-1))) {
 					lattice[i][j].match = 1;
 				}
 			}
@@ -193,7 +201,7 @@ public class WordErrorCount {
 					alignedList.add(0,reference.get(i-1));
 					
 					// update the number of words from ref that have been skipped
-					totalDeletions += (lastRefAdded - i - 1);
+					totalDeletionsAndSubs += (lastRefAdded - i - 1);
 					lastRefAdded = i;
 				}
 				i = prevRef;
@@ -221,28 +229,30 @@ public class WordErrorCount {
 		totalNumWords = reference.size();
 		
 		// ref.size + tI - tD = hyp.size
-		totalInsertions = hypothesis.size() - reference.size() + totalDeletions;
-		int Errors = totalDeletions+ totalInsertions;
+		totalInsertions = hypothesis.size() - reference.size() + totalDeletionsAndSubs;
+		int Errors = totalDeletionsAndSubs+ totalInsertions;
 		wer = (double)Errors/(double)totalNumWords;
 		while(iter.hasNext()) {
 			Word currWord = iter.next();
 			if(currWord.isDeleted()){
 				correctedDeletions ++;
+			}else if(currWord.isSubstituted()){
+				correctedSubstitutions ++;
 			}
-		}
-		
+		}		
 		// Still have to add something to count for insertions. But it will work out :)
 	}
 	
 	public void printStats() {
 		System.out.println("Total Insertions:"+totalInsertions);
-		System.out.println("Total Deletions:"+ totalDeletions);
+		System.out.println("Total Deletions+Substitutions:"+ totalDeletionsAndSubs);
 		System.out.println("Total Corrected Deletions:"+ correctedDeletions);
+		System.out.println("Total Corrected Substitutions:"+correctedSubstitutions);
 		System.out.println("WER:"+wer);
 	}
 	
-	public int totalDeletions(){
-		return totalDeletions;
+	public int totalDeletionsAndSubstitutions(){
+		return totalDeletionsAndSubs;
 	}
 	
 	public int totalInsertions() {
@@ -254,7 +264,7 @@ public class WordErrorCount {
 	}
 	
 	public class BackTraceObj {
-		public int match;	// 0 if doesn't match, 1 if matches
+		public int match;	// 0 if no match, 1 if doesn't match
 		public int longestMatchLength; 	
 		public boolean refUsed;		// true if currRef was used to 
 									// get longest match
