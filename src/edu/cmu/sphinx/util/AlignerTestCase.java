@@ -57,8 +57,9 @@ public class AlignerTestCase {
 		String result = "";
 		while (iter.hasNext()) {
 			Word nextWord = iter.next();
-			if(!nextWord.isDeleted()|| !nextWord.isSubstituted())
-			result = result.concat(nextWord.getWord() + " ");
+			if(!nextWord.isDeleted() && !nextWord.isSubstituted()) {
+				result = result.concat(nextWord.getWord() + " ");
+			}
 		}
 		// System.out.println(result);
 		return result;

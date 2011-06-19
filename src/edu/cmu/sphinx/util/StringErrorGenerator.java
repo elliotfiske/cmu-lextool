@@ -97,7 +97,7 @@ public class StringErrorGenerator {
 		// Check for compatible word error rates
 		check_compatible();
 		
-		// process errors
+		// make errors
 		processDeletions();
 		processInsertions();
 		processSubstitution();
@@ -129,9 +129,10 @@ public class StringErrorGenerator {
 		while (substitutionCount < numSubstitutions) {
 			if (currIndex < words.size()) {
 				double random = rand.nextGaussian();
-				if (random <= sr / 2 && random >= -sr / 2) {
+				if (random <= sr && random >= -sr && 
+						words.get(currIndex).getFlag().compareTo("")== 0) {
 					// Substitute a word here
-					words.get(currIndex).substitute();
+					words.get(currIndex).substitute();					
 					String wordToInsert= wordsToInsert.get(rand
 							.nextInt(wordsToInsert.size()));
 					Word word = new Word(wordToInsert);
@@ -168,8 +169,11 @@ public class StringErrorGenerator {
 		while (deletionCount < numDeletions) {
 			if (currIndex < words.size()) {
 				double random = rand.nextGaussian();
-				if (random <= dr / 2 && random >= -dr / 2) {
+				if (random <= dr && random >= -dr &&
+						words.get(currIndex).getFlag().compareTo("")== 0) {
+					
 					// Delete word from here
+					
 					words.get(currIndex).delete();
 					iter = words.listIterator(currIndex);
 					deletionCount++;
@@ -201,7 +205,8 @@ public class StringErrorGenerator {
 		while (insertionCount < numInsertions) {
 			if (currIndex < words.size()) {
 				double random = rand.nextGaussian();
-				if (random <= ir / 2 && random >= -ir / 2) {
+				if (random <= ir && random >= -ir &&
+						words.get(currIndex).getFlag().compareTo("")==0) {
 					// Insert a new word here
 					String wordToInsert= wordsToInsert.get(rand
 							.nextInt(wordsToInsert.size()));
