@@ -76,7 +76,7 @@ public class LongAudioAligner {
 		flatLinguist.deallocate();
 		// Corrupt the input using StringErrorGenerator	
 		String corruptedInput = testCase.getCorruptedText();
-		System.out.println(corruptedInput);
+		//System.out.println(corruptedInput);
 		grammar.setText(corruptedInput);
 		// change grammar Configurations
 		System.out.println("=======Modified Grammar======");
