@@ -55,57 +55,40 @@ public class LongAudioAligner {
 		
 		// Clean-up the file to be suitable for making grammar
 		StringCustomise sc= new StringCustomise();
-		input=sc.customise(input);
-		
-		// Corrupt the input using StringErrorGenerator
-		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
-		AlignerTestCase testCase = new AlignerTestCase(input, 0.03, pathToWordFile);
-		String corruptedInput = testCase.getCorruptedText();	
-		// System.out.println("CorruptedInput="+corruptedInput);
-		grammar.setText(corruptedInput);
-		
+		input=sc.customise(input);	
+		grammar.setText(input);
+		grammar.setGrammarType("");			// FORCE ALIGNED GRAMMAR : Default
 		recognizer.allocate();
 
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
-				.lookup("audioFileDataSource");
-		
-		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
-		
-		Result result;
-		String untimed = "";
-		//System.out.print("Original Aligner :");
-		
-		while ((result = recognizer.recognize()) != null) {
-			String resultText = result.getBestResultNoFiller();
-			String timedResult = result.getTimedBestResult(false, true);
-			untimed = untimed.concat(resultText + " ");
-		}
-		
-		NISTAlign nistalign = new NISTAlign(true, true);
-		nistalign.align(input, untimed);
-		System.out.println("=======Force Aligned=========");
-		System.out.println("Deletions:"+nistalign.getTotalDeletions());
-		System.out.println("Insertions:"+nistalign.getTotalInsertions());
-		System.out.println("Substitution:"+nistalign.getTotalSubstitutions());
-		
-		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), untimed);
+				.lookup("audioFileDataSource");		
+		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);		
+		Result result;		
+		String timedResult ="";
+		result = recognizer.recognize();
+		timedResult = result.getTimedBestResult(false, true);	// Base result					
+		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
+		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
+		System.out.println("=======FORCE ALIGNED RESULT========");
+		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
 		wec.align();
 		wec.printStats();
-		
 		flatLinguist.deallocate();
+		// Corrupt the input using StringErrorGenerator	
+		String corruptedInput = testCase.getCorruptedText();	
+		grammar.setText(corruptedInput);
 		// change grammar Configurations
 		System.out.println("=======Modified Grammar======");
 		grammar.setGrammarType("MODEL_BACKWARD_JUMPS|MODEL_REPETITIONS");
 		flatLinguist.allocate();
 		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
-		untimed = "";
-		while ((result = recognizer.recognize()) != null) {
-			String resultText = result.getBestResultNoFiller();
-			String timedResult = result.getTimedBestResult(false, true);
-			untimed = untimed.concat(resultText + " ");
-		}
-		nistalign.align(input, untimed);
-		System.out.println("WER:" + nistalign.getTotalWordErrorRate());
+		result = recognizer.recognize();
+		timedResult = result.getTimedBestResult(false, true);
+		wec = new WordErrorCount(testCase.getWordList(), timedResult);
+		wec.align();
+		wec.printStats();
+		
+		
 	}		
 
 }

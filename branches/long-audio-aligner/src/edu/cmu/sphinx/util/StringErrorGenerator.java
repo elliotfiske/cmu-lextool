@@ -16,6 +16,9 @@ public class StringErrorGenerator {
 	private double ir = 0.01; // insertion rate (default= 1%)
 	private double dr = 0.01; // deletion rate (default= 1%)
 	private double sr = 0.01; // substitution rate (default= 1%)
+	private int numSubstitutions;
+	private int numInsertions;
+	private int numDeletions;
 	private Random rand;
 	private List<String> wordsToInsert; // Contains words that will be inserted
 	// or substituted.
@@ -66,7 +69,16 @@ public class StringErrorGenerator {
 			words = new LinkedList<Word>();
 			for (int i = 0; i < wordTokens.length; i++) {
 				if (wordTokens[i].compareTo("") != 0) {
-					words.add(new Word(wordTokens[i]));
+					//words.add(new Word(wordTokens[i]));
+					String textPart = wordTokens[i].
+										substring(0,wordTokens[i].indexOf("("));
+					String timedPart = wordTokens[i].
+										substring(wordTokens[i].indexOf("(") + 1,
+												wordTokens[i].indexOf(")"));
+					String startTime = timedPart.substring(0,timedPart.indexOf(","));
+					String endTime = timedPart.substring(timedPart.indexOf(",")+1);					
+					words.add(new Word(textPart, Double.valueOf(startTime),
+							Double.valueOf(endTime),0.1));
 				}
 			}
 			numWords = words.size();
@@ -89,6 +101,7 @@ public class StringErrorGenerator {
 		processDeletions();
 		processInsertions();
 		processSubstitution();
+		printErrorStats();
 	}
 	
 	// Throws error if error rates exceed acceptable bounds
@@ -104,10 +117,12 @@ public class StringErrorGenerator {
 	}
 
 	private void processSubstitution() {
-		double numSubstitutions = sr * numWords;
+		Double numSubs = sr * numWords;
+		numSubstitutions = numSubs.intValue();
 		int substitutionCount = 0;
 		int currIndex = 0;
 		Iterator<Word> iter = words.listIterator(0);
+		
 		// while number of substitution is less than total number of required
 		// substitutioniterate over the list and substitute word at random
 		// locations with another one.
@@ -116,11 +131,12 @@ public class StringErrorGenerator {
 				double random = rand.nextGaussian();
 				if (random <= sr / 2 && random >= -sr / 2) {
 					// Substitute a word here
-					words.get(currIndex).delete();
+					words.get(currIndex).substitute();
 					String wordToInsert= wordsToInsert.get(rand
 							.nextInt(wordsToInsert.size()));
 					Word word = new Word(wordToInsert);
 					word.insert();
+					numInsertions++;
 					words.add(currIndex,word);
 					iter = words.listIterator(currIndex);
 					substitutionCount++;
@@ -134,7 +150,6 @@ public class StringErrorGenerator {
 				currIndex = 0;
 			}
 		}
-
 	}
 
 	/*
@@ -142,7 +157,8 @@ public class StringErrorGenerator {
 	 * deletions equals the specified number.
 	 */
 	private void processDeletions() {
-		double numDeletions = dr * numWords;
+		Double numDel = dr * numWords;
+		numDeletions = numDel.intValue();
 		int deletionCount = 0;
 		int currIndex = 0;
 		Iterator<Word> iter = words.listIterator(0);
@@ -167,7 +183,6 @@ public class StringErrorGenerator {
 				currIndex = 0;
 			}
 		}
-
 	}
 
 	/*
@@ -175,7 +190,8 @@ public class StringErrorGenerator {
 	 * insertions equals the specified number.
 	 */
 	private void processInsertions() {
-		double numInsertions = ir * numWords;
+		Double numIns = ir * numWords;
+		numInsertions = numIns.intValue();
 		int insertionCount = 0;
 		int currIndex = 0;
 		Iterator<Word> iter = words.iterator();
@@ -207,6 +223,14 @@ public class StringErrorGenerator {
 	}
 	public LinkedList<Word> getTranscription() {
 		return words;
+	}
+	
+	public void printErrorStats() {
+		System.out.println("---------ERROR GENERATOR STATS---------");
+		System.out.println("Total number of insertions: "+ numInsertions);
+		System.out.println("Total number of deletions: "+ numDeletions);
+		System.out.println("Total number of substitutions: "+ numSubstitutions);
+		//System.out.println("--------ERROR GENERATOR STATS END------");
 	}
 	
 }

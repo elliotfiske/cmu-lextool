@@ -2,18 +2,29 @@ package edu.cmu.sphinx.util;
 
 public class Word {
 	private  String word;
+	private double startTime;
+	private double endTime;
+	private double tolerance;
 	private String FLAG; // contains information of whether the word is inserted
 						 // or deleted. 
 	
+	
 	public Word () {
-		this(null,"");
+		this(null,"",0.0, 0.0,0.0);
 	}
 	public Word(String word) {
-		this (word,"");
+		this (word,"",0.0, 0.0, 0.0);
 	}
-	public Word(String word, String FLAG) {
+	public Word (String word, double startTime, double endTime, double tolerance) {
+		this(word,"", startTime, endTime, tolerance);
+	}
+	public Word(String word, String FLAG, double startTime, double endTime, double tolerance ) {
 		this.word = word;
 		this.FLAG = FLAG;
+		this.startTime = startTime;
+		this.endTime = endTime;
+		this.tolerance = tolerance;
+		//System.out.println(word+"("+startTime+","+endTime+") ");
 	}
 	
 	public void insert() {
@@ -24,6 +35,10 @@ public class Word {
 	public void delete() {
 		//System.out.println("deleting:"+word);
 		setFlag("delete");
+	}
+	
+	public void substitute() {
+		setFlag("substitute");
 	}
 	//get functions
 	public String getWord() {
@@ -46,6 +61,31 @@ public class Word {
 	}
 	public boolean isDeleted() {
 		if(FLAG.compareTo("delete")== 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	public boolean isSubstituted() {
+		if(FLAG.compareToIgnoreCase("substitute")==0){
+			return true;
+		}else {
+			return false;
+		}
+	}
+	
+	private double getStartTime() {
+		return startTime;
+	}
+	
+	private double getEndTime() {
+		return endTime;
+	}
+	
+	public boolean isEqual(Word e) {
+		if ( e.getWord().compareTo(this.getWord())== 0 &&
+				Math.abs(e.getStartTime() - this.getStartTime())<=tolerance &&
+				Math.abs(e.getEndTime()-this.getEndTime())<=tolerance) {
 			return true;
 		} else {
 			return false;
