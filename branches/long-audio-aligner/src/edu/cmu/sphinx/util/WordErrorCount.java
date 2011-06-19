@@ -236,7 +236,7 @@ public class WordErrorCount {
 			Word currWord = iter.next();
 			if(currWord.isDeleted()){
 				correctedDeletions ++;
-			}else if(currWord.isSubstituted()){
+			}else if(currWord.isSubstituted()){				
 				correctedSubstitutions ++;
 			}
 		}		
