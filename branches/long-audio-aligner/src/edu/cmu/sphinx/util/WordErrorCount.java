@@ -244,8 +244,9 @@ public class WordErrorCount {
 	}
 	
 	public void printStats() {
-		System.out.println("Total Insertions:"+totalInsertions);
-		System.out.println("Total Deletions+Substitutions:"+ totalDeletionsAndSubs);
+		System.out.println("Total number of errors present:"+(totalDeletionsAndSubs+totalInsertions));
+		System.out.println("Total Insertions present:"+totalInsertions);
+		System.out.println("Total Deletions+Substitutions present:"+ totalDeletionsAndSubs);
 		System.out.println("Total Corrected Deletions:"+ correctedDeletions);
 		System.out.println("Total Corrected Substitutions:"+correctedSubstitutions);
 		System.out.println("WER:"+wer);
