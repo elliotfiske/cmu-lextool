@@ -231,10 +231,12 @@ public class StringErrorGenerator {
 	}
 	
 	public void printErrorStats() {
-		System.out.println("---------ERROR GENERATOR STATS---------");
-		System.out.println("Total number of insertions made: "+ numInsertions);
-		System.out.println("Total number of deletions made: "+ numDeletions);
-		System.out.println("Total number of substitutions made: "+ numSubstitutions);
+		System.out.println("----------ERROR GENERATOR STATS---------");
+		System.out.println("Total number of insertions made:        "+ numInsertions);
+		System.out.println("Total number of deletions made:         "+ numDeletions);
+		System.out.println("Total number of substitutions made:     "+ numSubstitutions);
+		double totalErr = (numDeletions+numSubstitutions+numInsertions)/numWords;
+		System.out.println("WER introduced:                         "+totalErr);
 		//System.out.println("--------ERROR GENERATOR STATS END------");
 	}
 	
