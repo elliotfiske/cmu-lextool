@@ -38,7 +38,10 @@ public class Word {
 	}
 	
 	public void substitute() {
-		setFlag("substitute");
+		setFlag("del+substitute");
+	}
+	public void substituteWord() {
+		setFlag("ins+substitute");
 	}
 	//get functions
 	public String getWord() {
@@ -67,9 +70,16 @@ public class Word {
 		}
 	}
 	public boolean isSubstituted() {
-		if(FLAG.compareToIgnoreCase("substitute")==0){
+		if(FLAG.compareToIgnoreCase("del+substitute")==0){
 			return true;
 		}else {
+			return false;
+		}
+	}
+	public boolean isAddedAsSubstitute() {
+		if(FLAG.compareTo("ins+substitute")== 0){
+			return true;
+		} else {
 			return false;
 		}
 	}

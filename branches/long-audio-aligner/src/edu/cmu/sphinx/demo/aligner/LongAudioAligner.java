@@ -18,6 +18,7 @@ import java.io.IOException;
 
 import java.net.URL;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
@@ -42,51 +43,79 @@ public class LongAudioAligner {
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		FlatLinguist flatLinguist = (FlatLinguist) cm.lookup("flatLinguist");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("AlignerGrammar");
-		grammar.setGrammarType("");
+		AudioFileDataSource dataSource = (AudioFileDataSource) cm
+		.lookup("audioFileDataSource");
 		
-		// Read raw input transcription from file
-		String input = "";
-		String line;
-		BufferedReader reader = new BufferedReader(new FileReader(
-				"./resource/transcription/black_cat1.txt"));
-		while ((line = reader.readLine()) != null) {
-			input = input.concat(line + " ");
+		// Read Batch File
+		BufferedReader batchReader = new BufferedReader(new FileReader(
+				"./resource/batchFile.txt"));
+		String Line;
+		while ((Line = batchReader.readLine())!=null) {
+			StringTokenizer st = new StringTokenizer(Line);
+			if (st.countTokens() != 2) {
+				throw new Error("Corrupt Batch File");
+			}
+			String pathToTextFile = st.nextToken();
+			String pathToAudioFile =st.nextToken();
+			dataSource.setAudioFile(new URL("file:"+pathToAudioFile), null);	
+			
+			// Read raw input transcription from file
+			String input = "";
+			String line;
+			BufferedReader reader = new BufferedReader(new FileReader(pathToTextFile));
+			while ((line = reader.readLine()) != null) {
+				input = input.concat(line + " ");
+			}	
+			
+			URL URLToAudioFile = new URL("file:"+pathToAudioFile);
+			currTest(recognizer, flatLinguist, grammar, dataSource, input, URLToAudioFile);
+			recognizer.deallocate();
 		}
+		
+	}	
+	
+	
+	public static void  currTest(Recognizer recognizer, FlatLinguist flatLinguist,
+			AlignerGrammar grammar, AudioFileDataSource dataSource ,
+			String input, URL audioFileURL) throws IOException {		
 		
 		// Clean-up the file to be suitable for making grammar
 		StringCustomise sc= new StringCustomise();
 		input=sc.customise(input);	
 		grammar.setText(input);
 		grammar.setGrammarType("");			// FORCE ALIGNED GRAMMAR : Default
-		recognizer.allocate();
-
-		AudioFileDataSource dataSource = (AudioFileDataSource) cm
-				.lookup("audioFileDataSource");		
-		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);		
+		recognizer.allocate();								
 		Result result;		
-		String timedResult ="";
+		String timedResult;
+		System.out.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
 		result = recognizer.recognize();
 		timedResult = result.getTimedBestResult(false, true);	// Base result					
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
-		System.out.println("==========FORCE ALIGNED RESULT==========");
-		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
-		wec.align();
-		wec.printStats();
 		flatLinguist.deallocate();
 		// Corrupt the input using StringErrorGenerator	
 		String corruptedInput = testCase.getCorruptedText();
-		//System.out.println(corruptedInput);
 		grammar.setText(corruptedInput);
 		// change grammar Configurations
-		System.out.println("=============MODIFIED GRAMMAR===========");		
-		grammar.setGrammarType("MODEL_BACKWARD_JUMPS|MODEL_REPETITIONS");
+		System.out.println("================ GRAMMAR MODEL: BACKWARD JUMPS ================");		
+		grammar.setGrammarType("MODEL_BACKWARD_JUMPS");
 		flatLinguist.allocate();
-		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
+		dataSource.setAudioFile(audioFileURL, null);
 		result = recognizer.recognize();
+		timedResult = result.getTimedBestResult(false, true);
+		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
+		wec.align();
+		wec.printStats();		
+		flatLinguist.deallocate();
+		System.out.println("================ GRAMMAR MODEL: REPETITIONS ===================");		
+		grammar.setGrammarType("MODEL_REPETITIONS");
+		flatLinguist.allocate();
+		dataSource.setAudioFile(audioFileURL, null);
+		result = recognizer.recognize();
+		flatLinguist.deallocate();
 		timedResult = result.getTimedBestResult(false, true);
 		wec = new WordErrorCount(testCase.getWordList(), timedResult);
 		wec.align();
-		wec.printStats();		
-	}		
+		wec.printStats();	
+	}
 }

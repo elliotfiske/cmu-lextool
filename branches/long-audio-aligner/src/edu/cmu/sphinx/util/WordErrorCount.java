@@ -25,23 +25,33 @@ public class WordErrorCount {
 	
 	private int totalNumWords;
 	private int totalInsertions;
-	private int totalDeletionsAndSubs;
+	private int totalDeletions;
+	private int totalSubstitutions;
+	private int totalWordErrors;
 	private int artificialInsertions;	// keeps count of the number of words 
 										// inserted due to corrupted transcription
 	
 	private int correctedDeletions;	// keeps count of the number of words
 										// deleted due to corrupted transcription
-	private int correctedSubstitutions;
+	private int correctedSubstitutions; // number of words that were removed via substitution
+									// and were correctly added back
+	private int removedSubstitute;	// number of words that were added as substitute 
+									// and now have been removed
+	private int correctedInsertions;
 	private Double wer;
 	
 	public WordErrorCount() {
 		totalNumWords = 0;
 		totalInsertions= 0;
-		totalDeletionsAndSubs = 0;
+		totalDeletions = 0;
+		totalSubstitutions = 0;
+		totalWordErrors = 0;
 		wer = 0.0;
 		artificialInsertions = 0;
 		correctedDeletions = 0;
+		removedSubstitute =0;
 		correctedSubstitutions = 0;
+		correctedInsertions = 0;
 	}
 	public WordErrorCount(LinkedList<Word> reference, String hypothesis) {
 		this();
@@ -189,6 +199,7 @@ public class WordErrorCount {
 		// LongestMatchlength.
 		LinkedList<Word> alignedList= new LinkedList<Word>();
 		int lastRefAdded = reference.size()+1;
+		int lastHypAdded = hypothesis.size()+1;
 		int i = reference.size();
 		int j = hypothesis.size();
 		while( i > 0){
@@ -201,8 +212,21 @@ public class WordErrorCount {
 					alignedList.add(0,reference.get(i-1));
 					
 					// update the number of words from ref that have been skipped
-					totalDeletionsAndSubs += (lastRefAdded - i - 1);
+					int numRefSkipped = lastRefAdded - i - 1;
+					int numHypSkipped = lastHypAdded - j - 1;
+					if(numRefSkipped < 0 || numHypSkipped < 0){
+						throw new Error ("ERROR: THERE IS SOMETHING WRONG IN REFERENCE / HYPOTHESIS." 
+								+"ONE WORD CAN'T MATCH WITH MORE THAN ONE WORDS");
+					} else {
+						int numSubs = Math.min(numRefSkipped, numHypSkipped);
+						int numIns = numHypSkipped - numSubs;
+						int numDels = numRefSkipped - numSubs;
+						totalSubstitutions += numSubs;
+						totalInsertions += numIns;
+						totalDeletions += numDels;
+					}
 					lastRefAdded = i;
+					lastHypAdded = j;
 				}
 				i = prevRef;
 				j = prevHyp;				
@@ -225,35 +249,55 @@ public class WordErrorCount {
 	}
 	
 	private void generateStats() {
-		ListIterator<Word> iter = alignedList.listIterator();
 		totalNumWords = reference.size();
-		
-		// ref.size + tI - tD = hyp.size
-		totalInsertions = hypothesis.size() - reference.size() + totalDeletionsAndSubs;
-		int Errors = totalDeletionsAndSubs+ totalInsertions;
-		wer = (double)Errors/(double)totalNumWords;
-		while(iter.hasNext()) {
-			Word currWord = iter.next();
-			if(currWord.isDeleted()){
-				correctedDeletions ++;
-			}else if(currWord.isSubstituted()){				
-				correctedSubstitutions ++;
+		totalWordErrors= totalDeletions+totalInsertions+totalSubstitutions;
+		wer = (double)totalWordErrors/(double)totalNumWords;
+		ListIterator<Word> alignedIter = alignedList.listIterator();
+		ListIterator<Word> referenceIter = allWordReference.listIterator();
+		Word currRef;
+		Word currAlignedWord = null;
+		while(referenceIter.hasNext()){
+			currRef = referenceIter.next();
+			if(currAlignedWord == null) {
+				currAlignedWord = alignedIter.next();
+			}else {
+				if(currRef.isEqual(currAlignedWord)) {
+					if(currAlignedWord.isDeleted()){
+						correctedDeletions++;
+					} else if (currAlignedWord.isSubstituted()){
+						correctedSubstitutions++;
+					}
+					currAlignedWord = alignedIter.next();
+				} else {
+					if(currRef.isInserted()) {
+						correctedInsertions ++;
+					} else if(currRef.isAddedAsSubstitute()) {
+						removedSubstitute++;
+					}
+				}
 			}
-		}		
-		// Still have to add something to count for insertions. But it will work out :)
+			
+		}
 	}
 	
 	public void printStats() {
-		System.out.println("Total number of errors present:         "+(totalDeletionsAndSubs+totalInsertions));
-		System.out.println("Total Insertions present:               "+totalInsertions);
-		System.out.println("Total Deletions+Substitutions present:  "+ totalDeletionsAndSubs);
-		System.out.println("Total Corrected Deletions:              "+ correctedDeletions);
-		System.out.println("Total Corrected Substitutions:          "+correctedSubstitutions);
-		System.out.println("WER:                                    "+wer);
+		System.out.println("Total Number Of Errors Present:         "+totalWordErrors);
+		System.out.println("Total Insertions Present:               "+totalInsertions);
+		System.out.println("Total Deletions Present:                "+totalDeletions);
+		System.out.println("Total Substitutions Present:            "+totalSubstitutions);
+		System.out.println("Total Corrected Deletions:              "+correctedDeletions);
+		System.out.println("Total Num. Of Words Removed Via");
+		System.out.println("Substitution And Now Added:             "+correctedSubstitutions);
+		System.out.println("Total Number Of Words Added Via");
+		System.out.println("Substitution And Now Removed:           "+removedSubstitute);
+		String WER = wer.toString();
+		if(WER.length() > 6)
+			WER = WER.substring(0, WER.indexOf(".")+ 4);
+		System.out.println("WER:                                    "+WER);
 	}
 	
 	public int totalDeletionsAndSubstitutions(){
-		return totalDeletionsAndSubs;
+		return totalDeletions;
 	}
 	
 	public int totalInsertions() {

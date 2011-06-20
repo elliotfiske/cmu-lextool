@@ -136,8 +136,7 @@ public class StringErrorGenerator {
 					String wordToInsert= wordsToInsert.get(rand
 							.nextInt(wordsToInsert.size()));
 					Word word = new Word(wordToInsert);
-					word.insert();
-					numInsertions++;
+					word.substituteWord();
 					words.add(currIndex,word);
 					iter = words.listIterator(currIndex);
 					substitutionCount++;
@@ -231,12 +230,15 @@ public class StringErrorGenerator {
 	}
 	
 	public void printErrorStats() {
-		System.out.println("----------ERROR GENERATOR STATS---------");
-		System.out.println("Total number of insertions made:        "+ numInsertions);
-		System.out.println("Total number of deletions made:         "+ numDeletions);
-		System.out.println("Total number of substitutions made:     "+ numSubstitutions);
-		double totalErr = (numDeletions+numSubstitutions+numInsertions)/numWords;
-		System.out.println("WER introduced:                         "+totalErr);
+		System.out.println("================== ERROR GENERATOR STATS ======================");
+		System.out.println("Total Number Of Insertions Made:        "+ numInsertions);
+		System.out.println("Total Number Of Deletions Made:         "+ numDeletions);
+		System.out.println("Total Number Of Substitutions Made:     "+ numSubstitutions);
+		Double totalErr = (double)(numDeletions+numSubstitutions+numInsertions)/(double)numWords;
+		String WER = totalErr.toString();
+		if(WER.length() > 6)
+			WER = WER.substring(0, WER.indexOf(".")+4);
+		System.out.println("WER Introduced:                         "+WER);
 		//System.out.println("--------ERROR GENERATOR STATS END------");
 	}
 	
