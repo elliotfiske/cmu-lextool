@@ -69,7 +69,7 @@ public class LongAudioAligner {
 		timedResult = result.getTimedBestResult(false, true);	// Base result					
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
-		System.out.println("=======FORCE ALIGNED RESULT========");
+		System.out.println("==========FORCE ALIGNED RESULT==========");
 		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
 		wec.align();
 		wec.printStats();
@@ -79,7 +79,7 @@ public class LongAudioAligner {
 		//System.out.println(corruptedInput);
 		grammar.setText(corruptedInput);
 		// change grammar Configurations
-		System.out.println("=======Modified Grammar======");
+		System.out.println("=============MODIFIED GRAMMAR===========");		
 		grammar.setGrammarType("MODEL_BACKWARD_JUMPS|MODEL_REPETITIONS");
 		flatLinguist.allocate();
 		dataSource.setAudioFile(new URL("file:./resource/wav/black_cat1.wav"), null);
@@ -87,9 +87,6 @@ public class LongAudioAligner {
 		timedResult = result.getTimedBestResult(false, true);
 		wec = new WordErrorCount(testCase.getWordList(), timedResult);
 		wec.align();
-		wec.printStats();
-		
-		
+		wec.printStats();		
 	}		
-
 }
