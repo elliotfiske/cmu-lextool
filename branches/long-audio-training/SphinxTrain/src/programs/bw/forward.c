@@ -194,8 +194,6 @@ forward(float64 **active_alpha,
 {
     uint32 i, j, s, t, u;
     uint32 l_cb;
-    uint32 *active_a;
-    uint32 *active_b;
     uint32 *active;
     uint32 *active_l_cb;
     uint32 n_active;
@@ -253,10 +251,6 @@ forward(float64 **active_alpha,
     /* Scratch area for output probabilities at some time t */
     outprob = (float64 *)ckd_calloc(n_state, sizeof(float64));
 
-    /* Active state lists for time t and t+1 */
-    active_a = ckd_calloc(n_state, sizeof(uint32));
-    active_b = ckd_calloc(n_state, sizeof(uint32));
-
     /* Active (local) codebooks for some time t */
     active_l_cb = ckd_calloc(n_state, sizeof(uint32));
 
@@ -265,8 +259,9 @@ forward(float64 **active_alpha,
     amap = ckd_calloc(n_state, sizeof(uint16));
     
     /* set up the active and next_active lists and associated counts */
-    active = active_a;
-    next_active = active_b;
+    /* Active state lists for time t and t+1 */
+    active = ckd_calloc(n_state, sizeof(uint32));
+    next_active = ckd_calloc(n_state, sizeof(uint32));
     n_active = 0;
     n_active_l_cb = 0;
     n_sum_active = 0;
@@ -598,6 +593,7 @@ forward(float64 **active_alpha,
 			if (bp) {
 			    /* Give its backpointer a default value */
 			    bp[t][amap[j]] = s;
+			    bp_t[amap[j]] = s;
 			    best_pred[amap[j]] = x;
 			}
 		    }
@@ -776,12 +772,12 @@ forward(float64 **active_alpha,
             sqrt_pos++;
             
             reduced_alpha[sqrt_pos] = (float64 *)ckd_calloc(n_active_astate[t], sizeof(float64));
-            for (s = 0; s < n_active_astate[sqrt_pos]; ++s) {
+            for (s = 0; s < n_active_astate[t]; ++s) {
                 reduced_alpha[sqrt_pos][s] = active_alpha_t[s];
             }
             
             reduced_bp[sqrt_pos] = (uint32 *)ckd_calloc(n_active_astate[t], sizeof(uint32));
-            for (s = 0; s < n_active_astate[sqrt_pos]; ++s) {
+            for (s = 0; s < n_active_astate[t]; ++s) {
                 reduced_bp[sqrt_pos][s] = bp_t[s];
             }
         }
@@ -809,8 +805,10 @@ cleanup:
         fprintf(stderr, "\n");
     }
 */
-    ckd_free(active_a);
-    ckd_free(active_b);
+    ckd_free(bp_t);
+    
+    ckd_free(active);
+    ckd_free(next_active);
     ckd_free(amap);
 
     ckd_free(active_l_cb);
@@ -878,7 +876,7 @@ cleanup:
  * Made state.h a "local" header file
  *
  * Revision 1.6  1995/10/10  12:43:50  eht
- * Changed to use <sphinxbase/prim_type.h>
+ * Changed to use <sphinxbase/prim_type.h> = ckd_calloc(n_state, sizeof(uint32));
  *
  * Revision 1.5  1995/10/09  14:55:33  eht
  * Change interface to new ckd_alloc routines
