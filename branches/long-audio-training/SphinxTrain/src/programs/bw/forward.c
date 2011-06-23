@@ -180,6 +180,7 @@ forward(float64 **active_alpha,
 	uint32 **active_astate,
 	uint32 *n_active_astate,
 	uint32 **bp,
+	uint32 **reduced_bp,
 	float64 *scale,
 	float64 **dscale,
 	vector_t **feature,
@@ -227,6 +228,8 @@ forward(float64 **active_alpha,
     uint32 sqrt_pos;
     float64 *active_alpha_t = NULL;
     float64 *active_alpha_p = NULL;
+    
+    uint32 *bp_t = NULL;
     
     /* Get the CPU timer associated with mixture Gaussian evaluation */
     gau_timer = timing_get("gau");
@@ -318,6 +321,8 @@ forward(float64 **active_alpha,
     active_alpha_t = ckd_calloc(1, sizeof(float64));
     active_alpha_p = ckd_calloc(1, sizeof(float64));
     
+    bp_t = ckd_calloc(1, sizeof(uint32));
+    
     active_alpha[0] = ckd_calloc(1, sizeof(float64));
     reduced_alpha[0] = ckd_calloc(1, sizeof(float64));
     active_astate[0] = ckd_calloc(1, sizeof(uint32));
@@ -373,6 +378,8 @@ forward(float64 **active_alpha,
 	active_alpha_t = ckd_realloc(active_alpha_t, sizeof(float64) * aalpha_alloc);
 	active_alpha_p = ckd_realloc(active_alpha_p, sizeof(float64) * aalpha_alloc);
 	
+	bp_t = (uint32 *)ckd_realloc(bp_t, sizeof(uint32) * aalpha_alloc);
+	    
 	if (bp) {
 	    bp[t] = (uint32 *)ckd_calloc(aalpha_alloc, sizeof(uint32));
 	    /* reallocate the best score array and zero it out */
@@ -450,10 +457,13 @@ forward(float64 **active_alpha,
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
+			        bp_t = ckd_realloc(bp_t, sizeof(uint32) * aalpha_alloc);
 				best_pred = (float64 *)ckd_realloc(best_pred,
 								   sizeof(float64) * aalpha_alloc);
 				memset(bp[t] + aalpha_alloc / 2,
 				       0, sizeof(uint32) * (aalpha_alloc / 2));
+				memset(bp_t + aalpha_alloc / 2,
+				        0, sizeof(uint32) * (aalpha_alloc /2));
 				memset(best_pred + aalpha_alloc / 2,
 				       0, sizeof(float64) * (aalpha_alloc / 2));
 			    }
@@ -510,6 +520,7 @@ forward(float64 **active_alpha,
 #endif
 			    best_pred[amap[j]] = x;
 			    bp[t][amap[j]] = s;
+			    bp_t[amap[j]] = s;
 			}
 		    }
 		    
@@ -573,10 +584,13 @@ forward(float64 **active_alpha,
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
+			        bp_t = ckd_realloc(bp_t, sizeof(uint32) * aalpha_alloc);
 				best_pred = (float64 *)ckd_realloc(best_pred,
 								   sizeof(float64) * aalpha_alloc);
 				memset(bp[t] + aalpha_alloc / 2,
 				       0, sizeof(uint32) * (aalpha_alloc / 2));
+				memset(bp_t + aalpha_alloc / 2,
+				        0, sizeof(uint32) * (aalpha_alloc /2));
 				memset(best_pred + aalpha_alloc / 2,
 				       0, sizeof(float64) * (aalpha_alloc / 2));
 			    }
@@ -591,6 +605,7 @@ forward(float64 **active_alpha,
 		    /* update backpointers bp[t][j] */
 		    if (bp && x > best_pred[amap[j]]) {
 			bp[t][amap[j]] = s;
+			bp_t[amap[j]] = s;
 			best_pred[amap[j]] = x;
 		    }
 		    /* update its alpha value */
@@ -700,6 +715,7 @@ forward(float64 **active_alpha,
 		       next_active[s], bp[t][s], next_active[bp[t][s]]);
 #endif
 		bp[t][s] = next_active[bp[t][s]];
+		bp_t[s] = next_active[bp_t[s]];
 	    }
 	    /* If we have a phone segmentation, use it instead of the beam. */
 	    if (phseg && can_prune_phseg) {
@@ -708,8 +724,10 @@ forward(float64 **active_alpha,
 		    active_alpha[t][n_active] = active_alpha[t][s] * scale[t];
 		    active_alpha_t[n_active] = active_alpha_t[s] * scale[t];
 		    active[n_active] = active_astate[t][n_active] = next_active[s];
-		    if (bp)
+		    if (bp) {
 			bp[t][n_active] = bp[t][s];
+			bp_t[n_active] = bp_t[s];
+		    }
 		    amap[next_active[s]] = n_active;
 		    n_active++;
 		}
@@ -722,8 +740,10 @@ forward(float64 **active_alpha,
 		    active_alpha[t][n_active] = active_alpha[t][s] * scale[t];
 		    active_alpha_t[n_active] = active_alpha_t[s] * scale[t];
 		    active[n_active] = active_astate[t][n_active] = next_active[s];
-		    if (bp)
+		    if (bp) {
 			bp[t][n_active] = bp[t][s];
+			bp_t[n_active] = bp_t[s];
+	            }
 		    amap[next_active[s]] = n_active;
 		    n_active++;
 		}
@@ -740,6 +760,7 @@ forward(float64 **active_alpha,
 		       active[s], bp[t][s], amap[bp[t][s]], active[amap[bp[t][s]]]);
 #endif
 		bp[t][s] = amap[bp[t][s]];
+		bp_t[s] = amap[bp_t[s]];
 	    }
 	}
 	/* And finally deactive all states. */
@@ -754,9 +775,14 @@ forward(float64 **active_alpha,
         if (fmod(t, sqrt(n_obs)) < 1) {
             sqrt_pos++;
             
-            reduced_alpha[sqrt_pos] = (float64 *)ckd_calloc(n_active_astate, sizeof(float64));
+            reduced_alpha[sqrt_pos] = (float64 *)ckd_calloc(n_active_astate[t], sizeof(float64));
             for (s = 0; s < n_active_astate[sqrt_pos]; ++s) {
                 reduced_alpha[sqrt_pos][s] = active_alpha_t[s];
+            }
+            
+            reduced_bp[sqrt_pos] = (uint32 *)ckd_calloc(n_active_astate[t], sizeof(uint32));
+            for (s = 0; s < n_active_astate[sqrt_pos]; ++s) {
+                reduced_bp[sqrt_pos][s] = bp_t[s];
             }
         }
     }
