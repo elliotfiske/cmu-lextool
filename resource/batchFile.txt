@@ -1,2 +1,3 @@
+./resource/transcription/oov_numbers.txt ./resource/wav/oov_numbers.wav
 ./resource/transcription/black_cat1.txt ./resource/wav/black_cat1.wav
 ./resource/transcription/black_cat2.txt ./resource/wav/black_cat2.wav

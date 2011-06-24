@@ -93,9 +93,16 @@ public class Word {
 	}
 	
 	public boolean isEqual(Word e) {
-		if ( e.getWord().compareTo(this.getWord())== 0 &&
+		if ( e.getWord().compareToIgnoreCase(this.getWord())== 0 &&
 				Math.abs(e.getStartTime() - this.getStartTime())<=tolerance &&
 				Math.abs(e.getEndTime()-this.getEndTime())<=tolerance) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	public boolean isEqualNoTolerance(Word e) {
+		if(e.getWord().compareToIgnoreCase(this.getWord())== 0){
 			return true;
 		} else {
 			return false;
