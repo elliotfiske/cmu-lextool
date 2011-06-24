@@ -3,14 +3,15 @@
 <config>
 
 	<property name="logLevel" value="WARNING" />
-	<property name="absoluteBeamWidth" value="-1" />
-	<property name="relativeBeamWidth" value="1E-200" />
+	<property name="absoluteBeamWidth" value="60" />
+	<property name="relativeBeamWidth" value="1E-80" />
 	<property name="wordInsertionProbability" value="0.7" />
 	<property name="languageWeight" value="7" />
 
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
+	<property name="outOfGrammarProbability" value="1E-30"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
@@ -22,7 +23,7 @@
 
 	<component name="searchManager" type="edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager">
 		<property name="logMath" value="logMath" />
-		<property name="linguist" value="flatLinguist" />
+		<property name="linguist" value="AflatLinguist" />
 		<property name="pruner" value="trivialPruner" />
 		<property name="scorer" value="threadedScorer" />
 		<property name="activeListFactory" value="activeList" />
@@ -41,7 +42,7 @@
 		<property name="frontend" value="${frontend}" />
 	</component>
 
-	<component name="flatLinguist" type="edu.cmu.sphinx.linguist.flat.FlatLinguist">
+	<component name="AflatLinguist" type="edu.cmu.sphinx.linguist.aflat.AFlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="AlignerGrammar" />
 		<property name="acousticModel" value="wsj" />		
@@ -49,9 +50,10 @@
 		<property name="languageWeight" value="${languageWeight}" />
 		<property name="unitManager" value="unitManager" />	
 		<!-- additions start-->
-		<!--property name="addOutOfGrammarBranch" value="true"/>
+		<property name="addOutOfGrammarBranch" value="true"/>
 		<property name="phoneLoopAcousticModel" value="WSJ"/>
-		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/-->
+		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/>
+		<property name="dumpGStates" value ="true"/>
 		<!-- additions end --> 	
 	</component>
 
@@ -85,18 +87,18 @@
 
 	<component name="unitManager" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" />
 	<!-- additions start-->
-	<!--component name="WSJ" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel">
-		<property name="loader" value="WsjLoader" />
-		<property name="unitManager" value="unitManager" />
+	<component name="WSJ" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel">
+		<property name="loader" value="WSJLOADER" />
+		<property name="unitManager" value="UNITMANAGER" />
 	</component>
 
-	<component name="WsjLoader" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
+	<component name="WSJLOADER" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
 		<property name="logMath" value="logMath" />
-		<property name="unitManager" value="UnitManager" />
+		<property name="unitManager" value="UNITMANAGER" />
 		<property name="location" value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz" />
 	</component>
 
-	<component name="UnitManager" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" /-->
+	<component name="UNITMANAGER" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" />
 	<!-- additions end -->
 
 	<component name="epFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">

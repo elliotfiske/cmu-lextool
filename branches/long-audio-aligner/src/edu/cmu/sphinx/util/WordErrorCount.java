@@ -13,6 +13,7 @@ package edu.cmu.sphinx.util;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
@@ -255,29 +256,25 @@ public class WordErrorCount {
 		ListIterator<Word> alignedIter = alignedList.listIterator();
 		ListIterator<Word> referenceIter = allWordReference.listIterator();
 		Word currRef;
-		Word currAlignedWord = null;
-		while(referenceIter.hasNext()){
-			currRef = referenceIter.next();
-			if(currAlignedWord == null) {
-				currAlignedWord = alignedIter.next();
-			}else {
-				if(currRef.isEqual(currAlignedWord)) {
-					if(currAlignedWord.isDeleted()){
+		Word currAlignedWord=null;
+		if(alignedIter.hasNext()){
+			currAlignedWord= alignedIter.next();
+			while(referenceIter.hasNext()) {					
+				currRef = referenceIter.next();			
+				if(currAlignedWord.isEqual(currRef)) {
+					//System.out.print(currAlignedWord.getWord()+" ");
+					if(currRef.isDeleted()){
 						correctedDeletions++;
-					} else if (currAlignedWord.isSubstituted()){
+					} else if(currRef.isSubstituted()) {
 						correctedSubstitutions++;
 					}
-					currAlignedWord = alignedIter.next();
-				} else {
-					if(currRef.isInserted()) {
-						correctedInsertions ++;
-					} else if(currRef.isAddedAsSubstitute()) {
-						removedSubstitute++;
+					if(alignedIter.hasNext()){
+						currAlignedWord = alignedIter.next();
 					}
-				}
+				}			
 			}
-			
 		}
+		//System.out.println("");
 	}
 	
 	public void printStats() {
@@ -286,6 +283,7 @@ public class WordErrorCount {
 		System.out.println("Total Deletions Present:                "+totalDeletions);
 		System.out.println("Total Substitutions Present:            "+totalSubstitutions);
 		System.out.println("Total Corrected Deletions:              "+correctedDeletions);
+		System.out.println("Total Corrected Insertions:             "+correctedInsertions);
 		System.out.println("Total Num. Of Words Removed Via");
 		System.out.println("Substitution And Now Added:             "+correctedSubstitutions);
 		System.out.println("Total Number Of Words Added Via");
