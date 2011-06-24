@@ -63,6 +63,82 @@
 #define FORWARD_DEBUG 0
 #define INACTIVE	0xffff
 
+typedef struct forward_data {
+    uint32 l_cb;
+    uint32 *active;
+    uint32 *active_l_cb;
+    uint32 n_active;
+    uint32 n_active_l_cb;
+    uint32 n_sum_active;
+    uint32 *next_active;
+    uint32 n_next_active;
+    uint32 aalpha_alloc;
+    uint16 *amap;
+    uint32 *next;
+    float32 *tprob;
+    float64 prior_alpha;
+    float32 ***mixw;
+    gauden_t *g;
+    acmod_set_t *as;
+    float64 x;
+    float64 pthresh;
+    float64 balpha;
+    float64 ***now_den;
+    uint32 ***now_den_idx;
+    uint32 retval;
+    uint32 n_l_cb;
+    int32 *acbframe; /* Frame in which a codebook was last active */
+    timing_t *gau_timer;
+    float64 *outprob;
+    /* Can we prune this frame using phseg? */
+    int can_prune_phseg;
+    float64 *best_pred;
+    
+    float64 *active_alpha_t;
+    float64 *active_alpha_p;
+    
+    uint32 **bp;
+    uint32 *bp_t;
+    
+    float64 *dscale_t;
+    vector_t *feature_t;
+    float64 scale_t;
+    
+    uint32 *active_astate_t;
+    uint32 n_active_astate_t;
+    
+    uint32 t;
+    
+} forward_data;
+
+int32
+forward_local(float64 **active_alpha,
+        float64 **reduced_alpha,
+	uint32 **active_astate,
+	uint32 *n_active_astate,
+	uint32 **bp,
+	uint32 **reduced_bp,
+	float64 *scale,
+	float64 **dscale,
+	vector_t **feature,
+	uint32 n_obs,
+	state_t *state_seq,
+	uint32 n_state,
+	model_inventory_t *inv,
+	float64 beam,
+	s3phseg_t *phseg,
+	uint32 mmi_train,
+	forward_data *args);
+int32
+forward_step(
+	uint32 n_obs,
+	state_t *state_seq,
+	uint32 n_state,
+	model_inventory_t *inv,
+	float64 beam,
+	s3phseg_t *phseg,
+	uint32 mmi_train,
+	forward_data *args);
 
 /*********************************************************************
  *
@@ -82,20 +158,20 @@
  *		active states for all input observations.  For any
  *		input observation at time t (t >= 0  && t < n_obs), the number
  *		of active states can be found by accessing
- *		n_active_astate[t].  So for some time t, the active
+ *		n_args->active_astate_t.  So for some time t, the active
  *		scaled alpha values are active_alpha[t][i] where
- *		i >= 0 and i < n_active_astate[t].  For some valid t and
+ *		i >= 0 and i < n_args->active_astate_t.  For some valid t and
  *		i, the sentence HMM state id can be found by accessing
- *		active_astate[t][i].
+ *		args->active_astate_t[i].
  *
  * 	uint32 **active_astate -
  *		On the successful return of this function,
  *		this array contains the mapping of active state indexes
  *		into sentence HMM indexes (i.e. indexes into the state_seq[]
  *		array).  The active states of the sentence HMM may be
- *		enumerated by accessing active_astate[t][i] over all
+ *		enumerated by accessing args->active_astate_t[i] over all
  *		t (t >= 0 && t < n_obs) and i
- *		(i >= 0 && i < n_active_astate[t]).
+ *		(i >= 0 && i < n_args->active_astate_t).
  *
  * 	uint32 *n_active_astate -
  *		On the successful return of this function,
@@ -119,13 +195,13 @@
  *		this array contains backtrace pointers for active states
  *              for all input observations except the first timepoint.
  *              As in active_alpha[], the sentence HMM state id can be
- *              found by accessing active_astate[t][i].  NOTE!
+ *              found by accessing args->active_astate_t[i].  NOTE!
  *              This is a "raw" backpointer array and as such, it contains
  *              pointers to non-emitting states.  These pointers refer to
  *              the current frame rather than the previous one.  Thus,
  *              the state id of the backpointer is either
  *              active_astate[t-1][args->bp_t[i]] (for normal states) or
- *              active_astate[t][args->bp_t[i]] (for non-emitting states).
+ *              args->active_astate_t[args->bp_t[i]] (for non-emitting states).
  *
  *	uint32 n_obs -
  *		This variable contains the number of input observation
@@ -193,83 +269,51 @@ forward(float64 **active_alpha,
 	s3phseg_t *phseg,
 	uint32 mmi_train)
 {
-    uint32 i, j, s, t, u;
-    uint32 l_cb;
-    uint32 *active;
-    uint32 *active_l_cb;
-    uint32 n_active;
-    uint32 n_active_l_cb;
-    uint32 n_sum_active;
-    uint32 *next_active;
-    uint32 n_next_active;
-    uint32 aalpha_alloc;
-    uint16 *amap;
-    uint32 *next;
-    float32 *tprob;
-    float64 prior_alpha;
-    float32 ***mixw;
-    gauden_t *g;
-    acmod_set_t *as;
-    float64 x;
-    float64 pthresh = 1e-300;
-    float64 balpha;
-    float64 ***now_den;
-    uint32 ***now_den_idx;
-    uint32 retval = S3_SUCCESS;
-    uint32 n_l_cb;
-    int32 *acbframe; /* Frame in which a codebook was last active */
-    timing_t *gau_timer = NULL;
-    float64 *outprob;
-    /* Can we prune this frame using phseg? */
-    int can_prune_phseg;
-    float64 *best_pred = NULL;
-    
+    uint32 i;
     uint32 sqrt_pos;
-    float64 *active_alpha_t = NULL;
-    
-    uint32 *bp_t = NULL;
+    forward_data args;
     
     /* Get the CPU timer associated with mixture Gaussian evaluation */
-    gau_timer = timing_get("gau");
+    args.gau_timer = timing_get("gau");
     
     /* # of distinct codebooks referenced by this utterance */
-    n_l_cb = inv->n_cb_inverse;
+    args.n_l_cb = inv->n_cb_inverse;
 
     /* active codebook frame index */
-    acbframe = ckd_calloc(n_l_cb, sizeof(*acbframe));
+    args.acbframe = ckd_calloc(args.n_l_cb, sizeof(*args.acbframe));
 
-    g = inv->gauden;
-    as = inv->mdef->acmod_set;
+    args.g = inv->gauden;
+    args.as = inv->mdef->acmod_set;
     /* density values and indices (for top-N eval) for some time t */
-    now_den = (float64 ***)ckd_calloc_3d(n_l_cb, gauden_n_feat(g), gauden_n_top(g),
+    args.now_den = (float64 ***)ckd_calloc_3d(args.n_l_cb, gauden_n_feat(args.g), gauden_n_top(args.g),
 					 sizeof(float64));
-    now_den_idx = (uint32 ***)ckd_calloc_3d(n_l_cb, gauden_n_feat(g), gauden_n_top(g),
+    args.now_den_idx = (uint32 ***)ckd_calloc_3d(args.n_l_cb, gauden_n_feat(args.g), gauden_n_top(args.g),
 					    sizeof(uint32));
     /* Mixing weight array */
-    mixw = inv->mixw;
+    args.mixw = inv->mixw;
 
     /* Scratch area for output probabilities at some time t */
-    outprob = (float64 *)ckd_calloc(n_state, sizeof(float64));
+    args.outprob = (float64 *)ckd_calloc(n_state, sizeof(float64));
 
     /* Active (local) codebooks for some time t */
-    active_l_cb = ckd_calloc(n_state, sizeof(uint32));
+    args.active_l_cb = ckd_calloc(n_state, sizeof(uint32));
 
     /* Mapping from sentence HMM state index to active state list index
     * for currently active time. */
-    amap = ckd_calloc(n_state, sizeof(uint16));
+    args.amap = ckd_calloc(n_state, sizeof(uint16));
     
     /* set up the active and next_active lists and associated counts */
     /* Active state lists for time t and t+1 */
-    active = ckd_calloc(n_state, sizeof(uint32));
-    next_active = ckd_calloc(n_state, sizeof(uint32));
-    n_active = 0;
-    n_active_l_cb = 0;
-    n_sum_active = 0;
-    n_next_active = 0;
+    args.active = ckd_calloc(n_state, sizeof(uint32));
+    args.next_active = ckd_calloc(n_state, sizeof(uint32));
+    args.n_active = 0;
+    args.n_active_l_cb = 0;
+    args.n_sum_active = 0;
+    args.n_next_active = 0;
 
     /* Initialize the active state map such that all states are inactive */
     for (i = 0; i < n_state; i++)
-    	amap[i] = INACTIVE;
+    	args.amap[i] = INACTIVE;
 
     /*
      * The following section computes the output liklihood of
@@ -278,32 +322,32 @@ forward(float64 **active_alpha,
      */
 
     /* compute alpha for the initial state at t == 0 */
-    if (gau_timer)
-	    timing_start(gau_timer);
+    if (args.gau_timer)
+	    timing_start(args.gau_timer);
 
     /* Compute the component Gaussians for state 0 mixture density */
-    gauden_compute_log(now_den[state_seq[0].l_cb],
-		       now_den_idx[state_seq[0].l_cb],
+    gauden_compute_log(args.now_den[state_seq[0].l_cb],
+		       args.now_den_idx[state_seq[0].l_cb],
 		       feature[0],
-		       g,
+		       args.g,
 		       state_seq[0].cb, NULL);
 
-    active_l_cb[0] = state_seq[0].l_cb;
+    args.active_l_cb[0] = state_seq[0].l_cb;
 
-    dscale[0] = gauden_scale_densities_fwd(now_den, now_den_idx,
-					   active_l_cb, 1, g);
+    dscale[0] = gauden_scale_densities_fwd(args.now_den, args.now_den_idx,
+					   args.active_l_cb, 1, args.g);
 
     /* Compute the mixture density value for state 0 time 0 */
-    outprob[0] = gauden_mixture(now_den[state_seq[0].l_cb],
-				now_den_idx[state_seq[0].l_cb],
-				mixw[state_seq[0].mixw],
-				g);
-    if (gau_timer)
-    	timing_stop(gau_timer);
-    if (outprob[0] <= MIN_IEEE_NORM_POS_FLOAT32) {
-	    E_ERROR("Small output prob (== %.2e) seen at frame 0 state 0\n", outprob[0]);
+    args.outprob[0] = gauden_mixture(args.now_den[state_seq[0].l_cb],
+				args.now_den_idx[state_seq[0].l_cb],
+				args.mixw[state_seq[0].mixw],
+				args.g);
+    if (args.gau_timer)
+    	timing_stop(args.gau_timer);
+    if (args.outprob[0] <= MIN_IEEE_NORM_POS_FLOAT32) {
+	    E_ERROR("Small output prob (== %.2e) seen at frame 0 state 0\n", args.outprob[0]);
 
-	    retval = S3_ERROR;
+	    args.retval = S3_ERROR;
 	
 	    goto cleanup;
     }
@@ -313,29 +357,25 @@ forward(float64 **active_alpha,
      * and active state arrays
      */
     sqrt_pos = 0;
-    active_alpha_t = ckd_calloc(1, sizeof(float64));
-    
-    bp_t = ckd_calloc(1, sizeof(uint32));
     
     active_alpha[0] = ckd_calloc(1, sizeof(float64));
     reduced_alpha[0] = ckd_calloc(1, sizeof(float64));
     active_astate[0] = ckd_calloc(1, sizeof(uint32));
     if (bp)
-	    bp[0] = ckd_calloc(1, sizeof(uint32)); /* Unused, actually */
-    aalpha_alloc = 1;
+	bp[0] = ckd_calloc(1, sizeof(uint32)); /* Unused, actually */
+    args.aalpha_alloc = 1;
 
     /*
      * Allocate the bestscore array for embedded Viterbi
      */
     if (bp)
-    	best_pred = ckd_calloc(1, sizeof(float64));
+    	args.best_pred = ckd_calloc(1, sizeof(float64));
 
     /* Compute scale for t == 0 */
-    scale[0] = 1.0 / outprob[0];
+    scale[0] = 1.0 / args.outprob[0];
 
     /* set the scaled alpha variable for the initial state */
     reduced_alpha[0][0] = 1.0;
-    active_alpha_t[0] = 1.0;
     active_alpha[0][0] = 1.0;
     /* put the initial state in the active state array for t == 0 */
     active_astate[0][0] = 0;
@@ -343,35 +383,34 @@ forward(float64 **active_alpha,
     n_active_astate[0] = 1;
 
     /* insert the initial state in the active list */
-    active[n_active] = 0;
-    n_active++;
+    args.active[args.n_active] = 0;
+    args.n_active++;
     
-    aalpha_alloc = n_active;
+    args.aalpha_alloc = args.n_active;
     
-    for (;;) {
-/*        forward_local();*/
-    }
+/*    for (;;) {*/
+        forward_local(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp, scale, dscale, feature, n_obs, state_seq, n_state,
+            inv, beam, phseg, mmi_train, &args);
+/*    }*/
 
     if (!mmi_train)
-	printf(" %u ", n_sum_active / n_obs);
+	printf(" %u ", args.n_sum_active / n_obs);
 
 cleanup:
-    ckd_free(bp_t);
-    
-    ckd_free(active);
-    ckd_free(next_active);
-    ckd_free(amap);
+    ckd_free(args.active);
+    ckd_free(args.next_active);
+    ckd_free(args.amap);
 
-    ckd_free(active_l_cb);
-    ckd_free(acbframe);
+    ckd_free(args.active_l_cb);
+    ckd_free(args.acbframe);
 
-    ckd_free(outprob);
-    ckd_free(best_pred);
+    ckd_free(args.outprob);
+    ckd_free(args.best_pred);
 
-    ckd_free_3d((void ***)now_den);
-    ckd_free_3d((void ***)now_den_idx);
+    ckd_free_3d((void ***)args.now_den);
+    ckd_free_3d((void ***)args.now_den_idx);
 
-    return retval;
+    return args.retval;
 }
 
 
@@ -392,108 +431,36 @@ forward_local(float64 **active_alpha,
 	model_inventory_t *inv,
 	float64 beam,
 	s3phseg_t *phseg,
-	uint32 mmi_train)
+	uint32 mmi_train,
+	forward_data *args)
 {
-    uint32 t;
-    uint32 l_cb;
-    uint32 *active;
-    uint32 *active_l_cb;
-    uint32 n_active;
-    uint32 n_active_l_cb;
-    uint32 n_sum_active;
-    uint32 *next_active;
-    uint32 n_next_active;
-    uint32 aalpha_alloc;
-    uint16 *amap;
-    uint32 *next;
-    float32 *tprob;
-    float64 prior_alpha;
-    float32 ***mixw;
-    gauden_t *g;
-    acmod_set_t *as;
-    float64 x;
-    float64 pthresh = 1e-300;
-    float64 balpha;
-    float64 ***now_den;
-    uint32 ***now_den_idx;
-    uint32 retval = S3_SUCCESS;
-    uint32 n_l_cb;
-    int32 *acbframe; /* Frame in which a codebook was last active */
-    timing_t *gau_timer = NULL;
-    float64 *outprob;
-    /* Can we prune this frame using phseg? */
-    int can_prune_phseg;
-    float64 *best_pred = NULL;
-    
-    uint32 sqrt_pos;
-    
-    uint32 *bp_t = NULL;
-    
     /* Compute scaled alpha over the remaining time in the utterance segment. */
-    for (t = 1; t < n_obs; t++) {
+    for (args->t = 1; args->t < n_obs; args->t++) {
         /* Find active phone for this timepoint. */
         if (phseg) {
             /* Move the pointer forward if necessary. */
-            if (t > phseg->ef)
+            if (args->t > phseg->ef)
 	        phseg = phseg->next;
         }
 
-/*        forward_step(args);*/
+        args->active_alpha_t = active_alpha[args->t];
+        args->active_alpha_p = active_alpha[args->t-1];
+        args->bp = bp;
+        args->bp_t = bp[args->t];
+        args->dscale_t = dscale[args->t];
+        args->feature_t = feature[args->t];
+        args->scale_t = scale[args->t];
+        args->active_astate_t = active_astate[args->t];
+        args->n_active_astate_t = n_active_astate[args->t];
+        
+        forward_step(n_obs, state_seq, n_state, inv, beam, phseg, mmi_train, &args);
     }
 }
 
 
-typedef struct forward_data {
-    uint32 l_cb;
-    uint32 *active;
-    uint32 *active_l_cb;
-    uint32 n_active;
-    uint32 n_active_l_cb;
-    uint32 n_sum_active;
-    uint32 *next_active;
-    uint32 n_next_active;
-    uint32 aalpha_alloc;
-    uint16 *amap;
-    uint32 *next;
-    float32 *tprob;
-    float64 prior_alpha;
-    float32 ***mixw;
-    gauden_t *g;
-    acmod_set_t *as;
-    float64 x;
-    float64 pthresh;
-    float64 balpha;
-    float64 ***now_den;
-    uint32 ***now_den_idx;
-    uint32 retval;
-    uint32 n_l_cb;
-    int32 *acbframe; /* Frame in which a codebook was last active */
-    timing_t *gau_timer;
-    float64 *outprob;
-    /* Can we prune this frame using phseg? */
-    int can_prune_phseg;
-    float64 *best_pred;
-    
-    uint32 sqrt_pos;
-    float64 *active_alpha_t;
-    float64 *active_alpha_p;
-    
-    uint32 *bp_t;
-    
-} forward_data;
-
-
 
 int32
-forward_step(float64 **active_alpha,
-        float64 **reduced_alpha,
-	uint32 **active_astate,
-	uint32 *n_active_astate,
-	uint32 **bp,
-	uint32 **reduced_bp,
-	float64 *scale,
-	float64 **dscale,
-	vector_t **feature,
+forward_step(
 	uint32 n_obs,
 	state_t *state_seq,
 	uint32 n_state,
@@ -501,8 +468,7 @@ forward_step(float64 **active_alpha,
 	float64 beam,
 	s3phseg_t *phseg,
 	uint32 mmi_train,
-	forward_data *args,
-	uint32 t)
+	forward_data *args)
 {
     uint32 i, j, s, u;
     
@@ -512,7 +478,7 @@ forward_step(float64 **active_alpha,
        adjust to actual size as necessary later */
     args->active_alpha_t = (float64 *)ckd_calloc(args->aalpha_alloc, sizeof(float64));
         
-    if (bp) {
+    if (args->bp) {
         args->bp_t = (uint32 *)ckd_calloc(args->aalpha_alloc, sizeof(uint32));
         /* reallocate the best score array and zero it out */
         if (args->n_active > args->aalpha_alloc)
@@ -541,13 +507,13 @@ forward_step(float64 **active_alpha,
 	            if (args->amap[j] == INACTIVE) {
 		        args->l_cb = state_seq[j].l_cb;
 		
-		        if (args->acbframe[args->l_cb] != t) {
+		        if (args->acbframe[args->l_cb] != args->t) {
 		            /* Component density values not yet computed */
 		            if (args->gau_timer)
 			            timing_start(args->gau_timer);
 		            gauden_compute_log(args->now_den[args->l_cb],
 				               args->now_den_idx[args->l_cb],
-				               feature[t],
+				               args->feature_t,
 				               args->g,
 				               state_seq[j].cb,
 				               /* Preinitializing topn
@@ -556,41 +522,39 @@ forward_step(float64 **active_alpha,
 					          semi-continuous
 					          (n_l_cb == 1)
 					          models. */
-				               n_l_cb == 1
-				               ? now_den_idx[l_cb] : NULL);
+				               args->n_l_cb == 1
+				               ? args->now_den_idx[args->l_cb] : NULL);
 
-		            args->active_l_cb[n_active_l_cb++] = args->l_cb;
-		            args->args->acbframe[args->l_cb] = t;
+		            args->active_l_cb[args->n_active_l_cb++] = args->l_cb;
+		            args->acbframe[args->l_cb] = args->t;
 
 		            if (args->gau_timer)
 			            timing_stop(args->gau_timer);
 		        }
 
 		        /* Put next state j into the active list */
-		        amap[j] = n_next_active;
+		        args->amap[j] = args->n_next_active;
 
 		        /* Initialize the alpha variable to zero */
-		        args->active_alpha_t[n_next_active] = 0;
+		        args->active_alpha_t[args->n_next_active] = 0;
 
 		        /* Map active state list index to sentence HMM index */
-		        next_active[n_next_active] = j;
+		        args->next_active[args->n_next_active] = j;
 
-		        ++n_next_active;
+		        ++args->n_next_active;
 
-		        if (n_next_active == args->aalpha_alloc) {
+		        if (args->n_next_active == args->aalpha_alloc) {
 		            args->aalpha_alloc *= 2;
 		            
-		            active_alpha[t] = ckd_realloc(active_alpha[t],
-						          sizeof(float64) * args->aalpha_alloc);
 		            args->active_alpha_t = ckd_realloc(args->active_alpha_t, sizeof(float64) * args->aalpha_alloc);
                                 
-		            if (bp) {
+		            if (args->bp) {
 		                    args->bp_t = ckd_realloc(args->bp_t, sizeof(uint32) * args->aalpha_alloc);
-			            best_pred = (float64 *)ckd_realloc(best_pred,
+			            args->best_pred = (float64 *)ckd_realloc(args->best_pred,
 							               sizeof(float64) * args->aalpha_alloc);
 			            memset(args->bp_t + args->aalpha_alloc / 2,
 			                    0, sizeof(uint32) * (args->aalpha_alloc /2));
-			            memset(best_pred + args->aalpha_alloc / 2,
+			            memset(args->best_pred + args->aalpha_alloc / 2,
 			                   0, sizeof(float64) * (args->aalpha_alloc / 2));
 		                }
         		    }
@@ -600,57 +564,57 @@ forward_step(float64 **active_alpha,
     }
 
     /* Cope w/ numerical issues by dividing densities by max density */
-    dscale[t] = gauden_scale_densities_fwd(now_den, now_den_idx,
-				           active_l_cb, n_active_l_cb, g);
+    args->dscale_t = gauden_scale_densities_fwd(args->now_den, args->now_den_idx,
+				           args->active_l_cb, args->n_active_l_cb, args->g);
 
     /* Now, for all active states in the previous frame, compute
        alpha for all successors in this frame. */
-    for (s = 0; s < n_active; s++) {
-        i = active[s];
+    for (s = 0; s < args->n_active; s++) {
+        i = args->active[s];
         
 #if FORWARD_DEBUG
         E_INFO("At time %d, In real state alpha update, active state %d\n",t, i);
 #endif
         /* get list of states adjacent to active state i */
-        next = state_seq[i].next_state;	
+        args->next = state_seq[i].next_state;	
         /* get the associated transition probs */
-        tprob = state_seq[i].next_tprob;
+        args->tprob = state_seq[i].next_tprob;
 
         /* the scaled alpha value for i at t-1 */
-        prior_alpha = args->active_alpha_p[s];
+        args->prior_alpha = args->active_alpha_p[s];
 
         /* For all emitting states j adjacent to i, update their
          * alpha values.  */
         for (u = 0; u < state_seq[i].n_next; u++) {
-	        j = next[u];
+	        j = args->next[u];
 #if FORWARD_DEBUG
 	        E_INFO("In real state update, active state %d, next state %d\n", i,j);
 #endif
-	        l_cb = state_seq[j].l_cb;
+	        args->l_cb = state_seq[j].l_cb;
 
 	        if (state_seq[j].mixw != TYING_NON_EMITTING) {
 	            /* Next state j is an emitting state */
-	            outprob[j] = gauden_mixture(now_den[l_cb],
-					        now_den_idx[l_cb],
-					        mixw[state_seq[j].mixw],
-					        g);
+	            args->outprob[j] = gauden_mixture(args->now_den[args->l_cb],
+					        args->now_den_idx[args->l_cb],
+					        args->mixw[state_seq[j].mixw],
+					        args->g);
 
 
 	            /* update backpointers args->bp_t[j] */
-	            args->x = prior_alpha * tprob[u];
-	            if (bp) {
-		            if (x > best_pred[amap[j]]) {
+	            args->x = args->prior_alpha * args->tprob[u];
+	            if (args->bp) {
+		            if (args->x > args->best_pred[args->amap[j]]) {
 #if FORWARD_DEBUG
 		                E_INFO("In real state update, backpointer %d => %d updated from %e to (%e * %e = %e)\n",
 			               i, j, best_pred[amap[j]], prior_alpha, tprob[u], x);
 #endif
-		                args->best_pred[amap[j]] = args->x;
-		                args->args->bp_t[amap[j]] = s;
+		                args->best_pred[args->amap[j]] = args->x;
+		                args->bp_t[args->amap[j]] = s;
 		            }
 	            }
 	            
 	            /* update the unscaled alpha[t][j] */
-	            args->active_alpha_t[amap[j]] += x * outprob[j];
+	            args->active_alpha_t[args->amap[j]] += args->x * args->outprob[j];
 	        }
 	        else {
 	            /* already done below in the prior time frame */
@@ -659,9 +623,9 @@ forward_step(float64 **active_alpha,
     }
 
 #if FORWARD_DEBUG
-    if (bp) {
-        for (s = 0; s < n_next_active; ++s) {
-	    j = next_active[s];
+    if (args->bp) {
+        for (s = 0; s < args->n_next_active; ++s) {
+	    j = args->next_active[s];
 	    E_INFO("After real state update, best path to %d(%d) = %d(%d)\n",
 	           j, args->amap[j], args->active[args->bp_t[s]], args->args->bp_t[s]);
         }
@@ -670,103 +634,101 @@ forward_step(float64 **active_alpha,
     /* Now, for all active states in this frame, consume any
        following non-emitting states (multiplying in their
        transition probabilities)  */
-    for (s = 0; s < n_next_active; s++) {
-        i = next_active[s];
+    for (s = 0; s < args->n_next_active; s++) {
+        i = args->next_active[s];
 
         /* find the successor states */
-        next = state_seq[i].next_state;
-        tprob = state_seq[i].next_tprob;
+        args->next = state_seq[i].next_state;
+        args->tprob = state_seq[i].next_tprob;
 
         for (u = 0; u < state_seq[i].n_next; u++) {
-	        j = next[u];
+	        j = args->next[u];
 	        /* for any non-emitting ones */
 	        if (state_seq[j].mixw == TYING_NON_EMITTING) {
 #if FORWARD_DEBUG
 	            E_INFO("In non-emitting state update, active state %d, next state %d\n",i,j);
 #endif
-	            x = args->active_alpha_t[s] * tprob[u];
+	            args->x = args->active_alpha_t[s] * args->tprob[u];
 
 #if FORWARD_DEBUG
-	            E_INFO("In non-emitting state update, active_alpha[t][s]: %f,tprob[u]:  %f\n",active_alpha[t][s],tprob[u]);
+	            E_INFO("In non-emitting state update, active_alpha[t][s]: %f,tprob[u]:  %f\n",args->active_alpha_t[s],tprob[u]);
 #endif
 	            /* activate this state if necessary */
-	            if (amap[j] == INACTIVE) {
-		            amap[j] = n_next_active;
-		            args->active_alpha_t[n_next_active] = 0;
-		            next_active[n_next_active] = j;
-		            ++n_next_active;
+	            if (args->amap[j] == INACTIVE) {
+		            args->amap[j] = args->n_next_active;
+		            args->active_alpha_t[args->n_next_active] = 0;
+		            args->next_active[args->n_next_active] = j;
+		            ++args->n_next_active;
 
-		            if (n_next_active == args->aalpha_alloc) {
+		            if (args->n_next_active == args->aalpha_alloc) {
 		                args->aalpha_alloc = args->aalpha_alloc * 2;
 		                
-		                active_alpha[t] = ckd_realloc(active_alpha[t],
-						              sizeof(float64) * args->aalpha_alloc);
 		                args->active_alpha_t = ckd_realloc(args->active_alpha_t, sizeof(float64) * args->aalpha_alloc);
                                     
-		                if (bp) {
-		                    args->bp_t = ckd_realloc(bp_t, sizeof(uint32) * args->aalpha_alloc);
-			                best_pred = (float64 *)ckd_realloc(best_pred,
+		                if (args->bp) {
+		                    args->bp_t = ckd_realloc(args->bp_t, sizeof(uint32) * args->aalpha_alloc);
+			                args->best_pred = (float64 *)ckd_realloc(args->best_pred,
 							                   sizeof(float64) * args->aalpha_alloc);
-			                memset(bp_t + args->aalpha_alloc / 2,
+			                memset(args->bp_t + args->aalpha_alloc / 2,
 			                        0, sizeof(uint32) * (args->aalpha_alloc /2));
-			                memset(best_pred + args->aalpha_alloc / 2,
+			                memset(args->best_pred + args->aalpha_alloc / 2,
 			                       0, sizeof(float64) * (args->aalpha_alloc / 2));
 		                }
 		            }
-		            if (bp) {
+		            if (args->bp) {
 		                /* Give its backpointer a default value */
-		                args->bp_t[amap[j]] = s;
-		                args->bp_t[amap[j]] = s;
-		                best_pred[amap[j]] = x;
+		                args->bp_t[args->amap[j]] = s;
+		                args->bp_t[args->amap[j]] = s;
+		                args->best_pred[args->amap[j]] = args->x;
 		            }
 	            }
 
 	            /* update backpointers args->bp_t[j] */
-	            if (bp && x > best_pred[amap[j]]) {
-		        args->bp_t[amap[j]] = s;
-		        args->bp_t[amap[j]] = s;
-		        best_pred[amap[j]] = x;
+	            if (args->bp && args->x > args->best_pred[args->amap[j]]) {
+		        args->bp_t[args->amap[j]] = s;
+		        args->bp_t[args->amap[j]] = s;
+		        args->best_pred[args->amap[j]] = args->x;
 	            }
 	            /* update its alpha value */
-	            args->active_alpha_t[amap[j]] += x;
+	            args->active_alpha_t[args->amap[j]] += args->x;
 	        }
         }
     }
 
 #if FORWARD_DEBUG
-    for (s = 0; s < n_next_active; ++s) {
-        j = next_active[s];
-        if (bp && state_seq[j].mixw == TYING_NON_EMITTING) {
+    for (s = 0; s < args->n_next_active; ++s) {
+        j = args->next_active[s];
+        if (args->bp && state_seq[j].mixw == TYING_NON_EMITTING) {
 	    E_INFO("After non-emitting state update, best path to %d(%d) = %d(%d)\n",
-	           j, amap[j], next_active[args->bp_t[s]], args->bp_t[s]);
+	           j, args->amap[j], args->next_active[args->bp_t[s]], args->bp_t[s]);
 	    /* Assumptions about topology that might not be valid
 	     * but are useful for debugging. */
-	    assert(next_active[args->bp_t[s]] <= j);
-	    assert(j - next_active[args->bp_t[s]] <= 2);
+	    assert(args->next_active[args->bp_t[s]] <= j);
+	    assert(j - args->next_active[args->bp_t[s]] <= 2);
         }
     }
 #endif
     /* find best alpha value in current frame for pruning and scaling purposes */
     args->balpha = 0;
     /* also take the argmax to find the best backtrace */
-    for (s = 0; s < n_next_active; s++) {
+    for (s = 0; s < args->n_next_active; s++) {
         if (args->balpha < args->active_alpha_t[s]) {
     	    args->balpha = args->active_alpha_t[s];
         }
     }
 
     /* cope with some pathological case */
-    if (args->balpha == 0.0 && n_next_active > 0) {
-        E_ERROR("All %u active states,", n_next_active);
-        for (s = 0; s < n_next_active; s++) {
-	    if (state_seq[next_active[s]].mixw != TYING_NON_EMITTING)
-	        fprintf(stderr, " %u", state_seq[next_active[s]].mixw);
+    if (args->balpha == 0.0 && args->n_next_active > 0) {
+        E_ERROR("All %u active states,", args->n_next_active);
+        for (s = 0; s < args->n_next_active; s++) {
+	    if (state_seq[args->next_active[s]].mixw != TYING_NON_EMITTING)
+	        fprintf(stderr, " %u", state_seq[args->next_active[s]].mixw);
 	    else
 	        fprintf(stderr, " N(%u,%u)",
-		        state_seq[next_active[s]].tmat, state_seq[next_active[s]].m_state);
+		        state_seq[args->next_active[s]].tmat, state_seq[args->next_active[s]].m_state);
 
         }
-        fprintf(stderr, ", zero at time %u\n", t);
+        fprintf(stderr, ", zero at time %u\n", args->t);
         fflush(stderr);
         
         return S3_ERROR;
@@ -778,20 +740,20 @@ forward_step(float64 **active_alpha,
 
         return S3_ERROR;
     }
-    if (n_next_active == 0) {
-        E_ERROR("No active states at time %u\n", t);
+    if (args->n_next_active == 0) {
+        E_ERROR("No active states at time %u\n", args->t);
         return S3_ERROR;
     }
 
     /* compute the scale factor */
-    scale[t] = 1.0 / args->balpha;
+    args->scale_t = 1.0 / args->balpha;
     /* compute the pruning threshold based on the beam */
     if (log10(args->balpha) + log10(beam) > -300) {
-        pthresh = args->balpha * beam;
+        args->pthresh = args->balpha * beam;
     }
     else {
         /* avoiding underflow... */
-        pthresh = 1e-300;
+        args->pthresh = 1e-300;
     }
     /* DEBUG XXXXX */
     /* pthresh = 0.0; */
@@ -799,91 +761,91 @@ forward_step(float64 **active_alpha,
 
     /* Determine if phone segmentation-based pruning would leave
      * us with an empty active list (that would be bad!) */
-    can_prune_phseg = 0;
+    args->can_prune_phseg = 0;
     if (phseg) {
-        for (s = 0; s < n_next_active; ++s) 
-	    if (acmod_set_base_phone(as, state_seq[next_active[s]].phn)
-	        == acmod_set_base_phone(as, phseg->phone))
+        for (s = 0; s < args->n_next_active; ++s) 
+	    if (acmod_set_base_phone(args->as, state_seq[args->next_active[s]].phn)
+	        == acmod_set_base_phone(args->as, phseg->phone))
 	        break;
-        can_prune_phseg = !(s == n_next_active);
+        args->can_prune_phseg = !(s == args->n_next_active);
 #if FORWARD_DEBUG
         if (!can_prune_phseg) {
 	    E_INFO("Will not apply phone-based pruning at timepoint %d "
 	           "(%d != %d) (%s != %s)\n", t,
-	           state_seq[next_active[s]].phn,
+	           state_seq[args->next_active[s]].phn,
 	           phseg->phone,
-	           acmod_set_id2name(inv->mdef->acmod_set, state_seq[next_active[s]].phn),
+	           acmod_set_id2name(inv->mdef->acmod_set, state_seq[args->next_active[s]].phn),
 	           acmod_set_id2name(inv->mdef->acmod_set, phseg->phone)
 	           );
         }
 #endif
     }
     /* Prune active states for the next frame and rescale their alphas. */
-    active_astate[t] = ckd_calloc(n_next_active, sizeof(uint32));
-    for (s = 0, n_active = 0; s < n_next_active; s++) {
+    args->active_astate_t = ckd_calloc(args->n_next_active, sizeof(uint32));
+    for (s = 0, args->n_active = 0; s < args->n_next_active; s++) {
         /* "Snap" the backpointers for non-emitting states, so
            that they don't point to bogus indices (we will use
            amap to recover them). */
-        if (bp && state_seq[next_active[s]].mixw == TYING_NON_EMITTING) {
+        if (args->bp && state_seq[args->next_active[s]].mixw == TYING_NON_EMITTING) {
 #if FORWARD_DEBUG
 	    E_INFO("Snapping backpointer for %d, %d => %d\n",
-	           next_active[s], args->bp_t[s], next_active[args->bp_t[s]]);
+	           args->next_active[s], args->bp_t[s], args->next_active[args->bp_t[s]]);
 #endif
-	    args->bp_t[s] = next_active[args->bp_t[s]];
-	    args->bp_t[s] = next_active[args->bp_t[s]];
+	    args->bp_t[s] = args->next_active[args->bp_t[s]];
+	    args->bp_t[s] = args->next_active[args->bp_t[s]];
         }
         /* If we have a phone segmentation, use it instead of the beam. */
-        if (phseg && can_prune_phseg) {
-	        if (acmod_set_base_phone(as, state_seq[next_active[s]].phn)
-	            == acmod_set_base_phone(as, phseg->phone)) {
-	            args->active_alpha_t[args->n_active] = args->active_alpha_t[s] * scale[t];
-	            args->active[args->n_active] = active_astate[t][args->n_active] = args->next_active[s];
-	            if (bp) {
-		        args->bp_t[n_active] = args->bp_t[s];
-		        args->bp_t[n_active] = args->bp_t[s];
+        if (phseg && args->can_prune_phseg) {
+	        if (acmod_set_base_phone(args->as, state_seq[args->next_active[s]].phn)
+	            == acmod_set_base_phone(args->as, phseg->phone)) {
+	            args->active_alpha_t[args->n_active] = args->active_alpha_t[s] * args->scale_t;
+	            args->active[args->n_active] = args->active_astate_t[args->n_active] = args->next_active[s];
+	            if (args->bp) {
+		        args->bp_t[args->n_active] = args->bp_t[s];
+		        args->bp_t[args->n_active] = args->bp_t[s];
 	            }
-	            amap[next_active[s]] = n_active;
-	            n_active++;
+	            args->amap[args->next_active[s]] = args->n_active;
+	            args->n_active++;
 	        }
 	        else {
-	            amap[next_active[s]] = INACTIVE;
+	            args->amap[args->next_active[s]] = INACTIVE;
 	        }
         }
         else {
-	        if (active_alpha[t][s] > pthresh) {
-	            args->active_alpha_t[n_active] = args->active_alpha_t[s] * scale[t];
-	            active[n_active] = active_astate[t][n_active] = next_active[s];
-	            if (bp) {
-		        args->bp_t[n_active] = args->bp_t[s];
-		        args->bp_t[n_active] = args->bp_t[s];
+	        if (args->active_alpha_t[s] > args->pthresh) {
+	            args->active_alpha_t[args->n_active] = args->active_alpha_t[s] * args->scale_t;
+	            args->active[args->n_active] = args->active_astate_t[args->n_active] = args->next_active[s];
+	            if (args->bp) {
+		        args->bp_t[args->n_active] = args->bp_t[s];
+		        args->bp_t[args->n_active] = args->bp_t[s];
                     }
-	            amap[next_active[s]] = n_active;
-	            n_active++;
+	            args->amap[args->next_active[s]] = args->n_active;
+	            args->n_active++;
 	        }
 	        else {
-	            amap[next_active[s]] = INACTIVE;
+	            args->amap[args->next_active[s]] = INACTIVE;
 	        }
         }
     }
     /* Now recover the backpointers for non-emitting states. */
-    for (s = 0; s < n_active; ++s) {
-        if (bp && state_seq[active[s]].mixw == TYING_NON_EMITTING) {
+    for (s = 0; s < args->n_active; ++s) {
+        if (args->bp && state_seq[args->active[s]].mixw == TYING_NON_EMITTING) {
 #if FORWARD_DEBUG
 	    E_INFO("Snapping backpointer for %d, %d => %d(%d)\n",
-	           active[s], args->bp_t[s], amap[args->bp_t[s]], active[amap[args->bp_t[s]]]);
+	           args->active[s], args->bp_t[s], args->amap[args->bp_t[s]], args->active[amap[args->bp_t[s]]]);
 #endif
-	    args->bp_t[s] = amap[args->bp_t[s]];
-	    args->bp_t[s] = amap[args->bp_t[s]];
+	    args->bp_t[s] = args->amap[args->bp_t[s]];
+	    args->bp_t[s] = args->amap[args->bp_t[s]];
         }
     }
     /* And finally deactive all states. */
-    for (s = 0; s < n_active; ++s) {
-        amap[active[s]] = INACTIVE;
+    for (s = 0; s < args->n_active; ++s) {
+        args->amap[args->active[s]] = INACTIVE;
     }
-    n_active_astate[t] = n_active;
-    n_next_active = 0;
+    args->n_active_astate_t = args->n_active;
+    args->n_next_active = 0;
 
-    n_sum_active += n_active;
+    args->n_sum_active += args->n_active;
 }
 
 
