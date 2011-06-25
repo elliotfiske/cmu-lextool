@@ -121,8 +121,8 @@ public class LongAudioAligner {
 		String corruptedInput = testCase.getCorruptedText();
 		grammar.setText(corruptedInput);
 		// change grammar Configurations
-		System.out.println("================ GRAMMAR MODEL: BACKWARD JUMPS ================");		
-		grammar.setGrammarType("MODEL_BACKWARD_JUMPS");
+		System.out.println("================ GRAMMAR MODEL: DELETIONS ================");		
+		grammar.setGrammarType("MODEL_DELETIONS");
 		aflatLinguist.allocate();
 		dataSource.setAudioFile(audioFileURL, null);
 		result = recognizer.recognize();
