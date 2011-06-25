@@ -425,24 +425,7 @@ public class AFlatLinguist implements Linguist, Configurable {
             gstate.connect();
         TimerPool.getTimer(this, "Connect Nodes").stop();
 
-        SentenceHMMState initialState = findStartingState();
-
-        // add an out-of-grammar branch between each word transition if configured to do so
-        if (addOutOfGrammarBranch) {
-        	for(GrammarNode gnode: grammar.getGrammarNodes()) {
-        		//System.out.println("node:"+gnode.getWord());
-        		GState gstate = getGState(gnode);
-        		
-        		if(gstate.getEntryPoint()!=null) {
-        			//System.out.println("EntryPoint:"+gstate.getEntryPoint());
-	        		PhoneLoop phoneLoop = new PhoneLoop(phoneLoopAcousticModel, logPhoneInsertionProbability,
-	        				gstate.getEntryPoint());
-	                SentenceHMMState firstBranchState = (SentenceHMMState)
-	                        phoneLoop.getSearchGraph().getInitialState();
-	                initialState.connect(getArc(firstBranchState, logOne, logOutOfGrammarBranchProbability));
-        		}
-        	}            
-        }
+        SentenceHMMState initialState = findStartingState();       
         
         /*
         for(GrammarNode gnode: grammar.getGrammarNodes()) {
@@ -464,14 +447,24 @@ public class AFlatLinguist implements Linguist, Configurable {
                 GState gstate = getGState(grammarNode);
                 gstate.dumpInfo();
             }
-        }
+        }         
         
+		Set<SentenceHMMState> allStates = SentenceHMMState.collectStates(initialState);
+		 // add an out-of-grammar branch between each word transition if configured to do so
+        if (addOutOfGrammarBranch) {
+        	for(SentenceHMMState state: allStates) {        		
+        		PhoneLoop phoneLoop = new PhoneLoop(phoneLoopAcousticModel, logPhoneInsertionProbability,
+	        	state);	    
+        		SentenceHMMState firstBranchState = (SentenceHMMState)
+                phoneLoop.getSearchGraph().getInitialState();
+        		//System.out.println(state);
+                state.connect(getArc(firstBranchState, logOne, logOutOfGrammarBranchProbability));
+        	}          	
+        }
         nodeStateMap = null;
         arcPool = null;
-        
         GDLDumper dumper = new GDLDumper("./linguist.gdl", this,true,false,false,logMath);
 		dumper.run();
-        
         return SentenceHMMState.collectStates(initialState);
     }
 
