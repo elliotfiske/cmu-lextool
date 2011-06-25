@@ -430,7 +430,7 @@ public class AFlatLinguist implements Linguist, Configurable {
 		// add an out-of-grammar branch between each word transition if configured to do so
 	    if (addOutOfGrammarBranch) {
 	    	for(SentenceHMMState state: allStates) {        		
-	       		if(state.isWordStart()) {
+	       		if(state.isSharedState()) {
 	       			PhoneLoop phoneLoop = new PhoneLoop(phoneLoopAcousticModel, logPhoneInsertionProbability,
 	       					state);	    
 	       			SentenceHMMState firstBranchState = (SentenceHMMState)
