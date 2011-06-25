@@ -426,43 +426,32 @@ public class AFlatLinguist implements Linguist, Configurable {
         TimerPool.getTimer(this, "Connect Nodes").stop();
 
         SentenceHMMState initialState = findStartingState();       
-        
-        /*
-        for(GrammarNode gnode: grammar.getGrammarNodes()) {
-        	GState gstate = getGState(gnode);
-        	if(gstate.getEntryPoint()!=null) {
-        		System.out.println("word:"+gnode.getWord());
-            	System.out.println(gstate);
-        	}        	
-        }
-        */
-        
+        Set<SentenceHMMState> allStates = SentenceHMMState.collectStates(initialState);
+		// add an out-of-grammar branch between each word transition if configured to do so
+	    if (addOutOfGrammarBranch) {
+	    	for(SentenceHMMState state: allStates) {        		
+	       		if(state.isWordStart()) {
+	       			PhoneLoop phoneLoop = new PhoneLoop(phoneLoopAcousticModel, logPhoneInsertionProbability,
+	       					state);	    
+	       			SentenceHMMState firstBranchState = (SentenceHMMState)
+	       			phoneLoop.getSearchGraph().getInitialState();
+	       			//System.out.println(state);
+	       			state.connect(getArc(firstBranchState, logOne, logOutOfGrammarBranchProbability));
+	       		}
+	       	}          	
+	    }
+	    nodeStateMap = null;
+	    arcPool = null;
         searchGraph = new FlatSearchGraph(initialState);
         TimerPool.getTimer(this, "Compile").stop();
         // Now that we are all done, dump out some interesting
         // information about the process
         if (dumpGStates) {
-        //if(true) {
             for (GrammarNode grammarNode : grammar.getGrammarNodes()) {
                 GState gstate = getGState(grammarNode);
                 gstate.dumpInfo();
             }
-        }         
-        
-		Set<SentenceHMMState> allStates = SentenceHMMState.collectStates(initialState);
-		 // add an out-of-grammar branch between each word transition if configured to do so
-        if (addOutOfGrammarBranch) {
-        	for(SentenceHMMState state: allStates) {        		
-        		PhoneLoop phoneLoop = new PhoneLoop(phoneLoopAcousticModel, logPhoneInsertionProbability,
-	        	state);	    
-        		SentenceHMMState firstBranchState = (SentenceHMMState)
-                phoneLoop.getSearchGraph().getInitialState();
-        		//System.out.println(state);
-                state.connect(getArc(firstBranchState, logOne, logOutOfGrammarBranchProbability));
-        	}          	
-        }
-        nodeStateMap = null;
-        arcPool = null;
+        }        
         GDLDumper dumper = new GDLDumper("./linguist.gdl", this,true,false,false,logMath);
 		dumper.run();
         return SentenceHMMState.collectStates(initialState);
