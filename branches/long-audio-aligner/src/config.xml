@@ -3,15 +3,15 @@
 <config>
 
 	<property name="logLevel" value="WARNING" />
-	<property name="absoluteBeamWidth" value="60" />
-	<property name="relativeBeamWidth" value="1E-80" />
-	<property name="wordInsertionProbability" value="0.7" />
+	<property name="absoluteBeamWidth" value="-1" />
+	<property name="relativeBeamWidth" value="1E-200" />
+	<property name="wordInsertionProbability" value="0.6" />
 	<property name="languageWeight" value="7" />
 
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-75"/>	
+	<property name="outOfGrammarProbability" value="1E-80"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
