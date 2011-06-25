@@ -127,17 +127,14 @@ forward_local(float64 **active_alpha,
 	model_inventory_t *inv,
 	float64 beam,
 	s3phseg_t *phseg,
-	uint32 mmi_train,
 	forward_data *args);
 int32
 forward_step(
 	uint32 n_obs,
 	state_t *state_seq,
-	uint32 n_state,
 	model_inventory_t *inv,
 	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train,
+	s3phseg_t **phseg,
 	forward_data *args);
 
 /*********************************************************************
@@ -276,6 +273,7 @@ forward(float64 **active_alpha,
     args.pthresh = 1e-300;
     args.gau_timer = NULL;
     args.best_pred = NULL;
+    args.retval = S3_SUCCESS;
     
     /* Get the CPU timer associated with mixture Gaussian evaluation */
     args.gau_timer = timing_get("gau");
@@ -391,15 +389,14 @@ forward(float64 **active_alpha,
     args.n_active++;
     
     args.aalpha_alloc = args.n_active;
-    
-    args.retval = S3_SUCCESS;
+
 /*    for (;;) {*/
     args.retval = forward_local(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp, scale, dscale, feature, n_obs, state_seq, n_state,
-            inv, beam, phseg, mmi_train, &args);
+            inv, beam, phseg, &args);
 /*    }*/
 
     if (!mmi_train)
-	printf(" %u ", args.n_sum_active / n_obs);
+	    printf(" %u ", args.n_sum_active / n_obs);
 
 cleanup:
     ckd_free(args.active);
@@ -436,20 +433,12 @@ forward_local(float64 **active_alpha,
 	model_inventory_t *inv,
 	float64 beam,
 	s3phseg_t *phseg,
-	uint32 mmi_train,
 	forward_data *args)
 {
     /* Compute scaled alpha over the remaining time in the utterance segment. */
     for (args->t = 1; args->t < n_obs; args->t++) {
-        /* Find active phone for this timepoint. */
-        if (phseg) {
-            /* Move the pointer forward if necessary. */
-            if (args->t > phseg->ef)
-	        phseg = phseg->next;
-        }
-
-        args->active_alpha_t = active_alpha[args->t];
         args->active_alpha_p = active_alpha[args->t-1];
+        args->active_alpha_t = active_alpha[args->t];
         args->bp = bp;
         args->bp_t = bp[args->t];
         args->dscale_t = dscale[args->t];
@@ -458,18 +447,18 @@ forward_local(float64 **active_alpha,
         args->active_astate_t = active_astate[args->t];
         args->n_active_astate_t = n_active_astate[args->t];
         
-        args->retval = forward_step(n_obs, state_seq, n_state, inv, beam, phseg, mmi_train, args);
+        args->retval = forward_step(n_obs, state_seq, inv, beam, &phseg, args);
+        if (args->retval != S3_SUCCESS) {
+            return args->retval;
+        }
         
         active_alpha[args->t] = args->active_alpha_t;
         bp[args->t] = args->bp_t;
         dscale[args->t] = args->dscale_t;
+        feature[args->t] = args->feature_t;
         scale[args->t] = args->scale_t;
         active_astate[args->t] = args->active_astate_t;
         n_active_astate[args->t] = args->n_active_astate_t;
-        
-        if (args->retval != S3_SUCCESS) {
-            return args->retval;
-        }
     }
     return S3_SUCCESS;
 }
@@ -480,15 +469,20 @@ int32
 forward_step(
 	uint32 n_obs,
 	state_t *state_seq,
-	uint32 n_state,
 	model_inventory_t *inv,
 	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train,
+	s3phseg_t **phseg,
 	forward_data *args)
 {
     uint32 i, j, s, u;
     
+    /* Find active phone for this timepoint. */
+    if (*phseg) {
+        /* Move the pointer forward if necessary. */
+        if (args->t > (*phseg)->ef)
+            (*phseg) = (*phseg)->next;
+    }
+
     args->n_active_l_cb = 0;
 
     /* assume next active state set about the same size as current;
@@ -779,10 +773,10 @@ forward_step(
     /* Determine if phone segmentation-based pruning would leave
      * us with an empty active list (that would be bad!) */
     args->can_prune_phseg = 0;
-    if (phseg) {
+    if (*phseg) {
         for (s = 0; s < args->n_next_active; ++s) 
 	    if (acmod_set_base_phone(args->as, state_seq[args->next_active[s]].phn)
-	        == acmod_set_base_phone(args->as, phseg->phone))
+	        == acmod_set_base_phone(args->as, (*phseg)->phone))
 	        break;
         args->can_prune_phseg = !(s == args->n_next_active);
 #if FORWARD_DEBUG
@@ -790,9 +784,9 @@ forward_step(
 	    E_INFO("Will not apply phone-based pruning at timepoint %d "
 	           "(%d != %d) (%s != %s)\n", t,
 	           state_seq[args->next_active[s]].phn,
-	           phseg->phone,
+	           (*phseg)->phone,
 	           acmod_set_id2name(inv->mdef->acmod_set, state_seq[args->next_active[s]].phn),
-	           acmod_set_id2name(inv->mdef->acmod_set, phseg->phone)
+	           acmod_set_id2name(inv->mdef->acmod_set, (*phseg)->phone)
 	           );
         }
 #endif
@@ -812,9 +806,9 @@ forward_step(
 	    args->bp_t[s] = args->next_active[args->bp_t[s]];
         }
         /* If we have a phone segmentation, use it instead of the beam. */
-        if (phseg && args->can_prune_phseg) {
+        if ((*phseg) && args->can_prune_phseg) {
 	        if (acmod_set_base_phone(args->as, state_seq[args->next_active[s]].phn)
-	            == acmod_set_base_phone(args->as, phseg->phone)) {
+	            == acmod_set_base_phone(args->as, (*phseg)->phone)) {
 	            args->active_alpha_t[args->n_active] = args->active_alpha_t[s] * args->scale_t;
 	            args->active[args->n_active] = args->active_astate_t[args->n_active] = args->next_active[s];
 	            if (args->bp) {
@@ -851,7 +845,6 @@ forward_step(
 	    E_INFO("Snapping backpointer for %d, %d => %d(%d)\n",
 	           args->active[s], args->bp_t[s], args->amap[args->bp_t[s]], args->active[amap[args->bp_t[s]]]);
 #endif
-	    args->bp_t[s] = args->amap[args->bp_t[s]];
 	    args->bp_t[s] = args->amap[args->bp_t[s]];
         }
     }
