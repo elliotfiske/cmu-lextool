@@ -273,6 +273,10 @@ forward(float64 **active_alpha,
     uint32 sqrt_pos;
     forward_data args;
     
+    args.pthresh = 1e-300;
+    args.gau_timer = NULL;
+    args.best_pred = NULL;
+    
     /* Get the CPU timer associated with mixture Gaussian evaluation */
     args.gau_timer = timing_get("gau");
     
@@ -388,8 +392,9 @@ forward(float64 **active_alpha,
     
     args.aalpha_alloc = args.n_active;
     
+    args.retval = S3_SUCCESS;
 /*    for (;;) {*/
-        forward_local(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp, scale, dscale, feature, n_obs, state_seq, n_state,
+    args.retval = forward_local(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp, scale, dscale, feature, n_obs, state_seq, n_state,
             inv, beam, phseg, mmi_train, &args);
 /*    }*/
 
@@ -453,8 +458,20 @@ forward_local(float64 **active_alpha,
         args->active_astate_t = active_astate[args->t];
         args->n_active_astate_t = n_active_astate[args->t];
         
-        forward_step(n_obs, state_seq, n_state, inv, beam, phseg, mmi_train, &args);
+        args->retval = forward_step(n_obs, state_seq, n_state, inv, beam, phseg, mmi_train, args);
+        
+        active_alpha[args->t] = args->active_alpha_t;
+        bp[args->t] = args->bp_t;
+        dscale[args->t] = args->dscale_t;
+        scale[args->t] = args->scale_t;
+        active_astate[args->t] = args->active_astate_t;
+        n_active_astate[args->t] = args->n_active_astate_t;
+        
+        if (args->retval != S3_SUCCESS) {
+            return args->retval;
+        }
     }
+    return S3_SUCCESS;
 }
 
 
@@ -846,6 +863,8 @@ forward_step(
     args->n_next_active = 0;
 
     args->n_sum_active += args->n_active;
+    
+    return S3_SUCCESS;
 }
 
 
