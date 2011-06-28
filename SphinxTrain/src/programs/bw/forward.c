@@ -44,8 +44,6 @@
  * 	Eric H. Thayer (eht@cs.cmu.edu)
  *********************************************************************/
 
-#define ACHK 10
-
 #include <s3/model_inventory.h>
 #include <s3/s3phseg_io.h>
 #include <s3/vector.h>
@@ -222,7 +220,7 @@ forward(float64 **active_alpha,
     
     uint32 retval = S3_SUCCESS;
 	
-    uint32 block_size = 10;
+    uint32 block_size = 11;
     uint32 red_size = ceil(n_obs / (float64)block_size);
     int t;
 
@@ -232,48 +230,39 @@ forward(float64 **active_alpha,
      * Allocate the bestscore array for embedded Viterbi
      */
     
-/*    red_active_alpha = ckd_calloc(block_size + 1, sizeof(float64 *));
-    red_active_astate = ckd_calloc(block_size + 1, sizeof(int32 *));
-    red_n_active_astate = ckd_calloc(block_size + 1, sizeof(int32));
-    red_scale = ckd_calloc(block_size + 1, sizeof(float64));
-    red_dscale = ckd_calloc(block_size + 1, sizeof(float64 *));
+    red_active_alpha = ckd_calloc(red_size, sizeof(float64 *));
+    red_active_astate = ckd_calloc(red_size, sizeof(int32 *));
+    red_n_active_astate = ckd_calloc(red_size, sizeof(int32));
+    red_scale = ckd_calloc(red_size, sizeof(float64));
+    red_dscale = ckd_calloc(red_size, sizeof(float64 *));
     if (bp) {
-        red_bp = ckd_calloc(block_size + 1, sizeof(uint32 *));
+        red_bp = ckd_calloc(red_size, sizeof(uint32 *));
     }
     
-    loc_active_alpha = ckd_calloc(red_size, sizeof(float64 *));
-    loc_active_astate = ckd_calloc(red_size, sizeof(int32 *));
-    loc_n_active_astate = ckd_calloc(red_size, sizeof(int32));
-    loc_scale = ckd_calloc(red_size, sizeof(float64));
-    loc_dscale = ckd_calloc(red_size, sizeof(float64 *));
+    loc_active_alpha = ckd_calloc(block_size + 1, sizeof(float64 *));
+    loc_active_astate = ckd_calloc(block_size + 1, sizeof(int32 *));
+    loc_n_active_astate = ckd_calloc(block_size + 1, sizeof(int32));
+    loc_scale = ckd_calloc(block_size + 1, sizeof(float64));
+    loc_dscale = ckd_calloc(block_size + 1, sizeof(float64 *));
     if (bp) {
-        loc_bp = ckd_calloc(red_size, sizeof(uint32 *));
-    }*/
+        loc_bp = ckd_calloc(block_size + 1, sizeof(uint32 *));
+    }
     
-    /* inicializace prvniho casoveho ramce */
-/*    loc_active_alpha[0] = ckd_calloc(1, sizeof(float64));
+    loc_active_alpha[0] = ckd_calloc(1, sizeof(float64));
     loc_active_astate[0] = ckd_calloc(1, sizeof(uint32));
+    loc_n_active_astate[0] = 1;
 
     loc_active_alpha[0][0] = 1.0;
     loc_active_astate[0][0] = 0;
-    loc_n_active_astate[0] = 1;
     
     if (bp) {
 	loc_bp[0] = ckd_calloc(1, sizeof(uint32));
-    }*/
-    
-    /* inicializace prvniho casoveho ramce */
-    active_alpha[0] = ckd_calloc(1, sizeof(float64));
-    active_astate[0] = ckd_calloc(1, sizeof(uint32));
-
-    active_alpha[0][0] = 1.0;
-    active_astate[0][0] = 0;
-    n_active_astate[0] = 1;
+    }
     
     if (bp) {
 	bp[0] = ckd_calloc(1, sizeof(uint32)); /* Unused, actually */
     }
-/*    
+    
     for (t = 0; t < red_size; t++) {
         uint32 t2;
         uint32 block_obs = block_size + 1;
@@ -281,7 +270,7 @@ forward(float64 **active_alpha,
         if (t * block_size + block_obs > n_obs) {
             block_obs = n_obs - t * block_size;
         }
-        
+
         retval = forward_local(
             loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
             feature + (t * block_size), block_obs, state_seq, n_state, inv, beam, phseg, mmi_train, (t * block_size));
@@ -290,39 +279,39 @@ forward(float64 **active_alpha,
             return S3_ERROR;
         }
         
+        red_n_active_astate[t] = loc_n_active_astate[0];
+
+        red_active_alpha[t] = ckd_calloc(red_n_active_astate[t], sizeof(float64));
+        memcpy(red_active_alpha[t], loc_active_alpha[0], red_n_active_astate[t] * sizeof(float64));
+
+        red_active_astate[t] = ckd_calloc(red_n_active_astate[t], sizeof(uint32));
+        memcpy(red_active_astate[t], loc_active_astate[0], red_n_active_astate[t] * sizeof(uint32));
+
+        red_scale[t] = loc_scale[block_size];
+
+        red_dscale[t] = ckd_calloc(inv->gauden->n_feat, sizeof(float64));
+        memcpy(red_dscale[t], loc_dscale[0], inv->gauden->n_feat * sizeof(float64));
+        if (bp) {
+            red_bp[t] = ckd_calloc(red_n_active_astate[t], sizeof(uint32));
+            memcpy(red_bp[t], loc_bp[0], red_n_active_astate[t] * sizeof(uint32));
+        }
+        
         if (t < red_size - 1) {
-            red_n_active_astate[t] = loc_n_active_astate[block_size];
-            
-            red_active_alpha[t] = ckd_calloc(red_n_active_astate[t], sizeof(float64));
-            memcpy(red_active_alpha[t], loc_active_alpha[block_size], red_n_active_astate[t] * sizeof(float64));
-            
-            red_active_astate[t] = ckd_calloc(red_n_active_astate[t], sizeof(uint32));
-            memcpy(red_active_astate[t], loc_active_astate[block_size], red_n_active_astate[t] * sizeof(uint32));
-            
-            red_scale[t] = loc_scale[block_size];
-            
-            red_dscale[t] = ckd_calloc(red_n_active_astate[t], sizeof(float64));
-            memcpy(red_dscale[t], loc_dscale[block_size], red_n_active_astate[t] * sizeof(float64));
-            if (bp) {
-                red_bp[t] = ckd_calloc(red_n_active_astate[t], sizeof(uint32));
-                memcpy(red_bp[t], loc_bp[block_size], red_n_active_astate[t] * sizeof(uint32));
-            }
-            
             loc_n_active_astate[0] = loc_n_active_astate[block_size];
             
-            loc_active_alpha[0] = ckd_realloc(loc_active_alpha[0], loc_n_active_astate[t] * sizeof(float64));
-            memcpy(loc_active_alpha[0], loc_active_alpha[block_size], loc_n_active_astate[t] * sizeof(float64));
+            loc_active_alpha[0] = ckd_realloc(loc_active_alpha[0], loc_n_active_astate[0] * sizeof(float64));
+            memcpy(loc_active_alpha[0], loc_active_alpha[block_size], loc_n_active_astate[0] * sizeof(float64));
             
-            loc_active_astate[0] = ckd_realloc(loc_active_astate[0], loc_n_active_astate[t] * sizeof(uint32));
-            memcpy(loc_active_astate[0], loc_active_astate[block_size], loc_n_active_astate[t] * sizeof(uint32));
+            loc_active_astate[0] = ckd_realloc(loc_active_astate[0], loc_n_active_astate[0] * sizeof(uint32));
+            memcpy(loc_active_astate[0], loc_active_astate[block_size], loc_n_active_astate[0] * sizeof(uint32));
             
             loc_scale[0] = loc_scale[block_size];
             
-            loc_dscale[0] = ckd_realloc(loc_dscale[0], loc_n_active_astate[t] * sizeof(float64));
-            memcpy(loc_dscale[0], loc_dscale[block_size], loc_n_active_astate[t] * sizeof(float64));
+            loc_dscale[0] = ckd_realloc(loc_dscale[0], inv->gauden->n_feat * sizeof(float64));
+            memcpy(loc_dscale[0], loc_dscale[block_size], inv->gauden->n_feat * sizeof(float64));
             if (bp) {
-                loc_bp[0] = ckd_realloc(loc_bp[0], loc_n_active_astate[t] * sizeof(uint32));
-                memcpy(loc_bp[0], loc_bp[block_size], loc_n_active_astate[t] * sizeof(uint32));
+                loc_bp[0] = ckd_realloc(loc_bp[0], loc_n_active_astate[0] * sizeof(uint32));
+                memcpy(loc_bp[0], loc_bp[block_size], loc_n_active_astate[0] * sizeof(uint32));
             }
         }
 
@@ -335,7 +324,6 @@ forward(float64 **active_alpha,
     }
     
     for (t = 0; t < red_size; t++) {
-        uint32 t2;
         uint32 block_obs = block_size;
         
         if (t * block_size + block_obs > n_obs) {
@@ -352,8 +340,8 @@ forward(float64 **active_alpha,
         
         scale[t * block_size] = red_scale[t];
         
-        dscale[t * block_size] = ckd_calloc(n_active_astate[t * block_size], sizeof(float64));
-        memcpy(dscale[t * block_size], red_dscale[t], n_active_astate[t * block_size] * sizeof(float64));
+        dscale[t * block_size] = ckd_calloc(inv->gauden->n_feat, sizeof(float64));
+        memcpy(dscale[t * block_size], red_dscale[t], inv->gauden->n_feat * sizeof(float64));
         
         if (bp) {
             bp[t * block_size] = ckd_calloc(n_active_astate[t * block_size], sizeof(uint32));
@@ -369,21 +357,26 @@ forward(float64 **active_alpha,
             return S3_ERROR;
         }
         
-    }*/
+    }
     
-    retval = forward_local(active_alpha, active_astate, n_active_astate, bp, scale, dscale, feature,
-        n_obs, state_seq, n_state, inv, beam, phseg, mmi_train, 0);
+    /* retval = forward_local(active_alpha, active_astate, n_active_astate, bp, scale, dscale, feature,
+        n_obs, state_seq, n_state, inv, beam, phseg, mmi_train, 0); */
     
 /*    fprintf(stderr, "MICHAL...........................\n");
     for (t = 0; t < n_obs; t++) {
-        fprintf(stderr, "MICHAL: ");
+        int i;
+        fprintf(stderr, "MICHAL: %d %f \nMICHAL: ", n_active_astate[t], scale[t]);
         for (i = 0; i < n_active_astate[t]; i++) {
-            fprintf(stderr, "%f ", active_alpha[t][i]);
+            fprintf(stderr, "%f %d %d | ", active_alpha[t][i], active_astate[t][i], bp[t][i]);
+        }
+        fprintf(stderr, "\nMICHAL: dscale: ");
+        for (i = 0; i < inv->gauden->n_feat; i++) {
+            fprintf(stderr, "%f ", dscale[t][i]);
         }
         fprintf(stderr, "\n");
     }*/
     
-/*    ckd_free(loc_active_alpha);
+    ckd_free(loc_active_alpha);
     ckd_free(loc_active_astate);
     ckd_free(loc_n_active_astate);
     ckd_free(loc_scale);
@@ -399,7 +392,7 @@ forward(float64 **active_alpha,
     ckd_free(red_dscale);
     if (bp) {
         ckd_free(red_bp);
-    }*/
+    }
 
     return retval;
 }
@@ -407,20 +400,20 @@ forward(float64 **active_alpha,
 
 
 int32
-forward_local(float64 **active_alpha,   /* offset* */
-	uint32 **active_astate,         /* offset* */
-	uint32 *n_active_astate,        /* offset* */
-	uint32 **bp,                    /* offset* */
-	float64 *scale,                 /* offset* */
-	float64 **dscale,               /* offset* */
-	vector_t **feature,             /* offset */
-	uint32 n_obs,                   /* delka bloku */
-	state_t *state_seq,             /* -- */
-	uint32 n_state,                 /* -- */
-	model_inventory_t *inv,         /* -- */
-	float64 beam,                   /* -- */
-	s3phseg_t *phseg,               /* puvodni, dale zmeneno if na while */
-	uint32 mmi_train,               /* puvodni */
+forward_local(float64 **active_alpha,
+	uint32 **active_astate,
+	uint32 *n_active_astate,
+	uint32 **bp,
+	float64 *scale,
+	float64 **dscale,
+	vector_t **feature,
+	uint32 n_obs,
+	state_t *state_seq,
+	uint32 n_state,
+	model_inventory_t *inv,
+	float64 beam,
+	s3phseg_t *phseg,
+	uint32 mmi_train,
 	uint32 t_offset
 	)
 {
@@ -438,42 +431,44 @@ forward_local(float64 **active_alpha,   /* offset* */
     uint32 aalpha_alloc = n_active_astate[0];
     
     float64 outprob_0;
+    uint32 retval = S3_SUCCESS;
     int t, i;
 
     /* Initialize the active state map such that all states are inactive */
     for (i = 0; i < n_state; i++) {
 	amap[i] = INACTIVE;
     }
-
-    for (i = 0; i < n_active_astate[0]; i++) {
-        active_l_cb[i] = state_seq[i].l_cb;        /* zkontrolovat, jestli se zde nebere nejaky odvozeny index */
-    }
     
     if (bp) {
         best_pred = ckd_calloc(aalpha_alloc, sizeof(float64));
     }
 
-    /* Compute the component Gaussians for state 0 mixture density */
-    gauden_compute_log(now_den[state_seq[0].l_cb],
-		       now_den_idx[state_seq[0].l_cb],
-		       feature[0],
-		       inv->gauden,
-		       state_seq[0].cb, NULL);
+    if (t_offset == 0) {
+        active_l_cb[0] = state_seq[0].l_cb;
+        
+        /* Compute the component Gaussians for state 0 mixture density */
+        gauden_compute_log(now_den[state_seq[0].l_cb],
+                       now_den_idx[state_seq[0].l_cb],
+                       feature[0],
+                       inv->gauden,
+                       state_seq[0].cb, NULL);
 
-    dscale[0] = gauden_scale_densities_fwd(now_den, now_den_idx,
-					   active_l_cb, 1, inv->gauden);
+        dscale[0] = gauden_scale_densities_fwd(now_den, now_den_idx,
+                                           active_l_cb, 1, inv->gauden);
 
-    /* Compute the mixture density value for state 0 time 0 */
-    outprob_0 = gauden_mixture(now_den[state_seq[0].l_cb],
-				now_den_idx[state_seq[0].l_cb],
-				inv->mixw[state_seq[0].mixw],
-				inv->gauden);
-    if (outprob_0 <= MIN_IEEE_NORM_POS_FLOAT32) {
-	E_ERROR("Small output prob (== %.2e) seen at frame 0 state 0\n", outprob_0);
-	return S3_ERROR;
+        /* Compute the mixture density value for state 0 time 0 */  /* MICHAL: fix for all active states! */
+        outprob_0 = gauden_mixture(now_den[state_seq[0].l_cb],
+		                now_den_idx[state_seq[0].l_cb],
+		                inv->mixw[state_seq[0].mixw],
+		                inv->gauden);
+        if (outprob_0 <= MIN_IEEE_NORM_POS_FLOAT32) {
+            E_ERROR("Small output prob (== %.2e) seen at frame 0 state 0\n", outprob_0);
+            retval = S3_ERROR;
+            goto cleanup;
+        }
+        /* Compute scale for t == 0 */
+        scale[0] = 1.0 / outprob_0;
     }
-    /* Compute scale for t == 0 */
-    scale[0] = 1.0 / outprob_0;
     
     /* Compute scaled alpha over all remaining time in the utterance */
     for (t = 1; t < n_obs; t++) {
@@ -486,15 +481,13 @@ forward_local(float64 **active_alpha,   /* offset* */
 
 	/* assume next active state set about the same size as current;
 	   adjust to actual size as necessary later */
-	active_alpha[t] = (float64 *)ckd_calloc(n_active_astate[t-1], sizeof(float64));
+	active_alpha[t] = (float64 *)ckd_calloc(aalpha_alloc, sizeof(float64));
 	if (bp) {
-	    bp[t] = (uint32 *)ckd_calloc(n_active_astate[t-1], sizeof(uint32));
+	    bp[t] = (uint32 *)ckd_calloc(aalpha_alloc, sizeof(uint32));
 	    /* reallocate the best score array and zero it out */
-	    if (n_active_astate[t-1] > aalpha_alloc)
-		best_pred = (float64 *)ckd_realloc(best_pred, n_active_astate[t-1] * sizeof(float64));
-	    memset(best_pred, 0, n_active_astate[t-1] * sizeof(float64));
+	    best_pred = (float64 *)ckd_realloc(best_pred, aalpha_alloc * sizeof(float64));
+	    memset(best_pred, 0, aalpha_alloc * sizeof(float64));
 	}
-	aalpha_alloc = n_active_astate[t-1];
 
 	/* For all active states at the previous frame, activate their
 	   successors in this frame and compute codebooks. */
@@ -510,7 +503,7 @@ forward_local(float64 **active_alpha,   /* offset* */
 		    if (amap[j] == INACTIVE) {
 			uint32 l_cb = state_seq[j].l_cb;
 			
-			if (acbframe[l_cb] != t) {      /* MICHAL: treba offset ??? asi ne */
+			if (acbframe[l_cb] != t) {
 			    /* Component density values not yet computed */
 			    gauden_compute_log(now_den[l_cb],
 					       now_den_idx[l_cb],
@@ -534,7 +527,6 @@ forward_local(float64 **active_alpha,   /* offset* */
 
 			/* Put next state j into the active list */
 			/* Map active state list index to sentence HMM index */
-			/* MICHAL: tedy amap je inverzni k next_active */
 			amap[j] = n_next_active;
 			next_active[n_next_active] = j;
 
@@ -542,21 +534,19 @@ forward_local(float64 **active_alpha,   /* offset* */
 
 			if (n_next_active == aalpha_alloc) {
 			    /* Need to reallocate the active_alpha array */
-			    aalpha_alloc += ACHK;
+			    aalpha_alloc *= 2;
 			    active_alpha[t] = ckd_realloc(active_alpha[t],
 							  sizeof(float64) * aalpha_alloc);
-			    /* And the backpointer array */
+                            
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
-				/* And the best score array */
 				best_pred = (float64 *)ckd_realloc(best_pred,
 								   sizeof(float64) * aalpha_alloc);
-				/* Make sure the new stuff is zero */
-				memset(bp[t] + aalpha_alloc - ACHK,
-				       0, sizeof(uint32) * ACHK);
-				memset(best_pred + aalpha_alloc - ACHK,
-				       0, sizeof(float64) * ACHK);
+				memset(bp[t] + aalpha_alloc / 2,
+				       0, sizeof(uint32) * (aalpha_alloc / 2));
+				memset(best_pred + aalpha_alloc / 2,
+				       0, sizeof(float64) * (aalpha_alloc / 2));
 			    }
 			}
 		    }
@@ -577,7 +567,7 @@ forward_local(float64 **active_alpha,   /* offset* */
 	     * alpha values.  */
 	    for (u = 0; u < state_seq[i].n_next; u++) {
 		j = state_seq[i].next_state[u];
-		uint32 l_cb = state_seq[j].l_cb;        /* MICHAL: pomocna lokalni promenna - alias */
+		uint32 l_cb = state_seq[j].l_cb;
 
 		if (state_seq[j].mixw != TYING_NON_EMITTING) {
 		    /* Next state j is an emitting state */
@@ -619,24 +609,25 @@ forward_local(float64 **active_alpha,   /* offset* */
 
 		    /* activate this state if necessary */
 		    if (amap[j] == INACTIVE) {
-			active_alpha[t][n_next_active] = 0; /* MICHAL: do alpha se prida s nulovou vystupni pravdepodobnosti, ze se v nem skonci - je tying */
-			amap[j] = n_next_active;        /* MICHAL: opet inverze */
+			active_alpha[t][n_next_active] = 0;
+			amap[j] = n_next_active;
 			next_active[n_next_active] = j;
-			++n_next_active; /* prohledavani do sirky - viz druhy vnejsi for */
+			++n_next_active;
 
-			if (n_next_active == aalpha_alloc) { /* muze rust - viz predchozi komentar */
-			    aalpha_alloc += ACHK;
+			if (n_next_active == aalpha_alloc) {
+			    aalpha_alloc *= 2;
 			    active_alpha[t] = ckd_realloc(active_alpha[t],
 							  sizeof(float64) * aalpha_alloc);
+                            
 			    if (bp) {
 				bp[t] = ckd_realloc(bp[t],
 						    sizeof(uint32) * aalpha_alloc);
 				best_pred = (float64 *)ckd_realloc(best_pred,
 								   sizeof(float64) * aalpha_alloc);
-				memset(bp[t] + aalpha_alloc - ACHK,
-				       0, sizeof(uint32) * ACHK);
-				memset(best_pred + aalpha_alloc - ACHK,
-				       0, sizeof(float64) * ACHK);
+				memset(bp[t] + aalpha_alloc / 2,
+				       0, sizeof(uint32) * (aalpha_alloc / 2));
+				memset(best_pred + aalpha_alloc / 2,
+				       0, sizeof(float64) * (aalpha_alloc / 2));
 			    }
 			}
 			if (bp) {
@@ -652,56 +643,57 @@ forward_local(float64 **active_alpha,   /* offset* */
 			best_pred[amap[j]] = x;
 		    }
 		    /* update its alpha value */
-		    active_alpha[t][amap[j]] += x;      /* MICHAL: ??? */
+		    active_alpha[t][amap[j]] += x;
 		}
 	    }
 	}
 
-	/* find best alpha value in current frame for pruning and scaling purposes */ /* MICHAL: nalezeni nejvetsiho alpha v danem case - alpha uz musi byt hotovo */
-	{
-	        /* also take the argmax to find the best backtrace */
-	        for (s = 0; s < n_next_active; s++) {
-	            if (balpha < active_alpha[t][s]) {
-		        balpha = active_alpha[t][s];
-	            }
-	        }
+	/* find best alpha value in current frame for pruning and scaling purposes */
+        /* also take the argmax to find the best backtrace */
+        for (s = 0; s < n_next_active; s++) {
+            if (balpha < active_alpha[t][s]) {
+	        balpha = active_alpha[t][s];
+            }
+        }
 
-	        /* cope with some pathological case */
-	        if (balpha == 0.0 && n_next_active > 0) {
-	            E_ERROR("All %u active states,", n_next_active);
-	            for (s = 0; s < n_next_active; s++) {
-		        if (state_seq[next_active[s]].mixw != TYING_NON_EMITTING)
-		            fprintf(stderr, " %u", state_seq[next_active[s]].mixw);
-		        else
-		            fprintf(stderr, " N(%u,%u)",
-			            state_seq[next_active[s]].tmat, state_seq[next_active[s]].m_state);
+        /* cope with some pathological case */
+        if (balpha == 0.0 && n_next_active > 0) {
+            E_ERROR("All %u active states,", n_next_active);
+            for (s = 0; s < n_next_active; s++) {
+	        if (state_seq[next_active[s]].mixw != TYING_NON_EMITTING)
+	            fprintf(stderr, " %u", state_seq[next_active[s]].mixw);
+	        else
+	            fprintf(stderr, " N(%u,%u)",
+		            state_seq[next_active[s]].tmat, state_seq[next_active[s]].m_state);
 
-	            }
-	            fprintf(stderr, ", zero at time %u\n", t);
-	            fflush(stderr);
-	            return S3_ERROR;
-	        }
+            }
+            fprintf(stderr, ", zero at time %u\n", t);
+            fflush(stderr);
+            retval = S3_ERROR;
+            goto cleanup;
+        }
 
-	        /* and some related pathological cases */
-	        if (balpha < 1e-300) {
-	            E_ERROR("Best alpha < 1e-300\n");
-	            return S3_ERROR;
-	        }
-	        if (n_next_active == 0) {
-	            E_ERROR("No active states at time %u\n", t);
-	            return S3_ERROR;
-	        }
+        /* and some related pathological cases */
+        if (balpha < 1e-300) {
+            E_ERROR("Best alpha < 1e-300\n");
+            retval = S3_ERROR;
+            goto cleanup;
+        }
+        if (n_next_active == 0) {
+            E_ERROR("No active states at time %u\n", t);
+            retval = S3_ERROR;
+            goto cleanup;
+        }
 
-	        /* compute the scale factor */
-	        scale[t] = 1.0 / balpha;        /* MICHAL: skalovani nalezenou nejvetsi alphou */
-	}
+        /* compute the scale factor */
+        scale[t] = 1.0 / balpha;
     
 	/* Determine if phone segmentation-based pruning would leave
 	 * us with an empty active list (that would be bad!) */
 	if (phseg) {
             /* Find active phone for this timepoint. */
 	    /* Move the pointer forward if necessary. */
-	    while ((t + t_offset) > phseg->ef)       /* tady bylo if, while pro lokalni fwd, kdy se neuklada dosazene phseg pro dany cas. treba offset ??? */
+	    while ((t + t_offset) > phseg->ef)
 		phseg = phseg->next;
 		
 	    for (s = 0; s < n_next_active; ++s) 
@@ -736,7 +728,7 @@ forward_local(float64 **active_alpha,   /* offset* */
 		    amap[next_active[s]] = INACTIVE;
 		}
 	    }
-	    else {      /* MICHAL: beam prunning */
+	    else {
 	        /* compute the pruning threshold based on the beam */
                 float64 pthresh = ((log10(balpha) + log10(beam) > -300) ? (balpha * beam) : 1e-300);
 	
@@ -769,7 +761,8 @@ forward_local(float64 **active_alpha,   /* offset* */
 	}
     }
     
-    ckd_free(next_active);         /* TODO: pridat k ostatnim return */
+cleanup:
+    ckd_free(next_active);
     ckd_free(amap);
     ckd_free(active_l_cb);
 
@@ -780,6 +773,6 @@ forward_local(float64 **active_alpha,   /* offset* */
     ckd_free_3d((void ***)now_den);
     ckd_free_3d((void ***)now_den_idx);
     
-    return S3_SUCCESS;
+    return retval;
 }
 
