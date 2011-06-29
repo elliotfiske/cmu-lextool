@@ -62,26 +62,6 @@
 #define INACTIVE	0xffff
 
 
-
-int32
-forward_local(float64 **active_alpha,
-	uint32 **active_astate,
-	uint32 *n_active_astate,
-	uint32 **bp,
-	float64 *scale,
-	float64 **dscale,
-	vector_t **feature,
-	uint32 n_obs,
-	state_t *state_seq,
-	uint32 n_state,
-	model_inventory_t *inv,
-	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train,
-	uint32 t_offset
-	);
-
-
 /*********************************************************************
  *
  * Function: 
@@ -287,7 +267,7 @@ forward(float64 **active_alpha,
         red_active_astate[t] = ckd_calloc(red_n_active_astate[t], sizeof(uint32));
         memcpy(red_active_astate[t], loc_active_astate[0], red_n_active_astate[t] * sizeof(uint32));
 
-        red_scale[t] = loc_scale[block_size];
+        red_scale[t] = loc_scale[0];
 
         red_dscale[t] = ckd_calloc(inv->gauden->n_feat, sizeof(float64));
         memcpy(red_dscale[t], loc_dscale[0], inv->gauden->n_feat * sizeof(float64));
@@ -323,7 +303,7 @@ forward(float64 **active_alpha,
         }
     }
     
-    for (t = 0; t < red_size; t++) {
+    for (t = red_size - 1; t >= 0; t--) {
         uint32 block_obs = block_size;
         
         if (t * block_size + block_obs > n_obs) {
@@ -397,7 +377,6 @@ forward(float64 **active_alpha,
     return retval;
 }
 
-
 
 int32
 forward_local(float64 **active_alpha,
@@ -414,8 +393,7 @@ forward_local(float64 **active_alpha,
 	float64 beam,
 	s3phseg_t *phseg,
 	uint32 mmi_train,
-	uint32 t_offset
-	)
+	uint32 t_offset)
 {
     uint32 *next_active = ckd_calloc(n_state, sizeof(uint32));
     uint32 *active_l_cb = ckd_calloc(n_state, sizeof(uint32));
@@ -432,16 +410,7 @@ forward_local(float64 **active_alpha,
     
     float64 outprob_0;
     uint32 retval = S3_SUCCESS;
-    int t, i;
-
-    /* Initialize the active state map such that all states are inactive */
-    for (i = 0; i < n_state; i++) {
-	amap[i] = INACTIVE;
-    }
-    
-    if (bp) {
-        best_pred = ckd_calloc(aalpha_alloc, sizeof(float64));
-    }
+    uint32 t, i;
 
     if (t_offset == 0) {
         active_l_cb[0] = state_seq[0].l_cb;
@@ -469,6 +438,15 @@ forward_local(float64 **active_alpha,
         /* Compute scale for t == 0 */
         scale[0] = 1.0 / outprob_0;
     }
+
+    /* Initialize the active state map such that all states are inactive */
+    for (i = 0; i < n_state; i++) {
+	amap[i] = INACTIVE;
+    }
+    
+    if (bp) {
+        best_pred = ckd_calloc(aalpha_alloc, sizeof(float64));
+    }
     
     /* Compute scaled alpha over all remaining time in the utterance */
     for (t = 1; t < n_obs; t++) {
@@ -476,7 +454,7 @@ forward_local(float64 **active_alpha,
         uint32 n_next_active = 0;
         uint32 n_active_l_cb = 0;
         int can_prune_phseg = 0;
-        float64 balpha = 0;
+        float64 balpha = 0.0;
         uint32 i, j, s, u;
 
 	/* assume next active state set about the same size as current;
