@@ -73,6 +73,23 @@ forward(float64 **active_alpha,
 	s3phseg_t *phseg,
 	uint32 mmi_train);
 
+int32
+forward_local(float64 **active_alpha,
+	uint32 **active_astate,
+	uint32 *n_active_astate,
+	uint32 **bp,
+	float64 *scale,
+	float64 **dscale,
+	vector_t **feature,
+	uint32 n_obs,
+	state_t *state_seq,
+	uint32 n_state,
+	model_inventory_t *inv,
+	float64 beam,
+	s3phseg_t *phseg,
+	uint32 mmi_train,
+	uint32 t_offset);
+
 void
 forward_set_viterbi(int state);
 
