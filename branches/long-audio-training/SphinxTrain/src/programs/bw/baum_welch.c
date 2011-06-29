@@ -153,9 +153,8 @@ baum_welch_update(float64 *log_forw_prob,
     float64 *scale = NULL;
     float64 **dscale = NULL;
     float64 **active_alpha;
-    float64 **reduced_alpha;
     uint32 **active_astate;
-    uint32 **bp, **reduced_bp;
+    uint32 **bp;
     uint32 *n_active_astate;
     float64 log_fp;	/* accumulator for the log of the probability
 			 * of observing the input given the model */
@@ -180,10 +179,8 @@ baum_welch_update(float64 *log_forw_prob,
     dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
     n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
     active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    reduced_alpha  = (float64 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(float64 *));
     active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
-    reduced_bp = (uint32 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(uint32 *));
 
     /* Compute the scaled alpha variable and scale factors
      * for all states and time subject to the pruning constraints */
@@ -194,7 +191,7 @@ baum_welch_update(float64 *log_forw_prob,
  * Debug?
  *   E_INFO("Before Forward search\n");
  */
-    ret = forward(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp,
+    ret = forward(active_alpha, active_astate, n_active_astate, bp,
 		  scale, dscale,
 		  feature, n_obs, state, n_state,
 		  inv, a_beam, phseg, 0);
@@ -308,11 +305,7 @@ baum_welch_update(float64 *log_forw_prob,
 	ckd_free((void *)dscale[i]);
 	ckd_free((void *)bp[i]);
     }
-    for (i = 0; i < ceil(sqrt(n_obs)); i++) {
-        ckd_free((void *)reduced_alpha[i]);
-    }
     ckd_free((void *)active_alpha);
-    ckd_free((void *)reduced_alpha);
     ckd_free((void *)active_astate);
     ckd_free((void **)dscale);
 

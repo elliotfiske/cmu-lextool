@@ -261,9 +261,8 @@ viterbi_update(float64 *log_forw_prob,
     float64 *scale = NULL;
     float64 **dscale = NULL;
     float64 **active_alpha;
-    float64 **reduced_alpha;
     uint32 **active_astate;
-    uint32 **bp, **reduced_bp;
+    uint32 **bp;
     uint32 *n_active_astate;
     gauden_t *g;		/* Gaussian density parameters and
 				   reestimation sums */
@@ -338,16 +337,14 @@ viterbi_update(float64 *log_forw_prob,
     dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
     n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
     active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    reduced_alpha  = (float64 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(float64 *));
     active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
     bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
-    reduced_bp = (uint32 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(uint32 *));
 
     /* Run forward algorithm, which has embedded Viterbi. */
     if (fwd_timer)
 	timing_start(fwd_timer);
-    ret = forward(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp,
+    ret = forward(active_alpha, active_astate, n_active_astate, bp,
 		  scale, dscale,
 		  feature, n_obs, state_seq, n_state,
 		  inv, a_beam, phseg, 0);
@@ -691,11 +688,7 @@ viterbi_update(float64 *log_forw_prob,
 	ckd_free((void *)active_astate[i]);
 	ckd_free((void *)bp[i]);
     }
-    for (i = 0; i < ceil(sqrt(n_obs)); i++) {
-        ckd_free((void *)reduced_alpha[i]);
-    }
     ckd_free((void *)active_alpha);
-    ckd_free((void *)reduced_alpha);
     ckd_free((void *)active_astate);
     ckd_free((void *)active_cb);
 
@@ -727,9 +720,8 @@ mmi_viterbi_run(float64 *log_forw_prob,
     float64 *scale = NULL;
     float64 **dscale = NULL;
     float64 **active_alpha;
-    float64 **reduced_alpha;
     uint32 **active_astate;
-    uint32 **bp, **reduced_bp;
+    uint32 **bp;
     uint32 *n_active_astate;
     uint32 *active_cb;
     uint32 i;
@@ -747,14 +739,12 @@ mmi_viterbi_run(float64 *log_forw_prob,
     dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
     n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
     active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    reduced_alpha  = (float64 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(float64 *));
     active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
     bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
-    reduced_bp = (uint32 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(uint32 *));
 
     /* Run forward algorithm, which has embedded Viterbi. */
-    ret = forward(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp,
+    ret = forward(active_alpha, active_astate, n_active_astate, bp,
 		  scale, dscale,
 		  feature, n_obs, state_seq, n_state,
 		  inv, a_beam, NULL, 1);
@@ -801,11 +791,7 @@ mmi_viterbi_run(float64 *log_forw_prob,
 	ckd_free((void *)active_astate[i]);
 	ckd_free((void *)bp[i]);
     }
-    for (i = 0; i < ceil(sqrt(n_obs)); i++) {
-        ckd_free((void *)reduced_alpha[i]);
-    }
     ckd_free((void *)active_alpha);
-    ckd_free((void *)reduced_alpha);
     ckd_free((void *)active_astate);
     ckd_free((void *)active_cb);
     ckd_free((void **)bp);
@@ -831,9 +817,8 @@ mmi_viterbi_update(vector_t **feature,
     float64 *scale = NULL;
     float64 **dscale = NULL;
     float64 **active_alpha;
-    float64 **reduced_alpha;
     uint32 **active_astate;
-    uint32 **bp, **reduced_bp;
+    uint32 **bp;
     uint32 *n_active_astate;
     gauden_t *g;/* Gaussian density parameters and reestimation sums */
     float32 ***mixw;/* all mixing weights */
@@ -884,14 +869,12 @@ mmi_viterbi_update(vector_t **feature,
     dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
     n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
     active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    reduced_alpha  = (float64 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(float64 *));
     active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
     bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
-    reduced_bp = (uint32 **)ckd_calloc(ceil(sqrt(n_obs)), sizeof(uint32 *));
 
     /* Run forward algorithm, which has embedded Viterbi. */
-    ret = forward(active_alpha, reduced_alpha, active_astate, n_active_astate, bp, reduced_bp,
+    ret = forward(active_alpha, active_astate, n_active_astate, bp,
 		  scale, dscale,
 		  feature, n_obs, state_seq, n_state,
 		  inv, a_beam, NULL, 1);
@@ -1109,11 +1092,7 @@ mmi_viterbi_update(vector_t **feature,
 	ckd_free((void *)active_astate[i]);
 	ckd_free((void *)bp[i]);
     }
-    for (i = 0; i < ceil(sqrt(n_obs)); i++) {
-	ckd_free((void *)reduced_alpha[i]);
-    }
     ckd_free((void *)active_alpha);
-    ckd_free((void *)reduced_alpha);
     ckd_free((void *)active_astate);
     ckd_free((void *)active_cb);
     ckd_free((void **)bp);
