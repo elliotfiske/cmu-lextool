@@ -72,6 +72,30 @@ forward(float64 **active_alpha,
 	uint32 mmi_train);
 
 int32
+forward_recompute(float64 **loc_active_alpha,
+	uint32 **loc_active_astate,
+	uint32 *loc_n_active_astate,
+	uint32 **loc_bp,
+	float64 *loc_scale,
+	float64 **loc_dscale,
+        float64 **red_active_alpha,
+	uint32 **red_active_astate,
+	uint32 *red_n_active_astate,
+	uint32 **red_bp,
+	float64 *red_scale,
+	float64 **red_dscale,
+	vector_t **feature,
+	uint32 block_idx,
+	uint32 block_size,
+	uint32 n_obs,
+	state_t *state_seq,
+	uint32 n_state,
+	model_inventory_t *inv,
+	float64 beam,
+	s3phseg_t *phseg,
+	uint32 mmi_train);
+
+int32
 forward_reduced(float64 **active_alpha,
 	uint32 **active_astate,
 	uint32 *n_active_astate,
