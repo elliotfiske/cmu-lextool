@@ -58,17 +58,6 @@ public class LongAudioAligner {
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 		.lookup("audioFileDataSource");
 		
-		/*
-		TiedStateAcousticModel model = (TiedStateAcousticModel)cm.lookup("WSJ");
-		model.allocate();
-		PhoneLoop pl = new PhoneLoop(model,(float)-100.00);
-		SearchGraph sg = pl.getSearchGraph();
-		SearchState ss =  sg.getInitialState();
-		//System.out.println(ss);
-		SearchStateArc[] ssa =ss.getSuccessors();
-		//System.out.println(ssa[0].getState());
-		*/
-		
 		// Read Batch File
 		BufferedReader batchReader = new BufferedReader(new FileReader(
 				"./resource/batchFile.txt"));
