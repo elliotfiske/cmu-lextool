@@ -28,6 +28,7 @@ import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel;
 import edu.cmu.sphinx.linguist.aflat.AFlatLinguist;
 import edu.cmu.sphinx.linguist.aflat.PhoneLoop;
+import edu.cmu.sphinx.linguist.dflat.DynamicFlatLinguist;
 import edu.cmu.sphinx.linguist.flat.FlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
 import edu.cmu.sphinx.linguist.language.grammar.TextAlignerGrammar;
@@ -115,13 +116,13 @@ public class LongAudioAligner {
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
 		System.out.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
-		System.out.println("Timed Result: "+timedResult);
+		System.out.println("Timed Result: "+timedResult);		
 		aflatLinguist.deallocate();
 		// Corrupt the input using StringErrorGenerator	
 		String corruptedInput = testCase.getCorruptedText();
 		grammar.setText(corruptedInput);
 		// change grammar Configurations
-		System.out.println("================ GRAMMAR MODEL: DELETIONS ================");		
+		System.out.println("================== GRAMMAR MODEL: DELETIONS ===================");		
 		grammar.setGrammarType("MODEL_DELETIONS");
 		aflatLinguist.allocate();
 		dataSource.setAudioFile(audioFileURL, null);
