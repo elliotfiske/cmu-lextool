@@ -55,6 +55,34 @@
 uint32 *
 backtrace(state_t *state, uint32 fs_id, uint32 *n_vit_sseq);
 
+void
+forward_init_arrays(
+        float64 ***active_alpha,
+	uint32 ***active_astate,
+	uint32 **n_active_astate,
+	uint32 ***bp,
+	float64 **scale,
+	float64 ***dscale,
+	uint32 **_bp,
+        uint32 n_obs);
+
+void
+forward_free_arrays(
+        float64 ***active_alpha,
+	uint32 ***active_astate,
+	uint32 **n_active_astate,
+	uint32 ***bp,
+	float64 **scale,
+	float64 ***dscale);
+
+void
+forward_clear_arrays(
+        float64 **active_alpha,
+	uint32 **active_astate,
+	uint32 **bp,
+	float64 **dscale,
+	uint32 n_obs);
+
 int32
 forward(float64 **active_alpha,
 	uint32 **active_astate,
