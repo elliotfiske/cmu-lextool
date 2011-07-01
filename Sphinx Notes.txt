@@ -1,0 +1,73 @@
+=====================================================  FlatSearchState  ===============================================================
+Defines the basic functionalities that a Search State must provide to be a valid entity in Flat Search Graph.
+	* getSuccessors() 	:  Returns:- SearchStateArc[]
+				   These returned arcs lead to successors of the current state. These successors might not be of the 
+				   same search state. This gives us a very powerful way of creating dynamic graphs.
+					
+	* getOrder()      	:  Returns:- int 
+				   Defines the type current search state belongs to amongst all the search state types present in the
+				   search space.
+	
+	* getCachedSuccessors()	:  Returns:- SearchStateArc[]
+				   A cache is maintained to keep track of all the successors that are yet to be visited for scoring.
+				   This function returns the required arcs that leads to these successors.
+
+	* cacheSuccessors()	:  Returns:- void
+				   puts successors into the cache.
+
+===================================================== GrammarState ====================================================================
+Built on the guidlines defined in FlatLinguist, it represents a grammar node  in the Search Graph.
+Packages the following 4 information about the grammar node in this state:
+	* node 			:  DataType:- GrammaNode 
+				   It is a node from the grammar graph which this state represents in the search space.
+	
+	* lc (left Context)	:  DataType:- int
+				   Seems to represents (context information about?) the units that were visited before the current unit.
+	
+	* nextBaseID		:  DataType:- int
+				   Yet again no clue what this is supposed to be used for. Some how it also helps decide which successors 
+				   to filter successors in the cache. 				   
+	
+	*languageProbability	:  DataType:- float
+				   Self explanatory.
+
+The description of a few generic functions of FlatSearchState that GrammarState defines are as follows:
+	* getSuccessors()	:  if the current state is final then we don't have any successors to this state. In all other cases the 
+				   current state has successors which can be either the pronunciation of the word or units that comprise 
+				   of the current pronunciation state.
+In Search state hierarchy Grammar State leads to Pronunciation State ( described later ) which leads to Units State in the form of 
+FullHMMSearchState. This is important since a changes have to be made at the right level in the hierarchy to see correct results. 
+
+
+
+====================================  Modifications made in DFlatLinguist to form AFlatLinguist =======================================
+We wanted to insert phoneloop between all word transitions to capture presence of OOV words without compromising alot with recognition 
+accuracy, speed and memory requirements.
+
+DynamicFlatSearchGraph.getInitialState {
+	InitialState initialState = new InitialState();
+	initialState.addArc(new GrammarState(grammar.getInitialNode()));            
+	if (addOutOfGrammarBranch) {
+		OutOfGrammarGraph oogg = new OutOfGrammarGraph
+		(phoneLoopAcousticModel,logOutOfGrammarBranchProbability,
+                                logPhoneInsertionProbability);
+		initialState.addArc(oogg.getOutOfGrammarGraph());
+	}
+	return initialState;
+}
+
+The above implementation statically inserts 1 phoneloop branching out from the start of Search Graphs initial State. Adding phoneloops at 
+this stage also allocates alot of memory to search graph, all of which is not necessarily in use. So I plan to insert phoneloops as successors
+to words. This way at any point in time atmost 1 phoneloop has to be stored in the memory ( i.e. only when getSuccessors() of a GrammarState is 
+invoked ).
+
+OutOfGrammarGraph.LastBranchState.LastBranchState() {
+	successors = new SearchStateArc[2];
+	successors[0] = fbs;
+	successors[1] = new FinalState();
+}
+Obviously we don't want to have one of the successors of the phoneloop to be finalstate. Rather we want the final state to be the one defined in
+the grammar. So a quick fix was made to make the current GrammarState as the third successor of the phoneloop ( which allows returning back to 
+original grammar graph possible after the OOV word has been recognised).
+
+  
