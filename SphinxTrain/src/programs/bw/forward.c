@@ -61,6 +61,70 @@
 #define FORWARD_DEBUG 0
 #define INACTIVE	0xffff
 
+void
+forward_init_arrays(
+        float64 ***active_alpha,
+	uint32 ***active_astate,
+	uint32 **n_active_astate,
+	uint32 ***bp,
+	float64 **scale,
+	float64 ***dscale,
+	uint32 **_bp,
+        uint32 n_obs)
+{
+    *active_alpha = ckd_calloc(n_obs, sizeof(float64 *));
+    *active_astate = ckd_calloc(n_obs, sizeof(int32 *));
+    *n_active_astate = ckd_calloc(n_obs, sizeof(int32));
+    *scale = ckd_calloc(n_obs, sizeof(float64));
+    *dscale = ckd_calloc(n_obs, sizeof(float64 *));
+    if (_bp) {
+        *bp = ckd_calloc(n_obs, sizeof(uint32 *));
+    } else {
+        *bp = NULL;
+    }
+}
+
+void forward_free_arrays(
+        float64 ***active_alpha,
+	uint32 ***active_astate,
+	uint32 **n_active_astate,
+	uint32 ***bp,
+	float64 **scale,
+	float64 ***dscale)
+{
+    ckd_free(*active_alpha);
+    ckd_free(*active_astate);
+    ckd_free(*n_active_astate);
+    ckd_free(*scale);
+    ckd_free(*dscale);
+    if (*bp) {
+        ckd_free(*bp);
+    }
+    
+    *active_alpha = *active_astate = *n_active_astate = *scale = *dscale = *bp = NULL;
+}
+
+void
+forward_clear_arrays(
+        float64 **active_alpha,
+	uint32 **active_astate,
+	uint32 **bp,
+	float64 **dscale,
+	uint32 n_obs)
+{
+    uint32 t;
+    
+    for (t = 0; t < n_obs; t++) {
+        ckd_free(active_alpha[t]);
+        ckd_free(active_astate[t]);
+        ckd_free(dscale[t]);
+        if (bp) {
+            ckd_free(bp[t]);
+        }
+    }
+}
+
+
 
 /*********************************************************************
  *
@@ -172,6 +236,7 @@
  *	- Alpha variable < epsilon for all active states
  *
  *********************************************************************/
+
 
 int32
 forward(float64 **active_alpha,
@@ -208,14 +273,7 @@ forward(float64 **active_alpha,
      * Allocate the bestscore array for embedded Viterbi
      */
     
-    red_active_alpha = ckd_calloc(n_red, sizeof(float64 *));
-    red_active_astate = ckd_calloc(n_red, sizeof(int32 *));
-    red_n_active_astate = ckd_calloc(n_red, sizeof(int32));
-    red_scale = ckd_calloc(n_red, sizeof(float64));
-    red_dscale = ckd_calloc(n_red, sizeof(float64 *));
-    if (bp) {
-        red_bp = ckd_calloc(n_red, sizeof(uint32 *));
-    }
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, bp, n_red);
     
     retval = forward_reduced(
             red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
@@ -253,14 +311,7 @@ cleanup:
         fprintf(stderr, "\n");
     }*/
     
-    ckd_free(red_active_alpha);
-    ckd_free(red_active_astate);
-    ckd_free(red_n_active_astate);
-    ckd_free(red_scale);
-    ckd_free(red_dscale);
-    if (bp) {
-        ckd_free(red_bp);
-    }
+    forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
 
     return retval;
 }
@@ -358,14 +409,7 @@ forward_reduced(float64 **active_alpha,
      * Allocate the bestscore array for embedded Viterbi
      */
     
-    loc_active_alpha = ckd_calloc(block_size + 1, sizeof(float64 *));
-    loc_active_astate = ckd_calloc(block_size + 1, sizeof(int32 *));
-    loc_n_active_astate = ckd_calloc(block_size + 1, sizeof(int32));
-    loc_scale = ckd_calloc(block_size + 1, sizeof(float64));
-    loc_dscale = ckd_calloc(block_size + 1, sizeof(float64 *));
-    if (bp) {
-        loc_bp = ckd_calloc(block_size + 1, sizeof(uint32 *));
-    }
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, bp, block_size + 1);
     
     loc_active_alpha[0] = ckd_calloc(1, sizeof(float64));
     loc_active_astate[0] = ckd_calloc(1, sizeof(uint32));
@@ -427,27 +471,12 @@ forward_reduced(float64 **active_alpha,
                 memcpy(loc_bp[0], loc_bp[block_size], loc_n_active_astate[0] * sizeof(uint32));
             }
         }
-
-        for (t2 = 1; t2 < block_obs; t2++) {
-            ckd_free(loc_active_alpha[t2]);
-            ckd_free(loc_active_astate[t2]);
-            ckd_free(loc_dscale[t2]);
-            if (bp) {
-                ckd_free(loc_bp[t2]);
-            }
-        }
+        forward_clear_arrays(loc_active_alpha + 1, loc_active_astate + 1, (bp ? (loc_bp + 1) : NULL), loc_dscale + 1, block_obs - 1);
     }
     
 cleanup:
     
-    ckd_free(loc_active_alpha);
-    ckd_free(loc_active_astate);
-    ckd_free(loc_n_active_astate);
-    ckd_free(loc_scale);
-    ckd_free(loc_dscale);
-    if (bp) {
-        ckd_free(loc_bp);
-    }
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
 
     return retval;
 }

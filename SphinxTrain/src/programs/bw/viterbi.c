@@ -264,6 +264,22 @@ viterbi_update(float64 *log_forw_prob,
     uint32 **active_astate;
     uint32 **bp;
     uint32 *n_active_astate;
+
+    float64 **red_active_alpha;
+    uint32 **red_active_astate;
+    uint32 *red_n_active_astate;
+    uint32 **red_bp = NULL;
+    float64 *red_scale;
+    float64 **red_dscale;
+    float64 **loc_active_alpha;
+    uint32 **loc_active_astate;
+    uint32 *loc_n_active_astate;
+    uint32 **loc_bp = NULL;
+    float64 *loc_scale;
+    float64 **loc_dscale;
+    uint32 block_size = 11;
+    uint32 n_red = ceil(n_obs / (float64)block_size);
+
     gauden_t *g;		/* Gaussian density parameters and
 				   reestimation sums */
     float32 ***mixw;		/* all mixing weights */
@@ -341,6 +357,9 @@ viterbi_update(float64 *log_forw_prob,
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
     bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
 
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, bp, n_red);
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, bp, block_size);
+
     /* Run forward algorithm, which has embedded Viterbi. */
     if (fwd_timer)
 	timing_start(fwd_timer);
@@ -348,6 +367,10 @@ viterbi_update(float64 *log_forw_prob,
 		  scale, dscale,
 		  feature, n_obs, state_seq, n_state,
 		  inv, a_beam, phseg, 0);
+		  
+    ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+		  
     /* Dump a phoneme segmentation if requested */
     if (cmd_ln_str("-outphsegdir")) {
 	    const char *phsegdir;
@@ -446,8 +469,16 @@ viterbi_update(float64 *log_forw_prob,
 
     /* Okay now run through the backtrace and accumulate counts. */
     /* Find the non-emitting ending state */
-    for (q = 0; q < n_active_astate[n_obs-1]; ++q) {
+/*    for (q = 0; q < n_active_astate[n_obs-1]; ++q) {
 	if (active_astate[n_obs-1][q] == n_state-1)
+	    break;
+    }*/
+    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+    for (q = 0; q < loc_n_active_astate[n_obs-1]; ++q) {
+	if (loc_active_astate[(n_obs % block_size) - 1][q] == n_state-1)
 	    break;
     }
     if (q == n_active_astate[n_obs-1]) {
@@ -462,11 +493,11 @@ viterbi_update(float64 *log_forw_prob,
 	float64 op, p_reest_term;
 	uint32 prev;
 
-	j = active_astate[t][q];
+	j = loc_active_astate[t % block_size][q];
 
 	/* Follow any non-emitting states at time t first. */
 	while (state_seq[j].mixw == TYING_NON_EMITTING) {
-	    prev = active_astate[t][bp[t][q]];
+	    prev = loc_active_astate[t % block_size][loc_bp[t % block_size][q]];
 
 #if VITERBI_DEBUG
 	    printf("Following non-emitting state at time %d, %u => %u\n",
@@ -477,7 +508,7 @@ viterbi_update(float64 *log_forw_prob,
 		assert(tacc != NULL);
 		tacc[prev][j - prev] += 1.0;
 	    }
-	    q = bp[t][q];
+	    q = loc_bp[t % block_size][q];
 	    j = prev;
 	}
 
@@ -507,7 +538,7 @@ viterbi_update(float64 *log_forw_prob,
 	    active_cb[n_active_cb++] = l_ci_cb;
 	}
 	gauden_scale_densities_bwd(now_den, now_den_idx,
-				   &dscale[t],
+				   &loc_dscale[t % block_size],
 				   active_cb, n_active_cb, g);
 
 	assert(state_seq[j].mixw != TYING_NON_EMITTING);
@@ -631,7 +662,7 @@ viterbi_update(float64 *log_forw_prob,
 	    timing_stop(rstf_timer);
 
 	if (t > 0) { 
-	    prev = active_astate[t-1][bp[t][q]];
+	    prev = loc_active_astate[t % block_size - 1][loc_bp[t % block_size][q]];
 #if VITERBI_DEBUG
 	    printf("Backtrace at time %d, %u => %u\n",
 		   t, j, prev);
@@ -641,10 +672,21 @@ viterbi_update(float64 *log_forw_prob,
 		assert(tacc != NULL);
 		tacc[prev][j-prev] += 1.0;
 	    }
-	    q = bp[t][q];
+	    q = loc_bp[t % block_size][q];
 	    j = prev;
 	}
+	
+	if (t % block_size == 0) {
+	    if (t > 0) {
+	        forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, block_size);
+                forward_recompute(
+                    loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+                    red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+                    feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+	    }
+	}
     }
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     /* If no error was found, add the resulting utterance reestimation
      * accumulators to the global reestimation accumulators */
@@ -665,12 +707,23 @@ viterbi_update(float64 *log_forw_prob,
     assert(active_alpha[n_obs-1][i] > 0);
     log_fp = log(active_alpha[n_obs-1][i]);
     for (t = 0; t < n_obs; t++) {
-	assert(scale[t] > 0);
-	log_fp -= log(scale[t]);
+	if (t % block_size == 0) {
+	    if (t > 0) {
+                forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, block_size);
+            }
+            forward_recompute(
+                loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+                red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+                feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+	}
+
+	assert(loc_scale[t % block_size] > 0);
+	log_fp -= log(loc_scale[t % block_size]);
 	for (j = 0; j < inv->gauden->n_feat; j++) {
-	    log_fp += dscale[t][j];
+	    log_fp += loc_dscale[t % block_size][j];
 	}
     }
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     *log_forw_prob = log_fp;
 
