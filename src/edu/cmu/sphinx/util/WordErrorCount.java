@@ -11,9 +11,9 @@
  */
 package edu.cmu.sphinx.util;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
@@ -23,6 +23,9 @@ public class WordErrorCount {
 										// i.e. including the ones inserted and deleted.
 	private LinkedList<Word> hypothesis;
 	private LinkedList<Word> alignedList; // contains the final aligned Result
+	
+	private HashMap<Word, Word> alignedMap; // Maps aligned words in hypothesis with words in
+											// reference
 	
 	private int totalNumWords;
 	private int totalInsertions;
@@ -36,6 +39,7 @@ public class WordErrorCount {
 										// deleted due to corrupted transcription
 	private int correctedSubstitutions; // number of words that were removed via substitution
 									// and were correctly added back
+	
 	private int removedSubstitute;	// number of words that were added as substitute 
 									// and now have been removed
 	private int correctedInsertions;
@@ -59,6 +63,7 @@ public class WordErrorCount {
 		this.allWordReference = reference;
 		this.reference = new LinkedList<Word>();
 		this.hypothesis = new LinkedList<Word>();
+		this.alignedMap = new HashMap<Word, Word>();
 		generateRef();
 		setHypothesis(hypothesis);
 	}
@@ -134,7 +139,7 @@ public class WordErrorCount {
 		}
 		
 		// PASS 2 : We now move breadth first on the lattice. 
-		// Updating longest match info. 
+		// 			Updating longest match info. 
 		// NOTE : if possible we always want to have longest match w/o using
 		// currRef word since it can be used later (kind of Greedy approach)
 		
@@ -146,9 +151,15 @@ public class WordErrorCount {
 					if(lattice[i-1][j].longestMatchLength >= 
 						lattice[i][j-1].longestMatchLength ) {
 						
-						lattice[i][j].longestMatchLength = 
-							lattice[i-1][j].longestMatchLength + 1;
-						lattice[i][j].refUsed = true;
+						if(lattice[i-1][j].hypUsed == true) {
+							lattice[i][j].longestMatchLength = 
+								lattice[i-1][j].longestMatchLength;
+						} else {
+							lattice[i][j].longestMatchLength = 
+								lattice[i-1][j].longestMatchLength + 1;
+							lattice[i][j].refUsed = true;
+						}
+						lattice[i][j].hypUsed = true;
 						lattice[i][j].prevRef = i-1;
 						lattice[i][j].prefHyp = j;						
 					} else {
@@ -158,6 +169,7 @@ public class WordErrorCount {
 						} else {
 							lattice[i][j].longestMatchLength = 
 								lattice[i][j-1].longestMatchLength +1;
+							lattice[i][j].hypUsed = true;
 						}
 						
 						// No matter if ref was used the traceback info remains 
@@ -174,13 +186,17 @@ public class WordErrorCount {
 						lattice[i][j-1].longestMatchLength) {
 						lattice[i][j].longestMatchLength = 
 							lattice[i-1][j].longestMatchLength;
-						lattice[i][j].refUsed= false;
+						lattice[i][j].refUsed = false;
+						lattice[i][j].hypUsed = 
+							lattice[i-1][j].hypUsed;
 						lattice[i][j].prevRef = i-1;
 						lattice[i][j].prefHyp = j;
 					} else {
 						lattice[i][j].longestMatchLength = 
 							lattice[i][j-1].longestMatchLength;
-						lattice[i][j].refUsed = lattice[i][j-1].refUsed;
+						lattice[i][j].refUsed = 
+							lattice[i][j-1].refUsed;
+						lattice[i][j].hypUsed =false;
 						lattice[i][j].prevRef = i;
 						lattice[i][j].prefHyp = j-1;
 					}
@@ -198,40 +214,41 @@ public class WordErrorCount {
 		// Start from the lower right corner and traceback.
 		// Add a word from ref only when there is a change in 
 		// LongestMatchlength.
+
 		LinkedList<Word> alignedList= new LinkedList<Word>();
 		int lastRefAdded = reference.size()+1;
 		int lastHypAdded = hypothesis.size()+1;
 		int i = reference.size();
 		int j = hypothesis.size();
-		while( i > 0){
-			while ( j > 0) {
-				//System.out.println(i+ " " + j);
-				int prevRef = lattice[i][j].prevRef;
-				int prevHyp = lattice[i][j].prefHyp;
-				if( lattice[i][j].longestMatchLength > 
-					lattice[prevRef][prevHyp].longestMatchLength) {
-					alignedList.add(0,reference.get(i-1));
-					
-					// update the number of words from ref that have been skipped
-					int numRefSkipped = lastRefAdded - i - 1;
-					int numHypSkipped = lastHypAdded - j - 1;
-					if(numRefSkipped < 0 || numHypSkipped < 0){
-						throw new Error ("ERROR: THERE IS SOMETHING WRONG IN REFERENCE / HYPOTHESIS." 
-								+"ONE WORD CAN'T MATCH WITH MORE THAN ONE WORDS");
-					} else {
-						int numSubs = Math.min(numRefSkipped, numHypSkipped);
-						int numIns = numHypSkipped - numSubs;
-						int numDels = numRefSkipped - numSubs;
-						totalSubstitutions += numSubs;
-						totalInsertions += numIns;
-						totalDeletions += numDels;
-					}
-					lastRefAdded = i;
-					lastHypAdded = j;
+		while( i > 0 && j > 0){
+			//System.out.println(i+ " " + j);
+			int prevRef = lattice[i][j].prevRef;
+			int prevHyp = lattice[i][j].prefHyp;
+			if( lattice[i][j].longestMatchLength > 
+				lattice[prevRef][prevHyp].longestMatchLength) {
+				alignedList.add(0,reference.get(i-1));
+				alignedMap.put(reference.get(i-1), hypothesis.get(j-1));
+				
+				// update the number of words from ref that have been skipped
+				int numRefSkipped = lastRefAdded - i - 1;
+				int numHypSkipped = lastHypAdded - j - 1;
+				if(numRefSkipped < 0 || numHypSkipped < 0){
+					throw new Error ("ERROR: THERE IS SOMETHING WRONG IN REFERENCE" 
+							+"/HYPOTHESIS. ONE WORD CAN'T MATCH WITH MORE THAN ONE WORDS");
+				} else {
+					int numSubs = Math.min(numRefSkipped, numHypSkipped);
+					int numIns = numHypSkipped - numSubs;
+					int numDels = numRefSkipped - numSubs;
+					totalSubstitutions += numSubs;
+					totalInsertions += numIns;
+					totalDeletions += numDels;
+					//System.out.println("("+numIns+","+numDels+","+numSubs+")");
 				}
-				i = prevRef;
-				j = prevHyp;				
+				lastRefAdded = i;
+				lastHypAdded = j;				
 			}
+			i = prevRef;
+			j = prevHyp;
 		}
 		return alignedList;
 	}
@@ -241,9 +258,9 @@ public class WordErrorCount {
 		for(int j=1; j< hypothesis.size()+ 1; j++) {
 			for(int i=1; i< reference.size()+ 1; i++) {
 				//System.out.print(lattice[i][j].match);
-				//System.out.print(lattice[i][j].longestMatchLength);
-				System.out.print("("+lattice[i][j].prevRef+", "+
-						lattice[i][j].prefHyp+") ");
+				System.out.print(" ( "+lattice[i][j].longestMatchLength+" ) ");
+				//System.out.print("("+lattice[i][j].prevRef+", "+
+				//		lattice[i][j].prefHyp+") ");
 			}
 			System.out.println("");
 		}
@@ -311,6 +328,7 @@ public class WordErrorCount {
 		public int longestMatchLength; 	
 		public boolean refUsed;		// true if currRef was used to 
 									// get longest match
+		public boolean hypUsed;
 		
 		// TraceBack info
 		public int prevRef;
@@ -321,6 +339,7 @@ public class WordErrorCount {
 			this.match = 0;
 			this.longestMatchLength = 0;
 			this.refUsed = false;
+			this.hypUsed = false;
 		}
 	}	
 	

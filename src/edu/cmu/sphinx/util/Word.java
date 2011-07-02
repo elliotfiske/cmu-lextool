@@ -93,6 +93,11 @@ public class Word {
 	}
 	
 	public boolean isEqual(Word e) {
+		if(e.getWord().compareToIgnoreCase("<unk>")==0 || 
+				this.getWord().compareToIgnoreCase("<unk>")== 0){
+			
+			return false;
+		}
 		if ( e.getWord().compareToIgnoreCase(this.getWord())== 0 &&
 				Math.abs(e.getStartTime() - this.getStartTime())<=tolerance &&
 				Math.abs(e.getEndTime()-this.getEndTime())<=tolerance) {
