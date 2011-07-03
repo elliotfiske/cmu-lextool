@@ -132,10 +132,12 @@ public class StringErrorGenerator {
 				if (random <= sr && random >= -sr && 
 						words.get(currIndex).getFlag().compareTo("")== 0) {
 					// Substitute a word here
+					Word currWord = words.get(currIndex);
 					words.get(currIndex).substitute();					
 					String wordToInsert= wordsToInsert.get(rand
 							.nextInt(wordsToInsert.size()));
-					Word word = new Word(wordToInsert);
+					Word word = new Word(wordToInsert,currWord.getStartTime() , 
+							currWord.getEndTime(), 0.01);
 					word.substituteWord();
 					words.add(currIndex,word);
 					iter = words.listIterator(currIndex);

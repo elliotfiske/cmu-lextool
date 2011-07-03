@@ -15,7 +15,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 
 public class WordErrorCount {
 	private LinkedList<Word> reference;	// contains words that are reference transcription
@@ -239,9 +241,9 @@ public class WordErrorCount {
 					int numSubs = Math.min(numRefSkipped, numHypSkipped);
 					int numIns = numHypSkipped - numSubs;
 					int numDels = numRefSkipped - numSubs;
-					totalSubstitutions += numSubs;
-					totalInsertions += numIns;
-					totalDeletions += numDels;
+					//totalSubstitutions += numSubs;
+					//totalInsertions += numIns;
+					//totalDeletions += numDels;
 					//System.out.println("("+numIns+","+numDels+","+numSubs+")");
 				}
 				lastRefAdded = i;
@@ -267,31 +269,83 @@ public class WordErrorCount {
 	}
 	
 	private void generateStats() {
-		totalNumWords = reference.size();
-		totalWordErrors= totalDeletions+totalInsertions+totalSubstitutions;
-		wer = (double)totalWordErrors/(double)totalNumWords;
+		totalNumWords = reference.size();	
+		
+		// Add one final word to allow paritioning of all lists by tokens from
+		// aligned list
+		Word finalWord = new Word("FINAL", 10000000, 10000001, 1);
+		alignedList.addLast(finalWord);
+		allWordReference.addLast(finalWord);
+		hypothesis.addLast(finalWord);
 		ListIterator<Word> alignedIter = alignedList.listIterator();
 		ListIterator<Word> referenceIter = allWordReference.listIterator();
-		Word currRef;
-		Word currAlignedWord=null;
-		if(alignedIter.hasNext()){
-			currAlignedWord= alignedIter.next();
-			while(referenceIter.hasNext()) {					
-				currRef = referenceIter.next();			
-				if(currAlignedWord.isEqual(currRef)) {
-					//System.out.print(currAlignedWord.getWord()+" ");
-					if(currRef.isDeleted()){
-						correctedDeletions++;
-					} else if(currRef.isSubstituted()) {
-						correctedSubstitutions++;
-					}
-					if(alignedIter.hasNext()){
-						currAlignedWord = alignedIter.next();
-					}
-				}			
+		ListIterator<Word> hypIter = hypothesis.listIterator();		
+		while(alignedIter.hasNext()){
+			int numUnkWordsInRef = 0;
+			int numUnkWordsInHyp = 0;
+			
+			int numInsertedWordsInRef = 0;
+			int numDeletedWordsInRef = 0;
+			int numSubstitutedWordsInRef = 0;
+			int numWordSubstitutesInRef = 0;
+			boolean hypContainsUnkWord = false;
+			
+			Word nextAlignedWord = alignedIter.next();
+			Set<Word> allWordSet = new TreeSet<Word>();
+			Set<Word> hypSet = new TreeSet<Word>();
+			Word refWord = referenceIter.next();
+			while(!refWord.isEqual(nextAlignedWord) && referenceIter.hasNext()){
+				allWordSet.add(refWord);				
+				if(refWord.isUnknownWord()){
+					numUnkWordsInRef++;
+				}
+				if(refWord.isDeleted()){
+					numDeletedWordsInRef++;
+				} else if(refWord.isSubstituted()){
+					numSubstitutedWordsInRef++;
+				} else if(refWord.isInserted()){
+					numInsertedWordsInRef++;
+				} else if(refWord.isAddedAsSubstitute()){
+					numWordSubstitutesInRef ++;
+				}
+				refWord = referenceIter.next();			
 			}
+			
+			Word hypWord = hypIter.next();
+			while(!hypWord.isEqual(nextAlignedWord) && hypIter.hasNext()){
+				hypSet.add(hypWord);
+				if(hypWord.isUnknownWord()){
+					numUnkWordsInHyp++;
+					hypContainsUnkWord=true;
+				}
+				hypWord = hypIter.next();				
+			}
+			if(hypContainsUnkWord) {
+				correctedDeletions += numDeletedWordsInRef;
+				correctedSubstitutions += numSubstitutedWordsInRef;
+			}
+			correctedInsertions += numInsertedWordsInRef;
+			removedSubstitute += numWordSubstitutesInRef;
+			
+			int numRefSkipped = allWordSet.size()-numUnkWordsInRef;
+			int numHypSkipped = hypSet.size() - numUnkWordsInHyp;
+			int numSubs = Math.min(numRefSkipped, numHypSkipped);
+			int numIns = numHypSkipped - numSubs;
+			int numDels = numRefSkipped - numSubs;
+			totalSubstitutions += numSubs;
+			totalInsertions += numIns;
+			totalDeletions += numDels;
+			//System.out.println("("+numIns+","+numDels+","+numSubs+")");
+			
 		}
-		//System.out.println("");
+		
+		// remove the Final word that we added to regain the list
+		alignedList.removeLast();
+		allWordReference.removeLast();
+		hypothesis.removeLast();
+		
+		totalWordErrors= totalDeletions+totalInsertions+totalSubstitutions;
+		wer = (double)totalWordErrors/(double)totalNumWords;		
 	}
 	
 	public void printStats() {

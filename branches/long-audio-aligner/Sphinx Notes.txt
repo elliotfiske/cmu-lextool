@@ -81,13 +81,12 @@ ii) Words in the recognised result will be represented by single character eg. A
 iii) A word followed by ( i / d / s) shall mean that the word is (i) inserted (d) deleted (s) substituted from
 the reference text.
 
-Word : Captured the essence of a word unit in the utterance. It contains a String representing the text
+Word : Captures the essence of a word unit in the utterance. It contains a String representing the text
 spoken, and a start and end time representing the time at which the word is uttered in audio. Equality of
 two words is defined by comparing both the text and time component of the two Words.
 
-The Word Error Count implementation used the definition of equality of words to generate a traceback lattice.
-The traceback procedure was designed to only rely on the definition of equality of Words to generate the aligned
-result. Earlier implementation also treated <unk> as a comparable word.
+Word Error Count's traceback procedure was designed to rely only on the definition of equality of Words to generate the 
+aligned result. Earlier implementation also treated <unk> as a comparable word.
 
 Problems in using the above implementation were :
 
@@ -119,7 +118,7 @@ the cases that can occur and being exhaustive is important when counting word er
 So here is my proposal of what I am about to implement:
 Step 1: Treat <unk> as a word not equal to any other word irrespective of it's text, start and end times.
 
-Step 2: A single <unk> in between two correctly aligned words of Hyp. will account for all <unk>, deleted and substituted
+Step 2: Any number of <unk> in between two correctly aligned words of Hyp. will account for all <unk>, deleted and substituted
 words between the corresponding words words in Ref.
 
 So a typical corrected Word Error Count implementation's report for the following eg.:
