@@ -123,33 +123,31 @@ public class AlignerGrammar extends Grammar {
 	@Override
 	protected GrammarNode createGrammar() throws IOException {
 		
-		if(model_repetitions == true) {
-			
-			selfLoopProbability = 0.0000008; 	// penalty for repetition
+		if(model_repetitions) {
+			selfLoopProbability = 0.01; 	// penalty for repetition
 		} else {
 			selfLoopProbability = 0.0;
 		}
 		
-		if (model_deletions ==  true) {
-			
-			forwardJumpProbability = 0.000000001; 	// penality for forward skips
+		if (model_deletions) {
+			forwardJumpProbability = 1.0; 	// penality for forward skips
 		} else {
 			forwardJumpProbability = 0.0;
 		}
 		
-		if (model_backwardJumps == true) {
+		if (model_backwardJumps) {
 			
-			backwardTransitionProbability = 0.0000000001;
+			backwardTransitionProbability = 0.000001;
 		} else {
 			backwardTransitionProbability = 0.0;
 		}
-		if (model_insertions == true) {
+		if (model_insertions) {
 			// TODO CIPL
 			
 		}
-		//System.out.println("Self Loop Probability:"+selfLoopProbability);
-		//System.out.println("forward jump Probability: "+forwardJumpProbability);
-		//System.out.println("Backward Jump Probability:"+backwardTransitionProbability);
+		//System.out.println("Self Loop Probability:"+logMath.linearToLog(selfLoopProbability));
+		//System.out.println("forward jump Probability: "+logMath.linearToLog(forwardJumpProbability));
+		//System.out.println("Backward Jump Probability:"+logMath.linearToLog(backwardTransitionProbability));
 		
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);

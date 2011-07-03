@@ -1,6 +1,17 @@
+/*
+ * Copyright 1999-2004 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ *
+ */
 package edu.cmu.sphinx.util;
 
-public class Word {
+public class Word implements Comparable<Word>{
 	private  String word;
 	private double startTime;
 	private double endTime;
@@ -84,11 +95,11 @@ public class Word {
 		}
 	}
 	
-	private double getStartTime() {
+	double getStartTime() {
 		return startTime;
 	}
 	
-	private double getEndTime() {
+	double getEndTime() {
 		return endTime;
 	}
 	
@@ -111,6 +122,25 @@ public class Word {
 			return true;
 		} else {
 			return false;
+		}
+	}
+	public boolean isUnknownWord(){
+		if(this.getWord().compareToIgnoreCase("<unk>")== 0){
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	// Returns 1 if not equal 
+	@Override
+	public int compareTo(Word arg0) {
+		if(this.isEqual(arg0)){
+			return 0;
+		} else if(this.startTime < arg0.startTime) {
+			return -1;
+		} else{
+			return 1;
 		}
 	}
 }

@@ -105,7 +105,7 @@ public class LongAudioAligner {
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
 		System.out.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
-		System.out.println("Timed Result: "+timedResult);		
+		System.out.println("Timed Result: "+timedResult+"/n");		
 		aflatLinguist.deallocate();
 		// Corrupt the input using StringErrorGenerator	
 		String corruptedInput = testCase.getCorruptedText();
@@ -117,7 +117,7 @@ public class LongAudioAligner {
 		dataSource.setAudioFile(audioFileURL, null);
 		result = recognizer.recognize();
 		timedResult = result.getTimedBestResult(false, true);
-		System.out.println("Timed Result: "+timedResult);
+		System.out.println("Timed Result: "+timedResult+"/n");
 		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
 		wec.align();
 		wec.printStats();		
@@ -130,7 +130,7 @@ public class LongAudioAligner {
 		aflatLinguist.deallocate();
 		timedResult = result.getTimedBestResult(false, true);
 		wec = new WordErrorCount(testCase.getWordList(), timedResult);
-		System.out.println("Timed Result: "+timedResult);
+		System.out.println("Timed Result: "+timedResult+"/n");
 		wec.align();
 		wec.printStats();	
 	}
