@@ -58,10 +58,10 @@ DynamicFlatSearchGraph.getInitialState {
 	return initialState;
 }
 
-The above implementation statically inserts 1 phoneloop branching out from the start of Search Graphs initial State. Adding phoneloops at 
-this stage also allocates alot of memory to search graph, all of which is not necessarily in use. So I plan to insert phoneloops as successors
-to Grammar State. This way at any point in time atmost 1 phoneloop has to be stored in the memory ( i.e. only when getSuccessors() of a 
-GrammarState is invoked ).
+The above implementation statically inserts 1 phoneloop branching out from the start of Search Graphs initial State. Adding similar 
+phoneloops between words at this stage allocates alot of memory to search graph, all of which is not necessarily in use. So I plan 
+to insert phoneloops as successors to a Grammar State which is currently being scored . This way at any point in time atmost 1 phoneloop 
+has to be stored in the memory ( i.e. only when getSuccessors() of a GrammarState is invoked ).
 
 OutOfGrammarGraph.LastBranchState.LastBranchState() {
 	successors = new SearchStateArc[2];
