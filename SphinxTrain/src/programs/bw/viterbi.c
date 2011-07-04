@@ -86,10 +86,25 @@ write_phseg(const char *filename,
     model_def_entry_t *defn;
     uint32 n_defn;
     float64 ascr;
+    
+/*    float64 **loc_active_alpha;
+    uint32 **loc_active_astate;
+    uint32 *loc_n_active_astate;
+    uint32 **loc_bp = NULL;
+    float64 *loc_scale;
+    float64 **loc_dscale;*/
 
     /* Find the non-emitting ending state */
-    for (q = 0; q < n_active_astate[n_obs-1]; ++q) {
-	if (active_astate[n_obs-1][q] == n_state-1)
+/*    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+    for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
+	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
+	    break;
+    }*/
+    for (q = 0; q < n_active_astate[n_obs - 1]; ++q) {
+	if (active_astate[n_obs - 1][q] == n_state-1)
 	    break;
     }
     if (q == n_active_astate[n_obs-1]) {
@@ -258,13 +273,6 @@ viterbi_update(float64 *log_forw_prob,
 	       FILE *pdumpfh,
 	       feat_t *fcb)
 {
-    float64 *scale = NULL;
-    float64 **dscale = NULL;
-    float64 **active_alpha;
-    uint32 **active_astate;
-    uint32 **bp;
-    uint32 *n_active_astate;
-
     float64 **red_active_alpha;
     uint32 **red_active_astate;
     uint32 *red_n_active_astate;
@@ -349,24 +357,14 @@ viterbi_update(float64 *log_forw_prob,
 	d_term_ci = (float64 **)ckd_calloc_2d(n_feat, n_top, sizeof(float64));
     }
 
-    scale = (float64 *)ckd_calloc(n_obs, sizeof(float64));
-    dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
-    active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
-    bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
 
-    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, bp, n_red);
-    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, bp, block_size);
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
 
     /* Run forward algorithm, which has embedded Viterbi. */
     if (fwd_timer)
 	timing_start(fwd_timer);
-    ret = forward(active_alpha, active_astate, n_active_astate, bp,
-		  scale, dscale,
-		  feature, n_obs, state_seq, n_state,
-		  inv, a_beam, phseg, 0);
 		  
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
@@ -386,8 +384,8 @@ viterbi_update(float64 *log_forw_prob,
 	    strcat(segfn, "/");
 	    strcat(segfn, uttid);
 	    strcat(segfn, ".phseg");
-	    write_phseg(segfn, inv, state_seq, active_astate, n_active_astate,
-			n_state, n_obs, active_alpha, scale, bp);
+/*	    write_phseg(segfn, inv, state_seq, active_astate, n_active_astate,
+			n_state, n_obs, active_alpha, scale, dscale, bp);*/
 	    ckd_free(segfn);
     }
     if (fwd_timer)
@@ -469,19 +467,15 @@ viterbi_update(float64 *log_forw_prob,
 
     /* Okay now run through the backtrace and accumulate counts. */
     /* Find the non-emitting ending state */
-/*    for (q = 0; q < n_active_astate[n_obs-1]; ++q) {
-	if (active_astate[n_obs-1][q] == n_state-1)
-	    break;
-    }*/
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
         feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
-    for (q = 0; q < loc_n_active_astate[n_obs-1]; ++q) {
-	if (loc_active_astate[(n_obs % block_size) - 1][q] == n_state-1)
+    for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
+	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
     }
-    if (q == n_active_astate[n_obs-1]) {
+    if (q == loc_n_active_astate[(n_obs - 1) % block_size]) {
 	E_ERROR("Failed to align audio to trancript: final state of the search is not reached\n");
 	ret = S3_ERROR;
 	goto all_done;
@@ -662,7 +656,7 @@ viterbi_update(float64 *log_forw_prob,
 	    timing_stop(rstf_timer);
 
 	if (t > 0) { 
-	    prev = loc_active_astate[t % block_size - 1][loc_bp[t % block_size][q]];
+	    prev = loc_active_astate[(t - 1) % block_size][loc_bp[t % block_size][q]];
 #if VITERBI_DEBUG
 	    printf("Backtrace at time %d, %u => %u\n",
 		   t, j, prev);
@@ -699,13 +693,18 @@ viterbi_update(float64 *log_forw_prob,
 	timing_stop(rstu_timer);
 
     /* Find the final state */
-    for (i = 0; i < n_active_astate[n_obs-1]; ++i) {
-	if (active_astate[n_obs-1][i] == n_state-1)
+    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+    for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
+	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
     }
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
     /* Calculate log[ p( O | \lambda ) ] */
-    assert(active_alpha[n_obs-1][i] > 0);
-    log_fp = log(active_alpha[n_obs-1][i]);
+    assert(loc_active_alpha[(n_obs - 1) % block_size][i] > 0);
+    log_fp = log(loc_active_alpha[(n_obs - 1) % block_size][i]);
     for (t = 0; t < n_obs; t++) {
 	if (t % block_size == 0) {
 	    if (t > 0) {
@@ -728,21 +727,11 @@ viterbi_update(float64 *log_forw_prob,
     *log_forw_prob = log_fp;
 
  all_done:
-    ckd_free((void *)scale);
-    for (i = 0; i < n_obs; i++) {
-	if (dscale[i])
-	    ckd_free((void *)dscale[i]);
-    }
-    ckd_free((void **)dscale);
-    
-    ckd_free(n_active_astate);
-    for (i = 0; i < n_obs; i++) {
-	ckd_free((void *)active_alpha[i]);
-	ckd_free((void *)active_astate[i]);
-	ckd_free((void *)bp[i]);
-    }
-    ckd_free((void *)active_alpha);
-    ckd_free((void *)active_astate);
+    forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
+
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
+    forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
+
     ckd_free((void *)active_cb);
 
     if (denacc)
@@ -770,12 +759,21 @@ mmi_viterbi_run(float64 *log_forw_prob,
 		model_inventory_t *inv,
 		float64 a_beam)
 {
-    float64 *scale = NULL;
-    float64 **dscale = NULL;
-    float64 **active_alpha;
-    uint32 **active_astate;
-    uint32 **bp;
-    uint32 *n_active_astate;
+    float64 **red_active_alpha;
+    uint32 **red_active_astate;
+    uint32 *red_n_active_astate;
+    uint32 **red_bp = NULL;
+    float64 *red_scale;
+    float64 **red_dscale;
+    float64 **loc_active_alpha;
+    uint32 **loc_active_astate;
+    uint32 *loc_n_active_astate;
+    uint32 **loc_bp = NULL;
+    float64 *loc_scale;
+    float64 **loc_dscale;
+    uint32 block_size = 11;
+    uint32 n_red = ceil(n_obs / (float64)block_size);
+
     uint32 *active_cb;
     uint32 i;
     int ret;
@@ -787,20 +785,16 @@ mmi_viterbi_run(float64 *log_forw_prob,
        of work to be done here */
     assert(n_obs > 0);
     assert(n_state > 0);
-    
-    scale = (float64 *)ckd_calloc(n_obs, sizeof(float64));
-    dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
-    active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
+
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
-    bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
+
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
 
     /* Run forward algorithm, which has embedded Viterbi. */
-    ret = forward(active_alpha, active_astate, n_active_astate, bp,
-		  scale, dscale,
-		  feature, n_obs, state_seq, n_state,
-		  inv, a_beam, NULL, 1);
+		  
+    ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 1);
 
     if (ret != S3_SUCCESS) {
 
@@ -811,11 +805,15 @@ mmi_viterbi_run(float64 *log_forw_prob,
     }
 
     /* Find the non-emitting ending state */
-    for (i = 0; i < n_active_astate[n_obs-1]; ++i) {
-	if (active_astate[n_obs-1][i] == n_state-1)
+    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 1);
+    for (i = 0; i < loc_n_active_astate[(n_obs - 1) % block_size]; ++i) {
+	if (loc_active_astate[(n_obs - 1) % block_size][i] == n_state-1)
 	    break;
     }
-    if (i == n_active_astate[n_obs-1]) {
+    if (i == loc_n_active_astate[(n_obs - 1) % block_size]) {
 	/* since there are so many such errors during the mmie training,
 	      it's very annoying to output this error message
 	      E_ERROR("Failed to align audio to trancript: final state of the search is not reached\n"); */
@@ -825,29 +823,20 @@ mmi_viterbi_run(float64 *log_forw_prob,
     }
 
     /* Calculate log[ p( O | \lambda ) ] */
-    assert(active_alpha[n_obs-1][i] > 0);
-    log_fp = log(active_alpha[n_obs-1][i]);
+    assert(loc_active_alpha[(n_obs - 1) % block_size][i] > 0);
+    log_fp = log(loc_active_alpha[(n_obs - 1) % block_size][i]);
+
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     *log_forw_prob = log_fp;
-
- all_done:
-    ckd_free((void *)scale);
-    for (i = 0; i < n_obs; i++) {
-	if (dscale[i])
-	    ckd_free((void *)dscale[i]);
-    }
-    ckd_free((void **)dscale);
     
-    ckd_free(n_active_astate);
-    for (i = 0; i < n_obs; i++) {
-	ckd_free((void *)active_alpha[i]);
-	ckd_free((void *)active_astate[i]);
-	ckd_free((void *)bp[i]);
-    }
-    ckd_free((void *)active_alpha);
-    ckd_free((void *)active_astate);
+all_done:
+    forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
+
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
+    forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
+    
     ckd_free((void *)active_cb);
-    ckd_free((void **)bp);
 
     if (ret != S3_SUCCESS && !final_state_error)
 	E_ERROR("viterbi run error in sentence %s\n", corpus_utt_brief_name());
@@ -867,12 +856,21 @@ mmi_viterbi_update(vector_t **feature,
 		   float64 arc_gamma,
 		   feat_t *fcb)
 {
-    float64 *scale = NULL;
-    float64 **dscale = NULL;
-    float64 **active_alpha;
-    uint32 **active_astate;
-    uint32 **bp;
-    uint32 *n_active_astate;
+    float64 **red_active_alpha;
+    uint32 **red_active_astate;
+    uint32 *red_n_active_astate;
+    uint32 **red_bp = NULL;
+    float64 *red_scale;
+    float64 **red_dscale;
+    float64 **loc_active_alpha;
+    uint32 **loc_active_astate;
+    uint32 *loc_n_active_astate;
+    uint32 **loc_bp = NULL;
+    float64 *loc_scale;
+    float64 **loc_dscale;
+    uint32 block_size = 11;
+    uint32 n_red = ceil(n_obs / (float64)block_size);
+
     gauden_t *g;/* Gaussian density parameters and reestimation sums */
     float32 ***mixw;/* all mixing weights */
     float64 ***now_den = NULL;/* Short for den[t] */
@@ -918,19 +916,14 @@ mmi_viterbi_update(vector_t **feature,
 	d_term_ci = (float64 **)ckd_calloc_2d(n_feat, n_top, sizeof(float64));
     }
 
-    scale = (float64 *)ckd_calloc(n_obs, sizeof(float64));
-    dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
-    active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     active_cb = ckd_calloc(2*n_state, sizeof(uint32));
-    bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
+
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
 
     /* Run forward algorithm, which has embedded Viterbi. */
-    ret = forward(active_alpha, active_astate, n_active_astate, bp,
-		  scale, dscale,
-		  feature, n_obs, state_seq, n_state,
-		  inv, a_beam, NULL, 1);
+    ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 1);
     
     if (cmd_ln_str("-outphsegdir")) {
 	E_FATAL("current MMI implementation don't support -outphsegdir\n");
@@ -983,11 +976,15 @@ mmi_viterbi_update(vector_t **feature,
 
     /* Okay now run through the backtrace and accumulate counts. */
     /* Find the non-emitting ending state */
-    for (q = 0; q < n_active_astate[n_obs-1]; ++q) {
-	if (active_astate[n_obs-1][q] == n_state-1)
+    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 0);
+    for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
+	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
     }
-    if (q == n_active_astate[n_obs-1]) {
+    if (q == loc_n_active_astate[(n_obs - 1) % block_size]) {
 	E_ERROR("Failed to align audio to trancript: final state of the search is not reached\n");
 	ret = S3_ERROR;
 	goto all_done;
@@ -999,12 +996,12 @@ mmi_viterbi_update(vector_t **feature,
 	float64 op, p_reest_term;
 	uint32 prev;
 
-	j = active_astate[t][q];
+	j = loc_active_astate[t % block_size][q];
 
 	/* Follow any non-emitting states at time t first. */
 	while (state_seq[j].mixw == TYING_NON_EMITTING) {
-	    prev = active_astate[t][bp[t][q]];
-	    q = bp[t][q];
+	    prev = loc_active_astate[t % block_size][loc_bp[t % block_size][q]];
+	    q = loc_bp[t % block_size][q];
 	    j = prev;
 	}
 
@@ -1031,7 +1028,7 @@ mmi_viterbi_update(vector_t **feature,
 	    active_cb[n_active_cb++] = l_ci_cb;
 	}
 	ret = gauden_scale_densities_bwd(now_den, now_den_idx,
-					 &dscale[t],
+					 &loc_dscale[t % block_size],
 					 active_cb, n_active_cb, g);
 	if (ret != S3_SUCCESS)
 	    goto all_done;
@@ -1119,11 +1116,22 @@ mmi_viterbi_update(vector_t **feature,
 	}
 	
 	if (t > 0) { 
-	    prev = active_astate[t-1][bp[t][q]];
-	    q = bp[t][q];
+	    prev = loc_active_astate[(t - 1) % block_size][loc_bp[t % block_size][q]];
+	    q = loc_bp[t % block_size][q];
 	    j = prev;
 	}
+	
+	if (t % block_size == 0) {
+	    if (t > 0) {
+	        forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, block_size);
+                forward_recompute(
+                    loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+                    red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+                    feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 0);
+	    }
+	}
     }
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     /* If no error was found, add the resulting utterance reestimation
      * accumulators to the global reestimation accumulators */
@@ -1132,23 +1140,12 @@ mmi_viterbi_update(vector_t **feature,
 		 FALSE);
 
  all_done:
-    ckd_free((void *)scale);
-    for (i = 0; i < n_obs; i++) {
-	if (dscale[i])
-	    ckd_free((void *)dscale[i]);
-    }
-    ckd_free((void **)dscale);
-    
-    ckd_free(n_active_astate);
-    for (i = 0; i < n_obs; i++) {
-	ckd_free((void *)active_alpha[i]);
-	ckd_free((void *)active_astate[i]);
-	ckd_free((void *)bp[i]);
-    }
-    ckd_free((void *)active_alpha);
-    ckd_free((void *)active_astate);
+    forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
+
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
+    forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
+
     ckd_free((void *)active_cb);
-    ckd_free((void **)bp);
 
     if (denacc)
 	ckd_free_3d((void ***)denacc);
