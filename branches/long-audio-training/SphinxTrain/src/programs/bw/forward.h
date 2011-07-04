@@ -63,7 +63,6 @@ forward_init_arrays(
 	uint32 ***bp,
 	float64 **scale,
 	float64 ***dscale,
-	uint32 **_bp,
         uint32 n_obs);
 
 void

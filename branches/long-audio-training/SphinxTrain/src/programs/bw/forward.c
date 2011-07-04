@@ -69,7 +69,6 @@ forward_init_arrays(
 	uint32 ***bp,
 	float64 **scale,
 	float64 ***dscale,
-	uint32 **_bp,
         uint32 n_obs)
 {
     *active_alpha = ckd_calloc(n_obs, sizeof(float64 *));
@@ -77,10 +76,8 @@ forward_init_arrays(
     *n_active_astate = ckd_calloc(n_obs, sizeof(int32));
     *scale = ckd_calloc(n_obs, sizeof(float64));
     *dscale = ckd_calloc(n_obs, sizeof(float64 *));
-    if (_bp) {
+    if (bp) {
         *bp = ckd_calloc(n_obs, sizeof(uint32 *));
-    } else {
-        *bp = NULL;
     }
 }
 
@@ -97,11 +94,11 @@ void forward_free_arrays(
     ckd_free(*n_active_astate);
     ckd_free(*scale);
     ckd_free(*dscale);
-    if (*bp) {
+    if (bp) {
         ckd_free(*bp);
+        *bp = NULL;
     }
-    
-    *active_alpha = *active_astate = *n_active_astate = *scale = *dscale = *bp = NULL;
+    *active_alpha = *active_astate = *n_active_astate = *scale = *dscale = NULL;
 }
 
 void
@@ -273,7 +270,7 @@ forward(float64 **active_alpha,
      * Allocate the bestscore array for embedded Viterbi
      */
     
-    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, bp, n_red);
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
     
     retval = forward_reduced(
             red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
@@ -409,7 +406,7 @@ forward_reduced(float64 **active_alpha,
      * Allocate the bestscore array for embedded Viterbi
      */
     
-    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, bp, block_size + 1);
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size + 1);
     
     loc_active_alpha[0] = ckd_calloc(1, sizeof(float64));
     loc_active_astate[0] = ckd_calloc(1, sizeof(uint32));
@@ -423,7 +420,6 @@ forward_reduced(float64 **active_alpha,
     }
     
     for (t = 0; t < n_red; t++) {
-        uint32 t2;
         uint32 block_obs = block_size + 1;
         
         if (t * block_size + block_obs > n_obs) {
