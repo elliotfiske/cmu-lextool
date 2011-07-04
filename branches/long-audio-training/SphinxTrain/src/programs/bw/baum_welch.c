@@ -150,12 +150,34 @@ baum_welch_update(float64 *log_forw_prob,
 		  FILE *pdumpfh,
 		  feat_t *fcb)
 {
+    float64 **red_active_alpha;
+    uint32 **red_active_astate;
+    uint32 *red_n_active_astate;
+    uint32 **red_bp = NULL;
+    float64 *red_scale;
+    float64 **red_dscale;
+    float64 **loc_active_alpha;
+    uint32 **loc_active_astate;
+    uint32 *loc_n_active_astate;
+    uint32 **loc_bp = NULL;
+    float64 *loc_scale;
+    float64 **loc_dscale;
+    uint32 block_size = 11;
+    uint32 n_red = ceil(n_obs / (float64)block_size);
+    
     float64 *scale = NULL;
     float64 **dscale = NULL;
     float64 **active_alpha;
     uint32 **active_astate;
     uint32 **bp;
     uint32 *n_active_astate;
+    scale = (float64 *)ckd_calloc(n_obs, sizeof(float64));
+    dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
+    n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
+    active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
+    active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
+    bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
+
     float64 log_fp;	/* accumulator for the log of the probability
 			 * of observing the input given the model */
     uint32 t;		/* time */
@@ -174,19 +196,15 @@ baum_welch_update(float64 *log_forw_prob,
     fwd_timer = timing_get("fwd");
     bwd_timer = timing_get("bwd");
     rstu_timer = timing_get("rstu");
-    
-    scale = (float64 *)ckd_calloc(n_obs, sizeof(float64));
-    dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
-    active_alpha  = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
-    bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
 
     /* Compute the scaled alpha variable and scale factors
      * for all states and time subject to the pruning constraints */
     if (fwd_timer)
 	timing_start(fwd_timer);
 
+    forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
+    
 /*
  * Debug?
  *   E_INFO("Before Forward search\n");
@@ -195,6 +213,9 @@ baum_welch_update(float64 *log_forw_prob,
 		  scale, dscale,
 		  feature, n_obs, state, n_state,
 		  inv, a_beam, phseg, 0);
+
+    ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+		  feature, block_size, n_obs, state, n_state, inv, a_beam, phseg, 0);
 
 #if BW_DEBUG
     for (i=0 ; i < n_obs;i++){
@@ -223,8 +244,8 @@ baum_welch_update(float64 *log_forw_prob,
 	    strcat(segfn, "/");
 	    strcat(segfn, uttid);
 	    strcat(segfn, ".phseg");
-	    write_phseg(segfn, inv, state, active_astate, n_active_astate,
-			n_state, n_obs, active_alpha, scale, bp);
+/*	    write_phseg(segfn, inv, state, active_astate, n_active_astate,
+			n_state, n_obs, active_alpha, scale, bp);*/
 	    ckd_free(segfn);
     }
 
@@ -247,6 +268,13 @@ baum_welch_update(float64 *log_forw_prob,
 #if BW_DEBUG
     E_INFO("Before Backward search\n");
 #endif
+
+/*    ret = backward_update(red_active_alpha, red_active_astate, red_n_active_astate, red_scale, red_dscale,
+			  feature, block_size, n_obs,
+			  state, n_state,
+			  inv, b_beam, spthresh,
+			  mixw_reest, tmat_reest, mean_reest, var_reest, pass2var,
+			  var_is_full, pdumpfh, fcb);*/
 
     ret = backward_update(active_alpha, active_astate, n_active_astate, scale, dscale,
 			  feature, n_obs,
@@ -280,22 +308,41 @@ baum_welch_update(float64 *log_forw_prob,
     if (rstu_timer)
 	timing_stop(rstu_timer);
 
-    for (i = 0; i < n_active_astate[n_obs-1] && active_astate[n_obs-1][i] != (n_state-1); i++);
+    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state, n_state, inv, a_beam, NULL, 0);
+    for (i = 0; i < loc_n_active_astate[(n_obs - 1) % block_size] && loc_active_astate[(n_obs - 1) % block_size][i] != (n_state-1); i++);
 
-    assert(i < n_active_astate[n_obs-1]);
+    assert(i < loc_n_active_astate[(n_obs - 1) % block_size]);
 
     /* Calculate log[ p( O | \lambda ) ] */
-    assert(active_alpha[n_obs-1][i] > 0);
-    log_fp = log(active_alpha[n_obs-1][i]);
+    assert(loc_active_alpha[(n_obs - 1) % block_size][i] > 0);
+    log_fp = log(loc_active_alpha[(n_obs - 1) % block_size][i]);
+    
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
+    
     for (t = 0; t < n_obs; t++) {
-	assert(scale[t] > 0);
-	log_fp -= log(scale[t]);
+        if (t % block_size == 0) {
+            if (t > 0) {
+                forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, block_size);
+            }
+            forward_recompute(
+                loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
+                red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
+                feature, (t / block_size), block_size, n_obs, state, n_state, inv, a_beam, NULL, 0);
+        }
+	assert(loc_scale[t % block_size] > 0);
+	log_fp -= log(loc_scale[t % block_size]);
         for (j = 0; j < inv->gauden->n_feat; j++) {
-	    log_fp += dscale[t][j];
+	    log_fp += loc_dscale[t % block_size][j];
         }
     }
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     *log_forw_prob = log_fp;
+
+    forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
 
     ckd_free((void *)scale);
     ckd_free(n_active_astate);
@@ -312,21 +359,19 @@ baum_welch_update(float64 *log_forw_prob,
     return S3_SUCCESS;
 
 error:
+    forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
+
     ckd_free((void *)scale);
-    for (i = 0; i < n_obs; i++) {
-	if (dscale[i])
-	    ckd_free((void *)dscale[i]);
-    }
-    ckd_free((void **)dscale);
-    
     ckd_free(n_active_astate);
     for (i = 0; i < n_obs; i++) {
 	ckd_free((void *)active_alpha[i]);
 	ckd_free((void *)active_astate[i]);
+	ckd_free((void *)dscale[i]);
 	ckd_free((void *)bp[i]);
     }
     ckd_free((void *)active_alpha);
     ckd_free((void *)active_astate);
+    ckd_free((void **)dscale);
 
     E_ERROR("%s ignored\n", corpus_utt_brief_name());
 
