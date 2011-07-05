@@ -57,6 +57,7 @@
 #include <s3/gauden.h>
 #include <s3/s3.h>
 
+#include "forward.h"
 #include "accum.h"
 
 #include <assert.h>
@@ -304,17 +305,20 @@ den_terms(float64 **d_term,
  *********************************************************************/
 
 int32
-backward_update(float64 **active_alpha,
-		uint32 **active_astate,
-		uint32 *n_active_astate,
-		float64 *scale,
-		float64 **dscale,
+backward_update(float64 **red_active_alpha,
+		uint32 **red_active_astate,
+		uint32 *red_n_active_astate,
+		float64 *red_scale,
+		float64 **red_dscale,
 		vector_t **feature,
+		uint32 block_size,
 		uint32 n_obs,
 		state_t *state_seq,
 		uint32 n_state,
 		model_inventory_t *inv,
+		float64 a_beam,
 		float64 beam,
+                s3phseg_t *phseg,
 		float32 spthresh,
 		int32 mixw_reest,
 		int32 tmat_reest,
@@ -375,6 +379,7 @@ backward_update(float64 **active_alpha,
     size_t denacc_size;		/* Total size of data references in denacc.  Allows
 				   for quick clears between time frames */
 
+    float64 final_alpha;
     float64 recip_final_alpha;	/* Reciprocal of the final alpha value (i.e. last frame
 				   final HMM state */
     int retval = S3_SUCCESS;	/* use to exit gracefully */
@@ -412,6 +417,16 @@ backward_update(float64 **active_alpha,
     uint32 l_ci_cb;
 
     uint32 n_cb;
+     
+    float64 **loc_active_alpha;
+    uint32 **loc_active_astate;
+    uint32 *loc_n_active_astate;
+    float64 *loc_scale;
+    float64 **loc_dscale;
+    uint32 n_red = ceil(n_obs / (float64)block_size);
+
+    forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, NULL, &loc_scale, &loc_dscale, block_size + 1);
+    loc_dscale[block_size] = ckd_calloc(inv->gauden->n_feat, sizeof(float64));
 
     /* Get the Gaussian density evaluation CPU timer */
     gau_timer = timing_get("gau");
@@ -421,19 +436,27 @@ backward_update(float64 **active_alpha,
 
     /* Get the per frame reestimation CPU timer */
     rstf_timer = timing_get("rstf");
+    
+    forward_recompute(
+        loc_active_alpha, loc_active_astate, loc_n_active_astate, NULL, loc_scale, loc_dscale,
+        red_active_alpha, red_active_astate, red_n_active_astate, NULL, red_scale, red_dscale,
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
 
     /* Look for the final state in the active states at the last frame */
     for (q_f = 0;
-	 q_f < n_active_astate[n_obs-1] &&
-	     active_astate[n_obs-1][q_f] != (n_state-1); q_f++);
-    if (q_f == n_active_astate[n_obs-1]) {
+	 q_f < loc_n_active_astate[(n_obs-1) % block_size] &&
+	     loc_active_astate[(n_obs-1) % block_size][q_f] != (n_state-1); q_f++);
+    if (q_f == loc_n_active_astate[(n_obs-1) % block_size]) {
 	E_ERROR("Failed to align audio to trancript: final state of the search is not reached\n");
 	return S3_ERROR;
     }
+    
+    final_alpha = loc_active_alpha[(n_obs-1) % block_size][q_f];
+    recip_final_alpha = 1.0/final_alpha;
 
     /* Set pruning threshold for such that all unpruned paths for some
      * time t and state i satisfy alpha[t][i]beta[t][i] > beam * alpha[T][F] */
-    pthresh = beam * active_alpha[n_obs-1][q_f];
+    pthresh = beam * final_alpha;
 
     g = inv->gauden;
     n_feat = gauden_n_feat(g);
@@ -559,8 +582,6 @@ backward_update(float64 **active_alpha,
 	denacc = NULL;
 	denacc_size = 0;
     }
-
-    recip_final_alpha = 1.0/active_alpha[n_obs-1][q_f];
     
     /* Set the initial beta value */
     prior_beta[n_state-1] = 1.0;
@@ -570,7 +591,7 @@ backward_update(float64 **active_alpha,
     n_non_emit = 1;
     t = n_obs-1;
 
-    if (scale[t] == 0) {
+    if (loc_scale[t % block_size] == 0) {
 	E_ERROR("Scale factor at time == %u is zero\n", t);
 
 	retval = S3_ERROR;
@@ -598,8 +619,8 @@ backward_update(float64 **active_alpha,
 #if BACKWARD_DEBUG
 	    E_INFO("Processing non-emitting state %d, prior %d\n",j, i);
 #endif
-	    for (q = 0; q < n_active_astate[t] && active_astate[t][q] != i; q++);
-	    if (q == n_active_astate[t]) {
+	    for (q = 0; q < loc_n_active_astate[t % block_size] && loc_active_astate[t % block_size][q] != i; q++);
+	    if (q == loc_n_active_astate[t % block_size]) {
 		/* state i not active in forward pass; skip it */
 		continue;
 	    }
@@ -617,7 +638,7 @@ backward_update(float64 **active_alpha,
 
 	    if (a_tacc)
 		*a_tacc +=
-		    active_alpha[t][q] * tprob[u] * prior_beta[j] * recip_final_alpha;
+		    loc_active_alpha[t % block_size][q] * tprob[u] * prior_beta[j] * recip_final_alpha;
 
 	    assert(tprob[u] > 0);
 
@@ -637,7 +658,7 @@ backward_update(float64 **active_alpha,
 
     for ( s = 0; s < n_active; s++) {
 	i = active[s];
-	prior_beta[i] *= scale[t];
+	prior_beta[i] *= loc_scale[t % block_size];
     }
 
     n_non_emit = 0;
@@ -654,7 +675,19 @@ backward_update(float64 **active_alpha,
 #if BACKWARD_DEBUG
       E_INFO("At time %d\n",t);
 #endif
-	if (scale[t] == 0) {
+	if (((t + 1) % block_size) == 0) {
+            memcpy(loc_dscale[block_size], loc_dscale[0], inv->gauden->n_feat * sizeof(float64));
+            
+            forward_clear_arrays(loc_active_alpha, loc_active_astate, NULL, loc_dscale,
+                (((t / block_size) < (n_red - 2)) ? block_size : (n_obs % block_size)));
+            
+            forward_recompute(
+                loc_active_alpha, loc_active_astate, loc_n_active_astate, NULL, loc_scale, loc_dscale,
+                red_active_alpha, red_active_astate, red_n_active_astate, NULL, red_scale, red_dscale,
+                feature, (t / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+	}
+
+	if (loc_scale[t % block_size] == 0) {
 	    E_ERROR("Scale factor at time == %u is zero\n", t);
 	    retval = S3_ERROR;
 	    goto free;
@@ -731,7 +764,7 @@ backward_update(float64 **active_alpha,
 #endif
 	/* Scale densities by dividing all by max */
 	gauden_scale_densities_bwd(now_den, now_den_idx,
-				   &dscale[t+1],
+				   &loc_dscale[t % block_size + 1],
 				   active_cb, n_active_cb, g);
 	
 	for (s = 0; s < n_active; s++) {
@@ -770,9 +803,9 @@ backward_update(float64 **active_alpha,
 #if BACKWARD_DEBUG	
 		E_INFO("For active state %d , state %d is its prior\n",j,i);
 #endif
-		for (q = 0; q < n_active_astate[t] &&
-			 active_astate[t][q] != i; q++);
-		if (q == n_active_astate[t]) {
+		for (q = 0; q < loc_n_active_astate[t % block_size] &&
+			 loc_active_astate[t % block_size][q] != i; q++);
+		if (q == loc_n_active_astate[t % block_size]) {
 		    /* state i not active in forward pass; skip it */
 		    continue;
 		}
@@ -790,7 +823,7 @@ backward_update(float64 **active_alpha,
                    is passed to den_terms() instead of post_j).  This
                    seems needlessly obscure, but there you have it. */
 		p_reest_term =
-		    active_alpha[t][q] *
+		    loc_active_alpha[t % block_size][q] *
 		    (float64) tprob[u] *
 		    prior_beta[j] *
 		    recip_final_alpha;
@@ -810,13 +843,13 @@ backward_update(float64 **active_alpha,
 		}
 
 #if BACKWARD_DEBUG	
-		E_INFO("post_j =%e, alpha == %e * tprob == %e * op == %e * beta == %e * 1 / falpha == %e q=%d state_of_q=%d at time %d\n", post_j, active_alpha[t][q], tprob[u], op, prior_beta[j], recip_final_alpha, q, i,t);
+		E_INFO("post_j =%e, alpha == %e * tprob == %e * op == %e * beta == %e * 1 / falpha == %e q=%d state_of_q=%d at time %d\n", post_j, loc_active_alpha[t % block_size][q], tprob[u], op, prior_beta[j], recip_final_alpha, q, i,t);
 #endif
 
 
 		if (post_j > 1.0 + 1e-2) {
 		    E_ERROR("posterior of state %u (== %.8e) @ time %u > 1 + 1e-2\n", j, post_j, t+1);
-		    E_ERROR("alpha == %e * tprob == %e * op == %e * beta == %e * 1 / falpha == %e\n", active_alpha[t][q], tprob[u], op, prior_beta[j], recip_final_alpha);
+		    E_ERROR("alpha == %e * tprob == %e * op == %e * beta == %e * 1 / falpha == %e\n", loc_active_alpha[t % block_size][q], tprob[u], op, prior_beta[j], recip_final_alpha);
 		    
 		    retval = S3_ERROR;
 
@@ -964,14 +997,14 @@ backward_update(float64 **active_alpha,
 	for (s = 0, n_active = 0, pprob = 0; s < n_next_active; s++) {
 	    i = next_active[s];
 
-	    for (q = 0; q < n_active_astate[t] &&
-		     active_astate[t][q] != i; q++);
-	    if (q == n_active_astate[t]) {
+	    for (q = 0; q < loc_n_active_astate[t % block_size] &&
+		     loc_active_astate[t % block_size][q] != i; q++);
+	    if (q == loc_n_active_astate[t % block_size]) {
 		/* state i not active in forward pass; skip it */
 		continue;
 	    }
 		
-	    ttt = active_alpha[t][q] * beta[i];
+	    ttt = loc_active_alpha[t % block_size][q] * beta[i];
 
 	    if (ttt > pthresh) {
 		sum_alpha_beta += ttt;
@@ -986,14 +1019,14 @@ backward_update(float64 **active_alpha,
 	for (s = 0, n_tmp_non_emit = 0; s < n_non_emit; s++) {
 	    i = non_emit[s];
 
-	    for (q = 0; q < n_active_astate[t] &&
-		     active_astate[t][q] != i; q++);
-	    if (q == n_active_astate[t]) {
+	    for (q = 0; q < loc_n_active_astate[t % block_size] &&
+		     loc_active_astate[t % block_size][q] != i; q++);
+	    if (q == loc_n_active_astate[t % block_size]) {
 		/* state i not active in forward pass; skip it */
 		continue;
 	    }
 
-	    ttt = active_alpha[t][q] * beta[i];
+	    ttt = loc_active_alpha[t % block_size][q] * beta[i];
 
 	    if (ttt > pthresh) {
 		sum_alpha_beta += ttt;
@@ -1013,11 +1046,11 @@ backward_update(float64 **active_alpha,
 	 * sum_alpha_beta - alpha[n_obs-1][n_state-1] must be zero, but
 	 * we're dealing with finite machine word length, pruning, etc. */
 
-	if (fabs(sum_alpha_beta - active_alpha[n_obs-1][q_f])
-	    > (S2_ALPHA_BETA_EPSILON * active_alpha[n_obs-1][q_f])) {
+	if (fabs(sum_alpha_beta - final_alpha)
+	    > (S2_ALPHA_BETA_EPSILON * final_alpha)) {
 
 	    E_ERROR("alpha(%e) <> sum of alphas * betas (%e) in frame %d\n",
-		    active_alpha[n_obs-1][q_f], sum_alpha_beta, t);
+		    final_alpha, sum_alpha_beta, t);
 		
 	    retval = S3_ERROR;
 
@@ -1041,9 +1074,9 @@ backward_update(float64 **active_alpha,
 	    for (u = 0; u < state_seq[j].n_prior; u++) {
 		i = prior[u];
 
-		for (q = 0; q < n_active_astate[t] &&
-			 active_astate[t][q] != i; q++);
-		if (q == n_active_astate[t]) {
+		for (q = 0; q < loc_n_active_astate[t % block_size] &&
+			 loc_active_astate[t % block_size][q] != i; q++);
+		if (q == loc_n_active_astate[t % block_size]) {
 		    /* state i not active in forward pass; skip it */
 		    continue;
 		}
@@ -1055,7 +1088,7 @@ backward_update(float64 **active_alpha,
 		    timing_start(rsts_timer);
 		if (tmat_reest) {
 		    tacc[i][j-i] += 
-			active_alpha[t][q] * tprob[u] * beta[j] * recip_final_alpha;
+			loc_active_alpha[t % block_size][q] * tprob[u] * beta[j] * recip_final_alpha;
 		}
 		if (rsts_timer)
 		    timing_stop(rsts_timer);
@@ -1089,7 +1122,7 @@ backward_update(float64 **active_alpha,
 	for (s = 0; s < n_active; s++) {
 	    i = active[s];
 	    
-	    beta[i] *= scale[t];
+	    beta[i] *= loc_scale[t % block_size];
 	}
 
  	if (rstf_timer)
@@ -1148,7 +1181,7 @@ backward_update(float64 **active_alpha,
     active_cb[0] = state_seq[0].l_cb;
 
     gauden_scale_densities_bwd(now_den, now_den_idx,
-			       &dscale[0],
+			       &loc_dscale[0],
 			       active_cb, 1, g);
 
     op = gauden_mixture(now_den[state_seq[0].l_cb],
@@ -1165,10 +1198,10 @@ backward_update(float64 **active_alpha,
 
 	beta[0] = prior_beta[0] * op;
 
-	if (fabs(beta[0] - active_alpha[n_obs-1][q_f])
-	    > (S2_ALPHA_BETA_EPSILON * active_alpha[n_obs-1][q_f])) {
+	if (fabs(beta[0] - final_alpha)
+	    > (S2_ALPHA_BETA_EPSILON * final_alpha)) {
 	    E_ERROR("alpha(%e) <> beta(%e)\n",
-		    active_alpha[n_obs-1][q_f], beta[0]);
+		    final_alpha, beta[0]);
 	    
 	    retval = S3_ERROR;
 	}
@@ -1280,7 +1313,11 @@ backward_update(float64 **active_alpha,
     printf(" %d", n_reest_tot / n_obs);
     printf(" %e", t_pprob / n_obs);
 
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, NULL, loc_dscale, n_obs % block_size);
+    
 free:
+
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, NULL, &loc_scale, &loc_dscale);
 
     ckd_free(active_a);
     ckd_free(active_b);

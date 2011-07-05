@@ -78,6 +78,7 @@ write_s2stseg(const char *filename,
 int32
 viterbi_update(float64 *log_forw_prob,
 	       vector_t **feature,
+               uint32 block_size,
 	       uint32 n_obs,
 	       state_t *state,
 	       uint32 n_state,
@@ -97,6 +98,7 @@ viterbi_update(float64 *log_forw_prob,
 int32
 mmi_viterbi_run(float64 *log_forw_prob,
 		vector_t **feature,
+                uint32 block_size,
 		uint32 n_obs,
 		state_t *state,
 		uint32 n_state,
@@ -105,6 +107,7 @@ mmi_viterbi_run(float64 *log_forw_prob,
 
 int32
 mmi_viterbi_update(vector_t **feature,
+                   uint32 block_size,
 		   uint32 n_obs,
 		   state_t *state,
 		   uint32 n_state,
