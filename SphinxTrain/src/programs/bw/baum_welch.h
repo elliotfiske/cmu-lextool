@@ -59,6 +59,7 @@
 int32
 baum_welch_update(float64 *log_forw_prob,
 		  vector_t **feature,
+		  uint32 block_size,
 		  uint32 n_obs,
 		  state_t *state,
 		  uint32 n_state,

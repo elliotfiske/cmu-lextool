@@ -257,6 +257,7 @@ write_s2stseg(const char *filename,
 int32
 viterbi_update(float64 *log_forw_prob,
 	       vector_t **feature,
+               uint32 block_size,
 	       uint32 n_obs,
 	       state_t *state_seq,
 	       uint32 n_state,
@@ -285,7 +286,6 @@ viterbi_update(float64 *log_forw_prob,
     uint32 **loc_bp = NULL;
     float64 *loc_scale;
     float64 **loc_dscale;
-    uint32 block_size = 11;
     uint32 n_red = ceil(n_obs / (float64)block_size);
 
     gauden_t *g;		/* Gaussian density parameters and
@@ -753,6 +753,7 @@ viterbi_update(float64 *log_forw_prob,
 int32
 mmi_viterbi_run(float64 *log_forw_prob,
 		vector_t **feature,
+                uint32 block_size,
 		uint32 n_obs,
 		state_t *state_seq,
 		uint32 n_state,
@@ -771,7 +772,6 @@ mmi_viterbi_run(float64 *log_forw_prob,
     uint32 **loc_bp = NULL;
     float64 *loc_scale;
     float64 **loc_dscale;
-    uint32 block_size = 11;
     uint32 n_red = ceil(n_obs / (float64)block_size);
 
     uint32 *active_cb;
@@ -846,6 +846,7 @@ all_done:
 
 int32
 mmi_viterbi_update(vector_t **feature,
+                   uint32 block_size,
 		   uint32 n_obs,
 		   state_t *state_seq,
 		   uint32 n_state,
@@ -868,7 +869,6 @@ mmi_viterbi_update(vector_t **feature,
     uint32 **loc_bp = NULL;
     float64 *loc_scale;
     float64 **loc_dscale;
-    uint32 block_size = 11;
     uint32 n_red = ceil(n_obs / (float64)block_size);
 
     gauden_t *g;/* Gaussian density parameters and reestimation sums */

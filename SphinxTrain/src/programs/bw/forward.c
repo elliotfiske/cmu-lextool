@@ -79,6 +79,14 @@ forward_init_arrays(
     if (bp) {
         *bp = ckd_calloc(n_obs, sizeof(uint32 *));
     }
+    memset(*active_alpha, 0, n_obs * sizeof(float64 *));
+    memset(*active_astate, 0, n_obs * sizeof(int32 *));
+    memset(*n_active_astate, 0, n_obs * sizeof(int32));
+    memset(*scale, 0, n_obs * sizeof(float64));
+    memset(*dscale, 0, n_obs * sizeof(float64 *));
+    if (bp) {
+        memset(*bp, 0, n_obs * sizeof(uint32 *));
+    }
 }
 
 void forward_free_arrays(
@@ -321,7 +329,7 @@ forward_recompute(float64 **loc_active_alpha,
 	uint32 **loc_bp,
 	float64 *loc_scale,
 	float64 **loc_dscale,
-    float64 **red_active_alpha,
+        float64 **red_active_alpha,
 	uint32 **red_active_astate,
 	uint32 *red_n_active_astate,
 	uint32 **red_bp,
