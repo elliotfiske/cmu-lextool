@@ -192,7 +192,7 @@ write_phseg(const char *filename,
     return S3_SUCCESS;
 }
 
-int32
+int32   /* TODO: modify for reduced computation */
 write_s2stseg(const char *filename,
 	      state_t *state_seq,
 	      uint32 **active_astate,
@@ -671,8 +671,13 @@ viterbi_update(float64 *log_forw_prob,
 	}
 	
 	if (t % block_size == 0) {
-	    if (t > 0) {
+	    if ((t / block_size) < (n_red - 1)) {
 	        forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, block_size);
+	    }
+	    else {
+                forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
+	    }
+	    if (t > 0) {
                 forward_recompute(
                     loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
                     red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
@@ -680,7 +685,6 @@ viterbi_update(float64 *log_forw_prob,
 	    }
 	}
     }
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     /* If no error was found, add the resulting utterance reestimation
      * accumulators to the global reestimation accumulators */
@@ -701,7 +705,7 @@ viterbi_update(float64 *log_forw_prob,
 	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
     }
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
     /* Calculate log[ p( O | \lambda ) ] */
     assert(loc_active_alpha[(n_obs - 1) % block_size][i] > 0);
     log_fp = log(loc_active_alpha[(n_obs - 1) % block_size][i]);
@@ -722,7 +726,7 @@ viterbi_update(float64 *log_forw_prob,
 	    log_fp += loc_dscale[t % block_size][j];
 	}
     }
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
 
     *log_forw_prob = log_fp;
 
@@ -826,9 +830,9 @@ mmi_viterbi_run(float64 *log_forw_prob,
     assert(loc_active_alpha[(n_obs - 1) % block_size][i] > 0);
     log_fp = log(loc_active_alpha[(n_obs - 1) % block_size][i]);
 
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
-
     *log_forw_prob = log_fp;
+    
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
     
 all_done:
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
@@ -1122,8 +1126,13 @@ mmi_viterbi_update(vector_t **feature,
 	}
 	
 	if (t % block_size == 0) {
-	    if (t > 0) {
+	    if ((t / block_size) < (n_red - 1)) {
 	        forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, block_size);
+	    }
+	    else {
+                forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
+	    }
+	    if (t > 0) {
                 forward_recompute(
                     loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
                     red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
@@ -1131,7 +1140,6 @@ mmi_viterbi_update(vector_t **feature,
 	    }
 	}
     }
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
 
     /* If no error was found, add the resulting utterance reestimation
      * accumulators to the global reestimation accumulators */

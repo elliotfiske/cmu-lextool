@@ -295,7 +295,7 @@ baum_welch_update(float64 *log_forw_prob,
     assert(loc_active_alpha[(n_obs - 1) % block_size][i] > 0);
     log_fp = log(loc_active_alpha[(n_obs - 1) % block_size][i]);
     
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
     
     for (t = 0; t < n_obs; t++) {
         if (t % block_size == 0) {
@@ -313,16 +313,22 @@ baum_welch_update(float64 *log_forw_prob,
 	    log_fp += loc_dscale[t % block_size][j];
         }
     }
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, n_obs % block_size);
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
 
     *log_forw_prob = log_fp;
 
+    forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
+    
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
 
     return S3_SUCCESS;
 
 error:
+    forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
+    
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
+    forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
 
     E_ERROR("%s ignored\n", corpus_utt_brief_name());
 
