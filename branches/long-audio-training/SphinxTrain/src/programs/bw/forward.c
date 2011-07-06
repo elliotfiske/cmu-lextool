@@ -316,6 +316,7 @@ cleanup:
         fprintf(stderr, "\n");
     }*/
     
+    forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
 
     return retval;
@@ -477,9 +478,9 @@ forward_reduced(float64 **active_alpha,
         }
         forward_clear_arrays(loc_active_alpha + 1, loc_active_astate + 1, (bp ? (loc_bp + 1) : NULL), loc_dscale + 1, block_obs - 1);
     }
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, (bp ? loc_bp : NULL), loc_dscale, 1);
     
 cleanup:
-    
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
 
     return retval;

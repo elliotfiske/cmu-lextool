@@ -679,7 +679,7 @@ backward_update(float64 **red_active_alpha,
             memcpy(loc_dscale[block_size], loc_dscale[0], inv->gauden->n_feat * sizeof(float64));
             
             forward_clear_arrays(loc_active_alpha, loc_active_astate, NULL, loc_dscale,
-                (((t / block_size) < (n_red - 2)) ? block_size : (n_obs % block_size)));
+                (((t / block_size) < (n_red - 2)) ? block_size : ((n_obs - 1) % block_size + 1)));
             
             forward_recompute(
                 loc_active_alpha, loc_active_astate, loc_n_active_astate, NULL, loc_scale, loc_dscale,
@@ -1313,10 +1313,10 @@ backward_update(float64 **red_active_alpha,
     printf(" %d", n_reest_tot / n_obs);
     printf(" %e", t_pprob / n_obs);
 
-    forward_clear_arrays(loc_active_alpha, loc_active_astate, NULL, loc_dscale, n_obs % block_size);
+    forward_clear_arrays(loc_active_alpha, loc_active_astate, NULL, loc_dscale, block_size);
+    ckd_free(loc_dscale[block_size]);
     
 free:
-
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, NULL, &loc_scale, &loc_dscale);
 
     ckd_free(active_a);
