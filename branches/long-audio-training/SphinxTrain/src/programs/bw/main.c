@@ -836,7 +836,7 @@ main_reestimate(model_inventory_t *inv,
 	if (!viterbi) {
 	    /* accumulate reestimation sums for the utterance */
 	    if (baum_welch_update(&log_lik,
-				  f, 11, n_frame,
+				  f, sqrt(n_frame), n_frame,
 				  state_seq, n_state,
 				  inv,
 				  a_beam,
@@ -863,7 +863,7 @@ main_reestimate(model_inventory_t *inv,
 	else {
 	    /* Viterbi search and accumulate in it */
 	    if (viterbi_update(&log_lik,
-			       f, 11, n_frame,
+			       f, sqrt(n_frame), n_frame,
 			       state_seq, n_state,
 			       inv,
 			       a_beam,
@@ -1232,7 +1232,7 @@ mmi_rand_train(model_inventory_t *inv,
 
       /* viterbi compuation to get the acoustic score for a word hypothesis */
       if (mmi_viterbi_run(&log_lik,
-			  arc_f, 11, n_word_obs,
+			  arc_f, sqrt(n_word_obs), n_word_obs,
 			  state_seq, n_state,
 			  inv,
 			  a_beam) == S3_SUCCESS) {
@@ -1290,7 +1290,7 @@ mmi_rand_train(model_inventory_t *inv,
       state_seq = next_utt_states_mmie(&n_state, lex, inv, mdef, cword, lphone, rphone);
       
       /* viterbi update model parameters */
-      if (mmi_viterbi_update(arc_f, 11, n_word_obs,
+      if (mmi_viterbi_update(arc_f, sqrt(n_word_obs), n_word_obs,
 			     state_seq, n_state,
 			     inv,
 			     a_beam,
@@ -1393,7 +1393,7 @@ mmi_best_train(model_inventory_t *inv,
 	        
 	    /* viterbi compuation to get the acoustic score for a word hypothesis */
 	    if (mmi_viterbi_run(&log_lik,
-				arc_f, 11, n_word_obs,
+				arc_f, sqrt(n_word_obs), n_word_obs,
 				state_seq, n_state,
 				inv,
 				a_beam) == S3_SUCCESS) {
@@ -1463,7 +1463,7 @@ mmi_best_train(model_inventory_t *inv,
       state_seq = next_utt_states_mmie(&n_state, lex, inv, mdef, cword, lphone, rphone);
       
       /* viterbi update model parameters */
-      if (mmi_viterbi_update(arc_f, 11, n_word_obs,
+      if (mmi_viterbi_update(arc_f, sqrt(n_word_obs), n_word_obs,
 			     state_seq, n_state,
 			     inv,
 			     a_beam,
@@ -1520,7 +1520,7 @@ mmi_ci_train(model_inventory_t *inv,
     
     /* viterbi compuation to get the acoustic score for a word hypothesis */
     if (mmi_viterbi_run(&log_lik,
-			arc_f, 11, n_word_obs,
+			arc_f, sqrt(n_word_obs), n_word_obs,
 			state_seq, n_state,
 			inv,
 			a_beam) == S3_SUCCESS) {
@@ -1554,7 +1554,7 @@ mmi_ci_train(model_inventory_t *inv,
       state_seq = next_utt_states(&n_state, lex, inv, mdef, lat->arc[n].word);
       
       /* viterbi update model parameters */
-      if (mmi_viterbi_update(arc_f, 11, n_word_obs,
+      if (mmi_viterbi_update(arc_f, sqrt(n_word_obs), n_word_obs,
 			     state_seq, n_state,
 			     inv,
 			     a_beam,
