@@ -128,3 +128,12 @@ Result : Total Insertions : 0         Total Deletions : 1      Total Substitutio
             Total Corrected Ins: 0    Total Corrected Del: 1  Total Corrected Subs: 0
             Total Word Errors: 1  
 This according to me is a perfect result for a typical program to count timed word errors.
+
+Configurations:
+i) small files (upto 5 mins long):
+	<property name="absoluteBeamWidth" value="-1" />
+	<property name="relativeBeamWidth" value="1E-200" />
+	<property name="outOfGrammarProbability" value="1E-8"/>
+	<property name="phoneInsertionProbability" value="1E-85"/>
+ii) large files (upto 20 mins long) :
+
