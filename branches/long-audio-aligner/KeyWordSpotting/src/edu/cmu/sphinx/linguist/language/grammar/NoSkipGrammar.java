@@ -21,6 +21,8 @@ import edu.cmu.sphinx.decoder.ResultListener;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
+import edu.cmu.sphinx.util.props.PropertyException;
+import edu.cmu.sphinx.util.props.PropertySheet;
 import edu.cmu.sphinx.util.props.S4Component;
 
 public class NoSkipGrammar extends Grammar implements ResultListener{
@@ -51,7 +53,7 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 		while(st.hasMoreTokens()){
 			String token = st.nextToken();
 			token = token.toLowerCase();
-			while(token.compareTo(" ")!= 0){
+			if(token.compareTo(" ")!= 0){
 				tokens.add(token);
 			}			
 		}
@@ -64,12 +66,7 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 	 *   ↑________________________________________________|
 	 */
 	protected GrammarNode createGrammar(){
-		
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
-		GrammarNode branchNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
-		
-		// Create grammar loop from branchNode to intial.
-		branchNode.add(initialNode, logMath.getLogOne());
 		Iterator<String> iter = tokens.iterator();
 		GrammarNode prevWordNode = initialNode;
 		GrammarNode lastWordNode = initialNode;
@@ -79,18 +76,30 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 			prevWordNode.add(lastWordNode, logMath.getLogOne());
 			prevWordNode = lastWordNode;
 		}
-		lastWordNode.add(branchNode, logMath.getLogOne());
+		lastWordNode.add(initialNode, logMath.getLogOne());
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode.setFinalNode(true);
 		
 		// Currently Arbitrarily setting low To-final prob.
 		// This is subject to experimentation
-		branchNode.add(finalNode, logMath.linearToLog(0.001));
-		return finalNode;		
+		initialNode.add(finalNode, logMath.linearToLog(0.001));
+		//initialNode.add(finalNode, logMath.linearToLog(0.000001));
+		return initialNode;		
 	}
 	@Override
 	public void newResult(Result result) {
 		return ;		
 	}
+	
+	   /*
+     * (non-Javadoc)
+     *
+     * @see edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.util.props.PropertySheet)
+     */
+     @Override
+     public void newProperties(PropertySheet ps) throws PropertyException {
+         super.newProperties(ps);
+         logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
+     }
 	
 }
