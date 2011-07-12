@@ -19,9 +19,11 @@ import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.dictionary.Pronunciation;
 import edu.cmu.sphinx.linguist.dictionary.Word;
+import edu.cmu.sphinx.linguist.flat.*;
 import edu.cmu.sphinx.linguist.language.grammar.Grammar;
 import edu.cmu.sphinx.linguist.language.grammar.GrammarArc;
 import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
+import edu.cmu.sphinx.linguist.util.GDLDumper;
 import edu.cmu.sphinx.util.Cache;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.StatisticsVariable;
@@ -415,15 +417,19 @@ public class KWSFlatLinguist implements Linguist, Configurable {
         TimerPool.getTimer(this, "Connect Nodes").stop();
 
         SentenceHMMState initialState = findStartingState();
+        GState state = getGState(grammar.getInitialNode());
+        state.attachState(initialState,initialState, logOne, logOne);
 
         // add an out-of-grammar branch if configured to do so
         if (addOutOfGrammarBranch) {
-            CIPhoneLoop phoneLoop = new CIPhoneLoop(phoneLoopAcousticModel, logPhoneInsertionProbability);
-            SentenceHMMState firstBranchState = (SentenceHMMState)
-                    phoneLoop.getSearchGraph().getInitialState();
-            initialState.connect(getArc(firstBranchState, logOne, logOutOfGrammarBranchProbability));
+        	PhoneLoopCI phoneLoop = new PhoneLoopCI(phoneLoopAcousticModel,
+            		logPhoneInsertionProbability, initialState);
+        	SentenceHMMState firstBranchState = (SentenceHMMState)
+                    phoneLoop.getSearchGraph().getInitialState();            
+            initialState.connect(getArc(firstBranchState, logMath.linearToLog(0.00001),
+            		logOutOfGrammarBranchProbability));            
         }
-
+        
         searchGraph = new FlatSearchGraph(initialState);
         TimerPool.getTimer(this, "Compile").stop();
         // Now that we are all done, dump out some interesting
@@ -436,6 +442,8 @@ public class KWSFlatLinguist implements Linguist, Configurable {
         }
         nodeStateMap = null;
         arcPool = null;
+        GDLDumper dumper = new GDLDumper("./graph.gdl", this, true,true, true, logMath);
+        dumper.run();
         return SentenceHMMState.collectStates(initialState);
     }
 

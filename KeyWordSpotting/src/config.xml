@@ -11,9 +11,8 @@
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-3"/>
-	<property name="phoneInsertionProbability" value="1E-80"/>	
-
+	<property name="outOfGrammarProbability" value="1E-81"/>
+	<property name="phoneInsertionProbability" value="1E-184"/>	
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
 	</component>
@@ -43,14 +42,14 @@
 		<property name="frontend" value="${frontend}" />
 	</component>
 
-	<component name="FlatLinguist" type="edu.cmu.sphinx.linguist.flat.FlatLinguist">
+	<component name="FlatLinguist" type="edu.cmu.sphinx.linguist.KWSFlatLinguist.KWSFlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="NoSkipGrammar" />
 		<property name="acousticModel" value="wsj" />		
 		<property name="wordInsertionProbability" value="${wordInsertionProbability}" />
 		<property name="languageWeight" value="${languageWeight}" />
 		<property name="unitManager" value="unitManager" />	
-		<property name="addOutOfGrammarBranch" value="false"/>
+		<property name="addOutOfGrammarBranch" value="true"/>
 		<property name="phoneLoopAcousticModel" value="WSJ"/>
 		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/>
 		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}"/>
@@ -60,7 +59,7 @@
 	<component name="NoSkipGrammar" type="edu.cmu.sphinx.linguist.language.grammar.NoSkipGrammar">
 		<property name="dictionary" value="dictionary" />
 		<property name="logMath" value="logMath" />
-		<property name="addSilenceWords" value="true" />
+		<property name="addSilenceWords" value="false" />
 	</component>
 
 	<component name="dictionary" type="edu.cmu.sphinx.linguist.dictionary.FastDictionary">
