@@ -26,7 +26,7 @@ public class KeyWordSpotting {
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
 		Recognizer recognizer = (Recognizer)cm.lookup("recognizer");
 		NoSkipGrammar grammar = (NoSkipGrammar)cm.lookup("NoSkipGrammar");
-		grammar.setText("test");
+		grammar.setText("Azimuthal");
 		//System.out.println(grammar);
 		AudioFileDataSource dataSource = (AudioFileDataSource)cm.lookup("audioFileDataSource");
 		dataSource.setAudioFile(new URL("file:./resource/wav/test.wav"), null);
