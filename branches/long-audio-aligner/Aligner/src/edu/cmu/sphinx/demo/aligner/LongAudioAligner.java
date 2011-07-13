@@ -11,14 +11,16 @@
  */
 package edu.cmu.sphinx.demo.aligner;
 
-import java.awt.List;
+import java.util.List;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 
 import java.net.URL;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.RandomAccess;
 import java.util.StringTokenizer;
 
 import edu.cmu.sphinx.linguist.SearchGraph;
@@ -35,10 +37,16 @@ import edu.cmu.sphinx.linguist.language.grammar.TextAlignerGrammar;
 import edu.cmu.sphinx.linguist.util.GDLDumper;
 import edu.cmu.sphinx.linguist.util.LinguistDumper;
 import edu.cmu.sphinx.recognizer.Recognizer;
+import edu.cmu.sphinx.result.FrameStatistics;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.props.Configurable;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
+import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
+import edu.cmu.sphinx.decoder.ResultListener;
+import edu.cmu.sphinx.decoder.search.ActiveList;
+import edu.cmu.sphinx.decoder.search.AlternateHypothesisManager;
+import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 
 import edu.cmu.sphinx.util.AlignerTestCase;
@@ -99,14 +107,14 @@ public class LongAudioAligner {
 		recognizer.allocate();	
 		
 		Result result;		
-		String timedResult;
+		String timedResult;	
 		result = recognizer.recognize();
 		timedResult = result.getTimedBestResult(false, true);	// Base result					
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
 		System.out.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
-		System.out.println("Timed Result: "+timedResult+"/n");		
-		aflatLinguist.deallocate();
+		System.out.println("Timed Result: "+timedResult+"\n");			
+		aflatLinguist.deallocate();		
 		// Corrupt the input using StringErrorGenerator	
 		String corruptedInput = testCase.getCorruptedText();
 		grammar.setText(corruptedInput);
@@ -117,11 +125,11 @@ public class LongAudioAligner {
 		dataSource.setAudioFile(audioFileURL, null);
 		result = recognizer.recognize();
 		timedResult = result.getTimedBestResult(false, true);
-		System.out.println("Timed Result: "+timedResult+"/n");
+		System.out.println("Timed Result: "+timedResult+"\n");				
+		aflatLinguist.deallocate();
 		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
 		wec.align();
-		wec.printStats();		
-		aflatLinguist.deallocate();
+		wec.printStats();
 		System.out.println("================ GRAMMAR MODEL: REPETITIONS ===================");		
 		grammar.setGrammarType("MODEL_REPETITIONS");
 		aflatLinguist.allocate();
@@ -130,8 +138,8 @@ public class LongAudioAligner {
 		aflatLinguist.deallocate();
 		timedResult = result.getTimedBestResult(false, true);
 		wec = new WordErrorCount(testCase.getWordList(), timedResult);
-		System.out.println("Timed Result: "+timedResult+"/n");
+		System.out.println("Timed Result: "+timedResult+"\n");		
 		wec.align();
-		wec.printStats();	
+		wec.printStats();		
 	}
 }
