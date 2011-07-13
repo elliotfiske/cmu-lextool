@@ -24,12 +24,15 @@ import edu.cmu.sphinx.linguist.language.grammar.Grammar;
 import edu.cmu.sphinx.linguist.language.grammar.GrammarArc;
 import edu.cmu.sphinx.linguist.language.grammar.GrammarNode;
 import edu.cmu.sphinx.linguist.util.GDLDumper;
+import edu.cmu.sphinx.linguist.util.LinguistDumper;
 import edu.cmu.sphinx.util.Cache;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.StatisticsVariable;
 import edu.cmu.sphinx.util.TimerPool;
 import edu.cmu.sphinx.util.props.*;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -327,7 +330,12 @@ public class KWSFlatLinguist implements Linguist, Configurable {
     @Override
     public void startRecognition() {
         if (grammarHasChanged()) {
-            stateSet = compileGrammar();
+            try {
+				stateSet = compileGrammar();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
             totalStates.value = stateSet.size();
         }
     }
@@ -373,8 +381,9 @@ public class KWSFlatLinguist implements Linguist, Configurable {
      * jobs left on the grammar job queue, a job is removed from the queue and
      * the associated grammar node is expanded and attached to the tails.
      * GrammarJobs for the successors are added to the grammar job queue.
+     * @throws IOException 
      */
-    protected Collection<SentenceHMMState> compileGrammar() {
+    protected Collection<SentenceHMMState> compileGrammar() throws IOException {
         initialGrammarState = grammar.getInitialNode();
 
         nodeStateMap = new HashMap<GrammarNode, GState>();
@@ -416,22 +425,29 @@ public class KWSFlatLinguist implements Linguist, Configurable {
             gstate.connect();
         TimerPool.getTimer(this, "Connect Nodes").stop();
 
-        SentenceHMMState initialState = findStartingState();
-        GState state = getGState(grammar.getInitialNode());
-        state.attachState(initialState,initialState, logOne, logOne);
-
-        // add an out-of-grammar branch if configured to do so
-        if (addOutOfGrammarBranch) {
-        	PhoneLoopCI phoneLoop = new PhoneLoopCI(phoneLoopAcousticModel,
-            		logPhoneInsertionProbability, initialState);
-        	SentenceHMMState firstBranchState = (SentenceHMMState)
-                    phoneLoop.getSearchGraph().getInitialState();            
-            initialState.connect(getArc(firstBranchState, logMath.linearToLog(0.00001),
-            		logOutOfGrammarBranchProbability));            
-        }
-        
+        SentenceHMMState initialState = findStartingState();       
+        Set<SentenceHMMState> allStates = SentenceHMMState.collectStates(initialState);
+        int count = 0;
+		// add an out-of-grammar branch between each word transition if configured to do so
+	    if (addOutOfGrammarBranch) {
+	    	for(SentenceHMMState state: allStates) {        		
+	       		if(state.isWordStart()) {
+	       			//System.out.println("here");
+	       			count++;
+	       			PhoneLoopCI phoneLoop = new PhoneLoopCI(phoneLoopAcousticModel, logPhoneInsertionProbability,
+	       					state);	    
+	       			SentenceHMMState firstBranchState = (SentenceHMMState)
+	       			phoneLoop.getSearchGraph().getInitialState();
+	       			//System.out.println(state);
+	       			state.connect(getArc(firstBranchState, logOne, logOutOfGrammarBranchProbability));
+	       		}
+	       	}          	
+	    }
+	    nodeStateMap = null;
+	    arcPool = null;
         searchGraph = new FlatSearchGraph(initialState);
         TimerPool.getTimer(this, "Compile").stop();
+        
         // Now that we are all done, dump out some interesting
         // information about the process
         if (dumpGStates) {
@@ -439,11 +455,9 @@ public class KWSFlatLinguist implements Linguist, Configurable {
                 GState gstate = getGState(grammarNode);
                 gstate.dumpInfo();
             }
-        }
-        nodeStateMap = null;
-        arcPool = null;
-        GDLDumper dumper = new GDLDumper("./graph.gdl", this, true,true, true, logMath);
-        dumper.run();
+        }        
+        GDLDumper dumper = new GDLDumper("./linguist.gdl", this,true,false,false,logMath);
+		dumper.run();
         return SentenceHMMState.collectStates(initialState);
     }
 
@@ -1366,8 +1380,10 @@ public class KWSFlatLinguist implements Linguist, Configurable {
 
         /**
          * Prints info about this GState
+         * @throws IOException 
          */
-        void dumpInfo() {
+        void dumpInfo() throws IOException {
+        	//BufferedWriter writer = new BufferedWriter(new FileWriter("./graph.dot"));
             System.out.println(" ==== " + this + " ========");
             System.out.print("Node: " + node);
             if (node.isEmpty()) {

@@ -68,24 +68,18 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 	protected GrammarNode createGrammar(){
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		Iterator<String> iter = tokens.iterator();
-		GrammarNode prevWordNode = initialNode;
-		GrammarNode lastWordNode = initialNode;
-		while(iter.hasNext()){
-			String currTok = iter.next();
-			lastWordNode = createGrammarNode(currTok);
-			prevWordNode.add(lastWordNode, logMath.getLogOne());
-			prevWordNode = lastWordNode;
-		}
-		lastWordNode.add(initialNode, logMath.getLogOne());
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
-		finalNode.setFinalNode(true);
-		
-		// Currently Arbitrarily setting low To-final prob.
-		// This is subject to experimentation
-		initialNode.add(finalNode, logMath.linearToLog(0.001));
-		//initialNode.add(finalNode, logMath.linearToLog(0.000001));
+		initialNode.add(finalNode, logMath.getLogOne());
+		finalNode.add(initialNode, logMath.getLogOne());
+		while(iter.hasNext()){
+			GrammarNode currNode = createGrammarNode(iter.next());
+			initialNode.add(currNode, logMath.getLogOne());
+			currNode.add(finalNode, logMath.getLogOne());
+		}
 		return initialNode;		
 	}
+	
+	
 	@Override
 	public void newResult(Result result) {
 		return ;		
