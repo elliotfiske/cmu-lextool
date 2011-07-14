@@ -123,8 +123,9 @@ public class AlignerGrammar extends Grammar {
 	@Override
 	protected GrammarNode createGrammar() throws IOException {
 		
+		logger.info("Creating Grammar");
 		if(model_repetitions) {
-			selfLoopProbability = 0.01; 	// penalty for repetition
+			selfLoopProbability = 0.000001; 	// penalty for repetition
 		} else {
 			selfLoopProbability = 0.0;
 		}
@@ -144,10 +145,7 @@ public class AlignerGrammar extends Grammar {
 		if (model_insertions) {
 			// TODO CIPL
 			
-		}
-		//System.out.println("Self Loop Probability:"+logMath.linearToLog(selfLoopProbability));
-		//System.out.println("forward jump Probability: "+logMath.linearToLog(forwardJumpProbability));
-		//System.out.println("Backward Jump Probability:"+logMath.linearToLog(backwardTransitionProbability));
+		}		
 		
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
@@ -208,7 +206,7 @@ public class AlignerGrammar extends Grammar {
 				}
 			}
 		}
-		//initialNode.dumpDot("./graph.dot");
+		logger.info("Grammar Generated");
 		return initialNode;
 	}
 
