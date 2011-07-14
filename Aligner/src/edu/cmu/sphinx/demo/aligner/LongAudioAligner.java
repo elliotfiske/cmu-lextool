@@ -113,8 +113,10 @@ public class LongAudioAligner {
 		result = recognizer.recognize();
 		aflatLinguist.deallocate();
 		timedResult = result.getTimedBestResult(false, true);	// Base result					
-		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
-		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
+		
+		//URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");		
+		//AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
+		
 		System.out.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
 		System.out.println("Timed Result: "+timedResult+"\n");	
 		
