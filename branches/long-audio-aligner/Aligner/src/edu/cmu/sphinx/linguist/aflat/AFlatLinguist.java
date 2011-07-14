@@ -106,6 +106,8 @@ public class AFlatLinguist implements Linguist, Configurable {
     private Logger logger;
     private HMMPool hmmPool;
     SearchStateArc outOfGrammarGraph;
+    public Runtime runtime = Runtime.getRuntime();
+    private long counterForMemoryLogging = 0;
 
     // this map is used to manage the set of follow on units for a
     // particular grammar node. It is used to select the set of
@@ -188,6 +190,9 @@ public class AFlatLinguist implements Linguist, Configurable {
      */
     @Override
     public SearchGraph getSearchGraph() {
+    	logger.info("Generated Search Graph");
+    	logger.info("Total Memory= "+runtime.totalMemory()/1024);
+    	logger.info("Free Memory = "+runtime.freeMemory()/1024);
         return searchGraph;
     }
 
@@ -278,13 +283,16 @@ public class AFlatLinguist implements Linguist, Configurable {
 
     /** Compiles the grammar */
     private void compileGrammar() {
-        // iterate through the grammar nodes
-
+        
+    	logger.info("Compiling Grammar");
+    	// iterate through the grammar nodes
         Set<GrammarNode> nodeSet = grammar.getGrammarNodes();
 
         for (GrammarNode node : nodeSet) {
             initUnitMaps(node);
         }
+        logger.info("Free Memory before generating Search Graph= "
+        		+runtime.freeMemory()/1024);
         searchGraph = new DynamicFlatSearchGraph();
     }
 
@@ -533,7 +541,7 @@ public class AFlatLinguist implements Linguist, Configurable {
      * Represents a grammar node in the search graph. A grammar state needs to keep track of the associated grammar node
      * as well as the left context and next base unit.
      */
-    class GrammarState extends FlatSearchState {
+    public class GrammarState extends FlatSearchState {
 
         private final GrammarNode node;
         private final int lc;
@@ -641,7 +649,10 @@ public class AFlatLinguist implements Linguist, Configurable {
          */
         @Override
         public SearchStateArc[] getSuccessors() {
-
+        	counterForMemoryLogging ++;
+        	if(counterForMemoryLogging % 500000 ==0){
+        		logger.info("Free Memory= "+runtime.freeMemory()/1024);
+        	}
             SearchStateArc[] arcs = getCachedSuccessors();
             if (arcs == null) {
                 if (isFinal()) {
@@ -656,7 +667,6 @@ public class AFlatLinguist implements Linguist, Configurable {
                             new SearchStateArc[pronunciations.length+1];
                     
                     for (int i = 0; i < pronunciations.length; i++) {
-                    	//System.out.println("Pronunciation:"+pronunciations[i]);
                         nextArcs[i] =
                                 new PronunciationState(this, pronunciations[i]);
                     }

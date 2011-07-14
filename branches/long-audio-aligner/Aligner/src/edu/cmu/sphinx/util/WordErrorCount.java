@@ -232,6 +232,7 @@ public class WordErrorCount {
 				alignedMap.put(reference.get(i-1), hypothesis.get(j-1));
 				
 				// update the number of words from ref that have been skipped
+				/*
 				int numRefSkipped = lastRefAdded - i - 1;
 				int numHypSkipped = lastHypAdded - j - 1;
 				if(numRefSkipped < 0 || numHypSkipped < 0){
@@ -241,11 +242,12 @@ public class WordErrorCount {
 					int numSubs = Math.min(numRefSkipped, numHypSkipped);
 					int numIns = numHypSkipped - numSubs;
 					int numDels = numRefSkipped - numSubs;
-					//totalSubstitutions += numSubs;
-					//totalInsertions += numIns;
-					//totalDeletions += numDels;
-					//System.out.println("("+numIns+","+numDels+","+numSubs+")");
+					totalSubstitutions += numSubs;
+					totalInsertions += numIns;
+					totalDeletions += numDels;
+					System.out.println("("+numIns+","+numDels+","+numSubs+")");
 				}
+				*/
 				lastRefAdded = i;
 				lastHypAdded = j;				
 			}

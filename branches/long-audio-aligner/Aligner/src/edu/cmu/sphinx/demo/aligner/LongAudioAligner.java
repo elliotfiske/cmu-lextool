@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.RandomAccess;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
 import edu.cmu.sphinx.linguist.SearchGraph;
 import edu.cmu.sphinx.linguist.SearchState;
@@ -85,9 +86,10 @@ public class LongAudioAligner {
 			BufferedReader reader = new BufferedReader(new FileReader(pathToTextFile));
 			while ((line = reader.readLine()) != null) {
 				input = input.concat(line + " ");
-			}	
-			//input ="one";
+			}
 			URL URLToAudioFile = new URL("file:"+pathToAudioFile);
+			System.out.println("Path to Text File: "+pathToTextFile+
+					"\nPath To Audio File: "+pathToAudioFile);
 			currTest(recognizer, aflatLinguist, grammar, dataSource, input, URLToAudioFile);
 			recognizer.deallocate();
 		}
@@ -104,20 +106,24 @@ public class LongAudioAligner {
 		input=sc.customise(input);	
 		grammar.setText(input);
 		grammar.setGrammarType("");			// FORCE ALIGNED GRAMMAR : Default
-		recognizer.allocate();	
 		
+		recognizer.allocate();
 		Result result;		
 		String timedResult;	
 		result = recognizer.recognize();
+		aflatLinguist.deallocate();
 		timedResult = result.getTimedBestResult(false, true);	// Base result					
 		URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 		AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03, pathToWordFile);
 		System.out.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
-		System.out.println("Timed Result: "+timedResult+"\n");			
-		aflatLinguist.deallocate();		
+		System.out.println("Timed Result: "+timedResult+"\n");	
+		
+		
+		/*
 		// Corrupt the input using StringErrorGenerator	
 		String corruptedInput = testCase.getCorruptedText();
 		grammar.setText(corruptedInput);
+		
 		// change grammar Configurations
 		System.out.println("================== GRAMMAR MODEL: DELETIONS ===================");		
 		grammar.setGrammarType("MODEL_DELETIONS");
@@ -127,19 +133,6 @@ public class LongAudioAligner {
 		timedResult = result.getTimedBestResult(false, true);
 		System.out.println("Timed Result: "+timedResult+"\n");				
 		aflatLinguist.deallocate();
-		WordErrorCount wec = new WordErrorCount(testCase.getWordList(), timedResult);
-		wec.align();
-		wec.printStats();
-		System.out.println("================ GRAMMAR MODEL: REPETITIONS ===================");		
-		grammar.setGrammarType("MODEL_REPETITIONS");
-		aflatLinguist.allocate();
-		dataSource.setAudioFile(audioFileURL, null);
-		result = recognizer.recognize();
-		aflatLinguist.deallocate();
-		timedResult = result.getTimedBestResult(false, true);
-		wec = new WordErrorCount(testCase.getWordList(), timedResult);
-		System.out.println("Timed Result: "+timedResult+"\n");		
-		wec.align();
-		wec.printStats();		
+		*/	
 	}
 }
