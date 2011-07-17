@@ -16,6 +16,11 @@
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
+		<propertylist name="monitors">
+            <item>accuracyTracker </item>
+            <item>speedTracker </item>
+            <item>memoryTracker </item>
+        </propertylist>
 	</component>
 
 	<component name="decoder" type="edu.cmu.sphinx.decoder.Decoder">
@@ -160,5 +165,30 @@
 		<property name="logBase" value="1.0001" />
 		<property name="useAddTable" value="true" />
 	</component>
+	<!-- ******************************************************* -->
+    <!--  monitors                                               -->
+    <!-- ******************************************************* -->
+    
+    <component name="accuracyTracker" 
+                type="edu.cmu.sphinx.instrumentation.BestPathAccuracyTracker">
+        <property name="recognizer" value="${recognizer}"/>
+        <property name="showAlignedResults" value="false"/>
+        <property name="showRawResults" value="false"/>
+    </component>
+    
+    <component name="memoryTracker" 
+                type="edu.cmu.sphinx.instrumentation.MemoryTracker">
+        <property name="recognizer" value="${recognizer}"/>
+	<property name="showSummary" value="true"/>
+	<property name="showDetails" value="true"/>
+    </component>
+    
+    <component name="speedTracker" 
+                type="edu.cmu.sphinx.instrumentation.SpeedTracker">
+        <property name="recognizer" value="${recognizer}"/>
+        <property name="frontend" value="${frontend}"/>
+	<property name="showSummary" value="true"/>
+	<property name="showDetails" value="false"/>
+    </component>
 
 </config>
