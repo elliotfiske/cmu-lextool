@@ -478,18 +478,14 @@ public class KWSFlatLinguist implements Linguist, Configurable {
 		// add an out-of-grammar branch between each word transition if
 		// configured to do so
 		if (addOutOfGrammarBranch) {
-			for (GState gstate : gstateList) {
-				if (!gstate.getNode().isEmpty()) {
-					for (SentenceHMMState state : gstate.getEntryPoints()) {
-						PhoneLoopCI phoneLoop = new PhoneLoopCI(
-								phoneLoopAcousticModel,
-								logPhoneInsertionProbability, state);
-						SentenceHMMState firstBranchState = (SentenceHMMState) phoneLoop
-								.getSearchGraph().getInitialState();
-						state.connect(getArc(firstBranchState, logOne,
-								logOutOfGrammarBranchProbability));
-					}
-				}
+			GState gstate = nodeStateMap.get(initialGrammarState);
+			for (SentenceHMMState state : gstate.getEntryPoints()) {
+				PhoneLoopCI phoneLoop = new PhoneLoopCI(phoneLoopAcousticModel,
+						logPhoneInsertionProbability, state);
+				SentenceHMMState firstBranchState = (SentenceHMMState) phoneLoop
+						.getSearchGraph().getInitialState();
+				state.connect(getArc(firstBranchState, logOne,
+						logOutOfGrammarBranchProbability));
 			}
 		}
 		nodeStateMap = null;
