@@ -71,11 +71,18 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		initialNode.add(finalNode, logMath.getLogOne());
 		finalNode.add(initialNode, logMath.getLogOne());
+		GrammarNode lastWordGrammarNode = initialNode;
 		while(iter.hasNext()){
 			GrammarNode currNode = createGrammarNode(iter.next());
-			initialNode.add(currNode, logMath.getLogOne());
-			currNode.add(finalNode, logMath.getLogOne());
+			lastWordGrammarNode.add(currNode, logMath.getLogOne());
+			lastWordGrammarNode = currNode;
+			
+			// Parallel keyword topology
+			//initialNode.add(currNode, logMath.getLogOne());
+			
+			//currNode.add(finalNode, logMath.getLogOne());
 		}
+		lastWordGrammarNode.add(finalNode, logMath.getLogOne());
 		return initialNode;		
 	}
 	
