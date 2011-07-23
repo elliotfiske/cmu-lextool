@@ -1,0 +1,5 @@
+-------------  Development of new Linguist ---------------
+Def:
+i) Context : Every unit (word/phone) has set of predecessor and successor phone. Storing this information apparently is very important (or your viterbi search will go haywire due when co-articulation is encountered). So what is context information anyways? It simply stores the last few phones from the previous word to make sure that even if you mumble at the end of a word, it can jump the last few phones and still recognise that last word.
+	Hence, the <b> Left Context </b> for the first phone of a word is usually the last phone of the previous word, and <b>Right Context </b> of a phone is itself.
+
