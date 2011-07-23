@@ -24,15 +24,18 @@ public class KeyWordSpotting {
 
 	public static void main(String Args[]) throws IOException {
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
-		Recognizer recognizer = (Recognizer)cm.lookup("recognizer");
-		NoSkipGrammar grammar = (NoSkipGrammar)cm.lookup("NoSkipGrammar");
-		grammar.setText("Azimuthal");
-		//System.out.println(grammar);
-		AudioFileDataSource dataSource = (AudioFileDataSource)cm.lookup("audioFileDataSource");
-		dataSource.setAudioFile(new URL("file:./resource/wav/test.wav"), null);
+		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
+		NoSkipGrammar grammar = (NoSkipGrammar) cm.lookup("NoSkipGrammar");
+		System.out.println("Key Word : azimuthal");
+		grammar.setText("azimuthal");
+		// System.out.println(grammar);
+		AudioFileDataSource dataSource = (AudioFileDataSource) cm
+				.lookup("audioFileDataSource");
+		dataSource.setAudioFile(new URL("file:./resource/wav/azimuthal.wav"),
+				null);
 		recognizer.allocate();
 		Result result = recognizer.recognize();
 		System.out.println(result.getTimedBestResult(false, true));
-		
+
 	}
 }
