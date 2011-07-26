@@ -2,4 +2,16 @@
 Def:
 i) Context : Every unit (word/phone) has set of predecessor and successor phone. Storing this information apparently is very important (or your viterbi search will go haywire due when co-articulation is encountered). So what is context information anyways? It simply stores the last few phones from the previous word to make sure that even if you mumble at the end of a word, it can jump the last few phones and still recognise that last word.
 	Hence, the <b> Left Context </b> for the first phone of a word is usually the last phone of the previous word, and <b>Right Context </b> of a phone is itself.
+---------------- Phrase Spotting API ---------------------
+A typical phrase spotter will typically have the following functionality:
+i) allocate : allocates resources for required for phrase spotting such as 
+the decoder, linguist, grammar etc.
+
+ii) setPhrase : will create typically be used to set phrase words. One should typically re-build the search graph after this.
+
+iii) startSpotting: Starts phrase spotting on of the utterance. Generates the final timed data containing the start and end times of phrase.
+
+iv) getTimedResult : Returns the start and end time of the phrase each time it was spoken in the complete utterance.
+
+v) setAudioDataSource: Sets audio data source. This will come in handy when dealing with batch files.
 
