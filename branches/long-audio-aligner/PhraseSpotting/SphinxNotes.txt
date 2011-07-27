@@ -7,11 +7,9 @@ A typical phrase spotter will typically have the following functionality:
 i) allocate : allocates resources for required for phrase spotting such as 
 the decoder, linguist, grammar etc.
 
-ii) setPhrase : will create typically be used to set phrase words. One should typically re-build the search graph after this.
+ii) startSpotting: Starts phrase spotting on of the utterance. Generates the final timed data containing the start and end times of phrase.
 
-iii) startSpotting: Starts phrase spotting on of the utterance. Generates the final timed data containing the start and end times of phrase.
+iii) getTimedResult : Returns the start and end time of the phrase each time it was spoken in the complete utterance.
 
-iv) getTimedResult : Returns the start and end time of the phrase each time it was spoken in the complete utterance.
 
-v) setAudioDataSource: Sets audio data source. This will come in handy when dealing with batch files.
 
