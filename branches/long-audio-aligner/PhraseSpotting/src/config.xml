@@ -12,7 +12,7 @@
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
 	<property name="outOfGrammarProbability" value="1E-3"/>
-	<property name="phoneInsertionProbability" value="1E-80"/>	
+	<property name="phoneInsertionProbability" value="1E-50"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
@@ -47,7 +47,7 @@
 		<property name="frontend" value="${frontend}" />
 	</component>
 
-	<component name="linguist" type="edu.cmu.sphinx.linguist.PhraseSpottingFlatLinguist.PhraseSpottingFlatLinguist">
+	<component name="linguist" type="edu.cmu.sphinx.linguist.phrasespottingflatlinguist.PhraseSpottingFlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="grammar" />
 		<property name="acousticModel" value="wsj" />		

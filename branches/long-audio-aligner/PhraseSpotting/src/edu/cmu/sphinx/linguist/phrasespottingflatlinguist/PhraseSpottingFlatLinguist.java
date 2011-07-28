@@ -9,7 +9,7 @@
  * WARRANTIES.
  *
  */
-package edu.cmu.sphinx.linguist.PhraseSpottingFlatLinguist;
+package edu.cmu.sphinx.linguist.phrasespottingflatlinguist;
 
 import edu.cmu.sphinx.linguist.Linguist;
 import edu.cmu.sphinx.linguist.SearchGraph;
