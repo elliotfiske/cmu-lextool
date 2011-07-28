@@ -47,7 +47,7 @@
 		<property name="frontend" value="${frontend}" />
 	</component>
 
-	<component name="linguist" type="edu.cmu.sphinx.linguist.phrasespottingflatlinguist.PhraseSpottingFlatLinguist">
+	<component name="linguist" type="edu.cmu.sphinx.linguist.aflat.AFlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="grammar" />
 		<property name="acousticModel" value="wsj" />		
@@ -55,7 +55,7 @@
 		<property name="languageWeight" value="${languageWeight}" />
 		<property name="unitManager" value="unitManager" />	
 		<!-- additions start-->
-		<property name="addOutOfGrammarBranch" value="true"/>
+		<property name="addOutOfGrammarBranch" value="false"/>
 		<property name="phoneLoopAcousticModel" value="WSJ"/>
 		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/>
 		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}"/>
@@ -63,7 +63,7 @@
 		<!-- additions end --> 	
 	</component>
 
-	<component name="grammar" type="edu.cmu.sphinx.linguist.language.grammar.NoSkipGrammar">
+	<component name="grammar" type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
 		<property name="dictionary" value="dictionary" />
 		<property name="logMath" value="logMath" />
 		<property name="addSilenceWords" value="true" />
