@@ -56,4 +56,14 @@ public class Result {
 		return phraseText + "(" + startTime + "," + endTime + ")" ;
 	}
 
+	
+	public int equals(Result obj) {
+		if((Math.abs(this.getStartTime() - obj.getStartTime()) < 0.5) && 
+				(Math.abs(this.getEndTime() - obj.getEndTime()) < 0.5)) {
+			return 0;
+		}
+		
+		return 1;
+	}
+
 }

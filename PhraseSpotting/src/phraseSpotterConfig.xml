@@ -11,8 +11,8 @@
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-3"/>
-	<property name="phoneInsertionProbability" value="1E-80"/>	
+	<property name="outOfGrammarProbability" value="1E-1"/>
+	<property name="phoneInsertionProbability" value="1E-30"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
