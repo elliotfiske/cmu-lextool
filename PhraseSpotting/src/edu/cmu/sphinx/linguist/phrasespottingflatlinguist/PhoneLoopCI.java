@@ -10,7 +10,7 @@
  *
  */
 
-package edu.cmu.sphinx.linguist.PhraseSpottingFlatLinguist;
+package edu.cmu.sphinx.linguist.phrasespottingflatlinguist;
 
 import edu.cmu.sphinx.linguist.SearchGraph;
 import edu.cmu.sphinx.linguist.SearchState;

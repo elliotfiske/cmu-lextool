@@ -10,7 +10,7 @@
  *
  */
 
-package edu.cmu.sphinx.PhraseSpotter;
+package edu.cmu.sphinx.phrasespotter;
 
 
 /**

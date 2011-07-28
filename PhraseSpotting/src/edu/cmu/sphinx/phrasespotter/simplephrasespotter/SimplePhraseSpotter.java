@@ -10,7 +10,7 @@
  *
  */
 
-package edu.cmu.sphinx.PhraseSpotter.SimplePhraseSpotter;
+package edu.cmu.sphinx.phrasespotter.simplephrasespotter;
 
 import java.net.URL;
 import java.util.Iterator;
@@ -18,13 +18,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import edu.cmu.sphinx.PhraseSpotter.PhraseSpotter;
-import edu.cmu.sphinx.PhraseSpotter.Result;
-import edu.cmu.sphinx.decoder.Decoder;
+import edu.cmu.sphinx.phrasespotter.PhraseSpotter;
+import edu.cmu.sphinx.phrasespotter.Result;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
-import edu.cmu.sphinx.instrumentation.Monitor;
-import edu.cmu.sphinx.linguist.PhraseSpottingFlatLinguist.PhraseSpottingFlatLinguist;
-import edu.cmu.sphinx.linguist.language.grammar.Grammar;
+import edu.cmu.sphinx.linguist.phrasespottingflatlinguist.PhraseSpottingFlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.NoSkipGrammar;
 import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
@@ -52,8 +49,7 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 	public SimplePhraseSpotter(String phraseSpotterConfig) {
 		ConfigurationManager cm = new ConfigurationManager(phraseSpotterConfig);
 		recognizer = (Recognizer) cm.lookup(PROP_RECOGNIZER);
-		linguist = (PhraseSpottingFlatLinguist) cm
-												.lookup(PROP_LINGUIST);
+		linguist = (PhraseSpottingFlatLinguist) cm.lookup(PROP_LINGUIST);
 		grammar = (NoSkipGrammar) cm.lookup(PROP_GRAMMAR);
 		dataSource = (AudioFileDataSource) cm.lookup(PROP_AUDIO_DATA_SOURCE);
 	}
