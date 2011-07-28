@@ -111,6 +111,7 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 		// call this a simple Phrase Spotter
 
 		StringTokenizer st = new StringTokenizer(timedResult);
+		System.out.println(timedResult);
 		timedData = new LinkedList<TimedData>();
 		
 		while (st.hasMoreTokens()) {
