@@ -10,21 +10,15 @@
  *
  */
 
-package edu.cmu.sphinx.demo.PhraseSpotting;
+package edu.cmu.sphinx.demo.phrasespotting;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 
-
-import edu.cmu.sphinx.PhraseSpotter.PhraseSpotter;
-import edu.cmu.sphinx.PhraseSpotter.Result;
-import edu.cmu.sphinx.PhraseSpotter.SimplePhraseSpotter.SimplePhraseSpotter;
-import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
-import edu.cmu.sphinx.linguist.PhraseSpottingFlatLinguist.PhraseSpottingFlatLinguist;
-import edu.cmu.sphinx.linguist.language.grammar.NoSkipGrammar;
-import edu.cmu.sphinx.util.props.ConfigurationManager;
+import edu.cmu.sphinx.phrasespotter.Result;
+import edu.cmu.sphinx.phrasespotter.simplephrasespotter.SimplePhraseSpotter;
 
 public class PhraseSpotting {
 	public static void main(String Args[]) throws MalformedURLException{
