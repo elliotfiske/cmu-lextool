@@ -57,7 +57,7 @@ public class PhraseSpotting {
 		dataSource.setAudioFile(new URL("file:./resource/wav/test.wav"), null);
 		recognizer.allocate();
 		
-		System.out.println("---------------- Generating Timed Result ------------------");
+		System.out.println("-------------------- Generating Timed Result -----------------------");
 		edu.cmu.sphinx.result.Result baseResult = recognizer.recognize();
 		String timedResult = baseResult.getTimedBestResult(false, true);
 		System.out.println(timedResult);
@@ -122,5 +122,30 @@ public class PhraseSpotting {
 			Result data = iter.next();
 			System.out.println("(" + data.getStartTime() + "," + data.getEndTime() + ")");
 		}
+		
+		int numCorrectSpottings = 0;
+		Iterator<Result> baseIter = baseTimedResult.iterator();
+		while(baseIter.hasNext()){
+			iter = result.iterator();
+			Result currBaseToken = baseIter.next();		
+			
+			while(iter.hasNext()){
+				Result currPhraseToken = iter.next();
+				if(currBaseToken.equals(currPhraseToken) == 0){
+					numCorrectSpottings++;
+					continue;
+				}
+			}
+		}
+		System.out.println("------------------- Statistics ---------------------");
+		System.out.println("Number of phrase occurances:\t\t\t" + baseTimedResult.size());
+		System.out.println("Number of phrases correctly spotted:\t\t" + numCorrectSpottings);
+		System.out.println("Number of uncaught phrase occurance:\t\t" + 
+				(baseTimedResult.size() - numCorrectSpottings));
+		System.out.println("Number of false alarms:\t\t\t\t" + (result.size() - numCorrectSpottings));
+		System.out.println("Error rate:\t\t\t\t\t" +
+				(float)(baseTimedResult.size() - numCorrectSpottings)/(float)baseTimedResult.size());
+		
+		
 	}
 }
