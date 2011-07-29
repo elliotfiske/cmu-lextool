@@ -62,6 +62,7 @@ public class PhraseSpotting {
 		String timedResult = baseResult.getTimedBestResult(false, true);
 		System.out.println(timedResult);
 		
+		System.out.println("Times when the Phrase \"" + phrase + "\" was spoken:");
 		List<String> wordsInPhrase = new LinkedList<String>();
 		StringTokenizer tokenizer = new StringTokenizer(phrase);
 		while(tokenizer.hasMoreTokens()) {
