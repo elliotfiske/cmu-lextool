@@ -146,7 +146,7 @@ public class PhraseSpotting {
 		System.out.println("Number of false alarms:\t\t\t\t" + (result.size() - numCorrectSpottings));
 		System.out.println("Error rate:\t\t\t\t\t" +
 				(float)(baseTimedResult.size() - numCorrectSpottings)/(float)baseTimedResult.size());
-		System.out.println("Accuracy rate:\t\t\t\t" + ((float)numCorrectSpottings/(float)baseTimedResult.size()));
+		System.out.println("Accuracy rate:\t\t\t\t\t" + ((float)numCorrectSpottings/(float)baseTimedResult.size()));
 		
 	}
 }
