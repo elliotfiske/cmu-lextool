@@ -33,20 +33,26 @@ import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 public class PhraseSpotting {
-	public static void main(String Args[]) throws IOException{
-		
-		final String phrase = "quantum number";
+	public static void main(String Args[]) throws IOException {
+
+		// Initialise demo related variables
+		final String phrase = "quantum number"; // Phrase to be spotted
+		String pathToAudioFile = "./resource/wav/test.wav"; // Audio file
+		String pathToTextFile = "./resource/Transcription/test.txt"; // Transcription
+		// file
+
 		System.out.println("Phrase: " + phrase);
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		AFlatLinguist aflatLinguist = (AFlatLinguist) cm.lookup("linguist");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("grammar");
-		AudioFileDataSource dataSource = (AudioFileDataSource) cm.lookup("audioFileDataSource");
-		
-		BufferedReader reader = new BufferedReader(
-				new FileReader("./resource/Transcription/test.txt"));
+		AudioFileDataSource dataSource = (AudioFileDataSource) cm
+				.lookup("audioFileDataSource");
+
+		BufferedReader reader = new BufferedReader(new FileReader(
+				pathToTextFile));
 		String input = "";
-		String line ;
+		String line;
 		while ((line = reader.readLine()) != null) {
 			input = input.concat(line + " ");
 		}
@@ -54,29 +60,31 @@ public class PhraseSpotting {
 		input = sc.customise(input);
 		grammar.setGrammarType("");
 		grammar.setText(input);
-		dataSource.setAudioFile(new URL("file:./resource/wav/test.wav"), null);
+		dataSource.setAudioFile(new URL("file:" + pathToAudioFile), null);
 		recognizer.allocate();
-		
-		System.out.println("-------------------- Generating Timed Result -----------------------");
+
+		System.out
+				.println("-------------------- Generating Timed Result -----------------------");
 		edu.cmu.sphinx.result.Result baseResult = recognizer.recognize();
 		String timedResult = baseResult.getTimedBestResult(false, true);
 		System.out.println(timedResult);
-		
-		System.out.println("Times when the Phrase \"" + phrase + "\" was spoken:");
+
+		System.out.println("Times when the Phrase \"" + phrase
+				+ "\" was spoken:");
 		List<String> wordsInPhrase = new LinkedList<String>();
 		StringTokenizer tokenizer = new StringTokenizer(phrase);
-		while(tokenizer.hasMoreTokens()) {
+		while (tokenizer.hasMoreTokens()) {
 			wordsInPhrase.add(tokenizer.nextToken());
 		}
-		
+
 		List<Result> baseTimedResult = new LinkedList<Result>();
 		StringTokenizer stoken = new StringTokenizer(timedResult);
-		while(stoken.hasMoreTokens()) {
+		while (stoken.hasMoreTokens()) {
 			String wordFormed = "";
 			String currWord = stoken.nextToken();
 			String word = currWord.substring(0, currWord.indexOf("("));
-			String timedPart = currWord.substring(
-					currWord.indexOf("(") + 1, currWord.indexOf(")"));
+			String timedPart = currWord.substring(currWord.indexOf("(") + 1,
+					currWord.indexOf(")"));
 			String st = timedPart.substring(0, timedPart.indexOf(","));
 			String et = timedPart.substring(timedPart.indexOf(",") + 1);
 			ListIterator<String> iter = wordsInPhrase.listIterator();
@@ -84,69 +92,89 @@ public class PhraseSpotting {
 			float startTime = Float.valueOf(st);
 			float endTime = Float.valueOf(et);
 			int match = 0;
-			while(phraseWord.compareToIgnoreCase(word) == 0 && match < wordsInPhrase.size()){
+			while (phraseWord.compareToIgnoreCase(word) == 0
+					&& match < wordsInPhrase.size()) {
 				match++;
 				wordFormed += word + " ";
 				endTime = Float.valueOf(et);
-				if(stoken.hasMoreTokens()){
-					if(iter.hasNext()) {
+				if (stoken.hasMoreTokens()) {
+					if (iter.hasNext()) {
 						phraseWord = iter.next();
 						currWord = stoken.nextToken();
 						word = currWord.substring(0, currWord.indexOf("("));
 						timedPart = currWord.substring(
-								currWord.indexOf("(") + 1, currWord.indexOf(")"));
+								currWord.indexOf("(") + 1, currWord
+										.indexOf(")"));
 						st = timedPart.substring(0, timedPart.indexOf(","));
 						et = timedPart.substring(timedPart.indexOf(",") + 1);
 					}
 				}
-			}			
+			}
 			// if phrase was completely detected then mark this position
-			
-			if(match == wordsInPhrase.size()) {
+
+			if (match == wordsInPhrase.size()) {
 				System.out.println("(" + startTime + "," + endTime + ")");
 				baseTimedResult.add(new Result(phrase, startTime, endTime));
 			}
-		}		
-		
+		}
+
 		// Start PhraseSpotting now and see how well it performs
-		
-		System.out.println("\n------------- Generating Phrase Spotter's Result --------------------");
-		SimplePhraseSpotter spotter = new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");		
+
+		System.out
+				.println("\n------------- Generating Phrase Spotter's Result --------------------");
+		SimplePhraseSpotter spotter = new SimplePhraseSpotter(
+				"./src/phraseSpotterConfig.xml");
 		spotter.setPhrase(phrase);
-		spotter.setAudioDataSource(new URL("file:./resource/wav/test.wav"));
+		spotter.setAudioDataSource(new URL("file:" + pathToAudioFile));
 		spotter.allocate();
 		spotter.startSpotting();
 		List<Result> result = spotter.getTimedResult();
 		Iterator<Result> iter = result.iterator();
 		System.out.println("Times when \"" + phrase + "\" was spotted");
-		while(iter.hasNext()){
+		while (iter.hasNext()) {
 			Result data = iter.next();
-			System.out.println("(" + data.getStartTime() + "," + data.getEndTime() + ")");
+			System.out.println("(" + data.getStartTime() + ","
+					+ data.getEndTime() + ")");
 		}
-		
+
 		int numCorrectSpottings = 0;
 		Iterator<Result> baseIter = baseTimedResult.iterator();
-		while(baseIter.hasNext()){
+		while (baseIter.hasNext()) {
 			iter = result.iterator();
-			Result currBaseToken = baseIter.next();		
-			
-			while(iter.hasNext()){
+			Result currBaseToken = baseIter.next();
+
+			while (iter.hasNext()) {
 				Result currPhraseToken = iter.next();
-				if(currBaseToken.equals(currPhraseToken) == 0){
+				if (currBaseToken.equals(currPhraseToken) == 0) {
 					numCorrectSpottings++;
 					continue;
 				}
 			}
 		}
-		System.out.println("------------------- Statistics ---------------------");
-		System.out.println("Number of phrase occurances:\t\t\t" + baseTimedResult.size());
-		System.out.println("Number of phrases correctly spotted:\t\t" + numCorrectSpottings);
-		System.out.println("Number of uncaught phrase occurance:\t\t" + 
-				(baseTimedResult.size() - numCorrectSpottings));
-		System.out.println("Number of false alarms:\t\t\t\t" + (result.size() - numCorrectSpottings));
-		System.out.println("Error rate:\t\t\t\t\t" +
-				(float)(baseTimedResult.size() - numCorrectSpottings)/(float)baseTimedResult.size());
-		System.out.println("Accuracy rate:\t\t\t\t\t" + ((float)numCorrectSpottings/(float)baseTimedResult.size()));
-		
+		Float errorRate = (float) (baseTimedResult.size() - numCorrectSpottings)
+				/ (float) baseTimedResult.size();
+		String erToString = errorRate.toString();
+		if (erToString.length() > 6) {
+			erToString = erToString.substring(0, 6);
+		}
+		Float accuracy = ((float) numCorrectSpottings / (float) baseTimedResult
+				.size());
+		String accuracyToString = accuracy.toString();
+		if (accuracyToString.length() > 6) {
+			accuracyToString = accuracyToString.substring(0, 6);
+		}
+		System.out
+				.println("------------------- Statistics ---------------------");
+		System.out.println("Number of phrase occurances:\t\t\t"
+				+ baseTimedResult.size());
+		System.out.println("Number of phrases correctly spotted:\t\t"
+				+ numCorrectSpottings);
+		System.out.println("Number of uncaught phrase occurance:\t\t"
+				+ (baseTimedResult.size() - numCorrectSpottings));
+		System.out.println("Number of false alarms:\t\t\t\t"
+				+ (result.size() - numCorrectSpottings));
+		System.out.println("Error rate:\t\t\t\t\t" + erToString);
+		System.out.println("Accuracy rate:\t\t\t\t\t" + accuracyToString);
+
 	}
 }
