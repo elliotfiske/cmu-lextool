@@ -140,16 +140,20 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 			float endTime = 0;
 			while(phraseIter.hasNext()) {
 				String word = phraseIter.next();
-				TimedData data = resultIter.next();
-				// if phrase is begining store the start time
-				if( startOfPhrase ){
-					startTime = data.getStartTime();
-					startOfPhrase = false;
+				if(resultIter.hasNext()) {
+					TimedData data = resultIter.next();
+					// if phrase is begining store the start time
+					if( startOfPhrase ){
+						startTime = data.getStartTime();
+						startOfPhrase = false;
+					}
+					if(!( word.compareToIgnoreCase(data.getText()) == 0) ) {				
+						throw new Error("Words in result don't match phrase");
+					}
+					endTime = data.getEndTime();
+				} else {
+					throw new Error("The recognizer for phrase spotting didn't exit gracefully.");
 				}
-				if(!( word.compareToIgnoreCase(data.getText()) == 0) ) {				
-					throw new Error("Words in result don't match phrase");
-				}
-				endTime = data.getEndTime();
 			}
 			result.add(new Result(phraseText, startTime, endTime));
 		}

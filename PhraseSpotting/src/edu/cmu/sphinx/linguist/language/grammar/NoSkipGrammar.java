@@ -67,10 +67,11 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 	 */
 	protected GrammarNode createGrammar(){
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
-		Iterator<String> iter = tokens.iterator();
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
-		initialNode.add(finalNode, logMath.getLogOne());
-		finalNode.add(initialNode, logMath.getLogOne());
+		Iterator<String> iter = tokens.iterator();
+		GrammarNode lastNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
+		initialNode.add(lastNode, logMath.getLogOne());
+		lastNode.add(initialNode, logMath.getLogOne());
 		GrammarNode lastWordGrammarNode = initialNode;
 		while(iter.hasNext()){
 			GrammarNode currNode = createGrammarNode(iter.next());
@@ -82,7 +83,9 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 			
 			//currNode.add(finalNode, logMath.getLogOne());
 		}
-		lastWordGrammarNode.add(finalNode, logMath.getLogOne());
+		lastWordGrammarNode.add(lastNode, logMath.getLogOne());
+		lastNode.add(finalNode, logMath.linearToLog(0.000001));
+		finalNode.setFinalNode(true);
 		return initialNode;		
 	}
 	

@@ -12,7 +12,7 @@
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
 	<property name="outOfGrammarProbability" value="1E-1"/>
-	<property name="phoneInsertionProbability" value="1E-30"/>	
+	<property name="phoneInsertionProbability" value="1E-20"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
