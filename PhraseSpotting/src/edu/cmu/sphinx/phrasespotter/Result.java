@@ -58,8 +58,8 @@ public class Result {
 
 	
 	public int equals(Result obj) {
-		if((Math.abs(this.getStartTime() - obj.getStartTime()) < 0.5) && 
-				(Math.abs(this.getEndTime() - obj.getEndTime()) < 0.5)) {
+		if((Math.abs(this.getStartTime() - obj.getStartTime()) < 1.0) && 
+				(Math.abs(this.getEndTime() - obj.getEndTime()) < 1.0)) {
 			return 0;
 		}
 		
