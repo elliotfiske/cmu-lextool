@@ -11,5 +11,7 @@ ii) startSpotting: Starts phrase spotting on of the utterance. Generates the fin
 
 iii) getTimedResult : Returns the start and end time of the phrase each time it was spoken in the complete utterance.
 
-
+---------------- Timed Phrase Result ---------------------
+A new class AlignerResult was added to the project to repo allow fetching timed data of individual phone.
+The idea implementation was based on a simple idea of hopping from one Token to it's predecessor (starting from best active token). While hoping backwards silence and word tokens were taken care of ( ensured that they don't appear in the final result).Starttime of any token begins at the end time of it's previous token (this time previous token could be a silence token too). 
 
