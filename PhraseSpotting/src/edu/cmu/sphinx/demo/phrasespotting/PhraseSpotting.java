@@ -23,12 +23,20 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
+import edu.cmu.sphinx.decoder.search.Token;
+import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
+import edu.cmu.sphinx.linguist.SearchState;
+import edu.cmu.sphinx.linguist.UnitSearchState;
+import edu.cmu.sphinx.linguist.WordSearchState;
+import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.aflat.AFlatLinguist;
+import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
 import edu.cmu.sphinx.phrasespotter.Result;
 import edu.cmu.sphinx.phrasespotter.simplephrasespotter.SimplePhraseSpotter;
 import edu.cmu.sphinx.recognizer.Recognizer;
+import edu.cmu.sphinx.result.AlignerResult;
 import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
@@ -68,7 +76,9 @@ public class PhraseSpotting {
 		edu.cmu.sphinx.result.Result baseResult = recognizer.recognize();
 		String timedResult = baseResult.getTimedBestResult(false, true);
 		System.out.println(timedResult);
-
+		AlignerResult alignerResult = new AlignerResult(baseResult);
+		System.out.println(alignerResult.getBestTimedPhoneResult());
+		
 		System.out.println("Times when the Phrase \"" + phrase
 				+ "\" was spoken:");
 		List<String> wordsInPhrase = new LinkedList<String>();
