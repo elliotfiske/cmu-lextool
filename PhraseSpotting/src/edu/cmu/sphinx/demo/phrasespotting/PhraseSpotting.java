@@ -76,9 +76,12 @@ public class PhraseSpotting {
 		edu.cmu.sphinx.result.Result baseResult = recognizer.recognize();
 		String timedResult = baseResult.getTimedBestResult(false, true);
 		System.out.println(timedResult);
+
+		System.out
+				.println("-------------------- Timed Phone Result ----------------------------");
 		AlignerResult alignerResult = new AlignerResult(baseResult);
 		System.out.println(alignerResult.getBestTimedPhoneResult());
-		
+
 		System.out.println("Times when the Phrase \"" + phrase
 				+ "\" was spoken:");
 		List<String> wordsInPhrase = new LinkedList<String>();
