@@ -19,7 +19,7 @@ public class AlignerResult {
 		Token tok = result.getBestActiveToken();
 
 		StringBuilder sb = new StringBuilder();
-		float sampleRate = 0.0f;
+		float sampleRate = 1.0f;	// non-zero initialisation. 
 		long lastSampleNumber = -1;
 		long currSampleNumber = 0;
 		boolean unitDetected = false;
@@ -32,8 +32,8 @@ public class AlignerResult {
 				if (lastSampleNumber == -1) {
 					lastSampleNumber = currSampleNumber;
 				}
-				if (sampleRate == 0.0f) {
-					sampleRate = data.getSampleRate();
+				if (sampleRate == 1.0f) {
+					sampleRate = data.getSampleRate();	// Initialise sample rate to correct value
 				}
 			}
 			if (unitDetected) {
