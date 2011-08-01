@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
+
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
@@ -80,7 +84,33 @@ public class PhraseSpotting {
 		System.out
 				.println("-------------------- Timed Phone Result ----------------------------");
 		AlignerResult alignerResult = new AlignerResult(baseResult);
-		System.out.println(alignerResult.getBestTimedPhoneResult());
+		String aResult = alignerResult.getBestTimedPhoneResult();
+		
+		float audioLength = 0;
+		AudioInputStream stream;
+		try {
+			stream = AudioSystem.getAudioInputStream(new URL("file:" + pathToAudioFile));
+			audioLength = stream.getFrameLength()/stream.getFormat().getFrameRate();
+		} catch (UnsupportedAudioFileException e) {			
+			e.printStackTrace();
+		}	
+		
+		int phoneIndex = 0;
+		StringTokenizer stokeniser = new StringTokenizer(aResult);
+		int numPhones = stokeniser.countTokens();
+		float parameterX = 0.0f;
+		while(stokeniser.hasMoreTokens()) {
+			String data = stokeniser.nextToken();
+			String startTime = data.substring(data.indexOf("(") + 1, data.indexOf(","));
+			float time = Float.valueOf(startTime);
+			float currValue = (time - phoneIndex * audioLength / numPhones);
+			if(parameterX < currValue) {
+				parameterX = currValue;
+			}
+			phoneIndex ++;
+		}
+		
+		System.out.println("Paramter Value: " + parameterX);
 
 		System.out.println("Times when the Phrase \"" + phrase
 				+ "\" was spoken:");
