@@ -48,9 +48,9 @@ public class PhraseSpotting {
 	public static void main(String Args[]) throws IOException {
 
 		// Initialise demo related variables
-		final String phrase = "quantum number"; // Phrase to be spotted
-		String pathToAudioFile = "./resource/wav/test.wav"; // Audio file
-		String pathToTextFile = "./resource/Transcription/test.txt"; // Transcription
+		final String phrase = "buck was"; // Phrase to be spotted
+		String pathToAudioFile = "./resource/wav/call_of_the_wild_chapter_01.wav"; // Audio file
+		String pathToTextFile = "./resource/Transcription/call_of_the_wild_chapter_01.txt"; // Transcription
 		// file
 
 		System.out.println("Phrase: " + phrase);
@@ -85,33 +85,40 @@ public class PhraseSpotting {
 				.println("-------------------- Timed Phone Result ----------------------------");
 		AlignerResult alignerResult = new AlignerResult(baseResult);
 		String aResult = alignerResult.getBestTimedPhoneResult();
-		
+
 		float audioLength = 0;
 		AudioInputStream stream;
 		try {
-			stream = AudioSystem.getAudioInputStream(new URL("file:" + pathToAudioFile));
-			audioLength = stream.getFrameLength()/stream.getFormat().getFrameRate();
-		} catch (UnsupportedAudioFileException e) {			
+			stream = AudioSystem.getAudioInputStream(new URL("file:"
+					+ pathToAudioFile));
+			audioLength = stream.getFrameLength()
+					/ stream.getFormat().getFrameRate();
+		} catch (UnsupportedAudioFileException e) {
 			e.printStackTrace();
-		}	
-		
-		int phoneIndex = 0;
+		}
+
+		// USE TIMED PHONE RESULT FOR COMPUTING PARAMETER VALUE NOW
+		int phoneIndex = 1;
 		StringTokenizer stokeniser = new StringTokenizer(aResult);
 		int numPhones = stokeniser.countTokens();
 		float parameterX = 0.0f;
-		while(stokeniser.hasMoreTokens()) {
+		while (stokeniser.hasMoreTokens()) {
 			String data = stokeniser.nextToken();
-			String startTime = data.substring(data.indexOf("(") + 1, data.indexOf(","));
+			String startTime = data.substring(data.indexOf("(") + 1, data
+					.indexOf(","));
 			float time = Float.valueOf(startTime);
 			float currValue = (time - phoneIndex * audioLength / numPhones);
-			if(parameterX < currValue) {
+			currValue = Math.abs(currValue);
+			if (parameterX < currValue) {
 				parameterX = currValue;
 			}
-			phoneIndex ++;
+			phoneIndex++;
 		}
-		
-		System.out.println("Paramter Value: " + parameterX);
 
+		System.out.println("Parameter Value: " + parameterX + "\n");
+
+		// back to logging simple timed results
+		
 		System.out.println("Times when the Phrase \"" + phrase
 				+ "\" was spoken:");
 		List<String> wordsInPhrase = new LinkedList<String>();
