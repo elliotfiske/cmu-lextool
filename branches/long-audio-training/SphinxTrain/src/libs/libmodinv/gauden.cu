@@ -1654,6 +1654,468 @@ gauden_tie_vars_dnoms(vector_t ***wt_var,
 
 __global__ void
 gauden_norm_wt_var_kernel(
+		   float* in_var_j,
+		   float* wt_var_j,
+		   int32 pass2var,
+		   float32 *dnom_j,
+		   float* mean_j,
+		   uint32 n_density,
+		   uint32 veclen,
+		   uint32 n_mgau)
+{
+    uint32 i, k, l, m;
+    float32 dnom_ijk;
+    
+    k = blockIdx.x * blockDim.x + threadIdx.x;
+    i = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i >= n_mgau) return;
+    if (k >= n_density) return;
+    
+    dnom_ijk = dnom_j[i * n_density + k];
+    
+    for (l = 0; l < veclen; l++) {
+        m = i * n_density * veclen + k * veclen + l;
+
+        if (dnom_ijk != 0) {
+            if (!pass2var) {
+                wt_var_j[m] =
+                    (wt_var_j[m] / dnom_ijk) -
+                    (mean_j[m] * mean_j[m]);
+            }
+            else {
+                wt_var_j[m] = wt_var_j[m] / dnom_ijk;
+            }
+        }
+        else {
+            if (in_var_j) {
+                wt_var_j[m] = in_var_j[m];
+            }
+        }
+    }
+}
+void
+gauden_norm_wt_var(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar)
+{
+    uint32 i, j, k, l;
+
+    if (tiedvar) {
+	gauden_tie_vars_dnoms(wt_var, pass2var, dnom, mean,
+			      n_mgau, n_feat, n_density, veclen);
+    }
+    
+    for (j = 0; j < n_feat; j++) {
+        uint32 vec_len = veclen[j];
+        
+
+            cudaError_t err;
+            float *wt_var_dev = NULL;
+            float *in_var_dev = NULL;
+            float32 *dnom_dev = NULL;
+            float *mean_dev = NULL;
+            size_t p1, p2, p3;
+            int k, l;
+
+            cudaMalloc(&wt_var_dev, n_mgau * vec_len  * n_density * sizeof(float));
+            cudaMalloc(&in_var_dev, n_mgau * vec_len * n_density * sizeof(float));
+            cudaMalloc(&dnom_dev, n_mgau * n_density * sizeof(float32));
+            cudaMalloc(&mean_dev,  n_mgau * vec_len * n_density * sizeof(float));
+
+            for (i = 0; i < n_mgau; i++) {            
+                cudaMemcpy(dnom_dev + i * n_density, dnom[i][j], n_density * sizeof(float32), cudaMemcpyHostToDevice);
+
+                for (k = 0; k < n_density; k++) {
+                    cudaMemcpy(wt_var_dev + i * n_density * vec_len + k * vec_len, wt_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    if (in_var) {
+                        cudaMemcpy(in_var_dev + i * n_density * vec_len + k * vec_len, in_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    }
+                    if (!pass2var) {
+                        cudaMemcpy(mean_dev + i * n_density * vec_len + k * vec_len, mean[i][j][k],     vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    }
+                }
+            }
+            
+            dim3 bdim(16, 16, 1);
+            dim3 gdim(ceil(n_density / (float)bdim.x), ceil(n_mgau / (float)bdim.y), 1);
+
+            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
+
+            err = cudaGetLastError();
+            if( cudaSuccess != err) {
+                E_FATAL("CUDA ERROR: %s\n", cudaGetErrorString(err));
+            }
+            
+            for (i = 0; i < n_mgau; i++) {            
+                for (k = 0; k < n_density; k++) {
+                    cudaMemcpy(wt_var[i][j][k], wt_var_dev + i * vec_len * n_density + k * vec_len, vec_len * sizeof(float), cudaMemcpyDeviceToHost);
+                }
+            }
+            
+            cudaFree(wt_var_dev);
+            if (in_var_dev) {
+                cudaFree(in_var_dev);
+            }
+            cudaFree(dnom_dev);
+            if (!pass2var) {
+                cudaFree(mean_dev);
+            }
+    }
+}
+/*__global__ void
+gauden_norm_wt_var_kernel(
+		   float* in_var_j,
+		   float* wt_var_j,
+		   int32 pass2var,
+		   float32 *dnom_j,
+		   float* mean_j,
+		   uint32 n_density,
+		   uint32 veclen,
+		   uint32 n_mgau)
+{
+    uint32 i, k, l, m;
+
+    i = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i >= n_mgau) return;
+    
+    for (k = 0; k < n_density; k++) {
+    
+    for (l = 0; l < veclen; l++) {
+        m = i * n_density * veclen + k * veclen + l;
+
+        if (dnom_j[i * n_density + k] != 0) {
+            if (!pass2var) {
+                wt_var_j[m] =
+                    (wt_var_j[m] / dnom_j[i * n_density + k]) -
+                    (mean_j[m] * mean_j[m]);
+            }
+            else {
+                wt_var_j[m] = wt_var_j[m] / dnom_j[i * n_density + k];
+            }
+        }
+        else {
+            if (in_var_j) {
+                wt_var_j[m] = in_var_j[m];
+            }
+        }
+    }
+    
+    }
+}
+void
+gauden_norm_wt_var(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar)
+{
+    uint32 i, j, k, l;
+
+    if (tiedvar) {
+	gauden_tie_vars_dnoms(wt_var, pass2var, dnom, mean,
+			      n_mgau, n_feat, n_density, veclen);
+    }
+    
+    for (j = 0; j < n_feat; j++) {
+        uint32 vec_len = veclen[j];
+        
+
+            cudaError_t err;
+            float *wt_var_dev = NULL;
+            float *in_var_dev = NULL;
+            float32 *dnom_dev = NULL;
+            float *mean_dev = NULL;
+            size_t p1, p2, p3;
+            int k, l;
+
+            cudaMalloc(&wt_var_dev, n_mgau * vec_len  * n_density * sizeof(float));
+            cudaMalloc(&in_var_dev, n_mgau * vec_len * n_density * sizeof(float));
+            cudaMalloc(&dnom_dev, n_mgau * n_density * sizeof(float32));
+            cudaMalloc(&mean_dev,  n_mgau * vec_len * n_density * sizeof(float));
+
+            for (i = 0; i < n_mgau; i++) {            
+                cudaMemcpy(dnom_dev + i * n_density, dnom[i][j], n_density * sizeof(float32), cudaMemcpyHostToDevice);
+
+                for (k = 0; k < n_density; k++) {
+                    cudaMemcpy(wt_var_dev + i * n_density * vec_len + k * vec_len, wt_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    if (in_var) {
+                        cudaMemcpy(in_var_dev + i * n_density * vec_len + k * vec_len, in_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    }
+                    if (!pass2var) {
+                        cudaMemcpy(mean_dev + i * n_density * vec_len + k * vec_len, mean[i][j][k],     vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    }
+                }
+            }
+            
+            dim3 bdim(1, 16, 1);
+            dim3 gdim(1, ceil(n_mgau / (float)bdim.y), 1);
+
+            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
+
+            err = cudaGetLastError();
+            if( cudaSuccess != err) {
+                E_FATAL("CUDA ERROR: %s\n", cudaGetErrorString(err));
+            }
+            
+            for (i = 0; i < n_mgau; i++) {            
+                for (k = 0; k < n_density; k++) {
+                    cudaMemcpy(wt_var[i][j][k], wt_var_dev + i * vec_len * n_density + k * vec_len, vec_len * sizeof(float), cudaMemcpyDeviceToHost);
+                }
+            }
+            
+            cudaFree(wt_var_dev);
+            if (in_var_dev) {
+                cudaFree(in_var_dev);
+            }
+            cudaFree(dnom_dev);
+            if (!pass2var) {
+                cudaFree(mean_dev);
+            }
+    }
+}*/
+/*__global__ void
+gauden_norm_wt_var_kernel(
+		   float* in_var_j,
+		   float* wt_var_j,
+		   int32 pass2var,
+		   float32 *dnom_j,
+		   float* mean_j,
+		   uint32 n_density,
+		   uint32 veclen,
+		   uint32 n_mgau)
+{
+    uint32 i, k, l, m;
+
+    k = blockIdx.x * blockDim.x + threadIdx.x;
+    i = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (k >= n_density) return;
+    if (i >= n_mgau) return;
+    
+    for (l = 0; l < veclen; l++) {
+        m = i * n_density * veclen + k * veclen + l;
+
+        if (dnom_j[i * n_density + k] != 0) {
+            if (!pass2var) {
+                wt_var_j[m] =
+                    (wt_var_j[m] / dnom_j[i * n_density + k]) -
+                    (mean_j[m] * mean_j[m]);
+            }
+            else {
+                wt_var_j[m] = wt_var_j[m] / dnom_j[i * n_density + k];
+            }
+        }
+        else {
+            if (in_var_j) {
+                wt_var_j[m] = in_var_j[m];
+            }
+        }
+    }
+}
+void
+gauden_norm_wt_var(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar)
+{
+    uint32 i, j, k, l;
+
+    if (tiedvar) {
+	gauden_tie_vars_dnoms(wt_var, pass2var, dnom, mean,
+			      n_mgau, n_feat, n_density, veclen);
+    }
+    
+    for (j = 0; j < n_feat; j++) {
+        uint32 vec_len = veclen[j];
+        
+
+            cudaError_t err;
+            float *wt_var_dev = NULL;
+            float *in_var_dev = NULL;
+            float32 *dnom_dev = NULL;
+            float *mean_dev = NULL;
+            size_t p1, p2, p3;
+            int k, l;
+
+            cudaMalloc(&wt_var_dev, n_mgau * vec_len  * n_density * sizeof(float));
+            cudaMalloc(&in_var_dev, n_mgau * vec_len * n_density * sizeof(float));
+            cudaMalloc(&dnom_dev, n_mgau * n_density * sizeof(float32));
+            cudaMalloc(&mean_dev,  n_mgau * vec_len * n_density * sizeof(float));
+
+            for (i = 0; i < n_mgau; i++) {            
+                cudaMemcpy(dnom_dev + i * n_density, dnom[i][j], n_density * sizeof(float32), cudaMemcpyHostToDevice);
+
+                for (k = 0; k < n_density; k++) {
+                    cudaMemcpy(wt_var_dev + i * n_density * vec_len + k * vec_len, wt_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    if (in_var) {
+                        cudaMemcpy(in_var_dev + i * n_density * vec_len + k * vec_len, in_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    }
+                    if (!pass2var) {
+                        cudaMemcpy(mean_dev + i * n_density * vec_len + k * vec_len, mean[i][j][k],     vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                    }
+                }
+            }
+            
+            dim3 bdim(16, 16, 1);
+            dim3 gdim(ceil(n_density / (float)bdim.x), ceil(n_mgau / (float)bdim.y), 1);
+
+            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
+
+            err = cudaGetLastError();
+            if( cudaSuccess != err) {
+                E_FATAL("CUDA ERROR: %s\n", cudaGetErrorString(err));
+            }
+            
+            for (i = 0; i < n_mgau; i++) {            
+                for (k = 0; k < n_density; k++) {
+                    cudaMemcpy(wt_var[i][j][k], wt_var_dev + i * vec_len * n_density + k * vec_len, vec_len * sizeof(float), cudaMemcpyDeviceToHost);
+                }
+            }
+            
+            cudaFree(wt_var_dev);
+            if (in_var_dev) {
+                cudaFree(in_var_dev);
+            }
+            cudaFree(dnom_dev);
+            if (!pass2var) {
+                cudaFree(mean_dev);
+            }
+    }
+}*/
+/*__global__ void
+gauden_norm_wt_var_kernel(
+		   float* in_var_ij,
+		   float* wt_var_ij,
+		   int32 pass2var,
+		   float32 *dnom_ij,
+		   float* mean_ij,
+		   uint32 n_density,
+		   uint32 veclen)
+{
+    uint32 k, l, m;
+
+    k = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (k >= n_density) return;
+    
+    for (l = 0; l < veclen; l++) {
+        m = k * veclen + l;
+
+        if (dnom_ij[k] != 0) {
+            if (!pass2var) {
+                wt_var_ij[m] =
+                    (wt_var_ij[m] / dnom_ij[k]) -
+                    (mean_ij[m] * mean_ij[m]);
+            }
+            else {
+                wt_var_ij[m] = wt_var_ij[m] / dnom_ij[k];
+            }
+        }
+        else {
+            if (in_var_ij) {
+                wt_var_ij[m] = in_var_ij[m];
+            }
+        }
+    }
+}
+void
+gauden_norm_wt_var(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar)
+{
+    uint32 i, j, k, l;
+
+    if (tiedvar) {
+	gauden_tie_vars_dnoms(wt_var, pass2var, dnom, mean,
+			      n_mgau, n_feat, n_density, veclen);
+    }
+    
+    for (j = 0; j < n_feat; j++) {
+        uint32 vec_len = veclen[j];
+        
+        for (i = 0; i < n_mgau; i++) {
+
+            uint32 vec_len = veclen[j];
+
+            cudaError_t err;
+            float *wt_var_dev = NULL;
+            float *in_var_dev = NULL;
+            float32 *dnom_dev = NULL;
+            float *mean_dev = NULL;
+            size_t p1, p2, p3;
+            int k, l;
+
+            cudaMalloc(&wt_var_dev, vec_len  * n_density * sizeof(float));
+            cudaMalloc(&in_var_dev, vec_len * n_density * sizeof(float));
+            cudaMalloc(&dnom_dev, n_density * sizeof(float32));
+            cudaMalloc(&mean_dev,  vec_len * n_density * sizeof(float));
+            
+            cudaMemcpy(dnom_dev, dnom[i][j], n_density * sizeof(float32), cudaMemcpyHostToDevice);
+
+            for (k = 0; k < n_density; k++) {
+                cudaMemcpy(wt_var_dev + k * vec_len, wt_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                if (in_var) {
+                    cudaMemcpy(in_var_dev + k * vec_len, in_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                }
+                if (!pass2var) {
+                    cudaMemcpy(mean_dev + k * vec_len, mean[i][j][k],     vec_len * sizeof(float), cudaMemcpyHostToDevice);
+                }
+            }
+            
+            dim3 bdim(16, 1, 1);
+            dim3 gdim(ceil(n_density / (float)bdim.x), 1, 1);
+
+            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len);
+
+            err = cudaGetLastError();
+            if( cudaSuccess != err) {
+                E_FATAL("CUDA ERROR: %s\n", cudaGetErrorString(err));
+            }
+            
+            for (k = 0; k < n_density; k++) {
+                cudaMemcpy(wt_var[i][j][k], wt_var_dev + k * vec_len, vec_len * sizeof(float), cudaMemcpyDeviceToHost);
+            }
+            
+            cudaFree(wt_var_dev);
+            if (in_var_dev) {
+                cudaFree(in_var_dev);
+            }
+            cudaFree(dnom_dev);
+            if (!pass2var) {
+                cudaFree(mean_dev);
+            }
+	}
+    }
+}*/
+/*__global__ void
+gauden_norm_wt_var_kernel(
 		   float* in_var_ij,
 		   float* wt_var_ij,
 		   int32 pass2var,
@@ -1707,6 +2169,8 @@ gauden_norm_wt_var(vector_t ***in_var,
     }
     
     for (j = 0; j < n_feat; j++) {
+        uint32 vec_len = veclen[j];
+        
         for (i = 0; i < n_mgau; i++) {
 
             uint32 vec_len = veclen[j];
@@ -1760,7 +2224,7 @@ gauden_norm_wt_var(vector_t ***in_var,
             }
 	}
     }
-}
+}*/
 /*__global__ void
 gauden_norm_wt_var_kernel(
 		   float* wt_var,
