@@ -45,7 +45,7 @@ DIRNAME=src/libs/libmodinv
 BUILD_DIRS = 
 ALL_DIRS= $(BUILD_DIRS)
 SRCS = \
-  gauden.c \
+  gauden.cu \
   mod_inv.c
 H =
 
