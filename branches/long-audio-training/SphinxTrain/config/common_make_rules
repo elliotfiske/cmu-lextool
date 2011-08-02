@@ -64,7 +64,7 @@ LIBDIR=$(shell test -d $(TOP)/lib.$(PLATFORM) || mkdir $(TOP)/lib.$(PLATFORM); e
 
 ifdef SRCS
 OBJDIR=$(shell test -d obj.$(PLATFORM) || mkdir obj.$(PLATFORM); echo obj.$(PLATFORM);)
-OBJS=$(shell echo $(SRCS:.c=.o) | awk '{for (i=1; i<=NF; i++) printf("'$(OBJDIR)'/%s\n",$$i)}';)
+OBJS=$(shell echo $(patsubst %.cu,%.cuo,$(SRCS:.c=.o)) | awk '{for (i=1; i<=NF; i++) printf("'$(OBJDIR)'/%s\n",$$i)}';)
 endif
 
 INCLUDES = -I$(TOP)/include
@@ -82,6 +82,9 @@ STLIBS = $(LIBDIR)/libcommon.a \
 LIBS := $(STLIBS) $(LIBS)
 
 $(OBJDIR)/%.o : %.c
+	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.cuo : %.cu
 	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 all: .make_build_dirs $(ALL) nothing
