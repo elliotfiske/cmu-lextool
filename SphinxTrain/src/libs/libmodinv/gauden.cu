@@ -1652,7 +1652,7 @@ gauden_tie_vars_dnoms(vector_t ***wt_var,
     }
 }
 
-/*__global__ void
+__global__ void
 gauden_norm_wt_var_kernel(
 		   float* in_var_ij,
 		   float* wt_var_ij,
@@ -1760,7 +1760,7 @@ gauden_norm_wt_var(vector_t ***in_var,
             }
 	}
     }
-}*/
+}
 /*__global__ void
 gauden_norm_wt_var_kernel(
 		   float* wt_var,
@@ -1847,7 +1847,7 @@ gauden_norm_wt_var(vector_t ***in_var,
 	}
     }
 }*/
-void
+/*void
 gauden_norm_wt_var(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
@@ -1901,7 +1901,7 @@ gauden_norm_wt_var(vector_t ***in_var,
 	    }
 	}
     }
-}
+}*/
 
 static void
 gauden_tie_fullvars_dnoms(vector_t ****wt_fullvar,
