@@ -12,6 +12,10 @@
 
 package edu.cmu.sphinx.phrasespotter;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
+
 
 /**
  * 
@@ -24,6 +28,7 @@ public class Result {
 	private String phraseText;
 	private float startTime;
 	private float endTime;
+	private List<String> phrase;
 		
 	public Result() {
 		
@@ -33,6 +38,15 @@ public class Result {
 		this.phraseText = phraseText;
 		this.startTime = startTime;
 		this.endTime = endTime;
+		this.phrase = new LinkedList<String>();
+		processPhrase();
+	}
+	
+	private void processPhrase() {
+		StringTokenizer st = new StringTokenizer(phraseText);
+		while(st.hasMoreTokens()){
+			phrase.add(st.nextToken());
+		}
 	}
 	
 	public float getStartTime(){
@@ -65,5 +79,11 @@ public class Result {
 		
 		return 1;
 	}
-
+	public String getPhraseFirstWord(){
+		return phrase.get(0);
+	}
+	
+	public String getLastWord(){
+		return phrase.get(phrase.size()-1);
+	}
 }
