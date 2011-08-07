@@ -27,6 +27,8 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import edu.cmu.sphinx.decoder.search.AlignerSearchManager;
+import edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
@@ -46,20 +48,62 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 public class PhraseSpotting {
 	public static void main(String Args[]) throws IOException {
-
+		
 		// Initialise demo related variables
-		final String phrase = "buck was"; // Phrase to be spotted
-		String pathToAudioFile = "./resource/wav/call_of_the_wild_chapter_01.wav"; // Audio file
-		String pathToTextFile = "./resource/Transcription/call_of_the_wild_chapter_01.txt"; // Transcription
+		final String phrase = "quantum number"; // Phrase to be spotted
+		String pathToAudioFile = "./resource/wav/test.wav"; // Audio file
+		String pathToTextFile = "./resource/Transcription/test.txt"; // Transcription
 		// file
 
 		System.out.println("Phrase: " + phrase);
+		
+		
+		System.out
+		.println("\n------------- Generating Phrase Spotter's Result --------------------");
+		SimplePhraseSpotter spotter = new SimplePhraseSpotter(
+				"./src/phraseSpotterConfig.xml");
+		spotter.setPhrase(phrase);
+		spotter.setAudioDataSource(new URL("file:" + pathToAudioFile));
+		spotter.allocate();
+		spotter.startSpotting();
+		List<Result> result = spotter.getTimedResult();
+		Iterator<Result> resultIter = result.iterator();
+		System.out.println("Times when \"" + phrase + "\" was spotted");
+		while (resultIter.hasNext()) {
+			Result data = resultIter.next();
+			System.out.println("(" + data.getStartTime() + ","
+					+ data.getEndTime() + ")");
+		}		
+		
+		
+		
+		//  Now start the Informed Alignment using spotter's result
+		// By informed alignment we now mean to improve beam efficiency 
+		
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		AFlatLinguist aflatLinguist = (AFlatLinguist) cm.lookup("linguist");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("grammar");
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
+		AlignerSearchManager sm = (AlignerSearchManager)cm.lookup("searchManager");	
+		
+		float sampleRate = 1.0f;
+		float audioLength = 0;
+		AudioInputStream stream;
+		try {
+			stream = AudioSystem.getAudioInputStream(new URL("file:"
+					+ pathToAudioFile));
+			audioLength = stream.getFrameLength()
+					/ stream.getFormat().getFrameRate();
+			sampleRate = stream.getFormat().getSampleRate();
+		} catch (UnsupportedAudioFileException e) {
+			e.printStackTrace();
+		}
+		
+		sm.setPhrase(phrase);
+		sm.setSpotterResult(result);
+		sm.setSampleRate(sampleRate);
 
 		BufferedReader reader = new BufferedReader(new FileReader(
 				pathToTextFile));
@@ -86,16 +130,7 @@ public class PhraseSpotting {
 		AlignerResult alignerResult = new AlignerResult(baseResult);
 		String aResult = alignerResult.getBestTimedPhoneResult();
 
-		float audioLength = 0;
-		AudioInputStream stream;
-		try {
-			stream = AudioSystem.getAudioInputStream(new URL("file:"
-					+ pathToAudioFile));
-			audioLength = stream.getFrameLength()
-					/ stream.getFormat().getFrameRate();
-		} catch (UnsupportedAudioFileException e) {
-			e.printStackTrace();
-		}
+		
 
 		// USE TIMED PHONE RESULT FOR COMPUTING PARAMETER VALUE NOW
 		int phoneIndex = 1;
@@ -168,63 +203,6 @@ public class PhraseSpotting {
 			}
 		}
 
-		// Start PhraseSpotting now and see how well it performs
-
-		System.out
-				.println("\n------------- Generating Phrase Spotter's Result --------------------");
-		SimplePhraseSpotter spotter = new SimplePhraseSpotter(
-				"./src/phraseSpotterConfig.xml");
-		spotter.setPhrase(phrase);
-		spotter.setAudioDataSource(new URL("file:" + pathToAudioFile));
-		spotter.allocate();
-		spotter.startSpotting();
-		List<Result> result = spotter.getTimedResult();
-		Iterator<Result> iter = result.iterator();
-		System.out.println("Times when \"" + phrase + "\" was spotted");
-		while (iter.hasNext()) {
-			Result data = iter.next();
-			System.out.println("(" + data.getStartTime() + ","
-					+ data.getEndTime() + ")");
-		}
-
-		int numCorrectSpottings = 0;
-		Iterator<Result> baseIter = baseTimedResult.iterator();
-		while (baseIter.hasNext()) {
-			iter = result.iterator();
-			Result currBaseToken = baseIter.next();
-
-			while (iter.hasNext()) {
-				Result currPhraseToken = iter.next();
-				if (currBaseToken.equals(currPhraseToken) == 0) {
-					numCorrectSpottings++;
-					continue;
-				}
-			}
-		}
-		Float errorRate = (float) (baseTimedResult.size() - numCorrectSpottings)
-				/ (float) baseTimedResult.size();
-		String erToString = errorRate.toString();
-		if (erToString.length() > 6) {
-			erToString = erToString.substring(0, 6);
-		}
-		Float accuracy = ((float) numCorrectSpottings / (float) baseTimedResult
-				.size());
-		String accuracyToString = accuracy.toString();
-		if (accuracyToString.length() > 6) {
-			accuracyToString = accuracyToString.substring(0, 6);
-		}
-		System.out
-				.println("------------------- Statistics ---------------------");
-		System.out.println("Number of phrase occurances:\t\t\t"
-				+ baseTimedResult.size());
-		System.out.println("Number of phrases correctly spotted:\t\t"
-				+ numCorrectSpottings);
-		System.out.println("Number of uncaught phrase occurance:\t\t"
-				+ (baseTimedResult.size() - numCorrectSpottings));
-		System.out.println("Number of false alarms:\t\t\t\t"
-				+ (result.size() - numCorrectSpottings));
-		System.out.println("Error rate:\t\t\t\t\t" + erToString);
-		System.out.println("Accuracy rate:\t\t\t\t\t" + accuracyToString);
-
+		
 	}
 }
