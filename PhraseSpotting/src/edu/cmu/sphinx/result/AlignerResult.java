@@ -3,6 +3,7 @@ package edu.cmu.sphinx.result;
 
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.FloatData;
+import edu.cmu.sphinx.linguist.HMMSearchState;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.UnitSearchState;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
@@ -45,13 +46,30 @@ public class AlignerResult {
 				lastSampleNumber = currSampleNumber;
 				unitDetected = false;
 			}
-			if (searchState instanceof UnitSearchState) {
+			if (searchState instanceof UnitSearchState) {				
 				UnitSearchState unitState = (UnitSearchState) searchState;
-				Unit unit = unitState.getUnit();
-				lastUnit = unit;
-				unitDetected = true;
+				Unit tmpUnit = unitState.getUnit();
+				if(lastUnit == null) {
+					lastUnit = tmpUnit;
+				}
+				if(tmpUnit.getName().compareToIgnoreCase(lastUnit.getName()) != 0) {
+					lastUnit = tmpUnit;
+					unitDetected = true;
+				}
+			} else if ( searchState instanceof HMMSearchState) {
+				//System.out.println("here");
+				HMMSearchState hmmState = (HMMSearchState) searchState;
+				Unit tmpUnit = hmmState.getHMMState().getHMM().getBaseUnit();
+				if(lastUnit == null) {
+					lastUnit = tmpUnit;
+				}
+				if(tmpUnit.getName().compareToIgnoreCase(lastUnit.getName()) != 0) {
+					lastUnit = tmpUnit;
+					unitDetected = true;
+				}
 			}
-			tok = tok.getPredecessor();
+			tok = tok.getPredecessor();	
+			
 		}
 		return sb.toString();
 	}
