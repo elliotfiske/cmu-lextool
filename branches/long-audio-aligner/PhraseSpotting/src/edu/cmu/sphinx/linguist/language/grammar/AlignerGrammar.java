@@ -41,7 +41,7 @@ public class AlignerGrammar extends Grammar {
 	private double selfLoopProbability;
 	private double backwardTransitionProbability;
 	private double forwardJumpProbability;
-	private int numAllowedWordJumps;
+	private int numAllowedWordJumps = 100;
 
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();

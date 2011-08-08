@@ -50,32 +50,23 @@ public class PhraseSpotting {
 	public static void main(String Args[]) throws IOException {
 		
 		// Initialise demo related variables
-		final String phrase = "quantum number"; // Phrase to be spotted
-		String pathToAudioFile = "./resource/wav/test.wav"; // Audio file
-		String pathToTextFile = "./resource/Transcription/test.txt"; // Transcription
+		final String phrase = "but"; // Phrase to be spotted
+		String pathToAudioFile = "./resource/wav/obama_test.wav"; // Audio file
+		String pathToTextFile = "./resource/Transcription/obama.txt"; // Transcription
 		// file
 
 		System.out.println("Phrase: " + phrase);
 		
-		
-		System.out
-		.println("\n------------- Generating Phrase Spotter's Result --------------------");
-		SimplePhraseSpotter spotter = new SimplePhraseSpotter(
-				"./src/phraseSpotterConfig.xml");
-		spotter.setPhrase(phrase);
-		spotter.setAudioDataSource(new URL("file:" + pathToAudioFile));
-		spotter.allocate();
-		spotter.startSpotting();
-		List<Result> result = spotter.getTimedResult();
-		Iterator<Result> resultIter = result.iterator();
-		System.out.println("Times when \"" + phrase + "\" was spotted");
-		while (resultIter.hasNext()) {
-			Result data = resultIter.next();
-			System.out.println("(" + data.getStartTime() + ","
-					+ data.getEndTime() + ")");
-		}		
-		
-		
+		SimplePhraseSpotter sp =new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");
+		sp.setPhrase(phrase);
+		sp.setAudioDataSource(new URL("file:" + pathToAudioFile));
+		sp.allocate();
+		sp.startSpotting();
+		Iterator<edu.cmu.sphinx.phrasespotter.Result> iter = sp.getTimedResult().iterator();
+		while(iter.hasNext()){
+			edu.cmu.sphinx.phrasespotter.Result result = iter.next();
+			System.out.println("(" + result.getStartTime() + "," + result.getEndTime() + ")");
+		}
 		
 		//  Now start the Informed Alignment using spotter's result
 		// By informed alignment we now mean to improve beam efficiency 
@@ -84,26 +75,12 @@ public class PhraseSpotting {
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		AFlatLinguist aflatLinguist = (AFlatLinguist) cm.lookup("linguist");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("grammar");
+		grammar.setGrammarType("MODEL_DELETIONS");
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
-		AlignerSearchManager sm = (AlignerSearchManager)cm.lookup("searchManager");	
-		
-		float sampleRate = 1.0f;
-		float audioLength = 0;
-		AudioInputStream stream;
-		try {
-			stream = AudioSystem.getAudioInputStream(new URL("file:"
-					+ pathToAudioFile));
-			audioLength = stream.getFrameLength()
-					/ stream.getFormat().getFrameRate();
-			sampleRate = stream.getFormat().getSampleRate();
-		} catch (UnsupportedAudioFileException e) {
-			e.printStackTrace();
-		}
-		
+		AlignerSearchManager sm = (AlignerSearchManager) cm.lookup("searchManager");
 		sm.setPhrase(phrase);
-		sm.setSpotterResult(result);
-		sm.setSampleRate(sampleRate);
+		sm.setSpotterResult(sp.getTimedResult());
 
 		BufferedReader reader = new BufferedReader(new FileReader(
 				pathToTextFile));
@@ -124,85 +101,14 @@ public class PhraseSpotting {
 		edu.cmu.sphinx.result.Result baseResult = recognizer.recognize();
 		String timedResult = baseResult.getTimedBestResult(false, true);
 		System.out.println(timedResult);
-
+		
+		/*
 		System.out
 				.println("-------------------- Timed Phone Result ----------------------------");
 		AlignerResult alignerResult = new AlignerResult(baseResult);
 		String aResult = alignerResult.getBestTimedPhoneResult();
-
-		
-
-		// USE TIMED PHONE RESULT FOR COMPUTING PARAMETER VALUE NOW
-		int phoneIndex = 1;
-		StringTokenizer stokeniser = new StringTokenizer(aResult);
-		int numPhones = stokeniser.countTokens();
-		float parameterX = 0.0f;
-		while (stokeniser.hasMoreTokens()) {
-			String data = stokeniser.nextToken();
-			String startTime = data.substring(data.indexOf("(") + 1, data
-					.indexOf(","));
-			float time = Float.valueOf(startTime);
-			float currValue = (time - phoneIndex * audioLength / numPhones);
-			currValue = Math.abs(currValue);
-			if (parameterX < currValue) {
-				parameterX = currValue;
-			}
-			phoneIndex++;
-		}
-
-		System.out.println("Parameter Value: " + parameterX + "\n");
-
-		// back to logging simple timed results
-		
-		System.out.println("Times when the Phrase \"" + phrase
-				+ "\" was spoken:");
-		List<String> wordsInPhrase = new LinkedList<String>();
-		StringTokenizer tokenizer = new StringTokenizer(phrase);
-		while (tokenizer.hasMoreTokens()) {
-			wordsInPhrase.add(tokenizer.nextToken());
-		}
-
-		List<Result> baseTimedResult = new LinkedList<Result>();
-		StringTokenizer stoken = new StringTokenizer(timedResult);
-		while (stoken.hasMoreTokens()) {
-			String wordFormed = "";
-			String currWord = stoken.nextToken();
-			String word = currWord.substring(0, currWord.indexOf("("));
-			String timedPart = currWord.substring(currWord.indexOf("(") + 1,
-					currWord.indexOf(")"));
-			String st = timedPart.substring(0, timedPart.indexOf(","));
-			String et = timedPart.substring(timedPart.indexOf(",") + 1);
-			ListIterator<String> iter = wordsInPhrase.listIterator();
-			String phraseWord = iter.next();
-			float startTime = Float.valueOf(st);
-			float endTime = Float.valueOf(et);
-			int match = 0;
-			while (phraseWord.compareToIgnoreCase(word) == 0
-					&& match < wordsInPhrase.size()) {
-				match++;
-				wordFormed += word + " ";
-				endTime = Float.valueOf(et);
-				if (stoken.hasMoreTokens()) {
-					if (iter.hasNext()) {
-						phraseWord = iter.next();
-						currWord = stoken.nextToken();
-						word = currWord.substring(0, currWord.indexOf("("));
-						timedPart = currWord.substring(
-								currWord.indexOf("(") + 1, currWord
-										.indexOf(")"));
-						st = timedPart.substring(0, timedPart.indexOf(","));
-						et = timedPart.substring(timedPart.indexOf(",") + 1);
-					}
-				}
-			}
-			// if phrase was completely detected then mark this position
-
-			if (match == wordsInPhrase.size()) {
-				System.out.println("(" + startTime + "," + endTime + ")");
-				baseTimedResult.add(new Result(phrase, startTime, endTime));
-			}
-		}
-
+		System.out.println(aResult);
+		*/	
 		
 	}
 }

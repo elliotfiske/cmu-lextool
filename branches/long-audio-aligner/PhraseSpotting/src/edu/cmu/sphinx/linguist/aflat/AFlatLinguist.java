@@ -701,25 +701,19 @@ public class AFlatLinguist implements Linguist, Configurable {
 					Word word = node.getWord();
 					Pronunciation[] pronunciations = word.getPronunciations();
 					pronunciations = filter(pronunciations, nextBaseID);
-					if(addOutOfGrammarBranch) {
-						SearchStateArc[] nextArcs = new SearchStateArc[pronunciations.length + 1];
-						SearchStateArc[] returnState = new SearchStateArc[1];
-						returnState[0] = this;
-						PhoneLoop pl = new PhoneLoop(phoneLoopAcousticModel,
-								logOutOfGrammarBranchProbability,
-								logPhoneInsertionProbability, returnState);
-						nextArcs[pronunciations.length] = pl.getPhoneLoop();
-						arcs = nextArcs;
-					} else {
-						SearchStateArc[] nextArcs = new SearchStateArc[pronunciations.length];
-						for (int i = 0; i < pronunciations.length; i++) {
-							nextArcs[i] = new PronunciationState(this,
-									pronunciations[i]);
-						}
-						SearchStateArc[] returnState = new SearchStateArc[1];
-						returnState[0] = this;
-						arcs = nextArcs;
+					SearchStateArc[] nextArcs = new SearchStateArc[pronunciations.length + 1];
+
+					for (int i = 0; i < pronunciations.length; i++) {
+						nextArcs[i] = new PronunciationState(this,
+								pronunciations[i]);
 					}
+					SearchStateArc[] returnState = new SearchStateArc[1];
+					returnState[0] = this;
+					PhoneLoop pl = new PhoneLoop(acousticModel,
+							logOutOfGrammarBranchProbability,
+							logPhoneInsertionProbability, returnState);
+					nextArcs[pronunciations.length] = pl.getPhoneLoop();
+					arcs = nextArcs;
 				}
 				cacheSuccessors(arcs);
 			}

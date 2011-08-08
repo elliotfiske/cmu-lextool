@@ -55,7 +55,7 @@
 		<property name="languageWeight" value="${languageWeight}" />
 		<property name="unitManager" value="unitManager" />	
 		<!-- additions start-->
-		<property name="addOutOfGrammarBranch" value="false"/>
+		<property name="addOutOfGrammarBranch" value="true"/>
 		<property name="phoneLoopAcousticModel" value="WSJ"/>
 		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/>
 		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}"/>

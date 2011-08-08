@@ -119,6 +119,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 	protected List<edu.cmu.sphinx.phrasespotter.Result> spotterResult;
 	protected TreeSet<Float> spotterTimes = new TreeSet<Float>();
 	private float sampleRate = 1.0f;
+	private float timeThreshold = 1.0f;
 
 	// ------------------------------------
 	// monitoring data
@@ -498,67 +499,20 @@ public class AlignerSearchManager extends TokenSearchManager {
 		if (token.getScore() < threshold) {
 			return;
 		}
-
-		boolean localPhraseDetected = false; // Tells whether the current token
-		// fits spotter's result
-
+		
+		float penalty = 0.0f;
+		
 		// Changes made here not only to check for wordThreshold but also
 		// Phrase Spotter's result
 		if (state instanceof WordSearchState) {
 			Word word = token.getWord();
+			if(word.getSpelling().compareToIgnoreCase(phraseWordList.get(0)) == 0) {
+				penalty = 20;		// it's more of a reward
+			}
 			int indexInPhrase = phraseWordList.size() - 1;
 			if (token.getScore() < wordThreshold) {
 				return;
-			} else if (word.getSpelling().compareToIgnoreCase(
-					phraseWordList.get(indexInPhrase)) == 0) {
-				indexInPhrase--;
-
-				boolean exitLoop = false;
-				Token nextToken = token;
-				// Check if the previous words of the result too match the
-				// phrase,
-				// if yes then a phrase is detected and we need can prune the
-				// beam
-				// i.e. penalise the every token that is not a token from phrase
-				while (!exitLoop) {
-					nextToken = nextToken.getPredecessor();
-					if (nextToken == null) {
-						exitLoop = true;
-					} else {
-						if (nextToken.isWord()) {
-							String currWord = nextToken.getWord().getSpelling();
-							if (currWord.compareToIgnoreCase("<sil>") != 0
-									&& currWord
-											.compareToIgnoreCase(phraseWordList
-													.get(indexInPhrase)) != 0) {
-
-								exitLoop = true;
-							} else if (currWord
-									.compareToIgnoreCase(phraseWordList
-											.get(indexInPhrase)) == 0) {
-
-								indexInPhrase--;
-								if (indexInPhrase < 0) {
-									exitLoop = true;
-									localPhraseDetected = true;
-									if (spotterContains((float) currentFrameNumber
-											/ (float) 100)) {
-										phraseDetected = true;
-
-									}
-								}
-							}
-						}
-					}
-				}
 			}
-		}
-		float penalty = 0.0f;
-
-		// If phrase is spotted in some token and is not present here, add a
-		// penalty
-		if (phraseDetected && !localPhraseDetected) {
-			penalty = -1000.0f;
 		}
 		SearchStateArc[] arcs = state.getSuccessors();
 		// For each successor
@@ -622,7 +576,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 		Iterator<Float> iter = spotterTimes.iterator();
 		while (iter.hasNext()) {
 			Float timedData = iter.next();
-			if (Math.abs(timedData - time) < 1.0) {
+			if (Math.abs(timedData - time) < timeThreshold) {
 				return true;
 			}
 		}
@@ -810,11 +764,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 		Iterator<edu.cmu.sphinx.phrasespotter.Result> iter = spotterResult
 				.iterator();
 		while (iter.hasNext()) {
-			spotterTimes.add(iter.next().getEndTime());
+			spotterTimes.add(iter.next().getStartTime());
 		}
-	}
-
-	public void setSampleRate(float rate) {
-		this.sampleRate = rate;
 	}
 }
