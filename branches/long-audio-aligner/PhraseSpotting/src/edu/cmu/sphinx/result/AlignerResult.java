@@ -16,7 +16,7 @@ public class AlignerResult {
 	}
 
 	public String getBestTimedPhoneResult() {
-		Token tok = result.getBestActiveToken();
+		Token tok = result.getBestToken();
 
 		StringBuilder sb = new StringBuilder();
 		float sampleRate = 1.0f;	// non-zero initialisation. 
