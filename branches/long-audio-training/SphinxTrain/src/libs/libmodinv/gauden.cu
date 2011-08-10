@@ -836,25 +836,6 @@ dist_unrolled(float32 *out,
 
 /* This is a most used function during the training. Be very careful
  * when you modify it */
-/*float64
-log_diag_eval_kernel(vector_t obs,
-	      float32 norm,
-	      vector_t mean,
-	      vector_t var_fact,
-	      uint32 veclen)
-{
-    float64 d = 0.0, diff;
-    uint32 l;
-
-    for (l = 0; l < veclen; l++) {
-	diff = obs[l] - mean[l];
-	d += var_fact[l] * diff * diff;
-    }
-    
-    return norm - d;
-}*/
-/* This is a most used function during the training. Be very careful
- * when you modify it */
 float64
 log_diag_eval(vector_t obs,
 	      float32 norm,
@@ -964,6 +945,31 @@ log_full_eval(vector_t obs,
  * 
  *********************************************************************/
 
+__global__ void
+log_diag_eval_kernel(vector_t obs,
+	      float32 *norm,
+	      vector_t mean,
+	      vector_t var_fact,
+	      uint32 n_density,
+	      uint32 veclen,
+	      float64 *den,
+	      uint32 *den_idx)
+{
+    float64 d = 0.0, diff;
+    uint32 l;
+    uint32 i;
+    
+    i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= n_density) return;
+
+    for (l = i * veclen; l < (i + 1) * veclen; l++) {
+	diff = obs[i] - mean[l];
+	d += var_fact[l] * diff * diff;
+    }
+    
+    den[i] = norm[i] - d;
+    den_idx[i] = i;
+}
 static void
 log_full_densities(float64 *den,
 		   uint32  *den_idx,	/* the indices of the component densities */
@@ -973,6 +979,55 @@ log_full_densities(float64 *den,
 		   vector_t *mean,	/* means of the mixture density */
 		   vector_t *var,	/* variances of the mixture density */
 		   float32  *log_norm)	/* normalization factor for density */
+/*{
+    uint32 i;
+    
+    dim3 bdim(16, 1, 1);
+    dim3 gdim(ceil(n_density / (float)bdim.x), 1, 1);
+    
+    float *obs_dev;
+    float32 *log_norm_dev;
+    float *mean_dev;
+    float *var_dev;
+    float64 *den_dev;
+    uint32 *den_idx_dev;
+    
+    cudaMalloc(&obs_dev, n_density * sizeof(float));
+    cudaMalloc(&log_norm_dev, n_density * sizeof(float32));
+    cudaMalloc(&mean_dev, n_density * veclen * sizeof(float));
+    cudaMalloc(&var_dev, n_density * veclen * sizeof(float));
+    cudaMalloc(&den_dev, n_density * sizeof(float64));
+    cudaMalloc(&den_idx_dev, n_density * sizeof(uint32));
+
+    cudaMemcpy(obs_dev, obs, n_density * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(log_norm_dev, log_norm, n_density * sizeof(float32), cudaMemcpyHostToDevice);
+    
+    for (i = 0; i < n_density; i++) {
+        cudaMemcpy(mean_dev + i * veclen, mean[i], veclen * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(var_dev + i * veclen, var[i], veclen * sizeof(float), cudaMemcpyHostToDevice);
+    }
+    
+    log_diag_eval_kernel<<<gdim, bdim>>>(obs_dev, log_norm_dev, mean_dev, var_dev, n_density, veclen, den_dev, den_idx_dev);
+    
+    cudaMemcpy(den, den_dev, n_density * sizeof(float64), cudaMemcpyDeviceToHost);
+    cudaMemcpy(den_idx, den_idx, n_density * sizeof(uint32), cudaMemcpyDeviceToHost);
+    
+    cudaFree(obs_dev);
+    cudaFree(log_norm_dev);
+    cudaFree(mean_dev);
+    cudaFree(var_dev);
+    cudaFree(den_dev);
+    cudaFree(den_idx_dev);
+}
+static void
+log_full_densities(float64 *den,
+		   uint32  *den_idx,
+		   uint32   n_density,
+		   uint32   veclen,
+		   vector_t obs,
+		   vector_t *mean,
+		   vector_t *var,
+		   float32  *log_norm)*/
 {
     uint32 i;
     
@@ -1246,6 +1301,7 @@ gauden_compute_log(float64 **den,		/* density array for a mixture Gaussian */
 	}
     }
     else if (g->n_top == g->n_density) {
+//        E_INFO("MICHAL: n_feat=%u n_density=%u \n", g->n_feat, g->n_density);
 	for (j = 0; j < g->n_feat; j++) {
 	    log_full_densities(den[j],
 			       den_idx[j],
@@ -1653,7 +1709,7 @@ gauden_tie_vars_dnoms(vector_t ***wt_var,
 }
 
 __global__ void
-gauden_norm_wt_var_kernel(
+gauden_norm_wt_var_kernel6(
 		   float* in_var_j,
 		   float* wt_var_j,
 		   int32 pass2var,
@@ -1695,7 +1751,7 @@ gauden_norm_wt_var_kernel(
     }
 }
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var6(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -1715,6 +1771,8 @@ gauden_norm_wt_var(vector_t ***in_var,
     
     for (j = 0; j < n_feat; j++) {
         uint32 vec_len = veclen[j];
+
+//    E_INFO("MICHAL: n_feat %u, n_mgau %u, n_density %u, veclen %u\n", n_feat, n_mgau, n_density, veclen[j]);
         
 
             cudaError_t err;
@@ -1747,7 +1805,7 @@ gauden_norm_wt_var(vector_t ***in_var,
             dim3 bdim(16, 16, 1);
             dim3 gdim(ceil(n_density / (float)bdim.x), ceil(n_mgau / (float)bdim.y), 1);
 
-            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
+            gauden_norm_wt_var_kernel6<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
 
             err = cudaGetLastError();
             if( cudaSuccess != err) {
@@ -1770,8 +1828,8 @@ gauden_norm_wt_var(vector_t ***in_var,
             }
     }
 }
-/*__global__ void
-gauden_norm_wt_var_kernel(
+__global__ void
+gauden_norm_wt_var_kernel5(
 		   float* in_var_j,
 		   float* wt_var_j,
 		   int32 pass2var,
@@ -1812,7 +1870,7 @@ gauden_norm_wt_var_kernel(
     }
 }
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var5(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -1864,7 +1922,7 @@ gauden_norm_wt_var(vector_t ***in_var,
             dim3 bdim(1, 16, 1);
             dim3 gdim(1, ceil(n_mgau / (float)bdim.y), 1);
 
-            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
+            gauden_norm_wt_var_kernel5<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
 
             err = cudaGetLastError();
             if( cudaSuccess != err) {
@@ -1886,9 +1944,9 @@ gauden_norm_wt_var(vector_t ***in_var,
                 cudaFree(mean_dev);
             }
     }
-}*/
-/*__global__ void
-gauden_norm_wt_var_kernel(
+}
+__global__ void
+gauden_norm_wt_var_kernel4(
 		   float* in_var_j,
 		   float* wt_var_j,
 		   int32 pass2var,
@@ -1927,7 +1985,7 @@ gauden_norm_wt_var_kernel(
     }
 }
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var4(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -1979,7 +2037,7 @@ gauden_norm_wt_var(vector_t ***in_var,
             dim3 bdim(16, 16, 1);
             dim3 gdim(ceil(n_density / (float)bdim.x), ceil(n_mgau / (float)bdim.y), 1);
 
-            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
+            gauden_norm_wt_var_kernel4<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len, n_mgau);
 
             err = cudaGetLastError();
             if( cudaSuccess != err) {
@@ -2001,9 +2059,9 @@ gauden_norm_wt_var(vector_t ***in_var,
                 cudaFree(mean_dev);
             }
     }
-}*/
-/*__global__ void
-gauden_norm_wt_var_kernel(
+}
+__global__ void
+gauden_norm_wt_var_kernel3(
 		   float* in_var_ij,
 		   float* wt_var_ij,
 		   int32 pass2var,
@@ -2039,7 +2097,7 @@ gauden_norm_wt_var_kernel(
     }
 }
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var3(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -2092,7 +2150,7 @@ gauden_norm_wt_var(vector_t ***in_var,
             dim3 bdim(16, 1, 1);
             dim3 gdim(ceil(n_density / (float)bdim.x), 1, 1);
 
-            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len);
+            gauden_norm_wt_var_kernel3<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len);
 
             err = cudaGetLastError();
             if( cudaSuccess != err) {
@@ -2113,9 +2171,9 @@ gauden_norm_wt_var(vector_t ***in_var,
             }
 	}
     }
-}*/
-/*__global__ void
-gauden_norm_wt_var_kernel(
+}
+__global__ void
+gauden_norm_wt_var_kernel2(
 		   float* in_var_ij,
 		   float* wt_var_ij,
 		   int32 pass2var,
@@ -2125,22 +2183,27 @@ gauden_norm_wt_var_kernel(
 		   uint32 veclen)
 {
     uint32 k, l, m;
+    float32 dnom;
+    float mean;
 
-    k = blockIdx.x * blockDim.x + threadIdx.x;
-    l = blockIdx.y * blockDim.y + threadIdx.y;
+    l = blockIdx.x * blockDim.x + threadIdx.x;
+    k = blockIdx.y * blockDim.y + threadIdx.y;
     m = k * veclen + l;
     
     if (k >= n_density) return;
     if (l >= veclen) return;
     
-    if (dnom_ij[k] != 0) {
+    dnom = dnom_ij[k];
+    mean = mean_ij[m];
+    
+    if (dnom != 0) {
         if (!pass2var) {
             wt_var_ij[m] =
-                (wt_var_ij[m] / dnom_ij[k]) -
-                (mean_ij[m] * mean_ij[m]);
+                (wt_var_ij[m] / dnom) -
+                (mean * mean);
         }
         else {
-            wt_var_ij[m] = wt_var_ij[m] / dnom_ij[k];
+            wt_var_ij[m] = wt_var_ij[m] / dnom;
         }
     }
     else {
@@ -2150,7 +2213,7 @@ gauden_norm_wt_var_kernel(
     }
 }
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var2(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -2201,9 +2264,9 @@ gauden_norm_wt_var(vector_t ***in_var,
             }
             
             dim3 bdim(16, 16, 1);
-            dim3 gdim(ceil(n_density / (float)bdim.x), ceil(vec_len / (float)bdim.y), 1);
+            dim3 gdim(ceil(vec_len / (float)bdim.x), ceil(n_density / (float)bdim.y), 1);
 
-            gauden_norm_wt_var_kernel<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len);
+            gauden_norm_wt_var_kernel2<<<gdim, bdim>>>(in_var_dev, wt_var_dev, pass2var, dnom_dev, mean_dev, n_density, vec_len);
 
             err = cudaGetLastError();
             if( cudaSuccess != err) {
@@ -2224,9 +2287,9 @@ gauden_norm_wt_var(vector_t ***in_var,
             }
 	}
     }
-}*/
-/*__global__ void
-gauden_norm_wt_var_kernel(
+}
+__global__ void
+gauden_norm_wt_var_kernel1(
 		   float* wt_var,
 		   int32 pass2var,
 		   float32 dnom,
@@ -2248,7 +2311,7 @@ gauden_norm_wt_var_kernel(
     }
 }
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var1(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -2284,7 +2347,7 @@ gauden_norm_wt_var(vector_t ***in_var,
 
                     int gridX = ceil(veclen[j] / (float)TPB);
 
-                    gauden_norm_wt_var_kernel<<<gridX, TPB>>>(wt_var_dev, pass2var, dnom[i][j][k], mean_dev, veclen[j]);
+                    gauden_norm_wt_var_kernel1<<<gridX, TPB>>>(wt_var_dev, pass2var, dnom[i][j][k], mean_dev, veclen[j]);
 
                     err = cudaGetLastError();
                     if( cudaSuccess != err) {
@@ -2310,9 +2373,9 @@ gauden_norm_wt_var(vector_t ***in_var,
 	    }
 	}
     }
-}*/
-/*void
-gauden_norm_wt_var(vector_t ***in_var,
+}
+void
+gauden_norm_wt_var0(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,
@@ -2365,7 +2428,7 @@ gauden_norm_wt_var(vector_t ***in_var,
 	    }
 	}
     }
-}*/
+}
 
 static void
 gauden_tie_fullvars_dnoms(vector_t ****wt_fullvar,

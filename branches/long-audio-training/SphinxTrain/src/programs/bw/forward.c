@@ -584,6 +584,8 @@ forward_local(float64 **active_alpha,
 	    /* get list of states adjacent to active state i */
 	    /* activate them all, computing their codebook densities if necessary */
 	    for (u = 0; u < state_seq[i].n_next; u++) {
+	    
+//	        E_INFO("MICHAL: n_obs=%u n_active_astate=%u n_next=%u \n", n_obs, n_active_astate[t-1], state_seq[i].n_next);
 		j = state_seq[i].next_state[u];
 
 		if (state_seq[j].mixw != TYING_NON_EMITTING) {
