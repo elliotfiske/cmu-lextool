@@ -285,7 +285,91 @@ gauden_norm_wt_mean(vector_t ***in_mean,
 		    const uint32 *veclen);
 
 void
-gauden_norm_wt_var(vector_t ***in_var,
+gauden_norm_wt_var0(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var1(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var2(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var3(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var4(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var5(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var6(vector_t ***in_var,
+		   vector_t ***wt_var,
+		   int32 pass2var,
+		   float32 ***dnom,
+		   vector_t ***mean,
+		   uint32 n_mgau,
+		   uint32 n_feat,
+		   uint32 n_density,
+		   const uint32 *veclen,
+		   int32 tiedvar);
+
+void
+gauden_norm_wt_var7(vector_t ***in_var,
 		   vector_t ***wt_var,
 		   int32 pass2var,
 		   float32 ***dnom,

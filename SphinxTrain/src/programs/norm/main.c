@@ -455,10 +455,34 @@ normalize()
 	    else {
 		if (wt_var) {
 		    E_INFO("Normalizing var\n");
-		    gauden_norm_wt_var(in_var, wt_var, pass2var, dnom,
-				       wt_mean,	/* wt_mean now just mean */
+		    gauden_norm_wt_var0(in_var, wt_var, pass2var, dnom,
+				       wt_mean,
 				       n_mgau, n_stream, n_density, veclen,
 				       cmd_ln_boolean("-tiedvar"));
+/*		    gauden_norm_wt_var1(in_var, wt_var, pass2var, dnom,
+				       wt_mean,	
+				       n_mgau, n_stream, n_density, veclen,
+				       cmd_ln_boolean("-tiedvar"));*/
+/*		    gauden_norm_wt_var2(in_var, wt_var, pass2var, dnom,
+				       wt_mean,	
+				       n_mgau, n_stream, n_density, veclen,
+				       cmd_ln_boolean("-tiedvar"));*/
+/*		    gauden_norm_wt_var3(in_var, wt_var, pass2var, dnom,
+				       wt_mean,	
+				       n_mgau, n_stream, n_density, veclen,
+				       cmd_ln_boolean("-tiedvar"));
+		    gauden_norm_wt_var4(in_var, wt_var, pass2var, dnom,
+				       wt_mean,	
+				       n_mgau, n_stream, n_density, veclen,
+				       cmd_ln_boolean("-tiedvar"));
+		    gauden_norm_wt_var5(in_var, wt_var, pass2var, dnom,
+				       wt_mean,	
+				       n_mgau, n_stream, n_density, veclen,
+				       cmd_ln_boolean("-tiedvar"));*/
+/*		    gauden_norm_wt_var6(in_var, wt_var, pass2var, dnom,
+				       wt_mean,	
+				       n_mgau, n_stream, n_density, veclen,
+				       cmd_ln_boolean("-tiedvar"));*/
 		}
 	    }
 	}
@@ -471,6 +495,8 @@ normalize()
     else {
 	E_INFO("No means or variances to normalize\n");
     }
+    
+//    return S3_SUCCESS;
 
     /*
      * Write the parameters to files
