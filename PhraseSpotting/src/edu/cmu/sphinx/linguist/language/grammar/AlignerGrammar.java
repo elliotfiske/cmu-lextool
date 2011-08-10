@@ -41,7 +41,7 @@ public class AlignerGrammar extends Grammar {
 	private double selfLoopProbability;
 	private double backwardTransitionProbability;
 	private double forwardJumpProbability;
-	private int numAllowedWordJumps = 100;
+	private int numAllowedWordJumps = 10;
 
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();
@@ -131,7 +131,8 @@ public class AlignerGrammar extends Grammar {
 		}
 
 		if (model_deletions) {
-			forwardJumpProbability = 1.0; // penality for forward skips
+			forwardJumpProbability = 0.1; // penality for forward skips
+			
 		} else {
 			forwardJumpProbability = 0.0;
 		}
@@ -189,13 +190,15 @@ public class AlignerGrammar extends Grammar {
 			}
 
 			// allowing word repetitions: probability is still under test.
-			wordNode.add(wordNode, logMath.linearToLog(selfLoopProbability));
+			if(model_repetitions) {
+				wordNode.add(wordNode, logMath.linearToLog(selfLoopProbability));
+			}
 
 			// add connections to close words
 			for (int j = i + 1; j <= i + 1 + numAllowedWordJumps; j++) {
 				if (j < wordGrammarNodes.size()) {
 					final GrammarNode neighbour = wordGrammarNodes.get(j);
-					if (j != i + 1) {
+					if (j != i + 1 && model_deletions) {
 						wordNode.add(neighbour, logMath
 								.linearToLog(forwardJumpProbability));
 
@@ -204,12 +207,14 @@ public class AlignerGrammar extends Grammar {
 						// immediate neighbour
 						wordNode.add(neighbour, logMath.getLogOne());
 					}
+					if(model_backwardJumps)
 					neighbour.add(wordNode, logMath
 							.linearToLog(backwardTransitionProbability));
 				}
 			}
 		}
 		logger.info("Grammar Generated");
+		//initialNode.dumpDot("./graph.dot");
 		return initialNode;
 	}
 

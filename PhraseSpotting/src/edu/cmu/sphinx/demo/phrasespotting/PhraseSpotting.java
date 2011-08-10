@@ -50,7 +50,7 @@ public class PhraseSpotting {
 	public static void main(String Args[]) throws IOException {
 		
 		// Initialise demo related variables
-		final String phrase = "but"; // Phrase to be spotted
+		final String phrase = "I"; // Phrase to be spotted
 		String pathToAudioFile = "./resource/wav/obama_test.wav"; // Audio file
 		String pathToTextFile = "./resource/Transcription/obama.txt"; // Transcription
 		// file
@@ -91,7 +91,6 @@ public class PhraseSpotting {
 		}
 		StringCustomise sc = new StringCustomise();
 		input = sc.customise(input);
-		grammar.setGrammarType("");
 		grammar.setText(input);
 		dataSource.setAudioFile(new URL("file:" + pathToAudioFile), null);
 		recognizer.allocate();

@@ -11,14 +11,15 @@
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-10"/>
-	<property name="phoneInsertionProbability" value="1E-80"/>	
+	<property name="outOfGrammarProbability" value="1E-50"/>
+	<property name="phoneInsertionProbability" value="1E-200"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
 		<propertylist name="monitors">
             <item>accuracyTracker </item>
             <item>speedTracker </item>
+			<item>memoryTracker</item>
         </propertylist>
 	</component>
 
