@@ -32,6 +32,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
+import java.lang.ref.PhantomReference;
 
 public class AlignerSearchManager extends TokenSearchManager {
 
@@ -328,15 +329,20 @@ public class AlignerSearchManager extends TokenSearchManager {
 	 */
 	protected boolean recognize() {
 		boolean more = scoreTokens(); // score emitting tokens
+		phraseDetected = false;
 		if (more) {
 			pruneBranches(); // eliminate poor branches
+			if(phraseDetected) {
+				logger.info("Active List Pruned: number of active Token: " + activeList.size());
+			}
+			logger.info("Pruning Done: Number of Active tokens: " + activeList.size());
 			currentFrameNumber++;
 			if (growSkipInterval == 0
-					|| (currentFrameNumber % growSkipInterval) != 0) {
+					|| (currentFrameNumber % growSkipInterval) != 0) {			
 				phraseDetected = false;
-
+				logger.info("---------- Grow Branches Step : Start ---------");
 				growBranches(); // extend remaining branches
-
+				logger.info("---------- Grow Branches Step : Over ----------");
 			}
 		}
 		return !more;
@@ -505,15 +511,27 @@ public class AlignerSearchManager extends TokenSearchManager {
 		// Changes made here not only to check for wordThreshold but also
 		// Phrase Spotter's result
 		if (state instanceof WordSearchState) {
+			FloatData data = (FloatData) token.getData();
 			Word word = token.getWord();
-			if(word.getSpelling().compareToIgnoreCase(phraseWordList.get(0)) == 0) {
-				penalty = 20;		// it's more of a reward
+			float phraseTime = (float)currentFrameNumber/100;
+			if(word.getSpelling().compareToIgnoreCase(phraseWordList.get(0)) == 0 
+					&& spotterContains(phraseTime)) {
+				penalty = 1000.0f;		// it's more of a reward
+				phraseDetected = true;
+				logger.info("Token prioritized");
 			}
-			int indexInPhrase = phraseWordList.size() - 1;
 			if (token.getScore() < wordThreshold) {
 				return;
 			}
 		}
+		
+		// Idea is to award the favouring token very well 
+		if(penalty != 0.0f){
+			token.setScore(getBestToken(state).getScore());
+			setBestToken(token, state);
+		}
+		
+		
 		SearchStateArc[] arcs = state.getSuccessors();
 		// For each successor
 		// calculate the entry score for the token based upon the
@@ -525,10 +543,16 @@ public class AlignerSearchManager extends TokenSearchManager {
 		// otherwise recursively collect the new tokens successors.
 		for (SearchStateArc arc : arcs) {
 			SearchState nextState = arc.getState();
+			
+			
+			
+			
+			
 			// We're actually multiplying the variables, but since
 			// these come in log(), multiply gets converted to add
 			float logEntryScore = token.getScore() + arc.getProbability()
 					+ penalty;
+			
 			if (wantEntryPruning) { // false by default
 				if (logEntryScore < threshold) {
 					continue;
