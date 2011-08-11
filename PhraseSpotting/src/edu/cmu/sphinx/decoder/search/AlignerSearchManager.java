@@ -516,7 +516,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 			float phraseTime = (float)currentFrameNumber/100;
 			if(word.getSpelling().compareToIgnoreCase(phraseWordList.get(0)) == 0 
 					&& spotterContains(phraseTime)) {
-				penalty = 1000.0f;		// it's more of a reward
+				penalty = 1.0f;		// it's more of a reward
 				phraseDetected = true;
 				logger.info("Token prioritized");
 			}
@@ -527,7 +527,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 		
 		// Idea is to award the favouring token very well 
 		if(penalty != 0.0f){
-			token.setScore(getBestToken(state).getScore());
+			token.setScore(activeList.getBestScore());
 			setBestToken(token, state);
 		}
 		
