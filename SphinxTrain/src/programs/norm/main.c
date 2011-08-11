@@ -455,18 +455,18 @@ normalize()
 	    else {
 		if (wt_var) {
 		    E_INFO("Normalizing var\n");
-/*		    gauden_norm_wt_var0(in_var, wt_var, pass2var, dnom,
+		    gauden_norm_wt_var0(in_var, wt_var, pass2var, dnom,
 				       wt_mean,
 				       n_mgau, n_stream, n_density, veclen,
-				       cmd_ln_boolean("-tiedvar"));*/
+				       cmd_ln_boolean("-tiedvar"));
 /*		    gauden_norm_wt_var1(in_var, wt_var, pass2var, dnom,
 				       wt_mean,	
 				       n_mgau, n_stream, n_density, veclen,
 				       cmd_ln_boolean("-tiedvar"));*/
-		    gauden_norm_wt_var2(in_var, wt_var, pass2var, dnom,
+/*		    gauden_norm_wt_var2(in_var, wt_var, pass2var, dnom,
 				       wt_mean,	
 				       n_mgau, n_stream, n_density, veclen,
-				       cmd_ln_boolean("-tiedvar"));
+				       cmd_ln_boolean("-tiedvar"));*/
 /*		    gauden_norm_wt_var3(in_var, wt_var, pass2var, dnom,
 				       wt_mean,	
 				       n_mgau, n_stream, n_density, veclen,
