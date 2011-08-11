@@ -64,7 +64,7 @@ LIBDIR=$(shell test -d $(TOP)/lib.$(PLATFORM) || mkdir $(TOP)/lib.$(PLATFORM); e
 
 ifdef SRCS
 OBJDIR=$(shell test -d obj.$(PLATFORM) || mkdir obj.$(PLATFORM); echo obj.$(PLATFORM);)
-OBJS=$(shell echo $(patsubst %.cu,%.cuo,$(SRCS:.c=.o)) | awk '{for (i=1; i<=NF; i++) printf("'$(OBJDIR)'/%s\n",$$i)}';)
+OBJS=$(shell echo $(patsubst %.cu,%.cu.o,$(SRCS:.c=.o)) | awk '{for (i=1; i<=NF; i++) printf("'$(OBJDIR)'/%s\n",$$i)}';)
 endif
 
 INCLUDES = -I$(TOP)/include
@@ -81,11 +81,11 @@ STLIBS = $(LIBDIR)/libcommon.a \
 	 $(LIBDIR)/libclust.a
 LIBS := $(STLIBS) $(LIBS)
 
-$(OBJDIR)/%.o : %.c
-	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+$(OBJDIR)/%.cu.o : %.cu
+	$(NVCC) $(DEFS) $(CPPFLAGS) $(NVCCFLAGS) -c $< -o $@
 
-$(OBJDIR)/%.cuo : %.cu
-	$(CC) $(DEFS) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+$(OBJDIR)/%.o : %.c
+	$(NVCC) $(DEFS) $(CPPFLAGS) $(NVCCFLAGS) -c $< -o $@
 
 all: .make_build_dirs $(ALL) nothing
 
@@ -110,7 +110,7 @@ endif
 
 # Program build rules
 $(BINDIR)/$(TARGET): $(OBJS) $(STLIBS) $(DEP_LIBS)
-	$(CC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS) $(LIBS)
+	$(NVCC) -o $@ $(LDFLAGS) $(OBJS) $(LIBS) $(LIBS)
 
 # Festival Script build rules
 $(SCRIPTDIR)/%: %.festival
@@ -149,7 +149,7 @@ ifneq (,$(ALL_DIRS))
 endif
 
 DEPEND=make.depend
-MAKE_DEPEND=$(CC) -MM $(CFLAGS) $(CPPFLAGS)
+MAKE_DEPEND=$(NVCC) $(NVCCFLAGS) $(CPPFLAGS) -M
 
 depend:
 	@ echo make depend in $(DIRNAME) ...

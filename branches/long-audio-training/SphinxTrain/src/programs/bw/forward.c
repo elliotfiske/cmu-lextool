@@ -485,7 +485,6 @@ cleanup:
 
     return retval;
 }
-
 
 int32
 forward_local(float64 **active_alpha,
@@ -514,6 +513,9 @@ forward_local(float64 **active_alpha,
     uint32 ***now_den_idx = (uint32 ***)ckd_calloc_3d(inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
 					    sizeof(uint32));
 
+/*    E_INFO("MICHAL: now_den size: inv->n_cb_inverse x inv->gauden->n_feat x inv->gauden->n_top x sizeof(uint32) [%u, %u, %u, %u]\n",
+        inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden), sizeof(float64));*/
+
     float64 *best_pred = ckd_calloc(1, sizeof(float64));
     uint32 aalpha_alloc = n_active_astate[0];
     
@@ -534,7 +536,7 @@ forward_local(float64 **active_alpha,
         dscale[0] = gauden_scale_densities_fwd(now_den, now_den_idx,
                                            active_l_cb, 1, inv->gauden);
 
-        /* Compute the mixture density value for state 0 time 0 */  /* MICHAL: fix for all active states! */
+        /* Compute the mixture density value for state 0 time 0 */
         outprob_0 = gauden_mixture(now_den[state_seq[0].l_cb],
 		                now_den_idx[state_seq[0].l_cb],
 		                inv->mixw[state_seq[0].mixw],
