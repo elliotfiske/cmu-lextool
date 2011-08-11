@@ -1553,8 +1553,10 @@ gauden_mixture(float64 **den,
 	kk = 0;
  	while (kk < g->n_top) {
 	    uint32 k;
-	    k = den_idx[j][kk];
-	    oprob += w[j][k] * den[j][kk];
+/*	    k = den_idx[j][kk];
+	    oprob += w[j][k] * den[j][kk];*/
+	    k = den_idx[0][j * g->n_feat + kk];
+	    oprob += w[0][j * g->n_feat + k] * den[0][j * g->n_feat + kk];
 	    ++kk;
 	}
 
@@ -2253,7 +2255,7 @@ gauden_norm_wt_var2(vector_t ***in_var,
             
             cudaMemcpy(dnom_dev, dnom[i][j], n_density * sizeof(float32), cudaMemcpyHostToDevice);
 
-            for (k = 0; k < n_density; k++) {
+/*            for (k = 0; k < n_density; k++) {
                 cudaMemcpy(wt_var_dev + k * vec_len, wt_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
                 if (in_var) {
                     cudaMemcpy(in_var_dev + k * vec_len, in_var[i][j][k], vec_len * sizeof(float), cudaMemcpyHostToDevice);
@@ -2261,6 +2263,14 @@ gauden_norm_wt_var2(vector_t ***in_var,
                 if (!pass2var) {
                     cudaMemcpy(mean_dev + k * vec_len, mean[i][j][k],     vec_len * sizeof(float), cudaMemcpyHostToDevice);
                 }
+            }*/
+
+            cudaMemcpy(wt_var_dev, wt_var[i][j][0], n_density * vec_len * sizeof(float), cudaMemcpyHostToDevice);
+            if (in_var) {
+                cudaMemcpy(in_var_dev, in_var[i][j][0], n_density * vec_len * sizeof(float), cudaMemcpyHostToDevice);
+            }
+            if (!pass2var) {
+                cudaMemcpy(mean_dev, mean[i][j][0], n_density * vec_len * sizeof(float), cudaMemcpyHostToDevice);
             }
             
             dim3 bdim(16, 16, 1);
@@ -2273,9 +2283,11 @@ gauden_norm_wt_var2(vector_t ***in_var,
                 E_FATAL("CUDA ERROR: %s\n", cudaGetErrorString(err));
             }
             
-            for (k = 0; k < n_density; k++) {
+/*            for (k = 0; k < n_density; k++) {
                 cudaMemcpy(wt_var[i][j][k], wt_var_dev + k * vec_len, vec_len * sizeof(float), cudaMemcpyDeviceToHost);
-            }
+            }*/
+            
+            cudaMemcpy(wt_var[i][j][0], wt_var_dev, n_density * vec_len * sizeof(float), cudaMemcpyDeviceToHost);
             
             cudaFree(wt_var_dev);
             if (in_var_dev) {
