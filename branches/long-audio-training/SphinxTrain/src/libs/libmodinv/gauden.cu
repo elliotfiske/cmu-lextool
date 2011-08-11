@@ -1301,7 +1301,6 @@ gauden_compute_log(float64 **den,		/* density array for a mixture Gaussian */
 	}
     }
     else if (g->n_top == g->n_density) {
-//        E_INFO("MICHAL: n_feat=%u n_density=%u \n", g->n_feat, g->n_density);
 	for (j = 0; j < g->n_feat; j++) {
 	    log_full_densities(den[j],
 			       den_idx[j],

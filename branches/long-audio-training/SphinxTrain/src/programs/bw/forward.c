@@ -508,10 +508,12 @@ forward_local(float64 **active_alpha,
     uint16 *amap = ckd_calloc(n_state, sizeof(uint16));
     int32 *acbframe = ckd_calloc(inv->n_cb_inverse, sizeof(int32));
 
-    float64 ***now_den = (float64 ***)ckd_calloc_3d(inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
+    float64 ****now_den = (float64 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
 					 sizeof(float64));
-    uint32 ***now_den_idx = (uint32 ***)ckd_calloc_3d(inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
+    uint32 ****now_den_idx = (uint32 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
 					    sizeof(uint32));
+    float64 ***nd = (float64 ***)ckd_calloc(inv->n_cb_inverse, sizeof(float64**));
+    uint32 ***ndi = (float64 ***)ckd_calloc(inv->n_cb_inverse, sizeof(uint32**));
 
 /*    E_INFO("MICHAL: now_den size: inv->n_cb_inverse x inv->gauden->n_feat x inv->gauden->n_top x sizeof(uint32) [%u, %u, %u, %u]\n",
         inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden), sizeof(float64));*/
@@ -524,21 +526,26 @@ forward_local(float64 **active_alpha,
     uint32 t, i;
 
     if (t_offset == 0) {
+        uint32 n_top = gauden_n_top(inv->gauden);
+        
         active_l_cb[0] = state_seq[0].l_cb;
         
         /* Compute the component Gaussians for state 0 mixture density */
-        gauden_compute_log(now_den[state_seq[0].l_cb],
-                       now_den_idx[state_seq[0].l_cb],
+        gauden_compute_log(now_den[0][state_seq[0].l_cb],
+                       now_den_idx[0][state_seq[0].l_cb],
                        feature[0],
                        inv->gauden,
                        state_seq[0].cb, NULL);
-
-        dscale[0] = gauden_scale_densities_fwd(now_den, now_den_idx,
+                       
+//        acbframe[state_seq[0].l_cb] = 0;
+        nd[state_seq[0].l_cb] = now_den[0][state_seq[0].l_cb];
+        ndi[state_seq[0].l_cb] = now_den_idx[0][state_seq[0].l_cb];
+        dscale[0] = gauden_scale_densities_fwd(nd, ndi,
                                            active_l_cb, 1, inv->gauden);
 
         /* Compute the mixture density value for state 0 time 0 */
-        outprob_0 = gauden_mixture(now_den[state_seq[0].l_cb],
-		                now_den_idx[state_seq[0].l_cb],
+        outprob_0 = gauden_mixture(nd[state_seq[0].l_cb],
+		                ndi[state_seq[0].l_cb],
 		                inv->mixw[state_seq[0].mixw],
 		                inv->gauden);
         if (outprob_0 <= MIN_IEEE_NORM_POS_FLOAT32) {
@@ -548,6 +555,17 @@ forward_local(float64 **active_alpha,
         }
         /* Compute scale for t == 0 */
         scale[0] = 1.0 / outprob_0;
+    }
+    
+    for (t = 1; t < n_obs; t++) {
+        for (i = 0; i < inv->n_cb_inverse; i++) {
+            if (state_seq[i].mixw != TYING_NON_EMITTING) {
+                    uint32 l_cb = state_seq[i].l_cb;
+
+                    gauden_compute_log(now_den[t][l_cb], now_den_idx[t][l_cb],
+                       feature[t], inv->gauden, l_cb, NULL);
+            }
+        }
     }
 
     /* Initialize the active state map such that all states are inactive */
@@ -596,19 +614,24 @@ forward_local(float64 **active_alpha,
 			
 			if (acbframe[l_cb] != t) {
 			    /* Component density values not yet computed */
-			    gauden_compute_log(now_den[l_cb],
-					       now_den_idx[l_cb],
-					       feature[t],
-					       inv->gauden,
-					       state_seq[j].cb,
-					       /* Preinitializing topn
-						  only really makes a
-						  difference for
-						  semi-continuous
-						  (inv->n_cb_inverse == 1)
-						  models. */
-					       ((inv->n_cb_inverse == 1) ? now_den_idx[l_cb] : NULL));
+// odsud
 
+/*                            gauden_compute_log(now_den[t][l_cb],
+                               now_den_idx[t][l_cb],
+                               feature[t],
+                               inv->gauden,
+                               state_seq[j].cb,*/
+                               /* Preinitializing topn
+	                          only really makes a
+	                          difference for
+	                          semi-continuous
+	                          (inv->n_cb_inverse == 1)
+	                          models. */
+//                               ((inv->n_cb_inverse == 1) ? now_den_idx[t][l_cb] : NULL));
+
+                            nd[l_cb] = now_den[t][l_cb];
+                            ndi[l_cb] = now_den_idx[t][l_cb];
+                                
 			    active_l_cb[n_active_l_cb++] = l_cb;
 			    acbframe[l_cb] = t;
 			}
@@ -646,7 +669,7 @@ forward_local(float64 **active_alpha,
 	}
 
 	/* Cope w/ numerical issues by dividing densities by max density */
-	dscale[t] = gauden_scale_densities_fwd(now_den, now_den_idx,
+	dscale[t] = gauden_scale_densities_fwd(nd, ndi,
 					       active_l_cb, n_active_l_cb, inv->gauden);
 	
 	/* Now, for all active states in the previous frame, compute
@@ -662,12 +685,10 @@ forward_local(float64 **active_alpha,
 
 		if (state_seq[j].mixw != TYING_NON_EMITTING) {
 		    /* Next state j is an emitting state */
-		    float64 outprob_j = gauden_mixture(now_den[l_cb],
-						now_den_idx[l_cb],
-						inv->mixw[state_seq[j].mixw],
-						inv->gauden);
-
-
+		    float64 outprob_j = gauden_mixture(nd[l_cb],
+                                        ndi[l_cb],
+                                        inv->mixw[state_seq[j].mixw],
+                                        inv->gauden);
 		    /* update backpointers bp[t][j] */
 		    float64 x = active_alpha[t-1][s] * state_seq[i].next_tprob[u];
 		    if (bp) {
@@ -861,8 +882,8 @@ cleanup:
 
     ckd_free(acbframe);
 
-    ckd_free_3d((void ***)now_den);
-    ckd_free_3d((void ***)now_den_idx);
+    ckd_free_4d((void ****)now_den);
+    ckd_free_4d((void ****)now_den_idx);
     
     return retval;
 }
