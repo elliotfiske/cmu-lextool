@@ -558,12 +558,12 @@ forward_local(float64 **active_alpha,
     }
     
     for (t = 1; t < n_obs; t++) {
-        for (i = 0; i < inv->n_cb_inverse; i++) {
+        for (i = 0; i < n_state; i++) {
             if (state_seq[i].mixw != TYING_NON_EMITTING) {
                     uint32 l_cb = state_seq[i].l_cb;
 
                     gauden_compute_log(now_den[t][l_cb], now_den_idx[t][l_cb],
-                       feature[t], inv->gauden, l_cb, NULL);
+                       feature[t], inv->gauden, state_seq[i].cb, NULL);
             }
         }
     }
@@ -627,7 +627,8 @@ forward_local(float64 **active_alpha,
 	                          semi-continuous
 	                          (inv->n_cb_inverse == 1)
 	                          models. */
-//                               ((inv->n_cb_inverse == 1) ? now_den_idx[t][l_cb] : NULL));
+                               //((inv->n_cb_inverse == 1) ? now_den_idx[t][l_cb] : NULL)
+//                               NULL);
 
                             nd[l_cb] = now_den[t][l_cb];
                             ndi[l_cb] = now_den_idx[t][l_cb];
