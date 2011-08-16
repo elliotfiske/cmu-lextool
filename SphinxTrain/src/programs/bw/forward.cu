@@ -74,16 +74,16 @@ forward_init_arrays(
         uint32 n_obs)
 {
     *active_alpha = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
-    *active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(int32 *));
-    *n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(int32));
+    *active_astate = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
+    *n_active_astate = (uint32 *)ckd_calloc(n_obs, sizeof(uint32));
     *scale = (float64 *)ckd_calloc(n_obs, sizeof(float64));
     *dscale = (float64 **)ckd_calloc(n_obs, sizeof(float64 *));
     if (bp) {
         *bp = (uint32 **)ckd_calloc(n_obs, sizeof(uint32 *));
     }
     memset(*active_alpha, 0, n_obs * sizeof(float64 *));
-    memset(*active_astate, 0, n_obs * sizeof(int32 *));
-    memset(*n_active_astate, 0, n_obs * sizeof(int32));
+    memset(*active_astate, 0, n_obs * sizeof(uint32 *));
+    memset(*n_active_astate, 0, n_obs * sizeof(uint32));
     memset(*scale, 0, n_obs * sizeof(float64));
     memset(*dscale, 0, n_obs * sizeof(float64 *));
     if (bp) {
@@ -113,7 +113,9 @@ void forward_free_arrays(
     *n_active_astate = NULL;
     *scale = NULL;
     *dscale = NULL;
-    *bp = NULL;
+    if (bp) {
+        *bp = NULL;
+    }
 }
 
 void
@@ -266,6 +268,8 @@ forward(float64 **active_alpha,
         s3phseg_t *phseg,
         uint32 mmi_train)
 {
+    int32 retval = S3_SUCCESS;
+        
     float64 **red_active_alpha;
     uint32 **red_active_astate;
     uint32 *red_n_active_astate;
@@ -273,11 +277,9 @@ forward(float64 **active_alpha,
     float64 *red_scale;
     float64 **red_dscale;
     
-    uint32 retval = S3_SUCCESS;
-        
     uint32 block_size = 11;
     uint32 n_red = ceil(n_obs / (float64)block_size);
-    int t;    /* should be signed! iterating backwards to 0 and checking by >= 0 */
+    int32 t;    /* should be signed! iterating backwards to 0 and checking by >= 0 */
 
     /*
      * Allocate space for the initial state in the alpha
@@ -339,7 +341,7 @@ forward_recompute(float64 **loc_active_alpha,
         s3phseg_t *phseg,
         uint32 mmi_train)
 {
-    uint32 retval = S3_SUCCESS;
+    int32 retval = S3_SUCCESS;
 
     uint32 block_obs = block_size;
     
@@ -389,6 +391,8 @@ forward_reduced(float64 **active_alpha,
         s3phseg_t *phseg,
         uint32 mmi_train)
 {
+    int32 retval = S3_SUCCESS;
+        
     float64 **loc_active_alpha;
     uint32 **loc_active_astate;
     uint32 *loc_n_active_astate;
@@ -396,8 +400,6 @@ forward_reduced(float64 **active_alpha,
     float64 *loc_scale;
     float64 **loc_dscale;
     
-    uint32 retval = S3_SUCCESS;
-        
     uint32 n_red = ceil(n_obs / (float64)block_size);
     int t;
 
@@ -514,10 +516,12 @@ forward_local(float64 **active_alpha,
         uint32 mmi_train,
         uint32 t_offset)
 {
+    int32 retval = S3_SUCCESS;
+    
     uint32 *next_active = (uint32 *)ckd_calloc(n_state, sizeof(uint32));
     uint32 *active_l_cb = (uint32 *)ckd_calloc(n_state, sizeof(uint32));
     uint16 *amap = (uint16 *)ckd_calloc(n_state, sizeof(uint16));
-    int32 *acbframe = (int32 *)ckd_calloc(inv->n_cb_inverse, sizeof(int32));
+    uint32 *acbframe = (uint32 *)ckd_calloc(inv->n_cb_inverse, sizeof(uint32));
 
     float64 ****now_den = (float64 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
                                          sizeof(float64));
@@ -528,7 +532,6 @@ forward_local(float64 **active_alpha,
     uint32 aalpha_alloc = n_active_astate[0];
     
     float64 outprob_0;
-    int32 retval = S3_SUCCESS;
     uint32 t, i;
 
     if (t_offset == 0) {
