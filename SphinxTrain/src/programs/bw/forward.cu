@@ -498,6 +498,141 @@ int stopTimer(struct timeval *timer){
         return (int)(tmp.tv_usec + tmp.tv_sec*1000000);
 }*/
 
+__global__ void
+gauden_precompute_kernel(float64 ****den, uint32 ****den_idx, vector_t **feature, model_inventory_t *inv, state_t *state_seq, uint32 n_state, uint32 n_obs) {
+    int t = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    
+/*    if (state_seq[i].mixw != TYING_NON_EMITTING) {
+        uint32 l_cb = state_seq[i].l_cb;
+
+        gauden_compute_log(den[t][l_cb], den_idx[t][l_cb],
+           feature[t], inv->gauden, state_seq[i].cb, ((inv->n_cb_inverse == 1) ? den_idx[t-1][l_cb] : NULL));
+    }*/
+}
+
+/* This function treats gauden arrays as flat! */
+void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, int direction) {
+
+    uint32 i, j, k, l, maxveclen;
+    float32 buf_size;
+    float32 *src_buf, *dest_buf;
+    
+    cudaMemcpy((void *)dest_gau->veclen, (void *)src_gau->veclen, src_gau->n_feat * sizeof(uint32), cudaMemcpyHostToHost);
+    cudaMemcpy(dest_gau->norm, src_gau->norm, src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(float32), cudaMemcpyHostToHost);
+    
+    src_buf = src_gau->mean[0][0][0];
+    dest_buf = dest_gau->mean[0][0][0];
+    buf_size = src_gau->mean[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_buf +
+        src_gau->veclen[src_gau->n_feat - 1];
+    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), cudaMemcpyHostToHost);
+    /* this cannot be flattened */
+    for (i = 0; i < src_gau->n_mgau; i++) {
+        for (j = 0; j < src_gau->n_feat; j++) {
+            for (k = 0; k < src_gau->n_density; k++) {
+                dest_gau->mean[0][0][(i * src_gau->n_feat * src_gau->n_density) + (j * src_gau->n_density) + k] =
+                    dest_buf + (src_gau->mean[0][0][(i * src_gau->n_feat * src_gau->n_density) + (j * src_gau->n_density) + k] - src_buf);
+            }
+        }
+    }
+    
+    src_buf = src_gau->var[0][0][0];
+    dest_buf = dest_gau->var[0][0][0];
+    buf_size = src_gau->var[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_buf +
+        src_gau->veclen[src_gau->n_feat - 1];
+    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), cudaMemcpyHostToHost);
+    /* this cannot be flattened */
+    for (i = 0; i < src_gau->n_mgau; i++) {
+        for (j = 0; j < src_gau->n_feat; j++) {
+            for (k = 0; k < src_gau->n_density; k++) {
+                dest_gau->var[0][0][(i * src_gau->n_feat * src_gau->n_density) + (j * src_gau->n_density) + k] =
+                    dest_buf + (src_gau->var[0][0][(i * src_gau->n_feat * src_gau->n_density) + (j * src_gau->n_density) + k] - src_buf);
+            }
+        }
+    }
+
+    maxveclen = 0;
+    for (j = 0; j < src_gau->n_feat; j++) {
+        if (src_gau->veclen[j] > maxveclen) maxveclen = src_gau->veclen[j];
+    }
+    
+    src_buf = src_gau->fullvar[0][0][0][0];
+    dest_buf = dest_gau->fullvar[0][0][0][0];
+    buf_size = src_gau->fullvar[0][0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * maxveclen - 1] - src_buf +
+        src_gau->veclen[src_gau->n_feat - 1];
+    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), cudaMemcpyHostToHost);
+    /* this cannot be flattened */
+    for (i = 0; i < src_gau->n_mgau; i++) {
+        for (j = 0; j < src_gau->n_feat; j++) {
+            for (k = 0; k < src_gau->n_density; k++) {
+                for (l = 0; l < src_gau->veclen[j]; l++) {
+                    dest_gau->fullvar[0][0][0][
+                        (i * src_gau->n_feat * src_gau->n_density * maxveclen) + (j * src_gau->n_density * maxveclen) + (k * maxveclen) + l] =
+                            dest_buf + (src_gau->fullvar[0][0][0][
+                                (i * src_gau->n_feat * src_gau->n_density * maxveclen) + (j * src_gau->n_density * maxveclen) + (k * maxveclen) + l] - src_buf);
+                }
+            }
+        }
+    }
+}
+
+void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, model_inventory_t *inv, state_t *state_seq, uint32 n_state, uint32 n_obs) {
+
+/*    dim3 bdim(16, 16, 1);
+    dim3 gdim(ceil(n_obs / (float)bdim.x), ceil(n_state / (float)bdim.y), 1);
+
+    gauden_precompute_kernel<<<gdim, bdim>>>(d_den, d_den_idx, d_feature, inv, d_state_seq, n_state, n_obs);*/
+    
+    uint32 t, i, j, maxveclen;
+    uint32 buf_size;
+
+    gauden_t g;
+    g.veclen = (uint32 *)ckd_calloc(inv->gauden->n_feat, sizeof(uint32));
+    g.norm = (float32 ***)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density, sizeof(float32));
+
+    buf_size = inv->gauden->mean[0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density - 1] - inv->gauden->mean[0][0][0] +
+        inv->gauden->veclen[inv->gauden->n_feat - 1];
+    g.mean = (vector_t ***)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density, sizeof(vector_t));
+    g.var[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    
+    buf_size = inv->gauden->var[0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density - 1] - inv->gauden->var[0][0][0] +
+        inv->gauden->veclen[inv->gauden->n_feat - 1];
+    g.var = (vector_t ***)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density, sizeof(vector_t));
+    g.var[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    
+    maxveclen = 0;
+    for (j = 0; j < inv->gauden->n_feat; j++) {
+        if (inv->gauden->veclen[j] > maxveclen) maxveclen = inv->gauden->veclen[j];
+    }
+    
+    buf_size = inv->gauden->fullvar[0][0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density * maxveclen - 1] - inv->gauden->fullvar[0][0][0][0] +
+        inv->gauden->veclen[inv->gauden->n_feat - 1];
+    g.fullvar = (vector_t ****)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density * maxveclen, sizeof(vector_t));
+    g.fullvar[0][0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    
+    for (t = 1; t < n_obs; t++) {
+        for (i = 0; i < n_state; i++) {
+            if (state_seq[i].mixw != TYING_NON_EMITTING) {
+                uint32 l_cb = state_seq[i].l_cb;
+
+                gauden_compute_log(den[t][l_cb], den_idx[t][l_cb],
+                   feature[t], inv->gauden, state_seq[i].cb, ((inv->n_cb_inverse == 1) ? den_idx[t-1][l_cb] : NULL));
+                           /* Preinitializing topn only really makes a difference 
+                              for semi-continuous (inv->n_cb_inverse == 1) models. */
+            }
+        }
+    }
+    
+    ckd_free((void *) g.veclen);
+    ckd_free((void *) g.norm);
+    ckd_free((void *) g.mean[0][0][0]);
+    ckd_free((void *) g.mean);
+    ckd_free((void *) g.var[0][0][0]);
+    ckd_free((void *) g.var);
+    ckd_free((void *) g.fullvar[0][0][0][0]);
+    ckd_free((void *) g.fullvar);
+}
+
 
 int32
 forward_local(float64 **active_alpha,
@@ -523,9 +658,9 @@ forward_local(float64 **active_alpha,
     uint16 *amap = (uint16 *)ckd_calloc(n_state, sizeof(uint16));
     uint32 *acbframe = (uint32 *)ckd_calloc(inv->n_cb_inverse, sizeof(uint32));
 
-    float64 ****now_den = (float64 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
+    float64 ****den = (float64 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
                                          sizeof(float64));
-    uint32 ****now_den_idx = (uint32 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
+    uint32 ****den_idx = (uint32 ****)ckd_calloc_4d(n_obs, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden),
                                             sizeof(uint32));
 
     float64 *best_pred = (float64 *)ckd_calloc(1, sizeof(float64));
@@ -536,8 +671,8 @@ forward_local(float64 **active_alpha,
 
     if (t_offset == 0) {
         /* Compute the component Gaussians for state 0 mixture density */
-        gauden_compute_log(now_den[0][state_seq[0].l_cb],
-                       now_den_idx[0][state_seq[0].l_cb],
+        gauden_compute_log(den[0][state_seq[0].l_cb],
+                       den_idx[0][state_seq[0].l_cb],
                        feature[0],
                        inv->gauden,
                        state_seq[0].cb, NULL);
@@ -545,12 +680,12 @@ forward_local(float64 **active_alpha,
         active_l_cb[0] = state_seq[0].l_cb;
         acbframe[state_seq[0].l_cb] = 0;
                        
-        dscale[0] = gauden_scale_densities_fwd(now_den[0], now_den_idx[0],
+        dscale[0] = gauden_scale_densities_fwd(den[0], den_idx[0],
                                            active_l_cb, 1, inv->gauden);
 
         /* Compute the mixture density value for state 0 time 0 */
-        outprob_0 = gauden_mixture(now_den[0][state_seq[0].l_cb],
-                                now_den_idx[0][state_seq[0].l_cb],
+        outprob_0 = gauden_mixture(den[0][state_seq[0].l_cb],
+                                den_idx[0][state_seq[0].l_cb],
                                 inv->mixw[state_seq[0].mixw],
                                 inv->gauden);
         if (outprob_0 <= MIN_IEEE_NORM_POS_FLOAT32) {
@@ -565,18 +700,10 @@ forward_local(float64 **active_alpha,
 /*    struct timeval timer;
     startTimer(&timer);*/
     
-    for (t = 1; t < n_obs; t++) {
-        for (i = 0; i < n_state; i++) {
-            if (state_seq[i].mixw != TYING_NON_EMITTING) {
-                uint32 l_cb = state_seq[i].l_cb;
+/*    E_INFO("MICHAL: n_obs=%u n_state=%u (n_cb_inverse=%u) n_feat=%u n_top=%u\n",
+        n_obs, n_state, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden));*/
 
-                gauden_compute_log(now_den[t][l_cb], now_den_idx[t][l_cb],
-                   feature[t], inv->gauden, state_seq[i].cb, ((inv->n_cb_inverse == 1) ? now_den_idx[t-1][l_cb] : NULL));
-                           /* Preinitializing topn only really makes a difference 
-                              for semi-continuous (inv->n_cb_inverse == 1) models. */
-            }
-        }
-    }
+    gauden_precompute(den, den_idx, feature, inv, state_seq, n_state, n_obs);
     
 /*    int tm = stopTimer(&timer);
     E_INFO("MICHAL: n_obs=%u n_state=%u time=%u\n", n_obs, n_state, tm);*/
@@ -663,7 +790,7 @@ forward_local(float64 **active_alpha,
         }
 
         /* Cope w/ numerical issues by dividing densities by max density */
-        dscale[t] = gauden_scale_densities_fwd(now_den[t], now_den_idx[t],
+        dscale[t] = gauden_scale_densities_fwd(den[t], den_idx[t],
                                                active_l_cb, n_active_l_cb, inv->gauden);
         
         /* Now, for all active states in the previous frame, compute
@@ -679,8 +806,8 @@ forward_local(float64 **active_alpha,
 
                 if (state_seq[j].mixw != TYING_NON_EMITTING) {
                     /* Next state j is an emitting state */
-                    float64 outprob_j = gauden_mixture(now_den[t][l_cb],
-                                        now_den_idx[t][l_cb],
+                    float64 outprob_j = gauden_mixture(den[t][l_cb],
+                                        den_idx[t][l_cb],
                                         inv->mixw[state_seq[j].mixw],
                                         inv->gauden);
                     /* update backpointers bp[t][j] */
@@ -876,8 +1003,8 @@ cleanup:
 
     ckd_free(acbframe);
 
-    ckd_free_4d((void ****)now_den);
-    ckd_free_4d((void ****)now_den_idx);
+    ckd_free_4d((void ****)den);
+    ckd_free_4d((void ****)den_idx);
     
     return retval;
 }
