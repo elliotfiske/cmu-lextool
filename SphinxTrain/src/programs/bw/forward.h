@@ -52,115 +52,127 @@
 #include <s3/vector.h>
 #include <s3/s3phseg_io.h>
 
+
+#ifdef __cplusplus
+/* for NVCC compiles code as C++ and mangles the names */
+extern "C" {
+#endif
+
+
 uint32 *
 backtrace(state_t *state, uint32 fs_id, uint32 *n_vit_sseq);
 
 void
 forward_init_arrays(
-        float64 ***active_alpha,
-	uint32 ***active_astate,
-	uint32 **n_active_astate,
-	uint32 ***bp,
-	float64 **scale,
-	float64 ***dscale,
-        uint32 n_obs);
+    float64 ***active_alpha,
+    uint32 ***active_astate,
+    uint32 **n_active_astate,
+    uint32 ***bp,
+    float64 **scale,
+    float64 ***dscale,
+    uint32 n_obs);
 
 void
 forward_free_arrays(
-        float64 ***active_alpha,
-	uint32 ***active_astate,
-	uint32 **n_active_astate,
-	uint32 ***bp,
-	float64 **scale,
-	float64 ***dscale);
+    float64 ***active_alpha,
+    uint32 ***active_astate,
+    uint32 **n_active_astate,
+    uint32 ***bp,
+    float64 **scale,
+    float64 ***dscale);
 
 void
 forward_clear_arrays(
-        float64 **active_alpha,
-	uint32 **active_astate,
-	uint32 **bp,
-	float64 **dscale,
-	uint32 n_obs);
+    float64 **active_alpha,
+    uint32 **active_astate,
+    uint32 **bp,
+    float64 **dscale,
+    uint32 n_obs);
 
 int32
 forward(float64 **active_alpha,
-	uint32 **active_astate,
-	uint32 *n_active_astate,
-	uint32 **bp,
-	float64 *scale,
-	float64 **dscale,
-	vector_t **feature,
-	uint32 n_obs,
-	state_t *state_seq,
-	uint32 n_state,
-	model_inventory_t *inv,
-	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train);
+    uint32 **active_astate,
+    uint32 *n_active_astate,
+    uint32 **bp,
+    float64 *scale,
+    float64 **dscale,
+    vector_t **feature,
+    uint32 n_obs,
+    state_t *state_seq,
+    uint32 n_state,
+    model_inventory_t *inv,
+    float64 beam,
+    s3phseg_t *phseg,
+    uint32 mmi_train);
 
 int32
 forward_recompute(float64 **loc_active_alpha,
-	uint32 **loc_active_astate,
-	uint32 *loc_n_active_astate,
-	uint32 **loc_bp,
-	float64 *loc_scale,
-	float64 **loc_dscale,
-        float64 **red_active_alpha,
-	uint32 **red_active_astate,
-	uint32 *red_n_active_astate,
-	uint32 **red_bp,
-	float64 *red_scale,
-	float64 **red_dscale,
-	vector_t **feature,
-	uint32 block_idx,
-	uint32 block_size,
-	uint32 n_obs,
-	state_t *state_seq,
-	uint32 n_state,
-	model_inventory_t *inv,
-	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train);
+    uint32 **loc_active_astate,
+    uint32 *loc_n_active_astate,
+    uint32 **loc_bp,
+    float64 *loc_scale,
+    float64 **loc_dscale,
+    float64 **red_active_alpha,
+    uint32 **red_active_astate,
+    uint32 *red_n_active_astate,
+    uint32 **red_bp,
+    float64 *red_scale,
+    float64 **red_dscale,
+    vector_t **feature,
+    uint32 block_idx,
+    uint32 block_size,
+    uint32 n_obs,
+    state_t *state_seq,
+    uint32 n_state,
+    model_inventory_t *inv,
+    float64 beam,
+    s3phseg_t *phseg,
+    uint32 mmi_train);
 
 int32
 forward_reduced(float64 **active_alpha,
-	uint32 **active_astate,
-	uint32 *n_active_astate,
-	uint32 **bp,
-	float64 *scale,
-	float64 **dscale,
-	vector_t **feature,
-	uint32 block_size,
-	uint32 n_obs,
-	state_t *state_seq,
-	uint32 n_state,
-	model_inventory_t *inv,
-	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train);
+    uint32 **active_astate,
+    uint32 *n_active_astate,
+    uint32 **bp,
+    float64 *scale,
+    float64 **dscale,
+    vector_t **feature,
+    uint32 block_size,
+    uint32 n_obs,
+    state_t *state_seq,
+    uint32 n_state,
+    model_inventory_t *inv,
+    float64 beam,
+    s3phseg_t *phseg,
+    uint32 mmi_train);
 
 int32
 forward_local(float64 **active_alpha,
-	uint32 **active_astate,
-	uint32 *n_active_astate,
-	uint32 **bp,
-	float64 *scale,
-	float64 **dscale,
-	vector_t **feature,
-	uint32 n_obs,
-	state_t *state_seq,
-	uint32 n_state,
-	model_inventory_t *inv,
-	float64 beam,
-	s3phseg_t *phseg,
-	uint32 mmi_train,
-	uint32 t_offset);
+    uint32 **active_astate,
+    uint32 *n_active_astate,
+    uint32 **bp,
+    float64 *scale,
+    float64 **dscale,
+    vector_t **feature,
+    uint32 n_obs,
+    state_t *state_seq,
+    uint32 n_state,
+    model_inventory_t *inv,
+    float64 beam,
+    s3phseg_t *phseg,
+    uint32 mmi_train,
+    uint32 t_offset);
 
 void
 forward_set_viterbi(int state);
 
-#endif /* FORWARD_H */ 
 
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif /* FORWARD_H */ 
 
 /*
  * Log record.  Maintained by RCS.

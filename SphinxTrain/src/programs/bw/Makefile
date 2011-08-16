@@ -48,8 +48,7 @@ SRCS = \
   accum.c \
   backward.c \
   baum_welch.c \
-  forward.c \
-  forward_gpu.cu \
+  forward.cu \
   main.c \
   next_utt_states.c \
   train_cmd_ln.c \
