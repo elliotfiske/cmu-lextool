@@ -158,6 +158,7 @@ forward_local(float64 **active_alpha,
     state_t *state_seq,
     uint32 n_state,
     model_inventory_t *inv,
+    gauden_t *dev_gauden,
     float64 beam,
     s3phseg_t *phseg,
     uint32 mmi_train,
@@ -166,6 +167,8 @@ forward_local(float64 **active_alpha,
 void
 forward_set_viterbi(int state);
 
+void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind);
+gauden_t *gauden_duplicate(gauden_t *src_gau);
 
 #ifdef __cplusplus
 }
