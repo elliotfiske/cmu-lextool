@@ -59,6 +59,7 @@
 #include <string.h>
 
 #include "forward.h"
+#include "device_alloc.h"
 
 #define FORWARD_DEBUG 0
 #define INACTIVE        0xffff
@@ -515,85 +516,6 @@ gauden_precompute_kernel(float64 ****den, uint32 ****den_idx, vector_t **feature
     }*/
 }
 
-void *
-device_alloc_3d(size_t d1, size_t d2, size_t d3, size_t elemsize)
-{
-    char ***ref1, **ref2, *mem;
-    size_t i, j, offset;
-
-    cudaMalloc(&mem, d1 * d2 * d3 * elemsize);
-    cudaMalloc(&ref1, d1 * sizeof(void **));
-    cudaMalloc(&ref2, d1 * d2 * sizeof(void *));
-
-// TODO: parallelize
-    for (i = 0, offset = 0; i < d1; i++, offset += d2)
-        ref1[i] = ref2 + offset;
-
-    offset = 0;
-    for (i = 0; i < d1; i++) {
-        for (j = 0; j < d2; j++) {
-            ref1[i][j] = mem + offset;
-            offset += d3 * elemsize;
-        }
-    }
-
-    return ref1;
-}
-
-void ****
-device_alloc_4d(size_t d1,
-		  size_t d2,
-		  size_t d3,
-		  size_t d4,
-		  size_t elem_size)
-{
-    void *store;
-    void **tmp1;
-    void ***tmp2;
-    void ****out;
-    size_t i, j;
-
-    cudaMalloc(&store, d1 * d2 * d3 * d4 * elem_size);
-    cudaMalloc(&tmp1, d1 * d2 * d3 * sizeof(void *));
-    cudaMalloc(&tmp2, d1 * d2 * sizeof(void **));
-    cudaMalloc(&out, d1 * sizeof(void ***));
-    
-    for (i = 0, j = 0; i < d1*d2*d3; i++, j += d4) {
-        tmp1[i] = &((char *)store)[j*elem_size];
-    }
-
-    for (i = 0, j = 0; i < d1*d2; i++, j += d3) {
-        tmp2[i] = &tmp1[j];
-    }
-
-    for (i = 0, j = 0; i < d1; i++, j += d2) {
-        out[i] = &tmp2[j];
-    }
-
-    return out;
-}
-
-void
-device_free_3d(void *inptr) {
-    void ***ptr = (void ***)inptr;
-    if (ptr == NULL)
-        return;
-    ckd_free(ptr[0][0]);
-    ckd_free(ptr[0]);
-    ckd_free(ptr);
-}
-
-void
-device_free_4d(void *inptr) {
-    void ****ptr = (void ****)inptr;
-    if (ptr == NULL)
-        return;
-    ckd_free(ptr[0][0][0]);
-    ckd_free(ptr[0][0]);
-    ckd_free(ptr[0]);
-    ckd_free(ptr);
-}
-
 void gauden_dev_free(gauden_t *gauden) {
     cudaFree((void *)gauden->veclen);
     device_free_3d((void ***)gauden->norm);
@@ -620,8 +542,16 @@ void gauden_dev_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind 
     dest_gau->n_top = src_gau->n_top;
     
     cudaMemcpy((void *)dest_gau->veclen, (void *)src_gau->veclen, src_gau->n_feat * sizeof(uint32), kind);
+    
+    cudaMemcpy(dest_gau->norm, src_gau->norm, src_gau->n_mgau * sizeof(void *), kind);
+    cudaMemcpy(dest_gau->norm[0], src_gau->norm[0], src_gau->n_mgau * src_gau->n_feat * sizeof(void **), kind);
     cudaMemcpy(dest_gau->norm[0][0], src_gau->norm[0][0], src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(float32), kind);
     
+    cudaMemcpy(dest_gau->mean, src_gau->mean, src_gau->n_mgau * sizeof(void *), kind);
+    cudaMemcpy(dest_gau->mean[0], src_gau->mean[0], src_gau->n_mgau * src_gau->n_feat * sizeof(void **), kind);
+    cudaMemcpy(dest_gau->mean[0][0], src_gau->mean[0][0], src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(void ***), kind);
+    
+    // TODO: move to kernel
     src_buf = src_gau->mean[0][0][0];
     dest_buf = dest_gau->mean[0][0][0];
     buf_size = src_gau->mean[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_buf +
@@ -637,6 +567,11 @@ void gauden_dev_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind 
         }
     }
     
+    cudaMemcpy(dest_gau->var, src_gau->var, src_gau->n_mgau * sizeof(void *), kind);
+    cudaMemcpy(dest_gau->var[0], src_gau->var[0], src_gau->n_mgau * src_gau->n_feat * sizeof(void **), kind);
+    cudaMemcpy(dest_gau->var[0][0], src_gau->var[0][0], src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(void ***), kind);
+    
+    // TODO: move to kernel
     src_buf = src_gau->var[0][0][0];
     dest_buf = dest_gau->var[0][0][0];
     buf_size = src_gau->var[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_buf +
@@ -658,6 +593,11 @@ void gauden_dev_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind 
     }
     
     if (src_gau->fullvar) {
+        cudaMemcpy(dest_gau->fullvar, src_gau->fullvar, src_gau->n_mgau * sizeof(void *), kind);
+        cudaMemcpy(dest_gau->fullvar[0], src_gau->fullvar[0], src_gau->n_mgau * src_gau->n_feat * sizeof(void **), kind);
+        cudaMemcpy(dest_gau->fullvar[0][0], src_gau->fullvar[0][0], src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(void ***), kind);
+        
+        // TODO: move to kernel
         src_buf = src_gau->fullvar[0][0][0][0];
         dest_buf = dest_gau->fullvar[0][0][0][0];
         buf_size = src_gau->fullvar[0][0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * maxveclen - 1] - src_buf +
@@ -684,30 +624,33 @@ gauden_t *gauden_dev_duplicate(gauden_t *src_gau) {
     uint32 buf_size;
     gauden_t *dest_gau;
     
-    cudaMalloc(&dest_gau, sizeof(gauden_t));
+    dest_gau = gauden_alloc();
 
     cudaMalloc(&dest_gau->veclen, src_gau->n_feat * sizeof(uint32));
+    
     dest_gau->norm = (float32 ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(float32));
 
+    dest_gau->mean = (vector_t ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
     buf_size = src_gau->mean[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_gau->mean[0][0][0] +
         src_gau->veclen[src_gau->n_feat - 1];
-    dest_gau->mean = (vector_t ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
     cudaMalloc(&dest_gau->mean[0][0][0], buf_size * sizeof(float32));
     
+    dest_gau->var = (vector_t ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
     buf_size = src_gau->var[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_gau->var[0][0][0] +
         src_gau->veclen[src_gau->n_feat - 1];
-    dest_gau->var = (vector_t ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
     cudaMalloc(&dest_gau->var[0][0][0], buf_size * sizeof(float32));
     
     maxveclen = 0;
     for (j = 0; j < src_gau->n_feat; j++) {
-        if (src_gau->veclen[j] > maxveclen) maxveclen = src_gau->veclen[j];
+        if (src_gau->veclen[j] > maxveclen) {
+            maxveclen = src_gau->veclen[j];
+        }
     }
     
     if (src_gau->fullvar) {
+        dest_gau->fullvar = (vector_t ****)device_alloc_4d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, maxveclen, sizeof(vector_t));
         buf_size = src_gau->fullvar[0][0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * maxveclen - 1] - src_gau->fullvar[0][0][0][0] +
             src_gau->veclen[src_gau->n_feat - 1];
-        dest_gau->fullvar = (vector_t ****)device_alloc_4d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, maxveclen, sizeof(vector_t));
         cudaMalloc(&dest_gau->fullvar[0][0][0][0], buf_size * sizeof(float32));
     } else {
         dest_gau->fullvar = NULL;

@@ -49,6 +49,7 @@ SRCS = \
   backward.c \
   baum_welch.c \
   forward.cu \
+  device_alloc.cu \
   main.c \
   next_utt_states.c \
   train_cmd_ln.c \
@@ -58,6 +59,7 @@ H = \
   backward.h \
   baum_welch.h \
   forward.h \
+  device_alloc.h \
   next_utt_states.h \
   train_cmd_ln.h \
   viterbi.h
