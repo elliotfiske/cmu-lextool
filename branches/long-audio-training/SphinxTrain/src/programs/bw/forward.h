@@ -167,8 +167,27 @@ forward_local(float64 **active_alpha,
 void
 forward_set_viterbi(int state);
 
-void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind);
-gauden_t *gauden_duplicate(gauden_t *src_gau);
+void *
+device_alloc_3d(size_t d1, size_t d2, size_t d3, size_t elemsize);
+
+void ****
+device_alloc_4d(size_t d1, size_t d2, size_t d3, size_t d4, size_t elem_size);
+
+void
+device_free_3d(void *inptr);
+
+void
+device_free_4d(void *inptr);
+
+void
+gauden_dev_free(gauden_t *gauden);
+
+void
+gauden_dev_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind);
+
+gauden_t *
+gauden_dev_duplicate(gauden_t *src_gau);
+
 
 #ifdef __cplusplus
 }

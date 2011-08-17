@@ -404,7 +404,7 @@ forward_reduced(float64 **active_alpha,
     int t;
     gauden_t *dev_gauden;
     
-    dev_gauden = gauden_duplicate(inv->gauden);
+    dev_gauden = gauden_dev_duplicate(inv->gauden);
 
     /*
      * Allocate space for the initial state in the alpha
@@ -479,7 +479,7 @@ forward_reduced(float64 **active_alpha,
 cleanup:
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
     
-    gauden_free(dev_gauden);
+    gauden_dev_free(dev_gauden);
 
     return retval;
 }
@@ -515,8 +515,100 @@ gauden_precompute_kernel(float64 ****den, uint32 ****den_idx, vector_t **feature
     }*/
 }
 
+void *
+device_alloc_3d(size_t d1, size_t d2, size_t d3, size_t elemsize)
+{
+    char ***ref1, **ref2, *mem;
+    size_t i, j, offset;
+
+    cudaMalloc(&mem, d1 * d2 * d3 * elemsize);
+    cudaMalloc(&ref1, d1 * sizeof(void **));
+    cudaMalloc(&ref2, d1 * d2 * sizeof(void *));
+
+// TODO: parallelize
+    for (i = 0, offset = 0; i < d1; i++, offset += d2)
+        ref1[i] = ref2 + offset;
+
+    offset = 0;
+    for (i = 0; i < d1; i++) {
+        for (j = 0; j < d2; j++) {
+            ref1[i][j] = mem + offset;
+            offset += d3 * elemsize;
+        }
+    }
+
+    return ref1;
+}
+
+void ****
+device_alloc_4d(size_t d1,
+		  size_t d2,
+		  size_t d3,
+		  size_t d4,
+		  size_t elem_size)
+{
+    void *store;
+    void **tmp1;
+    void ***tmp2;
+    void ****out;
+    size_t i, j;
+
+    cudaMalloc(&store, d1 * d2 * d3 * d4 * elem_size);
+    cudaMalloc(&tmp1, d1 * d2 * d3 * sizeof(void *));
+    cudaMalloc(&tmp2, d1 * d2 * sizeof(void **));
+    cudaMalloc(&out, d1 * sizeof(void ***));
+    
+    for (i = 0, j = 0; i < d1*d2*d3; i++, j += d4) {
+        tmp1[i] = &((char *)store)[j*elem_size];
+    }
+
+    for (i = 0, j = 0; i < d1*d2; i++, j += d3) {
+        tmp2[i] = &tmp1[j];
+    }
+
+    for (i = 0, j = 0; i < d1; i++, j += d2) {
+        out[i] = &tmp2[j];
+    }
+
+    return out;
+}
+
+void
+device_free_3d(void *inptr) {
+    void ***ptr = (void ***)inptr;
+    if (ptr == NULL)
+        return;
+    ckd_free(ptr[0][0]);
+    ckd_free(ptr[0]);
+    ckd_free(ptr);
+}
+
+void
+device_free_4d(void *inptr) {
+    void ****ptr = (void ****)inptr;
+    if (ptr == NULL)
+        return;
+    ckd_free(ptr[0][0][0]);
+    ckd_free(ptr[0][0]);
+    ckd_free(ptr[0]);
+    ckd_free(ptr);
+}
+
+void gauden_dev_free(gauden_t *gauden) {
+    cudaFree((void *)gauden->veclen);
+    device_free_3d((void ***)gauden->norm);
+    cudaFree((void *)gauden->mean[0][0][0]);
+    device_free_3d((void ***)gauden->mean);
+    cudaFree((void *)gauden->var[0][0][0]);
+    device_free_3d((void ***)gauden->var);
+    if (gauden->fullvar) {
+        cudaFree((void *)gauden->fullvar[0][0][0][0]);
+        device_free_4d((void ****)gauden->fullvar);
+    }
+}
+
 /* This function treats gauden arrays as flat! */
-void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind) {
+void gauden_dev_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind) {
 
     uint32 i, j, k, l, maxveclen;
     float32 buf_size;
@@ -587,25 +679,25 @@ void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKi
     }
 }
 
-gauden_t *gauden_duplicate(gauden_t *src_gau) {
-    uint32 i, j, maxveclen;
+gauden_t *gauden_dev_duplicate(gauden_t *src_gau) {
+    uint32 j, maxveclen;
     uint32 buf_size;
     gauden_t *dest_gau;
     
-    dest_gau = gauden_alloc();
+    cudaMalloc(&dest_gau, sizeof(gauden_t));
 
-    dest_gau->veclen = (uint32 *)ckd_calloc(src_gau->n_feat, sizeof(uint32));
-    dest_gau->norm = (float32 ***)ckd_calloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(float32));
+    cudaMalloc(&dest_gau->veclen, src_gau->n_feat * sizeof(uint32));
+    dest_gau->norm = (float32 ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(float32));
 
     buf_size = src_gau->mean[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_gau->mean[0][0][0] +
         src_gau->veclen[src_gau->n_feat - 1];
-    dest_gau->mean = (vector_t ***)ckd_calloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
-    dest_gau->mean[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    dest_gau->mean = (vector_t ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
+    cudaMalloc(&dest_gau->mean[0][0][0], buf_size * sizeof(float32));
     
     buf_size = src_gau->var[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_gau->var[0][0][0] +
         src_gau->veclen[src_gau->n_feat - 1];
-    dest_gau->var = (vector_t ***)ckd_calloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
-    dest_gau->var[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    dest_gau->var = (vector_t ***)device_alloc_3d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, sizeof(vector_t));
+    cudaMalloc(&dest_gau->var[0][0][0], buf_size * sizeof(float32));
     
     maxveclen = 0;
     for (j = 0; j < src_gau->n_feat; j++) {
@@ -615,26 +707,15 @@ gauden_t *gauden_duplicate(gauden_t *src_gau) {
     if (src_gau->fullvar) {
         buf_size = src_gau->fullvar[0][0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * maxveclen - 1] - src_gau->fullvar[0][0][0][0] +
             src_gau->veclen[src_gau->n_feat - 1];
-        dest_gau->fullvar = (vector_t ****)ckd_calloc_4d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, maxveclen, sizeof(vector_t));
-        dest_gau->fullvar[0][0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+        dest_gau->fullvar = (vector_t ****)device_alloc_4d(src_gau->n_mgau, src_gau->n_feat, src_gau->n_density, maxveclen, sizeof(vector_t));
+        cudaMalloc(&dest_gau->fullvar[0][0][0][0], buf_size * sizeof(float32));
     } else {
         dest_gau->fullvar = NULL;
     }
 
-    gauden_device_copy(dest_gau, src_gau, cudaMemcpyHostToHost);
+    gauden_dev_copy(dest_gau, src_gau, cudaMemcpyHostToHost);
     
     return dest_gau;
-
-/*    ckd_free((void *)g.veclen);
-    ckd_free_3d((void ***)g.norm);
-    ckd_free((void *)g.mean[0][0][0]);
-    ckd_free_3d((void ***)g.mean);
-    ckd_free((void *)g.var[0][0][0]);
-    ckd_free_3d((void ***)g.var);
-    if (g.fullvar) {
-        ckd_free((void *)g.fullvar[0][0][0][0]);
-        ckd_free_4d((void ****)g.fullvar);
-    }*/
 }
 
 void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, model_inventory_t *inv, gauden_t *gauden, state_t *state_seq, uint32 n_state, uint32 n_obs) {
