@@ -512,20 +512,20 @@ gauden_precompute_kernel(float64 ****den, uint32 ****den_idx, vector_t **feature
 }
 
 /* This function treats gauden arrays as flat! */
-void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, int direction) {
+void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind) {
 
     uint32 i, j, k, l, maxveclen;
     float32 buf_size;
     float32 *src_buf, *dest_buf;
     
-    cudaMemcpy((void *)dest_gau->veclen, (void *)src_gau->veclen, src_gau->n_feat * sizeof(uint32), cudaMemcpyHostToHost);
-    cudaMemcpy(dest_gau->norm, src_gau->norm, src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(float32), cudaMemcpyHostToHost);
+    cudaMemcpy((void *)dest_gau->veclen, (void *)src_gau->veclen, src_gau->n_feat * sizeof(uint32), kind);
+    cudaMemcpy(dest_gau->norm, src_gau->norm, src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * sizeof(float32), kind);
     
     src_buf = src_gau->mean[0][0][0];
     dest_buf = dest_gau->mean[0][0][0];
     buf_size = src_gau->mean[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_buf +
         src_gau->veclen[src_gau->n_feat - 1];
-    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), cudaMemcpyHostToHost);
+    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), kind);
     /* this cannot be flattened */
     for (i = 0; i < src_gau->n_mgau; i++) {
         for (j = 0; j < src_gau->n_feat; j++) {
@@ -540,7 +540,7 @@ void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, int direction) {
     dest_buf = dest_gau->var[0][0][0];
     buf_size = src_gau->var[0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density - 1] - src_buf +
         src_gau->veclen[src_gau->n_feat - 1];
-    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), cudaMemcpyHostToHost);
+    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), kind);
     /* this cannot be flattened */
     for (i = 0; i < src_gau->n_mgau; i++) {
         for (j = 0; j < src_gau->n_feat; j++) {
@@ -556,20 +556,22 @@ void gauden_device_copy(gauden_t *dest_gau, gauden_t *src_gau, int direction) {
         if (src_gau->veclen[j] > maxveclen) maxveclen = src_gau->veclen[j];
     }
     
-    src_buf = src_gau->fullvar[0][0][0][0];
-    dest_buf = dest_gau->fullvar[0][0][0][0];
-    buf_size = src_gau->fullvar[0][0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * maxveclen - 1] - src_buf +
-        src_gau->veclen[src_gau->n_feat - 1];
-    cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), cudaMemcpyHostToHost);
-    /* this cannot be flattened */
-    for (i = 0; i < src_gau->n_mgau; i++) {
-        for (j = 0; j < src_gau->n_feat; j++) {
-            for (k = 0; k < src_gau->n_density; k++) {
-                for (l = 0; l < src_gau->veclen[j]; l++) {
-                    dest_gau->fullvar[0][0][0][
-                        (i * src_gau->n_feat * src_gau->n_density * maxveclen) + (j * src_gau->n_density * maxveclen) + (k * maxveclen) + l] =
-                            dest_buf + (src_gau->fullvar[0][0][0][
-                                (i * src_gau->n_feat * src_gau->n_density * maxveclen) + (j * src_gau->n_density * maxveclen) + (k * maxveclen) + l] - src_buf);
+    if (src_gau->fullvar) {
+        src_buf = src_gau->fullvar[0][0][0][0];
+        dest_buf = dest_gau->fullvar[0][0][0][0];
+        buf_size = src_gau->fullvar[0][0][0][src_gau->n_mgau * src_gau->n_feat * src_gau->n_density * maxveclen - 1] - src_buf +
+            src_gau->veclen[src_gau->n_feat - 1];
+        cudaMemcpy(dest_buf, src_buf, buf_size * sizeof(float32), kind);
+        /* this cannot be flattened */
+        for (i = 0; i < src_gau->n_mgau; i++) {
+            for (j = 0; j < src_gau->n_feat; j++) {
+                for (k = 0; k < src_gau->n_density; k++) {
+                    for (l = 0; l < src_gau->veclen[j]; l++) {
+                        dest_gau->fullvar[0][0][0][
+                            (i * src_gau->n_feat * src_gau->n_density * maxveclen) + (j * src_gau->n_density * maxveclen) + (k * maxveclen) + l] =
+                                dest_buf + (src_gau->fullvar[0][0][0][
+                                    (i * src_gau->n_feat * src_gau->n_density * maxveclen) + (j * src_gau->n_density * maxveclen) + (k * maxveclen) + l] - src_buf);
+                    }
                 }
             }
         }
@@ -588,16 +590,16 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, 
 
     gauden_t g;
     g.veclen = (uint32 *)ckd_calloc(inv->gauden->n_feat, sizeof(uint32));
-    g.norm = (float32 ***)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density, sizeof(float32));
+    g.norm = (float32 ***)ckd_calloc_3d(inv->gauden->n_mgau, inv->gauden->n_feat, inv->gauden->n_density, sizeof(float32));
 
     buf_size = inv->gauden->mean[0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density - 1] - inv->gauden->mean[0][0][0] +
         inv->gauden->veclen[inv->gauden->n_feat - 1];
-    g.mean = (vector_t ***)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density, sizeof(vector_t));
-    g.var[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    g.mean = (vector_t ***)ckd_calloc_3d(inv->gauden->n_mgau, inv->gauden->n_feat, inv->gauden->n_density, sizeof(vector_t));
+    g.mean[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
     
     buf_size = inv->gauden->var[0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density - 1] - inv->gauden->var[0][0][0] +
         inv->gauden->veclen[inv->gauden->n_feat - 1];
-    g.var = (vector_t ***)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density, sizeof(vector_t));
+    g.var = (vector_t ***)ckd_calloc_3d(inv->gauden->n_mgau, inv->gauden->n_feat, inv->gauden->n_density, sizeof(vector_t));
     g.var[0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
     
     maxveclen = 0;
@@ -605,10 +607,14 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, 
         if (inv->gauden->veclen[j] > maxveclen) maxveclen = inv->gauden->veclen[j];
     }
     
-    buf_size = inv->gauden->fullvar[0][0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density * maxveclen - 1] - inv->gauden->fullvar[0][0][0][0] +
-        inv->gauden->veclen[inv->gauden->n_feat - 1];
-    g.fullvar = (vector_t ****)ckd_calloc(inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density * maxveclen, sizeof(vector_t));
-    g.fullvar[0][0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    if (inv->gauden->fullvar) {
+        buf_size = inv->gauden->fullvar[0][0][0][inv->gauden->n_mgau * inv->gauden->n_feat * inv->gauden->n_density * maxveclen - 1] - inv->gauden->fullvar[0][0][0][0] +
+            inv->gauden->veclen[inv->gauden->n_feat - 1];
+        g.fullvar = (vector_t ****)ckd_calloc_4d(inv->gauden->n_mgau, inv->gauden->n_feat, inv->gauden->n_density, maxveclen, sizeof(vector_t));
+        g.fullvar[0][0][0][0] = (vector_t)ckd_calloc(buf_size, sizeof(float32));
+    } else {
+        g.fullvar = NULL;
+    }
     
     for (t = 1; t < n_obs; t++) {
         for (i = 0; i < n_state; i++) {
@@ -623,14 +629,16 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, 
         }
     }
     
-    ckd_free((void *) g.veclen);
-    ckd_free((void *) g.norm);
-    ckd_free((void *) g.mean[0][0][0]);
-    ckd_free((void *) g.mean);
-    ckd_free((void *) g.var[0][0][0]);
-    ckd_free((void *) g.var);
-    ckd_free((void *) g.fullvar[0][0][0][0]);
-    ckd_free((void *) g.fullvar);
+    ckd_free((void *)g.veclen);
+    ckd_free_3d((void ***)g.norm);
+    ckd_free((void *)g.mean[0][0][0]);
+    ckd_free_3d((void ***)g.mean);
+    ckd_free((void *)g.var[0][0][0]);
+    ckd_free_3d((void ***)g.var);
+    if (g.fullvar) {
+        ckd_free((void *)g.fullvar[0][0][0][0]);
+        ckd_free_4d((void ****)g.fullvar);
+    }
 }
 
 
