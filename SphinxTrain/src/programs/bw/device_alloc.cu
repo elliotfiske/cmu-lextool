@@ -1,4 +1,5 @@
 
+#include "device_alloc.h"
 #include <cutil.h>
 
 __global__ void device_init_3d_kernel(char *mem, char ***ref1, char **ref2, size_t elemsize, size_t d1, size_t d2, size_t d3) {

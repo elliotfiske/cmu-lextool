@@ -1,4 +1,7 @@
 
+#ifndef DEVICE_ALLOC_H
+#define DEvICE_ALLOC_H
+
 void *
 device_alloc_3d(size_t d1, size_t d2, size_t d3, size_t elemsize);
 
@@ -10,4 +13,6 @@ device_free_3d(void *inptr);
 
 void
 device_free_4d(void *inptr);
+
+#endif
 
