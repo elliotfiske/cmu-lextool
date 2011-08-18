@@ -6,27 +6,28 @@
 
 
 typedef struct gauden_dev_s {
-    uint32 n_feat;
-    uint32 *veclen;
-    uint32 max_veclen;
 
+    uint32 n_feat;
     uint32 n_mgau;
     uint32 n_density;
     uint32 n_top;
+    uint32 n_cb_inverse;
+    uint32 n_state;
 
-    float32 *norm;
+    uint32 *d_veclen;
+    float32 *d_norm;
     
-    float *mean;
-    uint64 *meanIdx;
-    uint64 meanIdx0;
+    float *d_mean_idx;
+    float *d_mean_buf;
+    uint32 d_mean_buflen;
     
-    float *var;
-    uint64 *varIdx;
-    uint64 varIdx0;
+    float *d_var_idx;
+    float *d_var_buf;
+    uint32 d_var_buflen;
     
-    float *fullvar;
-    uint64 *fullvarIdx;
-    uint64 fullvarIdx0;
+    uint32 *d_cb;
+    uint32 *d_l_cb;
+    uint32 *d_mixw;
     
 } gauden_dev_t;
 
