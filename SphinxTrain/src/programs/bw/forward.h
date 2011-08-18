@@ -52,26 +52,14 @@
 #include <s3/vector.h>
 #include <s3/s3phseg_io.h>
 
+#include "device_alloc.h"
+
 
 #ifdef __cplusplus
 /* for NVCC compiles code as C++ and mangles the names */
 extern "C" {
 #endif
 
-
-struct gauden_dev_s {
-    uint32 n_feat;
-    uint32 *veclen;
-
-    uint32 n_mgau;
-    uint32 n_density;
-    uint32 n_top;
-
-    float32 ***norm;
-    vector_t ***mean;
-    vector_t ***var;
-    vector_t ****fullvar;
-} gauden_dev_t;
 
 uint32 *
 backtrace(state_t *state, uint32 fs_id, uint32 *n_vit_sseq);
@@ -172,7 +160,7 @@ forward_local(float64 **active_alpha,
     state_t *state_seq,
     uint32 n_state,
     model_inventory_t *inv,
-    gauden_t *dev_gauden,
+    gauden_dev_t *dev_gauden,
     float64 beam,
     s3phseg_t *phseg,
     uint32 mmi_train,
@@ -185,10 +173,10 @@ void
 gauden_dev_free(gauden_t *gauden);
 
 void
-gauden_dev_copy(gauden_t *dest_gau, gauden_t *src_gau, enum cudaMemcpyKind kind);
+gauden_dev_copy(gauden_dev_t *dev_gau, gauden_t *host_gau);
 
-gauden_t *
-gauden_dev_duplicate(gauden_t *src_gau);
+gauden_dev_t *
+gauden_dev_duplicate(gauden_t *host_gau);
 
 
 #ifdef __cplusplus
