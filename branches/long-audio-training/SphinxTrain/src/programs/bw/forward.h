@@ -172,11 +172,8 @@ forward_set_viterbi(int state);
 void
 gauden_dev_free(gauden_t *gauden);
 
-void
-gauden_dev_copy(gauden_dev_t *dev_gau, gauden_t *host_gau);
-
 gauden_dev_t *
-gauden_dev_duplicate(gauden_t *host_gau);
+gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state);
 
 
 #ifdef __cplusplus

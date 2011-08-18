@@ -403,9 +403,10 @@ forward_reduced(float64 **active_alpha,
     
     uint32 n_red = ceil(n_obs / (float64)block_size);
     int t;
-    gauden_dev_t *dev_gauden;
     
-    dev_gauden = gauden_dev_duplicate(inv->gauden);
+    gauden_dev_t *dev_gau;
+    
+    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
 
     /*
      * Allocate space for the initial state in the alpha
@@ -434,7 +435,7 @@ forward_reduced(float64 **active_alpha,
 
         retval = forward_local(
             loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
-            feature + (t * block_size), block_obs, state_seq, n_state, inv, dev_gauden, beam, phseg, mmi_train, (t * block_size));
+            feature + (t * block_size), block_obs, state_seq, n_state, inv, dev_gau, beam, phseg, mmi_train, (t * block_size));
         if (retval != S3_SUCCESS) {
             goto cleanup;
         }
@@ -502,101 +503,87 @@ int stopTimer(struct timeval *timer){
 }*/
 
 void gauden_dev_free(gauden_t *gauden) {
-    cudaFree((void *)gauden->veclen);
-    device_free_3d((void ***)gauden->norm);
-    cudaFree((void *)gauden->mean[0][0][0]);
-    device_free_3d((void ***)gauden->mean);
-    cudaFree((void *)gauden->var[0][0][0]);
-    device_free_3d((void ***)gauden->var);
-    if (gauden->fullvar) {
-        cudaFree((void *)gauden->fullvar[0][0][0][0]);
-        device_free_4d((void ****)gauden->fullvar);
-    }
 }
 
-/* This function treats gauden arrays as flat! */
-void gauden_dev_copy(gauden_dev_t *dev_gau, gauden_t *host_gau) {
+gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state) {
 
-    uint32 j, maxveclen;
-    float32 buf_size;
+    gauden_dev_t *g;
+    uint32 *buf;
+    uint32 s;
     
-    dev_gau->n_feat = host_gau->n_feat;
-    dev_gau->n_mgau = host_gau->n_mgau;
-    dev_gau->n_density = host_gau->n_density;
-    dev_gau->n_top = host_gau->n_top;
+    g = (gauden_dev_t *)ckd_calloc(1, sizeof(gauden_dev_t));
     
-    cudaMemcpy((void *)dev_gau->veclen, (void *)host_gau->veclen, host_gau->n_feat * sizeof(uint32), cudaMemcpyHostToDevice);
+    g->n_feat = inv->gauden->n_feat;
+    g->n_mgau = inv->gauden->n_mgau;
+    g->n_density = inv->gauden->n_density;
+    g->n_top = inv->gauden->n_top;
+    g->n_cb_inverse = inv->n_cb_inverse;
+    g->n_state = n_state;
     
-    cudaMemcpy(dev_gau->norm, host_gau->norm[0][0], host_gau->n_mgau * sizeof(void *), cudaMemcpyHostToDevice);
+    cudaMalloc(&g->d_veclen, g->n_feat * sizeof(uint32));
+    cudaMalloc(&g->d_norm, g->n_mgau * g->n_feat * g->n_density * sizeof(float32));
     
-    buf_size = host_gau->mean[0][0][host_gau->n_mgau * host_gau->n_feat * host_gau->n_density - 1] - host_gau->mean[0][0][0] +
-        host_gau->veclen[host_gau->n_feat - 1];
-    cudaMemcpy(dev_gau->meanIdx, host_gau->mean[0][0], host_gau->n_mgau * host_gau->n_feat * host_gau->n_density * sizeof(void *), cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_gau->mean, host_gau->mean[0][0][0], buf_size * sizeof(float), cudaMemcpyHostToDevice);
-    dev_gau->meanIdx0 = (uint64)host_gau->mean[0][0][0];
+    cudaMalloc(&g->d_cb, g->n_state * sizeof(uint32));
+    cudaMalloc(&g->d_l_cb, g->n_state * sizeof(uint32));
+    cudaMalloc(&g->d_mixw, g->n_state * sizeof(uint32));
     
-    buf_size = host_gau->var[0][0][host_gau->n_mgau * host_gau->n_feat * host_gau->n_density - 1] - host_gau->var[0][0][0] +
-        host_gau->veclen[host_gau->n_feat - 1];
-    cudaMemcpy(dev_gau->varIdx, host_gau->var[0][0], host_gau->n_mgau * host_gau->n_feat * host_gau->n_density * sizeof(void *), cudaMemcpyHostToDevice);
-    cudaMemcpy(dev_gau->var, host_gau->var[0][0][0], buf_size * sizeof(float), cudaMemcpyHostToDevice);
-    dev_gau->varIdx0 = (uint64)host_gau->var[0][0][0];
+    g->d_mean_buflen = inv->gauden->mean[0][0][g->n_mgau * g->n_feat * g->n_density - 1] - inv->gauden->mean[0][0][0] + inv->gauden->veclen[g->n_feat - 1];
+    cudaMalloc(&g->d_mean_idx, g->n_mgau * g->n_feat * g->n_density * sizeof(float *));
+    cudaMalloc(&g->d_mean_buf, g->d_mean_buflen * sizeof(float));
 
-    maxveclen = 0;
-    for (j = 0; j < host_gau->n_feat; j++) {
-        if (host_gau->veclen[j] > maxveclen) {
-            maxveclen = host_gau->veclen[j];
-        }
-    }
+    g->d_var_buflen = inv->gauden->var[0][0][g->n_mgau * g->n_feat * g->n_density - 1] - inv->gauden->var[0][0][0] + inv->gauden->veclen[g->n_feat - 1];
+    cudaMalloc(&g->d_var_idx, g->n_mgau * g->n_feat * g->n_density * sizeof(float *));
+    cudaMalloc(&g->d_var_buf, g->d_var_buflen * sizeof(float));
     
-    if (host_gau->fullvar) {
-        // TODO:
-    }
-}
+    /* veclen, norm, den, den_idx */
+    cudaMemcpy(g->d_veclen, inv->gauden->veclen, g->n_feat * sizeof(uint32), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_norm, inv->gauden->norm, g->n_mgau * g->n_feat * g->n_density * sizeof(float32), cudaMemcpyHostToDevice);
+    
+    /* state_seq -> d_cb, d_l_cb, d_mixw */
+    buf = (uint32 *)ckd_calloc(g->n_state, sizeof(uint32));
+    for (s = 0; s < g->n_state; s++) buf[s] = state_seq[s].cb;
+    cudaMemcpy(g->d_cb, buf, g->n_state * sizeof(uint32), cudaMemcpyHostToDevice);
+    for (s = 0; s < g->n_state; s++) buf[s] = state_seq[s].l_cb;
+    cudaMemcpy(g->d_l_cb, buf, g->n_state * sizeof(uint32), cudaMemcpyHostToDevice);
+    for (s = 0; s < g->n_state; s++) buf[s] = state_seq[s].mixw;
+    cudaMemcpy(g->d_mixw, buf, g->n_state * sizeof(uint32), cudaMemcpyHostToDevice);
+    ckd_free((void *)buf);
+    
+    /* mean, var, feature */
+    cudaMemcpy(g->d_mean_idx, inv->gauden->mean, g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_mean_buf, inv->gauden->mean[0][0][0], g->d_mean_buflen * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_var_idx, inv->gauden->var, g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_var_buf, inv->gauden->var[0][0][0], g->d_var_buflen * sizeof(float), cudaMemcpyHostToDevice);
 
-gauden_dev_t *gauden_dev_duplicate(gauden_t *host_gau) {
-    uint32 j;
-    uint32 buf_size;
-    gauden_dev_t *dev_gau;
-    
-    dev_gau = (gauden_dev_t *)ckd_calloc(1, sizeof(gauden_dev_t));
-    
-    dev_gau->max_veclen = 0;
-    for (j = 0; j < host_gau->n_feat; j++) {
-        if (host_gau->veclen[j] > dev_gau->max_veclen) {
-            dev_gau->max_veclen = host_gau->veclen[j];
-        }
-    }
-
-    cudaMalloc(&dev_gau->veclen, host_gau->n_feat * sizeof(uint32));
-    
-    cudaMalloc(&dev_gau->norm, host_gau->n_mgau * host_gau->n_feat * host_gau->n_density * sizeof(float32));
-
-    buf_size = host_gau->mean[0][0][host_gau->n_mgau * host_gau->n_feat * host_gau->n_density - 1] - host_gau->mean[0][0][0] +
-        host_gau->veclen[host_gau->n_feat - 1];
-    cudaMalloc(&dev_gau->meanIdx, host_gau->n_mgau * host_gau->n_feat * host_gau->n_density * sizeof(uint32));
-    cudaMalloc(&dev_gau->mean, buf_size * sizeof(float));
-    
-    
-    buf_size = host_gau->var[0][0][host_gau->n_mgau * host_gau->n_feat * host_gau->n_density - 1] - host_gau->var[0][0][0] +
-        host_gau->veclen[host_gau->n_feat - 1];
-    cudaMalloc(&dev_gau->varIdx, host_gau->n_mgau * host_gau->n_feat * host_gau->n_density * sizeof(float));
-    cudaMalloc(&dev_gau->var, buf_size * sizeof(float));
-    
-    if (host_gau->fullvar) {
-        // TODO:
-        dev_gau->fullvar = NULL;
-    } else {
-        dev_gau->fullvar = NULL;
-    }
-
-    gauden_dev_copy(dev_gau, host_gau);
-    
-    return dev_gau;
+    return g;
 }
 
 __global__ void
-gauden_precompute_kernel_log_full_den(float64 *den, uint32 *den_idx, float *feature, state_t *state_seq, gauden_dev_t gauden,
-    uint32 n_cb_inverse, uint32 n_state, uint32 n_obs) {
+gauden_precompute_kernel_log_full_den(
+        float64 *den,
+        uint32 *den_idx,
+        
+        float *feature_idx,
+        float *feature_buf,
+
+        uint32 *veclen,
+        float32 *norm,
+        float *mean_idx,
+        float *mean_buf,
+        float *var_idx,
+        float *var_buf,
+        
+        uint32 *d_cb,
+        uint32 *d_l_cb,
+        uint32 *d_mixw,
+        
+        uint32 n_feat,
+        uint32 n_mgau,
+        uint32 n_density,
+        uint32 n_top,
+        uint32 n_cb_inverse,
+        uint32 n_state,
+        uint32 n_obs) {
     
     int t = blockIdx.x * blockDim.x + threadIdx.x;
     int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -628,109 +615,49 @@ gauden_precompute_kernel_log_full_den(float64 *den, uint32 *den_idx, float *feat
 }
 
 void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
-    model_inventory_t *inv, gauden_dev_t *dev_gau, state_t *state_seq, uint32 n_state, uint32 n_obs) {
-
-    uint32 n_feat = inv->gauden->n_feat;
-    uint32 n_mgau = inv->gauden->n_mgau;
-    uint32 n_density = inv->gauden->n_density;
-    uint32 n_top = inv->gauden->n_top;
-    uint32 n_cb_inverse = inv->n_cb_inverse;
-
-    uint32 *d_veclen;
-    float32 *d_norm;
+    model_inventory_t *inv, gauden_dev_t *g, state_t *state_seq, uint32 n_state, uint32 n_obs) {
+    
+    uint32 s;
+    
     float64 *d_den;
     uint32 *d_den_idx;
-    
-    float *d_mean_idx;
-    float *d_mean_buf;
-    uint32 d_mean_buflen;
-    
-    float *d_var_idx;
-    float *d_var_buf;
-    uint32 d_var_buflen;
     
     float *d_feature_idx;
     float *d_feature_buf;
     uint32 d_feature_buflen;
-    
-    uint32 *d_cb;
-    uint32 *d_l_cb;
-    uint32 *d_mixw;
-    uint32 *buf;
-    
-    uint32 s;
-    
-    cudaMalloc(&d_veclen, n_feat * sizeof(uint32));
-    cudaMalloc(&d_norm, n_mgau * n_feat * n_density * sizeof(float32));
-    cudaMalloc(&d_den, n_obs * n_cb_inverse * n_feat * n_top * sizeof(float64));
-    cudaMalloc(&d_den_idx, n_obs * n_cb_inverse * n_feat * n_top * sizeof(uint32));
-    
-    cudaMalloc(&d_cb, n_state * sizeof(uint32));
-    cudaMalloc(&d_l_cb, n_state * sizeof(uint32));
-    cudaMalloc(&d_mixw, n_state * sizeof(uint32));
-    
-    d_mean_buflen = inv->gauden->mean[0][0][n_mgau * n_feat * n_density - 1] - inv->gauden->mean[0][0][0] + inv->gauden->veclen[n_feat - 1];
-    cudaMalloc(&d_mean_idx, n_mgau * n_feat * n_density * sizeof(float *));
-    cudaMalloc(&d_mean_buf, d_mean_buflen * sizeof(float));
 
-    d_var_buflen = inv->gauden->var[0][0][n_mgau * n_feat * n_density - 1] - inv->gauden->var[0][0][0] + inv->gauden->veclen[n_feat - 1];
-    cudaMalloc(&d_var_idx, n_mgau * n_feat * n_density * sizeof(float *));
-    cudaMalloc(&d_var_buf, d_var_buflen * sizeof(float));
+    if (g) {
 
-    d_feature_buflen = feature[0][n_obs * n_feat - 1] - feature[0][0] + inv->gauden->veclen[n_feat - 1];
-    cudaMalloc(&d_feature_idx, n_obs * n_feat * sizeof(float *));
+    cudaMalloc(&d_den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64));
+    cudaMalloc(&d_den_idx, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32));
+
+    d_feature_buflen = feature[0][n_obs * g->n_feat - 1] - feature[0][0] + inv->gauden->veclen[g->n_feat - 1];
+    cudaMalloc(&d_feature_idx, n_obs * g->n_feat * sizeof(float *));
     cudaMalloc(&d_feature_buf, d_feature_buflen * sizeof(float));
-    
-    /* veclen, norm, den, den_idx */
-    cudaMemcpy(d_veclen, inv->gauden->veclen, n_feat * sizeof(uint32));
-    cudaMemcpy(d_norm, inv->gauden->norm, n_mgau * n_feat * n_density * sizeof(float32));
-    cudaMemcpy(d_den, den, n_obs * n_cb_inverse * n_feat * n_top * sizeof(float64));
-    cudaMemcpy(d_den_idx, den, n_obs * n_cb_inverse * n_feat * n_top * sizeof(uint32));
-    
-    /* state_seq -> d_cb, d_l_cb, d_mixw */
-    buf = (uint32 *)ckd_calloc(n_state, sizeof(uint32));
-    for (s = 0; s < n_state; s++) buf[s] = state_seq[s].cb;
-    cudaMemcpy(d_cb, buf, n_state * sizeof(uint32));
-    for (s = 0; s < n_state; s++) buf[s] = state_seq[s].l_cb;
-    cudaMemcpy(d_l_cb, buf, n_state * sizeof(uint32));
-    for (s = 0; s < n_state; s++) buf[s] = state_seq[s].mixw;
-    cudaMemcpy(d_mixw, buf, n_state * sizeof(uint32));
-    ckd_free((void *)buf);
-    
-    /* mean, var, feature */
-    cudaMemcpy(d_mean_idx, inv->gauden->mean, n_mgau * n_feat * n_density * sizeof(float *));
-    cudaMemcpy(d_mean_buf, inv->gauden->mean[0][0][0], d_mean_buflen * sizeof(float));
-    cudaMemcpy(d_var_idx, inv->gauden->var, n_mgau * n_feat * n_density * sizeof(float *));
-    cudaMemcpy(d_var_buf, inv->gauden->var[0][0][0], d_var_buflen * sizeof(float));
-    cudaMemcpy(d_feature_idx, feature, n_obs * n_feature * sizeof(float *));
-    cudaMemcpy(d_feature_buf, feature[0][0], d_feature_buflen * sizeof(float));
-    
-/*    dim3 bdim(16, 16, 1);
-    dim3 gdim(ceil(n_obs / (float)bdim.x), ceil(n_state / (float)bdim.y), 1);
 
-    float64 *d_den;
-    uint32 *d_den_idx;
-    float *d_feature;
-    state_t *d_state_seq;
+    cudaMemcpy(d_den, den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_den_idx, den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32), cudaMemcpyHostToDevice);
+
+    cudaMemcpy(d_feature_idx, feature, n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_feature_buf, feature[0][0], d_feature_buflen * sizeof(float), cudaMemcpyHostToDevice);
     
-    cudaMalloc(&d_den, n_obs * inv->n_cb_inverse * gauden_n_feat(inv->gauden) * gauden_n_top(inv->gauden), * sizeof(float64));
-    cudaMalloc(&d_den_idx, n_obs * inv->n_cb_inverse * gauden_n_feat(inv->gauden) * gauden_n_top(inv->gauden), * sizeof(uint32));*/
-
-
-    /* Top-N computation not (yet) possible for full covariances */
-/*    if (g->fullvar) {
-        // TODO:
-    }
-    else if (g->n_top == g->n_density) {
-        gauden_precompute_kernel_log_full_den<<<gdim, bdim>>>(d_den, d_den_idx, d_feature, d_state_seq, *dev_gau, inv->n_cb_inverse, n_state, n_obs);
-    }
-    else {
-        // TODO:
+    dim3 bdim(16, 16, 1);
+    dim3 gdim(ceil(n_obs / (float)bdim.x), ceil(n_state / (float)bdim.y), 1); 
+    
+    gauden_precompute_kernel_log_full_den<<<gdim, bdim>>>(
+        d_den, d_den_idx, d_feature_idx, d_feature_buf, g->d_veclen, g->d_norm, g->d_mean_idx, g->d_mean_buf, g->d_var_idx, g->d_var_buf,
+        g->d_cb, g->d_l_cb, g->d_mixw, g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_state, n_obs);
+    
+    cudaThreadSynchronize();
+    
+    cudaFree((void *)d_den);
+    cudaFree((void *)d_den_idx);
+    cudaFree((void *)d_feature_idx);
+    cudaFree((void *)d_feature_buf);
+    
     }
     
-    cudaThreadSynchronize();*/
-    
-    uint32 t, s;
+    uint32 t;
     
     for (t = 1; t < n_obs; t++) {
         for (s = 0; s < n_state; s++) {
@@ -793,7 +720,7 @@ forward_local(float64 **active_alpha,
         state_t *state_seq,
         uint32 n_state,
         model_inventory_t *inv,
-        gauden_dev_t *dev_gauden,
+        gauden_dev_t *dev_gau,
         float64 beam,
         s3phseg_t *phseg,
         uint32 mmi_train,
@@ -851,7 +778,7 @@ forward_local(float64 **active_alpha,
 /*    E_INFO("MICHAL: n_obs=%u n_state=%u (n_cb_inverse=%u) n_feat=%u n_top=%u\n",
         n_obs, n_state, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden));*/
 
-    gauden_precompute(den, den_idx, feature, inv, NULL, state_seq, n_state, n_obs);
+    gauden_precompute(den, den_idx, feature, inv, dev_gau, state_seq, n_state, n_obs);
     
 /*    int tm = stopTimer(&timer);
     E_INFO("MICHAL: n_obs=%u n_state=%u time=%u\n", n_obs, n_state, tm);*/
