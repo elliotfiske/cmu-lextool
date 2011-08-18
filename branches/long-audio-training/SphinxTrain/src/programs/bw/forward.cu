@@ -501,20 +501,6 @@ int stopTimer(struct timeval *timer){
         return (int)(tmp.tv_usec + tmp.tv_sec*1000000);
 }*/
 
-__global__ void
-gauden_precompute_kernel(float64 ****den, uint32 ****den_idx, vector_t **feature, model_inventory_t *inv, gauden_dev_t *gauden,
-        state_t *state_seq, uint32 n_state, uint32 n_obs) {
-    int t = blockIdx.x * blockDim.x + threadIdx.x;
-    int i = blockIdx.y * blockDim.y + threadIdx.y;
-    
-/*    if (state_seq[i].mixw != TYING_NON_EMITTING) {
-        uint32 l_cb = state_seq[i].l_cb;
-
-        gauden_compute_log(den[t][l_cb], den_idx[t][l_cb],
-           feature[t], inv->gauden, state_seq[i].cb, ((inv->n_cb_inverse == 1) ? den_idx[t-1][l_cb] : NULL));
-    }*/
-}
-
 void gauden_dev_free(gauden_t *gauden) {
     cudaFree((void *)gauden->veclen);
     device_free_3d((void ***)gauden->norm);
@@ -608,14 +594,39 @@ gauden_dev_t *gauden_dev_duplicate(gauden_t *host_gau) {
     return dev_gau;
 }
 
-void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, model_inventory_t *inv, gauden_dev_t *gauden, state_t *state_seq, uint32 n_state, uint32 n_obs) {
+__global__ void
+gauden_precompute_kernel(float64 *den, uint32 *den_idx, float *feature, state_t *state_seq, gauden_dev_t gauden,
+    uint32 n_cb_inverse, uint32 n_state, uint32 n_obs) {
+    int t = blockIdx.x * blockDim.x + threadIdx.x;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    
+    if (state_seq[i].mixw != TYING_NON_EMITTING) {
+        uint32 l_cb = state_seq[i].l_cb;
 
-/*    dim3 bdim(16, 16, 1);
+/*        gauden_compute_log(den[t][l_cb], den_idx[t][l_cb],
+           feature[t], inv->gauden, state_seq[i].cb, (n_cb_inverse == 1) ? den_idx[t-1][l_cb] : NULL));*/
+    }
+}
+
+void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
+    model_inventory_t *inv, gauden_dev_t *dev_gau, state_t *state_seq, uint32 n_state, uint32 n_obs) {
+
+    dim3 bdim(16, 16, 1);
     dim3 gdim(ceil(n_obs / (float)bdim.x), ceil(n_state / (float)bdim.y), 1);
 
-    gauden_precompute_kernel<<<gdim, bdim>>>(d_den, d_den_idx, d_feature, inv, d_state_seq, n_state, n_obs);*/
+    float64 *d_den;
+    uint32 *d_den_idx;
+    float *d_feature;
+    state_t *d_state_seq;
     
-    uint32 t, i;
+    cudaMalloc(&d_den, n_obs * inv->n_cb_inverse * gauden_n_feat(inv->gauden) * gauden_n_top(inv->gauden), * sizeof(float64));
+    cudaMalloc(&d_den_idx, n_obs * inv->n_cb_inverse * gauden_n_feat(inv->gauden) * gauden_n_top(inv->gauden), * sizeof(uint32));
+
+    gauden_precompute_kernel<<<gdim, bdim>>>(d_den, d_den_idx, d_feature, d_state_seq, *dev_gau, inv->n_cb_inverse, n_state, n_obs);
+    
+    cudaThreadSynchronize();
+    
+/*    uint32 t, i;
     
     for (t = 1; t < n_obs; t++) {
         for (i = 0; i < n_state; i++) {
@@ -624,11 +635,11 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature, 
 
                 gauden_compute_log(den[t][l_cb], den_idx[t][l_cb],
                    feature[t], inv->gauden, state_seq[i].cb, ((inv->n_cb_inverse == 1) ? den_idx[t-1][l_cb] : NULL));
-                           /* Preinitializing topn only really makes a difference 
-                              for semi-continuous (inv->n_cb_inverse == 1) models. */
             }
         }
-    }
+    }*/
+    /* Preinitializing topn only really makes a difference 
+       for semi-continuous (inv->n_cb_inverse == 1) models. */
 }
 
 
