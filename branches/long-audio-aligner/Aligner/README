@@ -13,3 +13,9 @@ file must be present in ./resource/wav and the text file in ./resource/transcrip
 Instructions to complile and run the code:
  > ant all
 
+
+POINTS OF CAUTION TO USER
+
+ * Make sure your audio file and acoustic model are compatible before actual alignment.
+ * Text and audio can differ by small amounts (small is relative, I leave it to user to realise 
+   that by re-peated usage).
