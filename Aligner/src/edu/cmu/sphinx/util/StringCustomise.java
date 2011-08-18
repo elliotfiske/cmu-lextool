@@ -53,7 +53,14 @@ public class StringCustomise {
 		return result;
 	}
 
-	private String process(String word) {
+	private String process(String word) {	
+		
+		if(word.length() >= 4) {
+			if(word.substring(0, 4).compareToIgnoreCase("SIL_") == 0) {
+				
+				return "";
+			}
+		}
 		word = word.toLowerCase();
 		int length = word.length();
 		String processedWord = "";
