@@ -692,14 +692,12 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
 
     CUDA_SAFE_CALL(cudaMemcpy(den[0][0][0], d_den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64), cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy(den_idx[0][0][0], d_den_idx, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32), cudaMemcpyDeviceToHost));
-    
-    cudaThreadSynchronize();
 
-    E_INFO("MICHAL: kernel: ");
+/*    E_INFO("MICHAL: kernel: ");
     for (s = 0; s < n_obs * g->n_cb_inverse * g->n_feat * g->n_top; s++) {
         fprintf(stderr, "%lf %u\t", den[0][0][0][s], den_idx[0][0][0][s]);
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\n");*/
     
     cudaFree((void *)d_den);
     cudaFree((void *)d_den_idx);
@@ -709,13 +707,13 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
 /*    int dt = stopTimer(&timer);
     E_INFO("MICHAL: kernel: %u\n", dt);*/
     
-    } {
+    } else {
     
     uint32 t;
     
 /*    startTimer(&timer);*/
-    memset(den[0][0][0], 0, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64));
-    memset(den_idx[0][0][0], 0, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32));
+    memset(den[0][0][0], 0, n_obs * inv->n_cb_inverse * inv->gauden->n_feat * inv->gauden->n_top * sizeof(float64));
+    memset(den_idx[0][0][0], 0, n_obs * inv->n_cb_inverse * inv->gauden->n_feat * inv->gauden->n_top * sizeof(uint32));
 
     for (t = 1; t < n_obs; t++) {
         for (s = 0; s < n_state; s++) {
@@ -762,11 +760,11 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
         }
     }
     
-    E_INFO("MICHAL: serial: ");
+/*    E_INFO("MICHAL: serial: ");
     for (s = 0; s < n_obs * g->n_cb_inverse * g->n_feat * g->n_top; s++) {
         fprintf(stderr, "%lf %u\t", den[0][0][0][s], den_idx[0][0][0][s]);
     }
-    fprintf(stderr, "\n");
+    fprintf(stderr, "\n");*/
     /* Preinitializing topn only really makes a difference 
        for semi-continuous (inv->n_cb_inverse == 1) models. */
     
