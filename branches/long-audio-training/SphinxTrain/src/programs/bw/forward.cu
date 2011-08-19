@@ -484,13 +484,13 @@ cleanup:
     return retval;
 }
 
-/*#include <sys/time.h>
+#include <sys/time.h>
 
 void startTimer(struct timeval *timer){
         gettimeofday(timer, NULL);
 }
 
-int stopTimer(struct timeval *timer){
+uint32 stopTimer(struct timeval *timer){
         struct timeval tmp;
         gettimeofday(&tmp, NULL);
         tmp.tv_sec -= timer->tv_sec;
@@ -499,8 +499,8 @@ int stopTimer(struct timeval *timer){
                 tmp.tv_usec+=1000000;
                 tmp.tv_sec--;
         }
-        return (int)(tmp.tv_usec + tmp.tv_sec*1000000);
-}*/
+        return (uint32)(tmp.tv_usec + tmp.tv_sec*1000000);
+}
 
 void gauden_dev_free(gauden_t *gauden) {
 }
@@ -615,7 +615,7 @@ gauden_precompute_kernel_log_full_den(
 }
 
 void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
-    model_inventory_t *inv, gauden_dev_t *g, state_t *state_seq, uint32 n_state, uint32 n_obs) {
+    model_inventory_t *inv, gauden_dev_t *g, state_t *state_seq, uint32 n_state, uint32 n_obs, uint32 t_offset) {
     
     uint32 s;
     
@@ -626,7 +626,11 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     float *d_feature_buf;
     uint32 d_feature_buflen;
 
+    struct timeval timer;
+
     if (g) {
+    
+    startTimer(&timer);
 
     cudaMalloc(&d_den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64));
     cudaMalloc(&d_den_idx, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32));
@@ -655,10 +659,15 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     cudaFree((void *)d_feature_idx);
     cudaFree((void *)d_feature_buf);
     
+    int dt = stopTimer(&timer);
+    E_INFO("MICHAL: kernel: %u\n", dt);
+    
     }
     
     uint32 t;
     
+    startTimer(&timer);
+
     for (t = 1; t < n_obs; t++) {
         for (s = 0; s < n_state; s++) {
             if (state_seq[s].mixw != TYING_NON_EMITTING) {
@@ -705,6 +714,9 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     }
     /* Preinitializing topn only really makes a difference 
        for semi-continuous (inv->n_cb_inverse == 1) models. */
+    
+    int dt = stopTimer(&timer);
+    E_INFO("MICHAL: serial: %u\n", dt);
 }
 
 
@@ -778,7 +790,7 @@ forward_local(float64 **active_alpha,
 /*    E_INFO("MICHAL: n_obs=%u n_state=%u (n_cb_inverse=%u) n_feat=%u n_top=%u\n",
         n_obs, n_state, inv->n_cb_inverse, gauden_n_feat(inv->gauden), gauden_n_top(inv->gauden));*/
 
-    gauden_precompute(den, den_idx, feature, inv, dev_gau, state_seq, n_state, n_obs);
+    gauden_precompute(den, den_idx, feature, inv, dev_gau, state_seq, n_state, n_obs, t_offset);
     
 /*    int tm = stopTimer(&timer);
     E_INFO("MICHAL: n_obs=%u n_state=%u time=%u\n", n_obs, n_state, tm);*/
