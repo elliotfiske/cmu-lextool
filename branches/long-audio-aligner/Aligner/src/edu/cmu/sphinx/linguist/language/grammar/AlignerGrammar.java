@@ -33,10 +33,10 @@ public class AlignerGrammar extends Grammar {
 	private LogMath logMath;
 	private int start;
 
-	private boolean model_repetitions = false;
-	private boolean model_insertions = false;
-	private boolean model_deletions = false;
-	private boolean model_backwardJumps = false;
+	private boolean modelRepetitions = false;
+	private boolean modelInsertions = false;
+	private boolean modelDeletions = false;
+	private boolean modelBackwardJumps = false;
 
 	private double selfLoopProbability;
 	private double backwardTransitionProbability;
@@ -81,33 +81,33 @@ public class AlignerGrammar extends Grammar {
 		}
 	}
 
-	public void setGrammarType(String GrammarType) {
+	public void setGrammarType(String grammarType) {
 		// Restore Default
-		model_backwardJumps = false;
-		model_deletions = false;
-		model_insertions = false;
-		model_repetitions = false;
-		StringTokenizer st = new StringTokenizer(GrammarType, "|");
+		modelBackwardJumps = false;
+		modelDeletions = false;
+		modelInsertions = false;
+		modelRepetitions = false;
+		StringTokenizer st = new StringTokenizer(grammarType, "|");
 		while (st.hasMoreTokens()) {
-			String GType = st.nextToken();
-			if (GType.compareToIgnoreCase("MODEL_INSERTIONS") == 0) {
+			String type = st.nextToken();
+			if (type.compareToIgnoreCase("modelInsertions") == 0) {
 
 				// allows for word insertions
-				model_insertions = true;
-			} else if (GType.compareToIgnoreCase("MODEL_REPETITIONS") == 0) {
+				modelInsertions = true;
+			} else if (type.compareToIgnoreCase("modelRepetitions") == 0) {
 
 				// allows for a word to repeated a number of times with certain
 				// penality associated with it
 
-				model_repetitions = true;
-			} else if (GType.compareTo("MODEL_DELETIONS") == 0) {
+				modelRepetitions = true;
+			} else if (type.compareTo("modelDeletions") == 0) {
 
 				// grammar allows for forward jumps with certain penalty
 				// associated with it
-				model_deletions = true;
-			} else if (GType.compareToIgnoreCase("MODEL_BACKWARD_JUMPS") == 0) {
+				modelDeletions = true;
+			} else if (type.compareToIgnoreCase("MODEL_BACKWARD_JUMPS") == 0) {
 
-				model_backwardJumps = true;
+				modelBackwardJumps = true;
 			} else {
 				throw new Error("UNKNOWN GRAMMAR MODEL");
 			}
@@ -124,25 +124,25 @@ public class AlignerGrammar extends Grammar {
 	protected GrammarNode createGrammar() throws IOException {
 
 		logger.info("Creating Grammar");
-		if (model_repetitions) {
+		if (modelRepetitions) {
 			selfLoopProbability = 0.000001; // penalty for repetition
 		} else {
 			selfLoopProbability = 0.0;
 		}
 
-		if (model_deletions) {
+		if (modelDeletions) {
 			forwardJumpProbability = 1.0; // penality for forward skips
 		} else {
 			forwardJumpProbability = 0.0;
 		}
 
-		if (model_backwardJumps) {
+		if (modelBackwardJumps) {
 
 			backwardTransitionProbability = 0.000001;
 		} else {
 			backwardTransitionProbability = 0.0;
 		}
-		if (model_insertions) {
+		if (modelInsertions) {
 			// TODO CIPL
 
 		}
