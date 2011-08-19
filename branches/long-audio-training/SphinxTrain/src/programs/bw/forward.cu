@@ -557,7 +557,7 @@ gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32
     
     /* veclen, norm, den, den_idx */
     cudaMemcpy(g->d_veclen, inv->gauden->veclen, g->n_feat * sizeof(uint32), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_norm, inv->gauden->norm, g->n_mgau * g->n_feat * g->n_density * sizeof(float32), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_norm, inv->gauden->norm[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float32), cudaMemcpyHostToDevice);
     
     /* state_seq -> d_cb, d_l_cb, d_mixw */
     buf = (uint32 *)ckd_calloc(g->n_state, sizeof(uint32));
@@ -570,9 +570,9 @@ gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32
     ckd_free((void *)buf);
     
     /* mean, var, feature */
-    cudaMemcpy(g->d_mean_idx, inv->gauden->mean, g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_mean_idx, inv->gauden->mean[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
     cudaMemcpy(g->d_mean_buf, inv->gauden->mean[0][0][0], g->d_mean_buflen * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_var_idx, inv->gauden->var, g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
+    cudaMemcpy(g->d_var_idx, inv->gauden->var[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
     cudaMemcpy(g->d_var_buf, inv->gauden->var[0][0][0], g->d_var_buflen * sizeof(float), cudaMemcpyHostToDevice);
 
     return g;
@@ -608,6 +608,7 @@ gauden_precompute_kernel_log_full_den(
     uint32 t = blockIdx.x * blockDim.x + threadIdx.x;
     uint32 s = blockIdx.y * blockDim.y + threadIdx.y;
     
+    if (t == 0) return;
     if (t >= n_obs) return;
     if (s >= n_state) return;
     
@@ -636,12 +637,11 @@ gauden_precompute_kernel_log_full_den(
                 }
                 
 /*                den[t][l_cb][j][i] = norm[mgau][j][i] - d;*/
-/*                den[((t * n_cb_inverse + l_cb) * n_feat + j) * n_top + i] =
-                    norm[(mgau * n_feat + j) * n_density + i] - d;*/
-                den[((t * n_cb_inverse + l_cb) * n_feat + j) * n_top + i] = 3.0f;
+                den[((t * n_cb_inverse + l_cb) * n_feat + j) * n_top + i] =
+                    norm[(mgau * n_feat + j) * n_density + i] - d;
                 
 /*                den_idx[t][l_cb][j][i] = i;*/
-                den_idx[((t * n_cb_inverse + l_cb) * n_feat + j) * n_top + i] = 4;//i;
+                den_idx[((t * n_cb_inverse + l_cb) * n_feat + j) * n_top + i] = i;
             }
         }
     }
@@ -672,10 +672,13 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     CUDA_SAFE_CALL(cudaMalloc(&d_feature_idx, n_obs * g->n_feat * sizeof(float *)));
     CUDA_SAFE_CALL(cudaMalloc(&d_feature_buf, d_feature_buflen * sizeof(float)));
 
+    CUDA_SAFE_CALL(cudaMemset(d_den, 0, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64)));
+    CUDA_SAFE_CALL(cudaMemset(d_den_idx, 0, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32)));
+
 //    CUDA_SAFE_CALL(cudaMemcpy(d_den, den[0][0][0], n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64), cudaMemcpyHostToDevice));
 //    CUDA_SAFE_CALL(cudaMemcpy(d_den_idx, den_idx[0][0][0], n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32), cudaMemcpyHostToDevice));
 
-    CUDA_SAFE_CALL(cudaMemcpy(d_feature_idx, feature, n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_feature_idx, feature[0], n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_feature_buf, feature[0][0], d_feature_buflen * sizeof(float), cudaMemcpyHostToDevice));
     
     dim3 bdim(16, 16, 1);
@@ -706,11 +709,13 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
 /*    int dt = stopTimer(&timer);
     E_INFO("MICHAL: kernel: %u\n", dt);*/
     
-    }  {
+    } {
     
     uint32 t;
     
 /*    startTimer(&timer);*/
+    memset(den[0][0][0], 0, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64));
+    memset(den_idx[0][0][0], 0, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32));
 
     for (t = 1; t < n_obs; t++) {
         for (s = 0; s < n_state; s++) {
