@@ -1,21 +1,51 @@
 CMUSphinx Long Audio Aligner
 ----------------------------
-To compile and run the current version of long audio aligner, we recommend using ANT.
+AUTHORS			  
+-------
+Apurv Tiwari		: Student GSoC 2011 
+Bhiksha Raj 		: CMUSphinx Mentor for GSoC 2011
+Nickolay Shymrev 	: CMUSphinx
+James Baker 		: CMUSphinx
+Rita			: CMUSphinx
 
-To run the demo, you may edit /resource/batchFile.txt with entries indicating path to your
-text and audio files that are to be aligned.
-<path/to/text/file.txt> SPACE/TAB <path/to/audio/file>
 
+ABOUT
+-----
+Speech and text alignment finds applications in fields such as multimedia indexing 
+and training of large vocabulary speech recognition. This project is designed to provide
+this functionality in CMUSphinx's Sphinx4 decoder.
 
-The jars must be present under ./lib for successful compilation of the code. The wav audio
-file must be present in ./resource/wav and the text file in ./resource/transcription/
+Result of a typical audio - text alignment is a sequence of word indexed with their start
+and end time in the audio.
 
-Instructions to complile and run the code:
- > ant all
+REQUIREMENTS
+------------
+i) JDK version >= 1.6.x.x
+ii) Sphinx4.jar 
 
+RUN INSTRUCTIONS
+----------------
+To run the demo :
+
+i) Edit /resource/batchFile.txt with entries indicating path to your text and audio files 
+that are to be aligned.
+path/to/text/file.txt <SPACE/TAB> path/to/audio/file
+
+ii) Run the code using ANT build by issuing command:
+	$ ant all
+
+UNDERSTANDING THE RESULT OF ALIGNMENT
+-------------------------------------
+Result of alignment is displayed on standard output as well as corresponding file* in ./TimedOutput/
+Result will contain of a sequence of words, each followed by it's start and end time in the utterance 
+as detected by Long Audio aligner.
+Eg. Sphinx(1.01,1.37) :- Word detected  : Sphinx
+			 Start Time	: 1.01 sec
+			 End Time	: 1.37 sec
 
 POINTS OF CAUTION TO USER
+-------------------------
 
  * Make sure your audio file and acoustic model are compatible before actual alignment.
  * Text and audio can differ by small amounts (small is relative, I leave it to user to realise 
-   that by re-peated usage).
+   that by repeated usage).
