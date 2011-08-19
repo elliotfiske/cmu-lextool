@@ -17,11 +17,11 @@ typedef struct gauden_dev_s {
     uint32 *d_veclen;
     float32 *d_norm;
     
-    float *d_mean_idx;
+    float **d_mean_idx;
     float *d_mean_buf;
     uint32 d_mean_buflen;
     
-    float *d_var_idx;
+    float **d_var_idx;
     float *d_var_buf;
     uint32 d_var_buflen;
     
