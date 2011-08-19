@@ -3,7 +3,13 @@
 #define DEVICE_ALLOC_H
 
 #include <s3/vector.h>
+#include <s3/model_inventory.h>
+#include <s3/state.h>
 
+#ifdef __cplusplus
+/* for NVCC compiles code as C++ and mangles the names */
+extern "C" {
+#endif
 
 typedef struct gauden_dev_s {
 
@@ -32,6 +38,12 @@ typedef struct gauden_dev_s {
 } gauden_dev_t;
 
 
+void
+gauden_dev_free(gauden_dev_t *g);
+
+gauden_dev_t *
+gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state);
+
 void *
 device_alloc_3d(size_t d1, size_t d2, size_t d3, size_t elemsize);
 
@@ -44,6 +56,9 @@ device_free_3d(void *inptr);
 void
 device_free_4d(void *inptr);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* DEVICE_ALLOC_H */
 

@@ -103,6 +103,7 @@ forward(float64 **active_alpha,
     state_t *state_seq,
     uint32 n_state,
     model_inventory_t *inv,
+    gauden_dev_t *dev_gau,
     float64 beam,
     s3phseg_t *phseg,
     uint32 mmi_train);
@@ -127,6 +128,7 @@ forward_recompute(float64 **loc_active_alpha,
     state_t *state_seq,
     uint32 n_state,
     model_inventory_t *inv,
+    gauden_dev_t *dev_gau,
     float64 beam,
     s3phseg_t *phseg,
     uint32 mmi_train);
@@ -144,6 +146,7 @@ forward_reduced(float64 **active_alpha,
     state_t *state_seq,
     uint32 n_state,
     model_inventory_t *inv,
+    gauden_dev_t *dev_gau,
     float64 beam,
     s3phseg_t *phseg,
     uint32 mmi_train);
@@ -168,12 +171,6 @@ forward_local(float64 **active_alpha,
 
 void
 forward_set_viterbi(int state);
-
-void
-gauden_dev_free(gauden_dev_t *g);
-
-gauden_dev_t *
-gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state);
 
 
 #ifdef __cplusplus

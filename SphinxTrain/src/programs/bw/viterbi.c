@@ -65,6 +65,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "device_alloc.h"
+
 #define INVLOGS3 100000.5 /* (1.0/log(1.0001)) */
 int32
 write_phseg(const char *filename,
@@ -98,7 +100,7 @@ write_phseg(const char *filename,
 /*    forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
     for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
 	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
@@ -325,6 +327,8 @@ viterbi_update(float64 *log_forw_prob,
     static float64 **d_term = NULL;
     static float64 **d_term_ci = NULL;
 
+    gauden_dev_t *dev_gau;
+    
     /* caller must ensure that there is some non-zero amount
        of work to be done here */
     assert(n_obs > 0);
@@ -366,8 +370,10 @@ viterbi_update(float64 *log_forw_prob,
     if (fwd_timer)
 	timing_start(fwd_timer);
 		  
+    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
+
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
 		  
     /* Dump a phoneme segmentation if requested */
     if (cmd_ln_str("-outphsegdir")) {
@@ -470,7 +476,7 @@ viterbi_update(float64 *log_forw_prob,
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
     for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
 	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
@@ -681,7 +687,7 @@ viterbi_update(float64 *log_forw_prob,
                 forward_recompute(
                     loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
                     red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-                    feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+                    feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
 	    }
 	}
     }
@@ -700,7 +706,7 @@ viterbi_update(float64 *log_forw_prob,
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
     for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
 	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
@@ -717,7 +723,7 @@ viterbi_update(float64 *log_forw_prob,
             forward_recompute(
                 loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
                 red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-                feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+                feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
 	}
 
 	assert(loc_scale[t % block_size] > 0);
@@ -778,6 +784,8 @@ mmi_viterbi_run(float64 *log_forw_prob,
     float64 **loc_dscale;
     uint32 n_red = ceil(n_obs / (float64)block_size);
 
+    gauden_dev_t *dev_gau;
+
     uint32 *active_cb;
     uint32 i;
     int ret;
@@ -797,8 +805,10 @@ mmi_viterbi_run(float64 *log_forw_prob,
 
     /* Run forward algorithm, which has embedded Viterbi. */
 		  
+    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
+    
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 1);
+		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 1);
 
     if (ret != S3_SUCCESS) {
 
@@ -812,7 +822,7 @@ mmi_viterbi_run(float64 *log_forw_prob,
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 1);
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 1);
     for (i = 0; i < loc_n_active_astate[(n_obs - 1) % block_size]; ++i) {
 	if (loc_active_astate[(n_obs - 1) % block_size][i] == n_state-1)
 	    break;
@@ -835,6 +845,8 @@ mmi_viterbi_run(float64 *log_forw_prob,
     forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
     
 all_done:
+    gauden_dev_free(dev_gau);
+
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
 
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
@@ -898,6 +910,8 @@ mmi_viterbi_update(vector_t **feature,
     static float64 *p_ci_op = NULL;
     static float64 **d_term = NULL;
     static float64 **d_term_ci = NULL;
+    
+    gauden_dev_t *dev_gau;
 
     /* caller must ensure that there is some non-zero amount
        of work to be done here */
@@ -925,9 +939,11 @@ mmi_viterbi_update(vector_t **feature,
     forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
     forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
 
+    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
+
     /* Run forward algorithm, which has embedded Viterbi. */
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-		  feature, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 1);
+		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 1);
     
     if (cmd_ln_str("-outphsegdir")) {
 	E_FATAL("current MMI implementation don't support -outphsegdir\n");
@@ -983,7 +999,7 @@ mmi_viterbi_update(vector_t **feature,
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 0);
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 0);
     for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
 	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
 	    break;
@@ -1136,7 +1152,7 @@ mmi_viterbi_update(vector_t **feature,
                 forward_recompute(
                     loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
                     red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-                    feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, NULL, 0);
+                    feature, ((t - 1) / block_size), block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 0);
 	    }
 	}
     }
@@ -1148,6 +1164,8 @@ mmi_viterbi_update(vector_t **feature,
 		 FALSE);
 
  all_done:
+    gauden_dev_free(dev_gau);
+
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
 
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);

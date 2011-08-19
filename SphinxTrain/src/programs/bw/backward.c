@@ -60,6 +60,8 @@
 #include "forward.h"
 #include "accum.h"
 
+#include "device_alloc.h"
+
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -424,6 +426,8 @@ backward_update(float64 **red_active_alpha,
     float64 *loc_scale;
     float64 **loc_dscale;
     uint32 n_red = ceil(n_obs / (float64)block_size);
+    
+    gauden_dev_t *dev_gau;
 
     forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, NULL, &loc_scale, &loc_dscale, block_size + 1);
     loc_dscale[block_size] = ckd_calloc(inv->gauden->n_feat, sizeof(float64));
@@ -437,10 +441,12 @@ backward_update(float64 **red_active_alpha,
     /* Get the per frame reestimation CPU timer */
     rstf_timer = timing_get("rstf");
     
+    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
+    
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, NULL, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, NULL, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
 
     /* Look for the final state in the active states at the last frame */
     for (q_f = 0;
@@ -684,7 +690,7 @@ backward_update(float64 **red_active_alpha,
             forward_recompute(
                 loc_active_alpha, loc_active_astate, loc_n_active_astate, NULL, loc_scale, loc_dscale,
                 red_active_alpha, red_active_astate, red_n_active_astate, NULL, red_scale, red_dscale,
-                feature, (t / block_size), block_size, n_obs, state_seq, n_state, inv, a_beam, phseg, 0);
+                feature, (t / block_size), block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
 	}
 
 	if (loc_scale[t % block_size] == 0) {
@@ -1317,6 +1323,8 @@ backward_update(float64 **red_active_alpha,
     ckd_free(loc_dscale[block_size]);
     
 free:
+    gauden_dev_free(dev_gau);
+
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, NULL, &loc_scale, &loc_dscale);
 
     ckd_free(active_a);

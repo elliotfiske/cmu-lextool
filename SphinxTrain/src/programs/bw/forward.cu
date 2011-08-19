@@ -266,6 +266,7 @@ forward(float64 **active_alpha,
         state_t *state_seq,
         uint32 n_state,
         model_inventory_t *inv,
+        gauden_dev_t *dev_gau,
         float64 beam,
         s3phseg_t *phseg,
         uint32 mmi_train)
@@ -293,7 +294,7 @@ forward(float64 **active_alpha,
     
     retval = forward_reduced(
             red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-            feature, block_size, n_obs, state_seq, n_state, inv, beam, phseg, mmi_train);
+            feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, beam, phseg, mmi_train);
     if (retval != S3_SUCCESS) {
         goto cleanup;
     }
@@ -303,7 +304,7 @@ forward(float64 **active_alpha,
             active_alpha + (t * block_size), active_astate + (t * block_size), n_active_astate + (t * block_size),
             bp + (t * block_size), scale + (t * block_size), dscale + (t * block_size),
             red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-            feature, t, block_size, n_obs, state_seq, n_state, inv, beam, phseg, mmi_train);
+            feature, t, block_size, n_obs, state_seq, n_state, inv, dev_gau, beam, phseg, mmi_train);
             
         if (retval != S3_SUCCESS) {
             goto cleanup;
@@ -339,6 +340,7 @@ forward_recompute(float64 **loc_active_alpha,
         state_t *state_seq,
         uint32 n_state,
         model_inventory_t *inv,
+        gauden_dev_t *dev_gau,
         float64 beam,
         s3phseg_t *phseg,
         uint32 mmi_train)
@@ -371,7 +373,7 @@ forward_recompute(float64 **loc_active_alpha,
     
     retval = forward_local(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
-        feature + (block_idx * block_size), block_obs, state_seq, n_state, inv, NULL, beam, phseg, mmi_train, (block_idx * block_size));
+        feature + (block_idx * block_size), block_obs, state_seq, n_state, inv, dev_gau, beam, phseg, mmi_train, (block_idx * block_size));
     
     return retval;
 }
@@ -389,6 +391,7 @@ forward_reduced(float64 **active_alpha,
         state_t *state_seq,
         uint32 n_state,
         model_inventory_t *inv,
+        gauden_dev_t *dev_gau,
         float64 beam,
         s3phseg_t *phseg,
         uint32 mmi_train)
@@ -405,9 +408,9 @@ forward_reduced(float64 **active_alpha,
     uint32 n_red = ceil(n_obs / (float64)block_size);
     int t;
     
-    gauden_dev_t *dev_gau;
+/*    gauden_dev_t *dev_gau;
     
-    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
+    dev_gau = gauden_dev_copy(inv, state_seq, n_state);*/
 
     /*
      * Allocate space for the initial state in the alpha
@@ -482,7 +485,7 @@ forward_reduced(float64 **active_alpha,
 cleanup:
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
     
-    gauden_dev_free(dev_gau);
+/*    gauden_dev_free(dev_gau);*/
 
     return retval;
 }
@@ -503,79 +506,6 @@ uint32 stopTimer(struct timeval *timer){
                 tmp.tv_sec--;
         }
         return (uint32)(tmp.tv_usec + tmp.tv_sec*1000000);
-}
-
-void gauden_dev_free(gauden_dev_t *g) {
-
-    cudaFree((void *)g->d_veclen);
-    cudaFree((void *)g->d_norm);
-    
-    cudaFree((void *)g->d_cb);
-    cudaFree((void *)g->d_l_cb);
-    cudaFree((void *)g->d_mixw);
-    
-    cudaFree((void *)g->d_mean_idx);
-    cudaFree((void *)g->d_mean_buf);
-
-    cudaFree((void *)g->d_var_idx);
-    cudaFree((void *)g->d_var_buf);
-
-    ckd_free((void *)g);
-}
-
-gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state) {
-
-    gauden_dev_t *g;
-    uint32 *buf;
-    uint32 s;
-    
-    g = (gauden_dev_t *)ckd_calloc(1, sizeof(gauden_dev_t));
-    
-    g->n_feat = inv->gauden->n_feat;
-    g->n_mgau = inv->gauden->n_mgau;
-    g->n_density = inv->gauden->n_density;
-    g->n_top = inv->gauden->n_top;
-    g->n_cb_inverse = inv->n_cb_inverse;
-    g->n_state = n_state;
-    
-    E_INFO("MICHAL: %u %u %u %u %u %u\n", g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_state);
-    
-    cudaMalloc(&g->d_veclen, g->n_feat * sizeof(uint32));
-    cudaMalloc(&g->d_norm, g->n_mgau * g->n_feat * g->n_density * sizeof(float32));
-    
-    cudaMalloc(&g->d_cb, g->n_state * sizeof(uint32));
-    cudaMalloc(&g->d_l_cb, g->n_state * sizeof(uint32));
-    cudaMalloc(&g->d_mixw, g->n_state * sizeof(uint32));
-    
-    g->d_mean_buflen = inv->gauden->mean[0][0][g->n_mgau * g->n_feat * g->n_density - 1] - inv->gauden->mean[0][0][0] + inv->gauden->veclen[g->n_feat - 1];
-    cudaMalloc(&g->d_mean_idx, g->n_mgau * g->n_feat * g->n_density * sizeof(float *));
-    cudaMalloc(&g->d_mean_buf, g->d_mean_buflen * sizeof(float));
-
-    g->d_var_buflen = inv->gauden->var[0][0][g->n_mgau * g->n_feat * g->n_density - 1] - inv->gauden->var[0][0][0] + inv->gauden->veclen[g->n_feat - 1];
-    cudaMalloc(&g->d_var_idx, g->n_mgau * g->n_feat * g->n_density * sizeof(float *));
-    cudaMalloc(&g->d_var_buf, g->d_var_buflen * sizeof(float));
-    
-    /* veclen, norm, den, den_idx */
-    cudaMemcpy(g->d_veclen, inv->gauden->veclen, g->n_feat * sizeof(uint32), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_norm, inv->gauden->norm[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float32), cudaMemcpyHostToDevice);
-    
-    /* state_seq -> d_cb, d_l_cb, d_mixw */
-    buf = (uint32 *)ckd_calloc(g->n_state, sizeof(uint32));
-    for (s = 0; s < g->n_state; s++) buf[s] = state_seq[s].cb;
-    cudaMemcpy(g->d_cb, buf, g->n_state * sizeof(uint32), cudaMemcpyHostToDevice);
-    for (s = 0; s < g->n_state; s++) buf[s] = state_seq[s].l_cb;
-    cudaMemcpy(g->d_l_cb, buf, g->n_state * sizeof(uint32), cudaMemcpyHostToDevice);
-    for (s = 0; s < g->n_state; s++) buf[s] = state_seq[s].mixw;
-    cudaMemcpy(g->d_mixw, buf, g->n_state * sizeof(uint32), cudaMemcpyHostToDevice);
-    ckd_free((void *)buf);
-    
-    /* mean, var, feature */
-    cudaMemcpy(g->d_mean_idx, inv->gauden->mean[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_mean_buf, inv->gauden->mean[0][0][0], g->d_mean_buflen * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_var_idx, inv->gauden->var[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_var_buf, inv->gauden->var[0][0][0], g->d_var_buflen * sizeof(float), cudaMemcpyHostToDevice);
-
-    return g;
 }
 
 __global__ void
@@ -707,7 +637,8 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
 /*    int dt = stopTimer(&timer);
     E_INFO("MICHAL: kernel: %u\n", dt);*/
     
-    } else {
+    }
+    if (0) {
     
     uint32 t;
     
