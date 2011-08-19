@@ -60,6 +60,7 @@
 
 #include "forward.h"
 #include "device_alloc.h"
+#include <cutil.h>
 
 #define FORWARD_DEBUG 0
 #define INACTIVE        0xffff
@@ -626,24 +627,24 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     float *d_feature_buf;
     uint32 d_feature_buflen;
 
-    struct timeval timer;
+/*    struct timeval timer;*/
 
     if (g) {
     
-    startTimer(&timer);
+/*    startTimer(&timer);*/
 
-    cudaMalloc(&d_den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64));
-    cudaMalloc(&d_den_idx, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32));
+    CUDA_SAFE_CALL(cudaMalloc(&d_den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64)));
+    CUDA_SAFE_CALL(cudaMalloc(&d_den_idx, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32)));
 
     d_feature_buflen = feature[0][n_obs * g->n_feat - 1] - feature[0][0] + inv->gauden->veclen[g->n_feat - 1];
-    cudaMalloc(&d_feature_idx, n_obs * g->n_feat * sizeof(float *));
-    cudaMalloc(&d_feature_buf, d_feature_buflen * sizeof(float));
+    CUDA_SAFE_CALL(cudaMalloc(&d_feature_idx, n_obs * g->n_feat * sizeof(float *)));
+    CUDA_SAFE_CALL(cudaMalloc(&d_feature_buf, d_feature_buflen * sizeof(float)));
 
-    cudaMemcpy(d_den, den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_den_idx, den, n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32), cudaMemcpyHostToDevice);
+    CUDA_SAFE_CALL(cudaMemcpy(d_den, den[0][0][0], n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_den_idx, den_idx[0][0][0], n_obs * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32), cudaMemcpyHostToDevice));
 
-    cudaMemcpy(d_feature_idx, feature, n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_feature_buf, feature[0][0], d_feature_buflen * sizeof(float), cudaMemcpyHostToDevice);
+    CUDA_SAFE_CALL(cudaMemcpy(d_feature_idx, feature, n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_feature_buf, feature[0][0], d_feature_buflen * sizeof(float), cudaMemcpyHostToDevice));
     
     dim3 bdim(16, 16, 1);
     dim3 gdim(ceil(n_obs / (float)bdim.x), ceil(n_state / (float)bdim.y), 1); 
@@ -659,14 +660,14 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     cudaFree((void *)d_feature_idx);
     cudaFree((void *)d_feature_buf);
     
-    int dt = stopTimer(&timer);
-    E_INFO("MICHAL: kernel: %u\n", dt);
+/*    int dt = stopTimer(&timer);
+    E_INFO("MICHAL: kernel: %u\n", dt);*/
     
     }
     
     uint32 t;
     
-    startTimer(&timer);
+/*    startTimer(&timer);*/
 
     for (t = 1; t < n_obs; t++) {
         for (s = 0; s < n_state; s++) {
@@ -715,8 +716,8 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     /* Preinitializing topn only really makes a difference 
        for semi-continuous (inv->n_cb_inverse == 1) models. */
     
-    int dt = stopTimer(&timer);
-    E_INFO("MICHAL: serial: %u\n", dt);
+/*    int dt = stopTimer(&timer);
+    E_INFO("MICHAL: serial: %u\n", dt);*/
 }
 
 
