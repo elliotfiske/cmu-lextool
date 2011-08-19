@@ -481,6 +481,8 @@ forward_reduced(float64 **active_alpha,
     
 cleanup:
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
+    
+    gauden_dev_free(dev_gau);
 
     return retval;
 }
@@ -503,7 +505,22 @@ uint32 stopTimer(struct timeval *timer){
         return (uint32)(tmp.tv_usec + tmp.tv_sec*1000000);
 }
 
-void gauden_dev_free(gauden_t *gauden) {
+void gauden_dev_free(gauden_dev_t *g) {
+
+    cudaFree((void *)g->d_veclen);
+    cudaFree((void *)g->d_norm);
+    
+    cudaFree((void *)g->d_cb);
+    cudaFree((void *)g->d_l_cb);
+    cudaFree((void *)g->d_mixw);
+    
+    cudaFree((void *)g->d_mean_idx);
+    cudaFree((void *)g->d_mean_buf);
+
+    cudaFree((void *)g->d_var_idx);
+    cudaFree((void *)g->d_var_buf);
+
+    ckd_free((void *)g);
 }
 
 gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state) {
@@ -591,8 +608,8 @@ gauden_precompute_kernel_log_full_den(
     
 /*    uint32 mgau = state_seq[i].cb;
     
-    if (state_seq[i].mixw != TYING_NON_EMITTING) {
-        uint32 l_cb = state_seq[i].l_cb;
+    if (state_seq[s].mixw != TYING_NON_EMITTING) {
+        uint32 l_cb = state_seq[s].l_cb;
         uint32 j;
 
         for (j = 0; j < inv->gauden->n_feat; j++) {
