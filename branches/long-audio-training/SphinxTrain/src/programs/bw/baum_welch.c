@@ -164,6 +164,8 @@ baum_welch_update(float64 *log_forw_prob,
     float64 *loc_scale;
     float64 **loc_dscale;
     uint32 n_red = ceil(n_obs / (float64)block_size);
+
+    gauden_dev_t *dev_gau;
     
     float64 log_fp;	/* accumulator for the log of the probability
 			 * of observing the input given the model */
@@ -196,8 +198,11 @@ baum_welch_update(float64 *log_forw_prob,
  * Debug?
  *   E_INFO("Before Forward search\n");
  */
+    
+    dev_gau = gauden_dev_copy(inv, state, n_state);
+    
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-		  feature, block_size, n_obs, state, n_state, inv, a_beam, phseg, 0);
+		  feature, block_size, n_obs, state, n_state, inv, dev_gau, a_beam, phseg, 0);
 
 #if BW_DEBUG
     for (i=0 ; i < n_obs;i++){
@@ -286,7 +291,7 @@ baum_welch_update(float64 *log_forw_prob,
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state, n_state, inv, a_beam, NULL, 0);
+        feature, n_red - 1, block_size, n_obs, state, n_state, inv, dev_gau, a_beam, NULL, 0);
     for (i = 0; i < loc_n_active_astate[(n_obs - 1) % block_size] && loc_active_astate[(n_obs - 1) % block_size][i] != (n_state-1); i++);
 
     assert(i < loc_n_active_astate[(n_obs - 1) % block_size]);
@@ -305,7 +310,7 @@ baum_welch_update(float64 *log_forw_prob,
             forward_recompute(
                 loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
                 red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-                feature, (t / block_size), block_size, n_obs, state, n_state, inv, a_beam, NULL, 0);
+                feature, (t / block_size), block_size, n_obs, state, n_state, inv, dev_gau, a_beam, NULL, 0);
         }
 	assert(loc_scale[t % block_size] > 0);
 	log_fp -= log(loc_scale[t % block_size]);
@@ -317,6 +322,8 @@ baum_welch_update(float64 *log_forw_prob,
 
     *log_forw_prob = log_fp;
 
+    gauden_dev_free(dev_gau);
+
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
     
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
@@ -325,6 +332,8 @@ baum_welch_update(float64 *log_forw_prob,
     return S3_SUCCESS;
 
 error:
+    gauden_dev_free(dev_gau);
+
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
     
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
