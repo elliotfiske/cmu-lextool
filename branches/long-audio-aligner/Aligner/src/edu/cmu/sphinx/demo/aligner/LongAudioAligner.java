@@ -13,7 +13,9 @@ package edu.cmu.sphinx.demo.aligner;
 
 import java.util.List;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import java.net.URL;
@@ -73,6 +75,7 @@ public class LongAudioAligner {
 		BufferedReader batchReader = new BufferedReader(new FileReader(
 				"./resource/batchFile.txt"));
 		String Line;
+		int outputFileIndex = 1;
 		while ((Line = batchReader.readLine()) != null) {
 			StringTokenizer st = new StringTokenizer(Line);
 			if (st.countTokens() != 2) {
@@ -93,8 +96,11 @@ public class LongAudioAligner {
 			URL URLToAudioFile = new URL("file:" + pathToAudioFile);
 			System.out.println("Path to Text File: " + pathToTextFile
 					+ "\nPath To Audio File: " + pathToAudioFile);
+			String outputFolder = "./TimedOutput/";
+			
 			currTest(recognizer, aflatLinguist, grammar, dataSource, input,
-					URLToAudioFile);
+					URLToAudioFile, outputFolder , outputFileIndex);
+			outputFileIndex ++;
 			recognizer.deallocate();
 		}
 
@@ -102,7 +108,8 @@ public class LongAudioAligner {
 
 	public static void currTest(Recognizer recognizer,
 			AFlatLinguist aflatLinguist, AlignerGrammar grammar,
-			AudioFileDataSource dataSource, String input, URL audioFileURL)
+			AudioFileDataSource dataSource, String input, URL audioFileURL,
+			String outputFolder, int outputFileIndex)
 			throws IOException {
 
 		// Clean-up the file to be suitable for making grammar
@@ -117,14 +124,13 @@ public class LongAudioAligner {
 		result = recognizer.recognize();
 		aflatLinguist.deallocate();
 		timedResult = result.getTimedBestResult(false, true); // Base result
-
-		// URL pathToWordFile = new URL("file:./resource/models/wordFile.txt");
-		// AlignerTestCase testCase = new AlignerTestCase(timedResult, 0.03,
-		// pathToWordFile);
-
+		String pathToFile = outputFolder + outputFileIndex + ".txt";
+		BufferedWriter writer = new BufferedWriter(new FileWriter(pathToFile));
 		System.out
 				.println("========== GENERATING TIMED RESULT USING CORRECT TEXT =========");
-		System.out.println("Timed Result: " + timedResult + "\n");
+		System.out.println(timedResult);
+		writer.write(timedResult);
+		writer.close();
 
 		/*
 		 * // Corrupt the input using StringErrorGenerator String corruptedInput
