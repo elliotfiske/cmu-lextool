@@ -3,22 +3,49 @@
 #include <sphinxbase/ckd_alloc.h>
 #include <cutil.h>
 
+
+#ifdef STOPWATCH
+
+#include <sys/time.h>
+
+void startTimer(struct timeval *timer){
+        gettimeofday(timer, NULL);
+}
+
+uint32 stopTimer(struct timeval *timer){
+        struct timeval tmp;
+        gettimeofday(&tmp, NULL);
+        tmp.tv_sec -= timer->tv_sec;
+        tmp.tv_usec -= timer->tv_usec;
+        if (tmp.tv_usec < 0){
+                tmp.tv_usec+=1000000;
+                tmp.tv_sec--;
+        }
+        return (uint32)(tmp.tv_usec + tmp.tv_sec*1000000);
+}
+
+#endif
+
+
 void gauden_dev_free(gauden_dev_t *g) {
+#ifdef GAUDEN_DEV
+    if (g) {
+        cudaFree((void *)g->d_veclen);
+        cudaFree((void *)g->d_norm);
+        
+        cudaFree((void *)g->d_cb);
+        cudaFree((void *)g->d_l_cb);
+        cudaFree((void *)g->d_mixw);
+        
+        cudaFree((void *)g->d_mean_idx);
+        cudaFree((void *)g->d_mean_buf);
 
-    cudaFree((void *)g->d_veclen);
-    cudaFree((void *)g->d_norm);
-    
-    cudaFree((void *)g->d_cb);
-    cudaFree((void *)g->d_l_cb);
-    cudaFree((void *)g->d_mixw);
-    
-    cudaFree((void *)g->d_mean_idx);
-    cudaFree((void *)g->d_mean_buf);
+        cudaFree((void *)g->d_var_idx);
+        cudaFree((void *)g->d_var_buf);
 
-    cudaFree((void *)g->d_var_idx);
-    cudaFree((void *)g->d_var_buf);
-
-    ckd_free((void *)g);
+        ckd_free((void *)g);
+    }
+#endif
 }
 
 gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state) {
@@ -26,6 +53,10 @@ gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32
     gauden_dev_t *g;
     uint32 *buf;
     uint32 s;
+    
+#ifndef GAUDEN_DEV
+    return NULL;
+#endif
     
     g = (gauden_dev_t *)ckd_calloc(1, sizeof(gauden_dev_t));
     
@@ -35,8 +66,6 @@ gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32
     g->n_top = inv->gauden->n_top;
     g->n_cb_inverse = inv->n_cb_inverse;
     g->n_state = n_state;
-    
-    E_INFO("MICHAL: %u %u %u %u %u %u\n", g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_state);
     
     cudaMalloc(&g->d_veclen, g->n_feat * sizeof(uint32));
     cudaMalloc(&g->d_norm, g->n_mgau * g->n_feat * g->n_density * sizeof(float32));
@@ -77,6 +106,7 @@ gauden_dev_t *gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32
 }
 
 
+/*
 __global__ void device_init_3d_kernel(char *mem, char ***ref1, char **ref2, size_t elemsize, size_t d1, size_t d2, size_t d3);
 __global__ void device_init_4d_kernel(char *mem, char ****ref1, char ***ref2, char **ref3, size_t elemsize, size_t d1, size_t d2, size_t d3, size_t d4);
 
@@ -148,8 +178,6 @@ device_free_4d(void *inptr) {
 }
 
 
-/* kernels */
-
 __global__ void device_init_3d_kernel(char *mem, char ***ref1, char **ref2, size_t elemsize, size_t d1, size_t d2, size_t d3) {
     int i, j;
     
@@ -188,4 +216,4 @@ __global__ void device_init_4d_kernel(char *mem, char ****ref1, char ***ref2, ch
         }
     }
 }
-
+*/
