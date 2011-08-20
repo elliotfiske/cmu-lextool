@@ -50,23 +50,18 @@ public class PhraseSpotting {
 	public static void main(String Args[]) throws IOException {
 		
 		// Initialise demo related variables
-		final String phrase = "We"; // Phrase to be spotted
-		String pathToAudioFile = "./resource/wav/obama_test.wav"; // Audio file
-		String pathToTextFile = "./resource/Transcription/obama.txt"; // Transcription
+		Runtime runtime = Runtime.getRuntime();
+		System.out.println("Total Memory: " + runtime.totalMemory()/(1024*1024) + "MB" +
+				" Free Memory: " + runtime.freeMemory()/(1024*1024) + "MB");
+		final String phrase = "two"; // Phrase to be spotted
+		String pathToAudioFile = "./resource/wav/oov_numbers.wav"; // Audio file
+		String pathToTextFile = "./resource/Transcription/oov_numbers.txt"; // Transcription
 		// file
 
 		System.out.println("Phrase: " + phrase);
+		SimplePhraseSpotter sp = phraseSpotting(phrase,  pathToAudioFile);
 		
-		SimplePhraseSpotter sp =new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");
-		sp.setPhrase(phrase);
-		sp.setAudioDataSource(new URL("file:" + pathToAudioFile));
-		sp.allocate();
-		sp.startSpotting();
-		Iterator<edu.cmu.sphinx.phrasespotter.Result> iter = sp.getTimedResult().iterator();
-		while(iter.hasNext()){
-			edu.cmu.sphinx.phrasespotter.Result result = iter.next();
-			System.out.println("(" + result.getStartTime() + "," + result.getEndTime() + ")");
-		}
+		
 		
 		//  Now start the Informed Alignment using spotter's result
 		// By informed alignment we now mean to improve beam efficiency 
@@ -109,5 +104,19 @@ public class PhraseSpotting {
 		System.out.println(aResult);
 		*/	
 		
+	}
+	
+	public static SimplePhraseSpotter phraseSpotting(String phrase, String pathToAudioFile) throws MalformedURLException {
+		SimplePhraseSpotter sp =new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");
+		sp.setPhrase(phrase);
+		sp.setAudioDataSource(new URL("file:" + pathToAudioFile));
+		sp.allocate();
+		sp.startSpotting();
+		Iterator<edu.cmu.sphinx.phrasespotter.Result> iter = sp.getTimedResult().iterator();
+		while(iter.hasNext()){
+			edu.cmu.sphinx.phrasespotter.Result result = iter.next();
+			System.out.println("(" + result.getStartTime() + "," + result.getEndTime() + ")");
+		}
+		return sp;
 	}
 }
