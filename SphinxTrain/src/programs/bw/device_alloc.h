@@ -14,10 +14,10 @@
 #define GAUDEN_DEV
 
 /* gauden precomputation on host */
-/*#define GAUDEN_HOST*/
+//#define GAUDEN_HOST
 
 /* output precomputed densities */
-/*#define DENSITIES_DEBUG*/
+//#define DENSITIES_DEBUG
 
 
 #ifdef __cplusplus
@@ -35,6 +35,7 @@ typedef struct gauden_dev_s {
     uint32 n_active_state;
 
     uint32 *d_veclen;
+    uint32 maxveclen;
     float32 *d_norm;
     
     float **d_mean_idx;
@@ -48,6 +49,7 @@ typedef struct gauden_dev_s {
     float **d_feature_idx;
     float *d_feature_buf;
     uint32 d_feature_buflen;
+    uint32 d_feature_n_obs;
     
     float64 *d_den;
     uint32 *d_den_idx;

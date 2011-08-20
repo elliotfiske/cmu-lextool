@@ -491,7 +491,7 @@ gauden_precompute_kernel_log_full_den(
         
         float **feature_idx,
         float *feature_buf,
-        uint32 feature_buflen,
+        uint32 feature_n_obs,
 
         uint32 *veclen,
         float32 *norm,
@@ -511,7 +511,8 @@ gauden_precompute_kernel_log_full_den(
         uint32 n_cb_inverse,
         uint32 n_active_state,
         uint32 n_obs,
-        uint32 t_offset) {
+        uint32 t_offset,
+        uint32 maxveclen) {
     
     uint32 t = blockIdx.x * blockDim.x + threadIdx.x;
     uint32 s = blockIdx.y * blockDim.y + threadIdx.y;
@@ -552,7 +553,8 @@ gauden_precompute_kernel_log_full_den(
 
             for (l = 0; l < veclen_j; l++) {
 /*                    diff = feature[t][j][l] - mean[mgau][j][i][l];*/
-                diff = feature_buf[(feature_idx[(t + t_offset) * n_feat + j] - feature_base_idx) + l]
+//                diff = feature_buf[(feature_idx[(t + t_offset) * n_feat + j] - feature_base_idx) + l]
+                diff = feature_buf[((l * n_feat) + j) * feature_n_obs + (t + t_offset)]
                     - mean_buf[(mean_idx[cur_mean_var] - mean_base_idx) + l];
 
 /*                    d += var[mgau][j][i][l] * diff * diff;*/
@@ -608,8 +610,8 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
     dim3 gdim(ceil(n_obs / (float)bdim.x), ceil(n_state / (float)bdim.y), 1); 
     
     gauden_precompute_kernel_log_full_den<<<gdim, bdim>>>(
-        g->d_den, g->d_den_idx, g->d_feature_idx, g->d_feature_buf, g->d_feature_buflen, g->d_veclen, g->d_norm, g->d_mean_idx, g->d_mean_buf, g->d_var_idx, g->d_var_buf,
-        g->d_cb, g->d_l_cb, g->d_active_states, g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_active_state, n_obs, t_offset);
+        g->d_den, g->d_den_idx, g->d_feature_idx, g->d_feature_buf, g->d_feature_n_obs, g->d_veclen, g->d_norm, g->d_mean_idx, g->d_mean_buf, g->d_var_idx, g->d_var_buf,
+        g->d_cb, g->d_l_cb, g->d_active_states, g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_active_state, n_obs, t_offset, g->maxveclen);
     
     cudaThreadSynchronize();
 
@@ -693,7 +695,7 @@ void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
 #endif
     
 #ifdef DENSITIES_DEBUG
-    E_INFO("DENSITIES: serial: ");
+    E_INFO("DENSITIES: serial densities: ");
     for (x = 0; x < n_obs * g->n_cb_inverse * g->n_feat * g->n_top; x++) {
         fprintf(stderr, "%lf %u\t", den[0][0][0][x], den_idx[0][0][0][x]);
     }
