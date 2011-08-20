@@ -11,10 +11,10 @@
 /*#define STOPWATCH*/
 
 /* gauden precomputation on device */
-/*#define GAUDEN_DEV*/
+#define GAUDEN_DEV
 
 /* gauden precomputation on host */
-#define GAUDEN_HOST
+/*#define GAUDEN_HOST*/
 
 /* output precomputed densities */
 /*#define DENSITIES_DEBUG*/
@@ -32,7 +32,7 @@ typedef struct gauden_dev_s {
     uint32 n_density;
     uint32 n_top;
     uint32 n_cb_inverse;
-    uint32 n_state;
+    uint32 n_active_state;
 
     uint32 *d_veclen;
     float32 *d_norm;
@@ -45,9 +45,17 @@ typedef struct gauden_dev_s {
     float *d_var_buf;
     uint32 d_var_buflen;
     
+    float **d_feature_idx;
+    float *d_feature_buf;
+    uint32 d_feature_buflen;
+    
+    float64 *d_den;
+    uint32 *d_den_idx;
+
     uint32 *d_cb;
     uint32 *d_l_cb;
-    uint32 *d_mixw;
+/*    uint32 *d_mixw;*/
+    uint32 *d_active_states;
     
 } gauden_dev_t;
 
@@ -62,7 +70,7 @@ void
 gauden_dev_free(gauden_dev_t *g);
 
 gauden_dev_t *
-gauden_dev_copy(model_inventory_t *inv, state_t *state_seq, uint32 n_state);
+gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_obs, model_inventory_t *inv, state_t *state_seq, uint32 n_state);
 
 /*
 void *
