@@ -441,7 +441,7 @@ backward_update(float64 **red_active_alpha,
     /* Get the per frame reestimation CPU timer */
     rstf_timer = timing_get("rstf");
     
-    dev_gau = gauden_dev_copy(inv, state_seq, n_state);
+    dev_gau = gauden_dev_copy(block_size, feature, n_obs, inv, state_seq, n_state);
     
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, NULL, loc_scale, loc_dscale,

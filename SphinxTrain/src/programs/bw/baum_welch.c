@@ -199,7 +199,7 @@ baum_welch_update(float64 *log_forw_prob,
  *   E_INFO("Before Forward search\n");
  */
     
-    dev_gau = gauden_dev_copy(inv, state, n_state);
+    dev_gau = gauden_dev_copy(block_size, feature, n_obs, inv, state, n_state);
     
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state, n_state, inv, dev_gau, a_beam, phseg, 0);
