@@ -56,6 +56,8 @@
 #include <s3/model_inventory.h>
 #include <s3/s3phseg_io.h>
 
+#include "device_alloc.h"
+
 int32
 baum_welch_update(float64 *log_forw_prob,
 		  vector_t **feature,
@@ -64,6 +66,7 @@ baum_welch_update(float64 *log_forw_prob,
 		  state_t *state,
 		  uint32 n_state,
 		  model_inventory_t *inv,
+		  gauden_dev_t *dev_gau,
 		  float64 a_beam,
 		  float64 b_beam,
 		  float32 spthresh,

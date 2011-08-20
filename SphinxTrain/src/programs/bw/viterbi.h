@@ -54,6 +54,8 @@
 #include <s3/model_inventory.h>
 #include <s3/s3phseg_io.h>
 
+#include "device_alloc.h"
+
 int32
 write_phseg(const char *filename,
 	    model_inventory_t *modinv,
@@ -83,6 +85,7 @@ viterbi_update(float64 *log_forw_prob,
 	       state_t *state,
 	       uint32 n_state,
 	       model_inventory_t *inv,
+	       gauden_dev_t *dev_gau,
 	       float64 a_beam,
 	       float32 spthresh,
 	       s3phseg_t *phseg,
@@ -103,6 +106,7 @@ mmi_viterbi_run(float64 *log_forw_prob,
 		state_t *state,
 		uint32 n_state,
 		model_inventory_t *inv,
+		gauden_dev_t *dev_gau,
 		float64 a_beam);
 
 int32
@@ -112,6 +116,7 @@ mmi_viterbi_update(vector_t **feature,
 		   state_t *state,
 		   uint32 n_state,
 		   model_inventory_t *inv,
+		   gauden_dev_t *dev_gau,
 		   float64 a_beam,
 		   int32 mean_reest,
 		   int32 var_reest,
