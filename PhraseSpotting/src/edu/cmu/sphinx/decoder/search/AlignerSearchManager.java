@@ -83,7 +83,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 	 * the word list for pruning. Words with a score less than relativeBeamWidth
 	 * * maximumScore will be pruned from the list
 	 */
-	@S4Double(defaultValue = 0.0)
+	@S4Double(defaultValue = 0.00000000000000000000000001)
 	public final static String PROP_RELATIVE_WORD_BEAM_WIDTH = "relativeWordBeamWidth";
 
 	/**

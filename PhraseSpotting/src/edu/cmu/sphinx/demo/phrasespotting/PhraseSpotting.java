@@ -53,9 +53,9 @@ public class PhraseSpotting {
 		Runtime runtime = Runtime.getRuntime();
 		System.out.println("Total Memory: " + runtime.totalMemory()/(1024*1024) + "MB" +
 				" Free Memory: " + runtime.freeMemory()/(1024*1024) + "MB");
-		final String phrase = "two"; // Phrase to be spotted
-		String pathToAudioFile = "./resource/wav/oov_numbers.wav"; // Audio file
-		String pathToTextFile = "./resource/Transcription/oov_numbers.txt"; // Transcription
+		final String phrase = "We"; // Phrase to be spotted
+		String pathToAudioFile = "./resource/wav/obama.wav"; // Audio file
+		String pathToTextFile = "./resource/Transcription/obama.txt"; // Transcription
 		// file
 
 		System.out.println("Phrase: " + phrase);
