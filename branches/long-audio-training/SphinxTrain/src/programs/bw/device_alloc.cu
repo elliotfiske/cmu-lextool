@@ -91,12 +91,39 @@ gauden_dev_t *gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_ob
     CUDA_SAFE_CALL(cudaMalloc(&g->d_den, (block_size + 1) * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64)));
     CUDA_SAFE_CALL(cudaMalloc(&g->d_den_idx, (block_size + 1) * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32)));
 
+    g->maxveclen = 0;
+    int i, j, k;
+    for (i = 0; i < g->n_feat; i++) {
+        if (inv->gauden->veclen[i] > g->maxveclen) {
+            g->maxveclen = inv->gauden->veclen[i];
+        }
+    }
+
     g->d_feature_buflen = feature[0][n_obs * g->n_feat - 1] - feature[0][0] + inv->gauden->veclen[g->n_feat - 1];
     CUDA_SAFE_CALL(cudaMalloc(&g->d_feature_idx, n_obs * g->n_feat * sizeof(float *)));
-    CUDA_SAFE_CALL(cudaMalloc(&g->d_feature_buf, g->d_feature_buflen * sizeof(float)));
+//    CUDA_SAFE_CALL(cudaMalloc(&g->d_feature_buf, g->d_feature_buflen * sizeof(float)));
+    CUDA_SAFE_CALL(cudaMalloc(&g->d_feature_buf, g->maxveclen * g->n_feat * n_obs * sizeof(float)));
 
-    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_idx, feature[0], n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_buf, feature[0][0], g->d_feature_buflen * sizeof(float), cudaMemcpyHostToDevice));
+/*    vector_t **feature_tr = (vector_t **)ckd_calloc_2d(g->n_feat, n_obs, sizeof(vector_t));
+    int i, j;
+    for (i = 0; i < g->n_feat; i++) {
+        for (j = 0; j < n_obs; j++) {
+            feature_tr[i][j] = feature[j][i];
+        }
+    }
+    ckd_free_2d((void **)feature_tr);*/
+    vector_t **feature_tr = (vector_t **)ckd_calloc_3d(g->maxveclen, g->n_feat, n_obs, sizeof(float));
+    for (i = 0; i < n_obs; i++) {
+        for (j = 0; j < g->n_feat; j++) {
+            for (k = 0; k < inv->gauden->veclen[j]; k++) {
+                feature_tr[k][j][i] = feature[i][j][k];
+            }
+        }
+    }
+    g->d_feature_n_obs = n_obs;
+//    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_idx, feature_tr[0], n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_buf, feature_tr[0][0], g->maxveclen * g->n_feat * n_obs * sizeof(float), cudaMemcpyHostToDevice));
+    ckd_free_3d((void ***)feature_tr);
     
     /* veclen, norm, den, den_idx */
     cudaMemcpy(g->d_veclen, inv->gauden->veclen, g->n_feat * sizeof(uint32), cudaMemcpyHostToDevice);
