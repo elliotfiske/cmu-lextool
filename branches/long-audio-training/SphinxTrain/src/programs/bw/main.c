@@ -725,6 +725,8 @@ main_reestimate(model_inventory_t *inv,
     n_utt = 0;
 
     while (corpus_next_utt()) {
+        gauden_dev_t *dev_gau;
+        
 	/* Zero timers before utt processing begins */
 	if (utt_timer) {
 	    timing_reset(utt_timer);
@@ -833,12 +835,15 @@ main_reestimate(model_inventory_t *inv,
 	/* create a sentence HMM */
 	state_seq = next_utt_states(&n_state, lex, inv, mdef, trans);
 	printf(" %5u", n_state);
+
+        dev_gau = gauden_dev_copy(sqrt(n_frame), f, n_frame, inv, state_seq, n_state);
+
 	if (!viterbi) {
 	    /* accumulate reestimation sums for the utterance */
 	    if (baum_welch_update(&log_lik,
 				  f, sqrt(n_frame), n_frame,
 				  state_seq, n_state,
-				  inv,
+				  inv, dev_gau,
 				  a_beam,
 				  b_beam,
 				  spthresh,
@@ -865,7 +870,7 @@ main_reestimate(model_inventory_t *inv,
 	    if (viterbi_update(&log_lik,
 			       f, sqrt(n_frame), n_frame,
 			       state_seq, n_state,
-			       inv,
+			       inv, dev_gau,
 			       a_beam,
 			       spthresh,
 			       phseg,
@@ -892,6 +897,8 @@ main_reestimate(model_inventory_t *inv,
 	ckd_free(mfcc);
 	feat_array_free(f);
 	free(trans);	/* alloc'ed using strdup() */
+
+        gauden_dev_free(dev_gau);
 
 	seq_no++;
 
@@ -1197,6 +1204,8 @@ mmi_rand_train(model_inventory_t *inv,
     /* randomly pick the left and right context */
     while (n_max_run > 0 && lat->arc[n].good_arc == 0) {
       
+      gauden_dev_t *dev_gau;
+      
       /* get left arc id */
       if (lat->arc[n].n_prev_arcs == 1) {
 	n_rand = 0;
@@ -1230,17 +1239,21 @@ mmi_rand_train(model_inventory_t *inv,
 
       state_seq = next_utt_states_mmie(&n_state, lex, inv, mdef, cword, lphone, rphone);
 
+      dev_gau = gauden_dev_copy(sqrt(n_word_obs), arc_f, n_word_obs, inv, state_seq, n_state);
+
       /* viterbi compuation to get the acoustic score for a word hypothesis */
       if (mmi_viterbi_run(&log_lik,
 			  arc_f, sqrt(n_word_obs), n_word_obs,
 			  state_seq, n_state,
-			  inv,
+			  inv, dev_gau,
 			  a_beam) == S3_SUCCESS) {
 	lat->arc[n].good_arc = 1;
 	lat->arc[n].ac_score = log_lik;
 	lat->arc[n].best_prev_arc = rand_prev_id;
 	lat->arc[n].best_next_arc = rand_next_id;
       }
+
+      gauden_dev_free((void *)dev_gau);
 
       n_max_run--;
       ckd_free(lphone);
@@ -1262,6 +1275,8 @@ mmi_rand_train(model_inventory_t *inv,
     
     /* only if the arc was successful in viterbi run */
     if (lat->arc[n].good_arc == 1) {
+      
+      gauden_dev_t *dev_gau;
       
       /* total observations of this arc */
       n_word_obs = lat->arc[n].ef - lat->arc[n].sf + 1;
@@ -1289,10 +1304,12 @@ mmi_rand_train(model_inventory_t *inv,
       /* make state list */
       state_seq = next_utt_states_mmie(&n_state, lex, inv, mdef, cword, lphone, rphone);
       
+      dev_gau = gauden_dev_copy(sqrt(n_word_obs), arc_f, n_word_obs, inv, state_seq, n_state);
+      
       /* viterbi update model parameters */
       if (mmi_viterbi_update(arc_f, sqrt(n_word_obs), n_word_obs,
 			     state_seq, n_state,
-			     inv,
+			     inv, dev_gau,
 			     a_beam,
 			     mean_reest,
 			     var_reest,
@@ -1300,6 +1317,9 @@ mmi_rand_train(model_inventory_t *inv,
 			     fcb) != S3_SUCCESS) {
 	E_ERROR("arc_%d is ignored (viterbi update failed)\n", n+1);
       }
+      
+      gauden_dev_free((void *)dev_gau);
+      
       ckd_free(arc_f);
       ckd_free(lphone);
       ckd_free(rphone);
@@ -1387,15 +1407,19 @@ mmi_best_train(model_inventory_t *inv,
 	    
 	  /* if the previous succeeding arc has different context as the new one */
 	  if (*rphone != prev_rphone || j == 0) {
-	        
+	       
+	    gauden_dev_t *dev_gau;
+	     
 	    /* make state list */
 	    state_seq = next_utt_states_mmie(&n_state, lex, inv, mdef, cword, lphone, rphone);
+	    
+	    dev_gau = gauden_dev_copy(sqrt(n_word_obs), arc_f, n_word_obs, inv, state_seq, n_state);
 	        
 	    /* viterbi compuation to get the acoustic score for a word hypothesis */
 	    if (mmi_viterbi_run(&log_lik,
 				arc_f, sqrt(n_word_obs), n_word_obs,
 				state_seq, n_state,
-				inv,
+				inv, dev_gau,
 				a_beam) == S3_SUCCESS) {
 	      if (lat->arc[n].good_arc == 0) {
 		lat->arc[n].good_arc = 1;
@@ -1409,6 +1433,8 @@ mmi_best_train(model_inventory_t *inv,
 		lat->arc[n].best_next_arc = lat->arc[n].next_arcs[j];
 	      }
 	    }
+	    
+	    gauden_dev_free((void *)dev_gau);
 	    /* save the current right context */
 	    prev_rphone = *rphone;
 	  }
@@ -1436,6 +1462,8 @@ mmi_best_train(model_inventory_t *inv,
     /* only if the arc was successful in viterbi run */
     if (lat->arc[n].good_arc == 1) {
       
+      gauden_dev_t *dev_gau;
+      
       /* total observations of this arc */
       n_word_obs = lat->arc[n].ef - lat->arc[n].sf + 1;
       arc_f = (vector_t **) ckd_calloc(n_word_obs, sizeof(vector_t *));
@@ -1462,10 +1490,12 @@ mmi_best_train(model_inventory_t *inv,
       /* make state list */
       state_seq = next_utt_states_mmie(&n_state, lex, inv, mdef, cword, lphone, rphone);
       
+      dev_gau = gauden_dev_copy(sqrt(n_word_obs), arc_f, n_word_obs, inv, state_seq, n_state);
+      
       /* viterbi update model parameters */
       if (mmi_viterbi_update(arc_f, sqrt(n_word_obs), n_word_obs,
 			     state_seq, n_state,
-			     inv,
+			     inv, dev_gau,
 			     a_beam,
 			     mean_reest,
 			     var_reest,
@@ -1473,6 +1503,9 @@ mmi_best_train(model_inventory_t *inv,
 			     fcb) != S3_SUCCESS) {
 	E_ERROR("arc_%d is ignored (viterbi update failed)\n", n+1);
       }
+      
+      gauden_dev_free((void *)dev_gau);
+      
       ckd_free(arc_f);
       ckd_free(lphone);
       ckd_free(rphone);
@@ -1506,6 +1539,8 @@ mmi_ci_train(model_inventory_t *inv,
 
   for(n=0; n<lat->n_arcs; n++) {
     
+    gauden_dev_t *dev_gau;
+    
     /* total observations of this arc */
     /* this is not very accurate, as it consumes one more frame for each word at the end */
     n_word_obs = lat->arc[n].ef - lat->arc[n].sf + 1;
@@ -1518,15 +1553,19 @@ mmi_ci_train(model_inventory_t *inv,
     /* make state list */
     state_seq = next_utt_states(&n_state, lex, inv, mdef, lat->arc[n].word);
     
+    dev_gau = gauden_dev_copy(sqrt(n_word_obs), arc_f, n_word_obs, inv, state_seq, n_state);
+
     /* viterbi compuation to get the acoustic score for a word hypothesis */
     if (mmi_viterbi_run(&log_lik,
 			arc_f, sqrt(n_word_obs), n_word_obs,
 			state_seq, n_state,
-			inv,
+			inv, dev_gau,
 			a_beam) == S3_SUCCESS) {
       lat->arc[n].good_arc = 1;
       lat->arc[n].ac_score = log_lik;
     }
+    
+    gauden_dev_free((void *)dev_gau);
     
     ckd_free(arc_f);
     
@@ -1544,6 +1583,8 @@ mmi_ci_train(model_inventory_t *inv,
     /* only if the arc was successful in viterbi run */
     if (lat->arc[n].good_arc == 1) {
       
+      gauden_dev_t *dev_gau;
+      
       /* total observations of this arc */
       n_word_obs = lat->arc[n].ef - lat->arc[n].sf + 1;
       arc_f = (vector_t **) ckd_calloc(n_word_obs, sizeof(vector_t *));
@@ -1553,10 +1594,12 @@ mmi_ci_train(model_inventory_t *inv,
       /* make state list */
       state_seq = next_utt_states(&n_state, lex, inv, mdef, lat->arc[n].word);
       
+      dev_gau = gauden_dev_copy(sqrt(n_word_obs), arc_f, n_word_obs, inv, state_seq, n_state);
+      
       /* viterbi update model parameters */
       if (mmi_viterbi_update(arc_f, sqrt(n_word_obs), n_word_obs,
 			     state_seq, n_state,
-			     inv,
+			     inv, dev_gau,
 			     a_beam,
 			     mean_reest,
 			     var_reest,
@@ -1564,6 +1607,8 @@ mmi_ci_train(model_inventory_t *inv,
 			     fcb) != S3_SUCCESS) {
 	E_ERROR("arc_%d is ignored (viterbi update failed)\n", n+1);
       }
+      
+      gauden_dev_free((void *)dev_gau);
       
       ckd_free(arc_f);
     }

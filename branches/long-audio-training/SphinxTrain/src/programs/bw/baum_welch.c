@@ -138,6 +138,7 @@ baum_welch_update(float64 *log_forw_prob,
 		  state_t *state,
 		  uint32 n_state,
 		  model_inventory_t *inv,
+		  gauden_dev_t *dev_gau,
 		  float64 a_beam,
 		  float64 b_beam,
 		  float32 spthresh,
@@ -164,8 +165,6 @@ baum_welch_update(float64 *log_forw_prob,
     float64 *loc_scale;
     float64 **loc_dscale;
     uint32 n_red = ceil(n_obs / (float64)block_size);
-
-    gauden_dev_t *dev_gau;
     
     float64 log_fp;	/* accumulator for the log of the probability
 			 * of observing the input given the model */
@@ -198,8 +197,6 @@ baum_welch_update(float64 *log_forw_prob,
  * Debug?
  *   E_INFO("Before Forward search\n");
  */
-    
-    dev_gau = gauden_dev_copy(block_size, feature, n_obs, inv, state, n_state);
     
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state, n_state, inv, dev_gau, a_beam, phseg, 0);
@@ -322,8 +319,6 @@ baum_welch_update(float64 *log_forw_prob,
 
     *log_forw_prob = log_fp;
 
-    gauden_dev_free(dev_gau);
-
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
     
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);
@@ -332,8 +327,6 @@ baum_welch_update(float64 *log_forw_prob,
     return S3_SUCCESS;
 
 error:
-    gauden_dev_free(dev_gau);
-
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
     
     forward_free_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale);

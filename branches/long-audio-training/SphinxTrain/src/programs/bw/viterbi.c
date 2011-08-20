@@ -264,6 +264,7 @@ viterbi_update(float64 *log_forw_prob,
 	       state_t *state_seq,
 	       uint32 n_state,
 	       model_inventory_t *inv,
+	       gauden_dev_t *dev_gau,
 	       float64 a_beam,
 	       float32 spthresh,
 	       s3phseg_t *phseg,
@@ -327,8 +328,6 @@ viterbi_update(float64 *log_forw_prob,
     static float64 **d_term = NULL;
     static float64 **d_term_ci = NULL;
 
-    gauden_dev_t *dev_gau;
-    
     /* caller must ensure that there is some non-zero amount
        of work to be done here */
     assert(n_obs > 0);
@@ -369,8 +368,6 @@ viterbi_update(float64 *log_forw_prob,
     /* Run forward algorithm, which has embedded Viterbi. */
     if (fwd_timer)
 	timing_start(fwd_timer);
-		  
-    dev_gau = gauden_dev_copy(block_size, feature, n_obs, inv, state_seq, n_state);
 
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
@@ -768,6 +765,7 @@ mmi_viterbi_run(float64 *log_forw_prob,
 		state_t *state_seq,
 		uint32 n_state,
 		model_inventory_t *inv,
+		gauden_dev_t *dev_gau,
 		float64 a_beam)
 {
     float64 **red_active_alpha;
@@ -783,8 +781,6 @@ mmi_viterbi_run(float64 *log_forw_prob,
     float64 *loc_scale;
     float64 **loc_dscale;
     uint32 n_red = ceil(n_obs / (float64)block_size);
-
-    gauden_dev_t *dev_gau;
 
     uint32 *active_cb;
     uint32 i;
@@ -804,8 +800,6 @@ mmi_viterbi_run(float64 *log_forw_prob,
     forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
 
     /* Run forward algorithm, which has embedded Viterbi. */
-		  
-    dev_gau = gauden_dev_copy(block_size, feature, n_obs, inv, state_seq, n_state);
     
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 1);
@@ -845,8 +839,6 @@ mmi_viterbi_run(float64 *log_forw_prob,
     forward_clear_arrays(loc_active_alpha, loc_active_astate, loc_bp, loc_dscale, (n_obs - 1) % block_size + 1);
     
 all_done:
-    gauden_dev_free(dev_gau);
-
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
 
     forward_free_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale);
@@ -867,6 +859,7 @@ mmi_viterbi_update(vector_t **feature,
 		   state_t *state_seq,
 		   uint32 n_state,
 		   model_inventory_t *inv,
+		   gauden_dev_t *dev_gau,
 		   float64 a_beam,
 		   int32 mean_reest,
 		   int32 var_reest,
@@ -911,8 +904,6 @@ mmi_viterbi_update(vector_t **feature,
     static float64 **d_term = NULL;
     static float64 **d_term_ci = NULL;
     
-    gauden_dev_t *dev_gau;
-
     /* caller must ensure that there is some non-zero amount
        of work to be done here */
     assert(n_obs > 0);
@@ -938,8 +929,6 @@ mmi_viterbi_update(vector_t **feature,
 
     forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
     forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
-
-    dev_gau = gauden_dev_copy(block_size, feature, n_obs, inv, state_seq, n_state);
 
     /* Run forward algorithm, which has embedded Viterbi. */
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
@@ -1164,7 +1153,6 @@ mmi_viterbi_update(vector_t **feature,
 		 FALSE);
 
  all_done:
-    gauden_dev_free(dev_gau);
 
     forward_clear_arrays(red_active_alpha, red_active_astate, red_bp, red_dscale, n_red);
 
