@@ -121,6 +121,8 @@ public class AlignerSearchManager extends TokenSearchManager {
 	protected TreeSet<Float> spotterTimes = new TreeSet<Float>();
 	private float sampleRate = 1.0f;
 	private float timeThreshold = 1.0f;
+	private int logCounter = 1;
+	private Runtime runtime = Runtime.getRuntime();
 
 	// ------------------------------------
 	// monitoring data
@@ -185,7 +187,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 		this.wantEntryPruning = wantEntryPruning;
 		this.logRelativeWordBeamWidth = logMath
 				.linearToLog(relativeWordBeamWidth);
-		this.keepAllTokens = true;
+		this.keepAllTokens = false;
 		this.phrase = null;
 		this.phraseWordList = new LinkedList<String>();
 	}
@@ -331,6 +333,12 @@ public class AlignerSearchManager extends TokenSearchManager {
 		boolean more = scoreTokens(); // score emitting tokens
 		phraseDetected = false;
 		if (more) {
+			/*
+			if(logCounter % 100 == 0) {
+				System.out.println("Total Memory: " + runtime.totalMemory()/(1024 * 1024) + "MB" +
+						" Free Memory: " +  runtime.freeMemory()/(1024 * 1024) + "MB");
+			}
+			*/	
 			pruneBranches(); // eliminate poor branches
 			if(phraseDetected) {
 				logger.info("Active List Pruned: number of active Token: " + activeList.size());
@@ -344,6 +352,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 				growBranches(); // extend remaining branches
 				logger.info("---------- Grow Branches Step : Over ----------");
 			}
+			logCounter ++;
 		}
 		return !more;
 	}
@@ -502,6 +511,20 @@ public class AlignerSearchManager extends TokenSearchManager {
 		if (token.isFinal()) {
 			resultList.add(token);
 		}
+		
+		 // if this is a non-emitting token and we've already 
+        // visited the same state during this frame, then we
+        // are in a grammar loop, so we don't continue to expand.
+        // This check only works properly if we have kept all of the
+        // tokens (instead of skipping the non-word tokens).
+        // Note that certain linguists will never generate grammar loops
+        // (lextree linguist for example). For these cases, it is perfectly
+        // fine to disable this check by setting keepAllTokens to false
+
+        if (!token.isEmitting() && (keepAllTokens && isVisited(token))) {
+            return;
+        }
+		
 		if (token.getScore() < threshold) {
 			return;
 		}

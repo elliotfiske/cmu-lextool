@@ -215,6 +215,12 @@ public class AlignerGrammar extends Grammar {
 		}
 		logger.info("Grammar Generated");
 		//initialNode.dumpDot("./graph.dot");
+		/*
+		System.out.println("------ Grammar Graph Generated ------");
+		Runtime runtime = Runtime.getRuntime();
+		System.out.println("Total Memory: " + runtime.totalMemory()/(1024*1024) + "MB" +" Free Memory: "+ 
+				runtime.freeMemory()/(1024*1024) + "MB");
+		*/
 		return initialNode;
 	}
 
