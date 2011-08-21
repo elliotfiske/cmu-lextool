@@ -552,13 +552,19 @@ gauden_precompute_kernel_log_full_den(
             uint32 cur_mean_var = (mgau * n_feat + j) * n_density + i;
 
             for (l = 0; l < veclen_j; l++) {
+//                uint32 mean_var_idx = ((l * n_density + i) * n_feat + j) * n_mgau + mgau;
+//                uint32 mean_var_idx = ((mgau * n_feat + j) * n_density + i) * maxveclen + l;
 /*                    diff = feature[t][j][l] - mean[mgau][j][i][l];*/
 //                diff = feature_buf[(feature_idx[(t + t_offset) * n_feat + j] - feature_base_idx) + l]
                 diff = feature_buf[((l * n_feat) + j) * feature_n_obs + (t + t_offset)]
                     - mean_buf[(mean_idx[cur_mean_var] - mean_base_idx) + l];
+//                    - mean_buf[((mgau * n_feat + j) * n_density + i) * maxveclen + l];
+//                    - mean_buf[mean_var_idx];
 
 /*                    d += var[mgau][j][i][l] * diff * diff;*/
                 d += var_buf[(var_idx[cur_mean_var] - var_base_idx) + l]
+//                d += var_buf[((mgau * n_feat + j) * n_density + i) * maxveclen + l]
+//                d += var_buf[mean_var_idx]
                     * diff * diff;
             }
             

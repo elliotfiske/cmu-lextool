@@ -8,7 +8,7 @@
 
 
 /* measure time spent in gauden precomputation */
-/*#define STOPWATCH*/
+//#define STOPWATCH
 
 /* gauden precomputation on device */
 #define GAUDEN_DEV

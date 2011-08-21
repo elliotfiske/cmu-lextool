@@ -72,6 +72,13 @@ gauden_dev_t *gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_ob
     g->n_top = inv->gauden->n_top;
     g->n_cb_inverse = inv->n_cb_inverse;
     g->n_active_state = 0;  /* computed later */
+    g->maxveclen = 0;
+    int i, j, k;
+    for (i = 0; i < g->n_feat; i++) {
+        if (inv->gauden->veclen[i] > g->maxveclen) {
+            g->maxveclen = inv->gauden->veclen[i];
+        }
+    }
     
     cudaMalloc(&g->d_veclen, g->n_feat * sizeof(uint32));
     cudaMalloc(&g->d_norm, g->n_mgau * g->n_feat * g->n_density * sizeof(float32));
@@ -83,21 +90,15 @@ gauden_dev_t *gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_ob
     g->d_mean_buflen = inv->gauden->mean[0][0][g->n_mgau * g->n_feat * g->n_density - 1] - inv->gauden->mean[0][0][0] + inv->gauden->veclen[g->n_feat - 1];
     cudaMalloc(&g->d_mean_idx, g->n_mgau * g->n_feat * g->n_density * sizeof(float *));
     cudaMalloc(&g->d_mean_buf, g->d_mean_buflen * sizeof(float));
+//    cudaMalloc(&g->d_mean_buf, g->n_mgau * g->n_feat * g->n_density * g->maxveclen * sizeof(float));
 
     g->d_var_buflen = inv->gauden->var[0][0][g->n_mgau * g->n_feat * g->n_density - 1] - inv->gauden->var[0][0][0] + inv->gauden->veclen[g->n_feat - 1];
     cudaMalloc(&g->d_var_idx, g->n_mgau * g->n_feat * g->n_density * sizeof(float *));
     cudaMalloc(&g->d_var_buf, g->d_var_buflen * sizeof(float));
+//    cudaMalloc(&g->d_var_buf, g->n_mgau * g->n_feat * g->n_density * g->maxveclen * sizeof(float));
 
     CUDA_SAFE_CALL(cudaMalloc(&g->d_den, (block_size + 1) * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(float64)));
     CUDA_SAFE_CALL(cudaMalloc(&g->d_den_idx, (block_size + 1) * g->n_cb_inverse * g->n_feat * g->n_top * sizeof(uint32)));
-
-    g->maxveclen = 0;
-    int i, j, k;
-    for (i = 0; i < g->n_feat; i++) {
-        if (inv->gauden->veclen[i] > g->maxveclen) {
-            g->maxveclen = inv->gauden->veclen[i];
-        }
-    }
 
     g->d_feature_buflen = feature[0][n_obs * g->n_feat - 1] - feature[0][0] + inv->gauden->veclen[g->n_feat - 1];
     CUDA_SAFE_CALL(cudaMalloc(&g->d_feature_idx, n_obs * g->n_feat * sizeof(float *)));
@@ -121,12 +122,14 @@ gauden_dev_t *gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_ob
         }
     }
     g->d_feature_n_obs = n_obs;
-//    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_idx, feature_tr[0], n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
+//    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_idx, feature[0], n_obs * g->n_feat * sizeof(float *), cudaMemcpyHostToDevice));
+//    CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_buf, feature[0][0], g->d_feature_buflen * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(g->d_feature_buf, feature_tr[0][0], g->maxveclen * g->n_feat * n_obs * sizeof(float), cudaMemcpyHostToDevice));
     ckd_free_3d((void ***)feature_tr);
     
     /* veclen, norm, den, den_idx */
     cudaMemcpy(g->d_veclen, inv->gauden->veclen, g->n_feat * sizeof(uint32), cudaMemcpyHostToDevice);
+
     cudaMemcpy(g->d_norm, inv->gauden->norm[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float32), cudaMemcpyHostToDevice);
     
     /* state_seq -> d_cb, d_l_cb, d_mixw */
@@ -145,10 +148,39 @@ gauden_dev_t *gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_ob
     ckd_free((void *)buf);
     
     /* mean, var, feature */
-    cudaMemcpy(g->d_mean_idx, inv->gauden->mean[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
-    cudaMemcpy(g->d_mean_buf, inv->gauden->mean[0][0][0], g->d_mean_buflen * sizeof(float), cudaMemcpyHostToDevice);
+/*    uint32 l;
+    vector_t ***mean_tr = (vector_t ***)ckd_calloc_4d(g->n_mgau, g->n_feat, g->n_density, g->maxveclen, sizeof(float));
+    for (i = 0; i < g->n_mgau; i++) {
+        for (j = 0; j < g->n_feat; j++) {
+            for (k = 0; k < g->n_density; k++) {
+                for (l = 0; l < inv->gauden->veclen[j]; l++) {
+                    mean_tr[i][j][k][l] = inv->gauden->mean[i][j][k][l];
+                }
+            }
+        }
+    }*/
+    CUDA_SAFE_CALL(cudaMemcpy(g->d_mean_idx, inv->gauden->mean[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(g->d_mean_buf, inv->gauden->mean[0][0][0], g->d_mean_buflen * sizeof(float), cudaMemcpyHostToDevice));
+//    CUDA_SAFE_CALL(cudaMemcpy(g->d_mean_buf, mean_tr[0][0][0], g->n_mgau * g->n_feat * g->n_density * g->maxveclen * sizeof(float), cudaMemcpyHostToDevice));
+//    ckd_free_4d((void ****)mean_tr);
+
+/*    vector_t ***var_tr = (vector_t ***)ckd_calloc_4d(g->n_mgau, g->n_feat, g->n_density, g->maxveclen, sizeof(float));
+    for (i = 0; i < g->n_mgau; i++) {
+        for (j = 0; j < g->n_feat; j++) {
+            for (k = 0; k < g->n_density; k++) {
+                for (l = 0; l < inv->gauden->veclen[j]; l++) {
+                    var_tr[i][j][k][l] = inv->gauden->var[i][j][k][l];
+                }
+            }
+        }
+    }*/
     cudaMemcpy(g->d_var_idx, inv->gauden->var[0][0], g->n_mgau * g->n_feat * g->n_density * sizeof(float *), cudaMemcpyHostToDevice);
     cudaMemcpy(g->d_var_buf, inv->gauden->var[0][0][0], g->d_var_buflen * sizeof(float), cudaMemcpyHostToDevice);
+//    cudaMemcpy(g->d_var_buf, var_tr[0][0][0], g->n_mgau * g->n_feat * g->n_density * g->maxveclen * sizeof(float), cudaMemcpyHostToDevice);
+//    ckd_free_4d((void ****)var_tr);
+    
+    E_INFO("MICHAL: n_feat=%u n_mgau=%u n_density=%u n_top=%u n_cb_inverse=%u n_active_state=%u maxveclen=%u\n",
+            g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_active_state, g->maxveclen);
 
     return g;
 }
