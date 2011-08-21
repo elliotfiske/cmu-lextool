@@ -1478,10 +1478,10 @@ gauden_mixture(float64 **den,
 	kk = 0;
  	while (kk < g->n_top) {
 	    uint32 k;
-/*	    k = den_idx[j][kk];
-	    oprob += w[j][k] * den[j][kk];*/
-	    k = den_idx[0][j * g->n_feat + kk];
-	    oprob += w[0][j * g->n_feat + k] * den[0][j * g->n_feat + kk];
+	    k = den_idx[j][kk];
+	    oprob += w[j][k] * den[j][kk];
+/*	    k = den_idx[0][j * g->n_feat + kk];
+	    oprob += w[0][j * g->n_feat + k] * den[0][j * g->n_feat + kk];*/
 	    ++kk;
 	}
 
