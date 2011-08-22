@@ -64,6 +64,9 @@ extern "C" {
 uint32 *
 backtrace(state_t *state, uint32 fs_id, uint32 *n_vit_sseq);
 
+/*
+ * Forward-backward arrays allocation and freeing.
+ */
 void
 forward_init_arrays(
     float64 ***active_alpha,
@@ -91,6 +94,10 @@ forward_clear_arrays(
     float64 **dscale,
     uint32 n_obs);
 
+
+/*
+ * Computes complete alpha matrix.
+ */
 int32
 forward(float64 **active_alpha,
     uint32 **active_astate,
@@ -108,6 +115,9 @@ forward(float64 **active_alpha,
     s3phseg_t *phseg,
     uint32 mmi_train);
 
+/*
+ * Recomputes a segment of alpha-matrix given a time frame and reduced alpha matrix.
+ */
 int32
 forward_recompute(float64 **loc_active_alpha,
     uint32 **loc_active_astate,
@@ -133,6 +143,9 @@ forward_recompute(float64 **loc_active_alpha,
     s3phseg_t *phseg,
     uint32 mmi_train);
 
+/*
+ * Reduced forward algorithm - computes reduced alpha-matrix.
+ */
 int32
 forward_reduced(float64 **active_alpha,
     uint32 **active_astate,
@@ -151,6 +164,9 @@ forward_reduced(float64 **active_alpha,
     s3phseg_t *phseg,
     uint32 mmi_train);
 
+/*
+ * Computes a segment of alpha-matrix given a checkpoint (values for the time frame [0]).
+ */
 int32
 forward_local(float64 **active_alpha,
     uint32 **active_astate,
@@ -168,6 +184,14 @@ forward_local(float64 **active_alpha,
     s3phseg_t *phseg,
     uint32 mmi_train,
     uint32 t_offset);
+
+
+/*
+ * Precomputes gaussian densities for all times and states.
+ */
+void gauden_precompute(float64 ****den, uint32 ****den_idx, vector_t **feature,
+    model_inventory_t *inv, gauden_dev_t *g, state_t *state_seq, uint32 n_state, uint32 n_obs, uint32 t_offset);
+
 
 void
 forward_set_viterbi(int state);

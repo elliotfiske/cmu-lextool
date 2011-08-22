@@ -1,4 +1,7 @@
 
+/*
+ * CUDA device related structures and methods for Baum-Welch algorithm.
+ */
 #ifndef DEVICE_ALLOC_H
 #define DEVICE_ALLOC_H
 
@@ -8,16 +11,16 @@
 
 
 /* measure time spent in gauden precomputation */
-//#define STOPWATCH
+/*#define STOPWATCH*/
 
 /* gauden precomputation on device */
 #define GAUDEN_DEV
 
 /* gauden precomputation on host */
-//#define GAUDEN_HOST
+/*#define GAUDEN_HOST*/
 
 /* output precomputed densities */
-//#define DENSITIES_DEBUG
+/*#define DENSITIES_DEBUG*/
 
 
 #ifdef __cplusplus
@@ -56,7 +59,6 @@ typedef struct gauden_dev_s {
 
     uint32 *d_cb;
     uint32 *d_l_cb;
-/*    uint32 *d_mixw;*/
     uint32 *d_active_states;
     
 } gauden_dev_t;
@@ -68,13 +70,14 @@ uint32 stopTimer(struct timeval *timer);
 #endif
 
 
+/* Device multidimensional matrix allocation and dealocation. */
 void
 gauden_dev_free(gauden_dev_t *g);
 
 gauden_dev_t *
 gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_obs, model_inventory_t *inv, state_t *state_seq, uint32 n_state);
 
-/*
+
 void *
 device_alloc_3d(size_t d1, size_t d2, size_t d3, size_t elemsize);
 
@@ -86,7 +89,7 @@ device_free_3d(void *inptr);
 
 void
 device_free_4d(void *inptr);
-*/
+
 
 #ifdef __cplusplus
 }

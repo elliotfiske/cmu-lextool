@@ -190,6 +190,7 @@ baum_welch_update(float64 *log_forw_prob,
     if (fwd_timer)
 	timing_start(fwd_timer);
 
+    /* Initialization of reduced and local alpha-matrices. */
     forward_init_arrays(&red_active_alpha, &red_active_astate, &red_n_active_astate, &red_bp, &red_scale, &red_dscale, n_red);
     forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
     
@@ -198,6 +199,7 @@ baum_welch_update(float64 *log_forw_prob,
  *   E_INFO("Before Forward search\n");
  */
     
+    /* Reduced forward computation. */
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state, n_state, inv, dev_gau, a_beam, phseg, 0);
 

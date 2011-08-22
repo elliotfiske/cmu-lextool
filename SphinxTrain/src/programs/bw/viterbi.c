@@ -89,22 +89,7 @@ write_phseg(const char *filename,
     uint32 n_defn;
     float64 ascr;
     
-/*    float64 **loc_active_alpha;
-    uint32 **loc_active_astate;
-    uint32 *loc_n_active_astate;
-    uint32 **loc_bp = NULL;
-    float64 *loc_scale;
-    float64 **loc_dscale;*/
-
     /* Find the non-emitting ending state */
-/*    forward_recompute(
-        loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
-        red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
-        feature, n_red - 1, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
-    for (q = 0; q < loc_n_active_astate[(n_obs - 1) % block_size]; ++q) {
-	if (loc_active_astate[(n_obs - 1) % block_size][q] == n_state-1)
-	    break;
-    }*/
     for (q = 0; q < n_active_astate[n_obs - 1]; ++q) {
 	if (active_astate[n_obs - 1][q] == n_state-1)
 	    break;
@@ -369,6 +354,7 @@ viterbi_update(float64 *log_forw_prob,
     if (fwd_timer)
 	timing_start(fwd_timer);
 
+    /* Reduced forward computation. */
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, phseg, 0);
 		  
@@ -469,7 +455,7 @@ viterbi_update(float64 *log_forw_prob,
     }
 
     /* Okay now run through the backtrace and accumulate counts. */
-    /* Find the non-emitting ending state */
+    /* Find the non-emitting ending state. Recompute next segment of alpha-matrix when needed. */
     forward_recompute(
         loc_active_alpha, loc_active_astate, loc_n_active_astate, loc_bp, loc_scale, loc_dscale,
         red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
@@ -690,7 +676,8 @@ viterbi_update(float64 *log_forw_prob,
     }
 
     /* If no error was found, add the resulting utterance reestimation
-     * accumulators to the global reestimation accumulators */
+     * accumulators to the global reestimation accumulators.
+     * Recompute segments of alpha when needed. */
     if (rstu_timer)
 	timing_start(rstu_timer);
     accum_global(inv, state_seq, n_state,
@@ -801,6 +788,7 @@ mmi_viterbi_run(float64 *log_forw_prob,
 
     /* Run forward algorithm, which has embedded Viterbi. */
     
+    /* Reduced forward computation. */
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 1);
 
@@ -931,6 +919,8 @@ mmi_viterbi_update(vector_t **feature,
     forward_init_arrays(&loc_active_alpha, &loc_active_astate, &loc_n_active_astate, &loc_bp, &loc_scale, &loc_dscale, block_size);
 
     /* Run forward algorithm, which has embedded Viterbi. */
+
+    /* Reduced forward computation. */
     ret = forward_reduced(red_active_alpha, red_active_astate, red_n_active_astate, red_bp, red_scale, red_dscale,
 		  feature, block_size, n_obs, state_seq, n_state, inv, dev_gau, a_beam, NULL, 1);
     
