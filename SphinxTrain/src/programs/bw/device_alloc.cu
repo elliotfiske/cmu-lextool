@@ -179,8 +179,8 @@ gauden_dev_t *gauden_dev_copy(uint32 block_size, vector_t **feature, uint32 n_ob
 //    cudaMemcpy(g->d_var_buf, var_tr[0][0][0], g->n_mgau * g->n_feat * g->n_density * g->maxveclen * sizeof(float), cudaMemcpyHostToDevice);
 //    ckd_free_4d((void ****)var_tr);
     
-    E_INFO("MICHAL: n_feat=%u n_mgau=%u n_density=%u n_top=%u n_cb_inverse=%u n_active_state=%u maxveclen=%u\n",
-            g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_active_state, g->maxveclen);
+//    E_INFO("MICHAL: n_feat=%u n_mgau=%u n_density=%u n_top=%u n_cb_inverse=%u n_active_state=%u maxveclen=%u\n",
+//            g->n_feat, g->n_mgau, g->n_density, g->n_top, g->n_cb_inverse, g->n_active_state, g->maxveclen);
 
     return g;
 }
