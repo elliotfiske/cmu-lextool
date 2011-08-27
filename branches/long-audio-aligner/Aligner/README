@@ -37,16 +37,9 @@ ii) Run the code using ANT build by issuing command:
 
 UNDERSTANDING THE RESULT OF ALIGNMENT
 -------------------------------------
-Result of alignment is displayed on standard output as well as corresponding file* in ./TimedOutput/
+Result of alignment is displayed on standard output as well as corresponding file* in ./timedOutput/
 Result will contain of a sequence of words, each followed by it's start and end time in the utterance 
 as detected by Long Audio aligner.
 Eg. Sphinx(1.01,1.37) :- Word detected  : Sphinx
 			 Start Time	: 1.01 sec
 			 End Time	: 1.37 sec
-
-POINTS OF CAUTION TO USER
--------------------------
-
- * Make sure your audio file and acoustic model are compatible before actual alignment.
- * Text and audio can differ by small amounts (small is relative, I leave it to user to realise 
-   that by repeated usage).
