@@ -96,7 +96,7 @@ public class LongAudioAligner {
 			URL URLToAudioFile = new URL("file:" + pathToAudioFile);
 			System.out.println("Path to Text File: " + pathToTextFile
 					+ "\nPath To Audio File: " + pathToAudioFile);
-			String outputFolder = "./TimedOutput/";
+			String outputFolder = "./timedOutput/";
 			
 			currTest(recognizer, aflatLinguist, grammar, dataSource, input,
 					URLToAudioFile, outputFolder , outputFileIndex);
