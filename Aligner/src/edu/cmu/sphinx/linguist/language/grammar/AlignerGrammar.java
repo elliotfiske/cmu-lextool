@@ -41,7 +41,7 @@ public class AlignerGrammar extends Grammar {
 	private double selfLoopProbability;
 	private double backwardTransitionProbability;
 	private double forwardJumpProbability;
-	private int numAllowedWordJumps;
+	private int numAllowedWordJumps = 2;
 
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();
@@ -90,17 +90,13 @@ public class AlignerGrammar extends Grammar {
 		StringTokenizer st = new StringTokenizer(grammarType, "|");
 		while (st.hasMoreTokens()) {
 			String type = st.nextToken();
-			if (type.compareToIgnoreCase("modelInsertions") == 0) {
-
-				// allows for word insertions
-				modelInsertions = true;
-			} else if (type.compareToIgnoreCase("modelRepetitions") == 0) {
+			if (type.compareToIgnoreCase("MODEL_REPETITIONS") == 0) {
 
 				// allows for a word to repeated a number of times with certain
 				// penality associated with it
 
 				modelRepetitions = true;
-			} else if (type.compareTo("modelDeletions") == 0) {
+			} else if (type.compareToIgnoreCase("MODEL_DELETIONS") == 0) {
 
 				// grammar allows for forward jumps with certain penalty
 				// associated with it
@@ -131,7 +127,7 @@ public class AlignerGrammar extends Grammar {
 		}
 
 		if (modelDeletions) {
-			forwardJumpProbability = 1.0; // penality for forward skips
+			forwardJumpProbability = 0.0000001; // penality for forward skips
 		} else {
 			forwardJumpProbability = 0.0;
 		}
@@ -141,10 +137,6 @@ public class AlignerGrammar extends Grammar {
 			backwardTransitionProbability = 0.000001;
 		} else {
 			backwardTransitionProbability = 0.0;
-		}
-		if (modelInsertions) {
-			// TODO CIPL
-
 		}
 
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);

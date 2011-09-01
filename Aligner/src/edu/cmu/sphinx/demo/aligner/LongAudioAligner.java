@@ -66,7 +66,7 @@ public class LongAudioAligner {
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		AFlatLinguist aflatLinguist = (AFlatLinguist) cm
-				.lookup("AflatLinguist");
+				.lookup("aflatLinguist");
 		AlignerGrammar grammar = (AlignerGrammar) cm.lookup("AlignerGrammar");
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
@@ -116,7 +116,7 @@ public class LongAudioAligner {
 		StringCustomise sc = new StringCustomise();
 		input = sc.customise(input);
 		grammar.setText(input);
-		grammar.setGrammarType(""); // FORCE ALIGNED GRAMMAR : Default
+		grammar.setGrammarType("Model_Deletions"); // FORCE ALIGNED GRAMMAR : Default
 
 		recognizer.allocate();
 		Result result;
