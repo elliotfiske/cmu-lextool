@@ -11,15 +11,14 @@
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-3"/>
-	<property name="phoneInsertionProbability" value="1E-80"/>	
+	<property name="outOfGrammarProbability" value="1E-19"/>
+	<property name="phoneInsertionProbability" value="1E-100"/>	
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
 		<propertylist name="monitors">
             <item>accuracyTracker </item>
             <item>speedTracker </item>
-            <item>memoryTracker </item>
         </propertylist>
 	</component>
 
@@ -29,7 +28,7 @@
 
 	<component name="searchManager" type="edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager">
 		<property name="logMath" value="logMath" />
-		<property name="linguist" value="AflatLinguist" />
+		<property name="linguist" value="aflatLinguist" />
 		<property name="pruner" value="trivialPruner" />
 		<property name="scorer" value="threadedScorer" />
 		<property name="activeListFactory" value="activeList" />
@@ -48,20 +47,20 @@
 		<property name="frontend" value="${frontend}" />
 	</component>
 
-	<component name="AflatLinguist" type="edu.cmu.sphinx.linguist.aflat.AFlatLinguist">
+	<component name="aflatLinguist" type="edu.cmu.sphinx.linguist.aflat.AFlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="AlignerGrammar" />
 		<property name="acousticModel" value="wsj" />		
 		<property name="wordInsertionProbability" value="${wordInsertionProbability}" />
 		<property name="languageWeight" value="${languageWeight}" />
 		<property name="unitManager" value="unitManager" />	
-		<!-- additions start-->
+		
 		<property name="addOutOfGrammarBranch" value="true"/>
 		<property name="phoneLoopAcousticModel" value="WSJ"/>
 		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/>
 		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}"/>
 		<property name="dumpGStates" value ="true"/>
-		<!-- additions end --> 	
+		 	
 	</component>
 
 	<component name="AlignerGrammar" type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">

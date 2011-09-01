@@ -701,7 +701,11 @@ public class AFlatLinguist implements Linguist, Configurable {
 					Word word = node.getWord();
 					Pronunciation[] pronunciations = word.getPronunciations();
 					pronunciations = filter(pronunciations, nextBaseID);
-					SearchStateArc[] nextArcs = new SearchStateArc[pronunciations.length + 1];
+					SearchStateArc[] nextArcs;
+					if(addOutOfGrammarBranch)
+						 nextArcs= new SearchStateArc[pronunciations.length + 1];
+					else
+						nextArcs = new SearchStateArc[pronunciations.length];
 
 					for (int i = 0; i < pronunciations.length; i++) {
 						nextArcs[i] = new PronunciationState(this,
@@ -709,10 +713,12 @@ public class AFlatLinguist implements Linguist, Configurable {
 					}
 					SearchStateArc[] returnState = new SearchStateArc[1];
 					returnState[0] = this;
-					PhoneLoop pl = new PhoneLoop(acousticModel,
-							logOutOfGrammarBranchProbability,
-							logPhoneInsertionProbability, returnState);
-					nextArcs[pronunciations.length] = pl.getPhoneLoop();
+					if(addOutOfGrammarBranch){
+						PhoneLoop pl = new PhoneLoop(acousticModel,
+								logOutOfGrammarBranchProbability,
+								logPhoneInsertionProbability, returnState);
+						nextArcs[pronunciations.length] = pl.getPhoneLoop();
+					}
 					arcs = nextArcs;
 				}
 				cacheSuccessors(arcs);
