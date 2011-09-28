@@ -13,6 +13,7 @@ import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
 import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.StringCustomise;
+import edu.cmu.sphinx.util.StringErrorGenerator;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 public class Aligner implements AudioAlignerInterface{
@@ -26,28 +27,34 @@ public class Aligner implements AudioAlignerInterface{
 	private Recognizer recognizer;
 	private AlignerGrammar grammar;
 	
-	
 	private boolean optimize;	// by default set this false
 	
 	private String config;
 	private String audioFile;
 	private String textFile;
+	private String txtInTranscription;
 	
+	public Aligner(String config, String audioFile, String textFile)
+			throws IOException {
+		this(config, audioFile, textFile, "recognizer", "AlignerGrammar",
+				"audioFileDataSource");
+	}
 	public Aligner(String config, String audioFile, String textFile,
-			String recognizerName, String grammarName, String audioDataSourceName) {
+			String recognizerName, String grammarName,
+			String audioDataSourceName) throws IOException {
 		this(config, audioFile, textFile, recognizerName, grammarName, "", audioDataSourceName);
 	}	
 	
 	public Aligner(String config, String audioFile, String textFile,
 			String recognizerName, String grammarName, String grammarType,
-			String audioDataSourceName) {
+			String audioDataSourceName) throws IOException {
 		this(config, audioFile, textFile, recognizerName, grammarName, grammarType,
-				audioDataSourceName, false);
+				audioDataSourceName, true);
 	}	
 	
 	public Aligner(String config, String audioFile,
-			String textFile, String recognizerName, String grammarName,
-			String grammarType, String audioDataSourceName, boolean optimize ){
+			String textFile, String recognizerName, String grammarName,String grammarType,
+			String audioDataSourceName, boolean optimize) throws IOException {
 		this.config = config;
 		this.audioFile = audioFile;
 		this.textFile = textFile;
@@ -56,6 +63,7 @@ public class Aligner implements AudioAlignerInterface{
 		this.PROP_GRAMMAR_TYPE = grammarType;
 		this.PROP_AUDIO_DATA_SOURCE = audioDataSourceName;
 		this.optimize = optimize;
+		txtInTranscription = readTranscription();
 	}
 	
 	
@@ -66,9 +74,11 @@ public class Aligner implements AudioAlignerInterface{
 	}
 
 	@Override
-	public boolean setText(String path) {
-		
-		return false;
+	public boolean setText(String text) {
+		recognizer.deallocate();
+		grammar.setText(text);
+		recognizer.allocate();
+		return true;
 	}
 
 	@Override
@@ -91,8 +101,7 @@ public class Aligner implements AudioAlignerInterface{
 		grammar = (AlignerGrammar) cm.lookup(PROP_GRAMMAR);
 		AudioFileDataSource datasource = (AudioFileDataSource) 
 				cm.lookup(PROP_AUDIO_DATA_SOURCE);
-		datasource.setAudioFile(new File(audioFile), null);
-		String txtInTranscription = readTranscription();
+		datasource.setAudioFile(new File(audioFile), null);		
 		grammar.setText(txtInTranscription);
 		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
 		recognizer.allocate();
@@ -117,7 +126,14 @@ public class Aligner implements AudioAlignerInterface{
 		timedResult = result.getTimedBestResult(false, true); // Base result
 		return timedResult;
 	}
-
+	
+	public void generateError(float wer){
+		StringErrorGenerator seg = new StringErrorGenerator(wer, txtInTranscription);
+	}
+	
+	public void generateError(float ir, float dr, float sr){
+		
+	}
 
 	@Override
 	public boolean newGrammarType(String grammarType) {
