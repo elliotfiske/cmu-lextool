@@ -15,25 +15,24 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.StringTokenizer;
 
+import edu.cmu.sphinx.util.AlignerTestCase;
+
 public class AlignerDemo {
 	public static void main(String Args[]) throws Exception {
 		BufferedReader batchReader = new BufferedReader(new FileReader(
 				"./resource/batchFile.txt"));
 		String currFileSet;
 		int lineNum = 1;
+		
 		while ((currFileSet = batchReader.readLine()) != null) {
 			StringTokenizer st = new StringTokenizer(currFileSet);
 			if (st.countTokens() != 2) {
-				throw new Exception("Error reading batch file :\""
-						+ currFileSet + " \" line[ " + lineNum + " ]");
+				throw new Exception("Error reading batch file at line #" + lineNum );
 			}
 			String textFile = st.nextToken();
 			String audioFile = st.nextToken();
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
-					textFile, "recognizer", "AlignerGrammar", "",
-					"audioFileDataSource", false);
-			System.out.println("Aligning audio at:" + audioFile
-					+ " with text at " + textFile);
+					textFile);
 			System.out.println(aligner.align());
 		}
 	}

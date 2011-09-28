@@ -35,22 +35,22 @@ public class StringErrorGenerator {
 	 * Divides the input word error rate equally into insertions, deletions and
 	 * substitution rates.
 	 */
-	public StringErrorGenerator(double wer, URL pathToWordFile) {
+	public StringErrorGenerator(double wer, String text) {
 		this.wer = wer;
 		this.ir = wer / 3;
 		this.dr = wer / 3;
 		this.sr = wer / 3;
-		this.pathToWordFile = pathToWordFile;
+		this.text = text;
 	}
 
 	// intialise un-equal error rates
 	public StringErrorGenerator(double ir, double dr, double sr,
-			URL pathToWordFile) {
+			String text) {
 		this.wer = ir + dr + sr;
 		this.ir = ir;
 		this.dr = dr;
 		this.sr = sr;
-		this.pathToWordFile = pathToWordFile;
+		this.text = text;
 	}
 
 	// set Text to be corrupted
@@ -69,16 +69,8 @@ public class StringErrorGenerator {
 			words = new LinkedList<Word>();
 			for (int i = 0; i < wordTokens.length; i++) {
 				if (wordTokens[i].compareTo("") != 0) {
-					//words.add(new Word(wordTokens[i]));
-					String textPart = wordTokens[i].
-										substring(0,wordTokens[i].indexOf("("));
-					String timedPart = wordTokens[i].
-										substring(wordTokens[i].indexOf("(") + 1,
-												wordTokens[i].indexOf(")"));
-					String startTime = timedPart.substring(0,timedPart.indexOf(","));
-					String endTime = timedPart.substring(timedPart.indexOf(",")+1);					
-					words.add(new Word(textPart, Double.valueOf(startTime),
-							Double.valueOf(endTime),0.1));
+					//words.add(new Word(wordTokens[i]));			
+					words.add(new Word(wordTokens[i], 0.0, 0.0, 0.0));
 				}
 			}
 			numWords = words.size();
