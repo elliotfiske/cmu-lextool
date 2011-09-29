@@ -27,7 +27,7 @@ public interface AudioAlignerInterface {
 	public boolean newGrammarType(String grammarType);
 	
 	// optimize values for aligner configuration
-	void optimize() ;
+	public void optimize() ;
 	
 	// align audio and return alignment result
 	public String align() throws Exception;
