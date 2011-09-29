@@ -93,20 +93,28 @@ public class Aligner implements AudioAlignerInterface{
 		grammar.setText(text);
 		return true;
 	}
-
+	
+	
+	// Idea is to automate the process of selection and setting of 
+	// Global properties for alignment giving hands free experience 
+	// to first time users.
 	@Override
 	public void optimize() {
+				
+	}
+	
+	private void setGlobalProperties() {
 		cm.setGlobalProperty("absoluteBeamWidth", absoluteBeamWidth);
 		cm.setGlobalProperty("relativeBeamWidth", relativeBeamWidth);
 		cm.setGlobalProperty("outOfGrammarProbability", outOfGrammarProbability);
-		cm.setGlobalProperty("phoneInsertionProbability", phoneInsertionProbability);		
+		cm.setGlobalProperty("phoneInsertionProbability", phoneInsertionProbability);
 	}
-	
 	
 	@Override
 	public String align() throws Exception {
 		cm = new ConfigurationManager(config);
 		optimize();
+		setGlobalProperties();
 		recognizer = (Recognizer) cm.lookup(PROP_RECOGNIZER);
 		grammar = (AlignerGrammar) cm.lookup(PROP_GRAMMAR);
 		datasource = (AudioFileDataSource) 
@@ -118,10 +126,6 @@ public class Aligner implements AudioAlignerInterface{
 	
 	
 	private void allocate() throws IOException {
-		
-		if(recognizer.getState() != State.DEALLOCATED){
-			recognizer.deallocate();
-		}
 		datasource.setAudioFile(new URL("file:" + audioFile), null);
 		grammar.setText(txtInTranscription);
 		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
@@ -163,7 +167,6 @@ public class Aligner implements AudioAlignerInterface{
 	@Override
 	public boolean newGrammarType(String grammarType) {
 		PROP_GRAMMAR_TYPE = grammarType;
-		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
 		return true;		
 	}
 	
