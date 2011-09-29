@@ -24,7 +24,7 @@ public interface AudioAlignerInterface {
 	public boolean setText(String text) throws Exception;
 	
 	// Allow dynamic grammar-type modification
-	public boolean newGrammarType(String grammarType);
+	public boolean setGrammarType(String grammarType);
 	
 	// optimize values for aligner configuration
 	public void optimize() ;
@@ -39,5 +39,11 @@ public interface AudioAlignerInterface {
 	public void setOutOfGrammarProbability (String outOfGrammarProbability);
 	
 	public void setPhoneInsertionProbability (String phoneInsertionProbability);
+	
+	public void setForwardJumpProbability( double prob);
+	
+	public void setBackwardJumpProbability( double prob);
+	
+	public void setSelfLoopProbability( double prob);
 	
 }

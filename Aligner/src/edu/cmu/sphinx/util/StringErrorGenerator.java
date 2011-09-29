@@ -3,6 +3,7 @@ package edu.cmu.sphinx.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -25,17 +26,18 @@ public class StringErrorGenerator {
 
 	private int numWords = 0; // total number of words in the text
 	private LinkedList<Word> words;
-	private URL pathToWordFile;
+	private URL pathToWordFile ;
 
-	public StringErrorGenerator() {
-
+	public StringErrorGenerator() throws MalformedURLException {
+		this.pathToWordFile = new URL("file:./resource/models/wordFile.txt");
 	}
 
 	/*
 	 * Divides the input word error rate equally into insertions, deletions and
 	 * substitution rates.
 	 */
-	public StringErrorGenerator(double wer, String text) {
+	public StringErrorGenerator(double wer, String text) throws MalformedURLException {
+		this();
 		this.wer = wer;
 		this.ir = wer / 3;
 		this.dr = wer / 3;
@@ -45,14 +47,15 @@ public class StringErrorGenerator {
 
 	// intialise un-equal error rates
 	public StringErrorGenerator(double ir, double dr, double sr,
-			String text) {
+			String text) throws MalformedURLException {
+		this();
 		this.wer = ir + dr + sr;
 		this.ir = ir;
 		this.dr = dr;
 		this.sr = sr;
 		this.text = text;
 	}
-
+	
 	// set Text to be corrupted
 	public void setText(String text) {
 		this.text = text;

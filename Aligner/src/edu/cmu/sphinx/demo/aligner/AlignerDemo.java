@@ -41,6 +41,9 @@ public class AlignerDemo {
 			aligner.setRelativeBeamWidth("1E-200");
 			System.out.println(aligner.align());
 			
+			aligner.setGrammarType("MODEL_REPETITIONS");
+			System.out.println(aligner.align());
+			
 		}
 	}
 
