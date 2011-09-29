@@ -11,6 +11,7 @@ import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.aflat.AFlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
 import edu.cmu.sphinx.recognizer.Recognizer;
+import edu.cmu.sphinx.recognizer.Recognizer.State;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.StringErrorGenerator;
@@ -23,9 +24,15 @@ public class Aligner implements AudioAlignerInterface{
 	private String PROP_GRAMMAR_TYPE;
 	private String PROP_AUDIO_DATA_SOURCE;
 	
+	private String absoluteBeamWidth;
+	private String relativeBeamWidth;
+	private String outOfGrammarProbability;
+	private String phoneInsertionProbability;
+	
 	private ConfigurationManager cm;
 	private Recognizer recognizer;
 	private AlignerGrammar grammar;
+	private AudioFileDataSource datasource;
 	
 	private boolean optimize;	// by default set this false
 	
@@ -42,7 +49,8 @@ public class Aligner implements AudioAlignerInterface{
 	public Aligner(String config, String audioFile, String textFile,
 			String recognizerName, String grammarName,
 			String audioDataSourceName) throws IOException {
-		this(config, audioFile, textFile, recognizerName, grammarName, "", audioDataSourceName);
+		this(config, audioFile, textFile, recognizerName, grammarName, "",
+				audioDataSourceName);
 	}	
 	
 	public Aligner(String config, String audioFile, String textFile,
@@ -64,6 +72,13 @@ public class Aligner implements AudioAlignerInterface{
 		this.PROP_AUDIO_DATA_SOURCE = audioDataSourceName;
 		this.optimize = optimize;
 		txtInTranscription = readTranscription();
+		
+		
+		cm = new ConfigurationManager(config);
+		absoluteBeamWidth = cm.getGlobalProperty("absoluteBeamWidth");
+		relativeBeamWidth = cm.getGlobalProperty("relativeBeamWidth");
+		outOfGrammarProbability = cm.getGlobalProperty("outOfGrammarProbability");
+		phoneInsertionProbability = cm.getGlobalProperty("phoneInsertionProbability");
 	}
 	
 	
@@ -74,36 +89,43 @@ public class Aligner implements AudioAlignerInterface{
 	}
 
 	@Override
-	public boolean setText(String text) {
-		recognizer.deallocate();
+	public boolean setText(String text) throws Exception {
 		grammar.setText(text);
-		recognizer.allocate();
 		return true;
 	}
 
 	@Override
 	public void optimize() {
-		
+		cm.setGlobalProperty("absoluteBeamWidth", absoluteBeamWidth);
+		cm.setGlobalProperty("relativeBeamWidth", relativeBeamWidth);
+		cm.setGlobalProperty("outOfGrammarProbability", outOfGrammarProbability);
+		cm.setGlobalProperty("phoneInsertionProbability", phoneInsertionProbability);		
 	}
 	
 	
 	@Override
 	public String align() throws Exception {
+		cm = new ConfigurationManager(config);
 		optimize();
+		recognizer = (Recognizer) cm.lookup(PROP_RECOGNIZER);
+		grammar = (AlignerGrammar) cm.lookup(PROP_GRAMMAR);
+		datasource = (AudioFileDataSource) 
+				cm.lookup(PROP_AUDIO_DATA_SOURCE);
+		datasource.setAudioFile(new File(audioFile), null);
 		allocate();			
 		return start_align();
 	}
 	
 	
 	private void allocate() throws IOException {
-		cm = new ConfigurationManager(config);
-		recognizer = (Recognizer) cm.lookup(PROP_RECOGNIZER);
-		grammar = (AlignerGrammar) cm.lookup(PROP_GRAMMAR);
-		AudioFileDataSource datasource = (AudioFileDataSource) 
-				cm.lookup(PROP_AUDIO_DATA_SOURCE);
-		datasource.setAudioFile(new File(audioFile), null);		
+		
+		if(recognizer.getState() != State.DEALLOCATED){
+			recognizer.deallocate();
+		}
+		datasource.setAudioFile(new URL("file:" + audioFile), null);
 		grammar.setText(txtInTranscription);
 		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
+		
 		recognizer.allocate();
 	}
 
@@ -120,11 +142,14 @@ public class Aligner implements AudioAlignerInterface{
 	}
 
 	private String start_align() throws IOException{
-		Result result;
-		String timedResult;
-		result = recognizer.recognize();
-		timedResult = result.getTimedBestResult(false, true); // Base result
+		Result result = recognizer.recognize();
+		String timedResult = result.getTimedBestResult(false, true);
+		deallocate();
 		return timedResult;
+	}
+	
+	private void deallocate() {
+		recognizer.deallocate();		
 	}
 	
 	public void generateError(float wer){
@@ -138,9 +163,28 @@ public class Aligner implements AudioAlignerInterface{
 	@Override
 	public boolean newGrammarType(String grammarType) {
 		PROP_GRAMMAR_TYPE = grammarType;
-		recognizer.deallocate();
 		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
-		recognizer.allocate();
 		return true;		
+	}
+	
+	@Override
+	public void setAbsoluteBeamWidth(String absoluteBeamWidth) {
+		this.absoluteBeamWidth = absoluteBeamWidth;
+		
+	}
+	@Override
+	public void setRelativeBeamWidth(String relativeBeamWidth) {
+		this.relativeBeamWidth = relativeBeamWidth;
+		
+	}
+	@Override
+	public void setOutOfGrammarProbability(String outOfGrammarProbability) {
+		this.outOfGrammarProbability = outOfGrammarProbability;
+		
+	}
+	@Override
+	public void setPhoneInsertionProbability(String phoneInsertionProbability) {
+		this.phoneInsertionProbability = phoneInsertionProbability;
+		
 	}
 }

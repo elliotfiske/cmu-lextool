@@ -31,9 +31,16 @@ public class AlignerDemo {
 			}
 			String textFile = st.nextToken();
 			String audioFile = st.nextToken();
+			
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
 					textFile);
+			
+			// Simple to use API ;)
+			aligner.setOutOfGrammarProbability("1E-23");
+			aligner.setPhoneInsertionProbability("1E-150");
+			aligner.setRelativeBeamWidth("1E-200");
 			System.out.println(aligner.align());
+			
 		}
 	}
 

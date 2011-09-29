@@ -11,15 +11,15 @@
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-900"/>
-	<property name="phoneInsertionProbability" value="1E-100"/>	
+	<property name="outOfGrammarProbability" value="1E-19" />
+	<property name="phoneInsertionProbability" value="1E-100" />
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
 		<propertylist name="monitors">
-            <item>accuracyTracker </item>
-            <item>speedTracker </item>
-        </propertylist>
+			<item>accuracyTracker </item>
+			<item>speedTracker </item>
+		</propertylist>
 	</component>
 
 	<component name="decoder" type="edu.cmu.sphinx.decoder.Decoder">
@@ -50,26 +50,26 @@
 	<component name="aflatLinguist" type="edu.cmu.sphinx.linguist.aflat.AFlatLinguist">
 		<property name="logMath" value="logMath" />
 		<property name="grammar" value="AlignerGrammar" />
-		<property name="acousticModel" value="wsj" />		
+		<property name="acousticModel" value="wsj" />
 		<property name="wordInsertionProbability" value="${wordInsertionProbability}" />
 		<property name="languageWeight" value="${languageWeight}" />
-		<property name="unitManager" value="unitManager" />	
-		
-		<property name="addOutOfGrammarBranch" value="true"/>
-		<property name="phoneLoopAcousticModel" value="WSJ"/>
-		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}"/>
-		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}"/>
-		<property name="dumpGStates" value ="true"/>
-		 	
+		<property name="unitManager" value="unitManager" />
+
+		<property name="addOutOfGrammarBranch" value="true" />
+		<property name="phoneLoopAcousticModel" value="WSJ" />
+		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}" />
+		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}" />
+		<property name="dumpGStates" value="true" />
+
 	</component>
 
 	<component name="AlignerGrammar" type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
 		<property name="dictionary" value="dictionary" />
 		<property name="logMath" value="logMath" />
 		<property name="addSilenceWords" value="true" />
-		<property name="allowLoopsAndBackwardJumps" value="allowLoopsAndBackwardJumps"/>
-		<property name="selfLoopProbability" value="selfLoopProbability"/>
-		<property name="backwardTransitionProbability" value="backwardTransitionProbability"/>
+		<property name="allowLoopsAndBackwardJumps" value="allowLoopsAndBackwardJumps" />
+		<property name="selfLoopProbability" value="selfLoopProbability" />
+		<property name="backwardTransitionProbability" value="backwardTransitionProbability" />
 	</component>
 
 	<component name="dictionary" type="edu.cmu.sphinx.linguist.dictionary.AllWordDictionary">
@@ -106,17 +106,15 @@
 
 	<component name="UNITMANAGER" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" />
 
-	<component name="tidigits" 
-      type="edu.cmu.sphinx.model.acoustic.TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.Model">
-        <property name="loader" value="sphinx3Loader"/>
-        <property name="unitManager" value="unitManager"/>
-    </component>
+	<component name="tidigits" type="edu.cmu.sphinx.model.acoustic.TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.Model">
+		<property name="loader" value="sphinx3Loader" />
+		<property name="unitManager" value="unitManager" />
+	</component>
 
-    <component name="sphinx3Loader"
-               type="edu.cmu.sphinx.model.acoustic.TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.ModelLoader">
-        <property name="logMath" value="logMath"/>
-        <property name="unitManager" value="UNITMANAGER"/>
-    </component>
+	<component name="sphinx3Loader" type="edu.cmu.sphinx.model.acoustic.TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.ModelLoader">
+		<property name="logMath" value="logMath" />
+		<property name="unitManager" value="UNITMANAGER" />
+	</component>
 	<!-- additions end -->
 
 	<component name="epFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
@@ -165,29 +163,26 @@
 		<property name="useAddTable" value="true" />
 	</component>
 	<!-- ******************************************************* -->
-    <!--  monitors                                               -->
-    <!-- ******************************************************* -->
-    
-    <component name="accuracyTracker" 
-                type="edu.cmu.sphinx.instrumentation.BestPathAccuracyTracker">
-        <property name="recognizer" value="${recognizer}"/>
-        <property name="showAlignedResults" value="false"/>
-        <property name="showRawResults" value="false"/>
-    </component>
-    
-    <component name="memoryTracker" 
-                type="edu.cmu.sphinx.instrumentation.MemoryTracker">
-        <property name="recognizer" value="${recognizer}"/>
-	<property name="showSummary" value="true"/>
-	<property name="showDetails" value="true"/>
-    </component>
-    
-    <component name="speedTracker" 
-                type="edu.cmu.sphinx.instrumentation.SpeedTracker">
-        <property name="recognizer" value="${recognizer}"/>
-        <property name="frontend" value="${frontend}"/>
-	<property name="showSummary" value="true"/>
-	<property name="showDetails" value="false"/>
-    </component>
+	<!--  monitors                                               -->
+	<!-- ******************************************************* -->
+
+	<component name="accuracyTracker" type="edu.cmu.sphinx.instrumentation.BestPathAccuracyTracker">
+		<property name="recognizer" value="${recognizer}" />
+		<property name="showAlignedResults" value="false" />
+		<property name="showRawResults" value="false" />
+	</component>
+
+	<component name="memoryTracker" type="edu.cmu.sphinx.instrumentation.MemoryTracker">
+		<property name="recognizer" value="${recognizer}" />
+		<property name="showSummary" value="true" />
+		<property name="showDetails" value="true" />
+	</component>
+
+	<component name="speedTracker" type="edu.cmu.sphinx.instrumentation.SpeedTracker">
+		<property name="recognizer" value="${recognizer}" />
+		<property name="frontend" value="${frontend}" />
+		<property name="showSummary" value="true" />
+		<property name="showDetails" value="false" />
+	</component>
 
 </config>
