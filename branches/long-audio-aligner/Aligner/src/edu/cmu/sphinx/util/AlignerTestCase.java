@@ -28,7 +28,7 @@ public class AlignerTestCase {
 		originalTranscription = Text;		
 	}
 	
-	public AlignerTestCase (String Text, double wer,URL pathToWordFile ) 
+	public AlignerTestCase (String Text, double wer,String pathToWordFile ) 
 	throws IOException {
 		this(Text);
 		
@@ -39,7 +39,7 @@ public class AlignerTestCase {
 	}
 	
 	public AlignerTestCase (String Text, double ir, double dr,
-							double sr, URL pathToWordFile) throws IOException {
+							double sr, String pathToWordFile) throws IOException {
 		this(Text);
 		
 		StringErrorGenerator seg = new StringErrorGenerator(ir, dr, sr, pathToWordFile);

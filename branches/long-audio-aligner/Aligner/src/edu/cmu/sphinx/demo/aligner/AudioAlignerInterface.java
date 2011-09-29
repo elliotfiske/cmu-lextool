@@ -21,15 +21,23 @@ public interface AudioAlignerInterface {
 	
 	// Allow dynamic transcription change
 	// returns false if change failed
-	public boolean setText(String text);
+	public boolean setText(String text) throws Exception;
 	
 	// Allow dynamic grammar-type modification
 	public boolean newGrammarType(String grammarType);
 	
 	// optimize values for aligner configuration
-	void optimize();
+	void optimize() ;
 	
 	// align audio and return alignment result
 	public String align() throws Exception;
+	
+	public void setAbsoluteBeamWidth( String absoluteBeamWidth );
+	
+	public void setRelativeBeamWidth( String relativeBeamWidth );
+	
+	public void setOutOfGrammarProbability (String outOfGrammarProbability);
+	
+	public void setPhoneInsertionProbability (String phoneInsertionProbability);
 	
 }
