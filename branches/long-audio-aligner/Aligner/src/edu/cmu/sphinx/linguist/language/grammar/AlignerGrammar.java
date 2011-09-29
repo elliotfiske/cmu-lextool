@@ -38,9 +38,9 @@ public class AlignerGrammar extends Grammar {
 	private boolean modelDeletions = false;
 	private boolean modelBackwardJumps = false;
 
-	private double selfLoopProbability;
-	private double backwardTransitionProbability;
-	private double forwardJumpProbability;
+	private double selfLoopProbability = 0.0;
+	private double backwardTransitionProbability = 0.0;
+	private double forwardJumpProbability = 0.0;
 	private int numAllowedWordJumps = 2;
 
 	protected GrammarNode finalNode;
@@ -115,30 +115,23 @@ public class AlignerGrammar extends Grammar {
 		super.newProperties(ps);
 		logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
 	}
-
+	
+	public void setSelfLoopProbability( double prob) {
+		selfLoopProbability = prob;
+	}
+	
+	public void setBackWardTransitionProbability (double prob) {
+		backwardTransitionProbability = prob;
+	}
+	
+	public void setForwardJumpProbability( double prob) {
+		forwardJumpProbability = prob;
+	}
+	
 	@Override
 	protected GrammarNode createGrammar() throws IOException {
 
-		logger.info("Creating Grammar");
-		if (modelRepetitions) {
-			selfLoopProbability = 0.000001; // penalty for repetition
-		} else {
-			selfLoopProbability = 0.0;
-		}
-
-		if (modelDeletions) {
-			forwardJumpProbability = 0.0000001; // penality for forward skips
-		} else {
-			forwardJumpProbability = 0.0;
-		}
-
-		if (modelBackwardJumps) {
-
-			backwardTransitionProbability = 0.000001;
-		} else {
-			backwardTransitionProbability = 0.0;
-		}
-
+		logger.info("Creating Grammar");		
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode.setFinalNode(true);

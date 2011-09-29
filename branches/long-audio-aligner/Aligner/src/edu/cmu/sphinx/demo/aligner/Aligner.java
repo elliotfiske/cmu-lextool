@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
@@ -132,7 +133,10 @@ public class Aligner implements AudioAlignerInterface{
 		
 		recognizer.allocate();
 	}
-
+	
+	public void deallocate() {
+		recognizer.deallocate();		
+	}
 
 	private String readTranscription() throws IOException {
 		BufferedReader txtReader = new BufferedReader(new FileReader(textFile));
@@ -152,11 +156,7 @@ public class Aligner implements AudioAlignerInterface{
 		return timedResult;
 	}
 	
-	private void deallocate() {
-		recognizer.deallocate();		
-	}
-	
-	public void generateError(float wer){
+	public void generateError(float wer) throws MalformedURLException{
 		StringErrorGenerator seg = new StringErrorGenerator(wer, txtInTranscription);
 	}
 	
@@ -165,7 +165,7 @@ public class Aligner implements AudioAlignerInterface{
 	}
 
 	@Override
-	public boolean newGrammarType(String grammarType) {
+	public boolean setGrammarType(String grammarType) {
 		PROP_GRAMMAR_TYPE = grammarType;
 		return true;		
 	}
@@ -188,6 +188,21 @@ public class Aligner implements AudioAlignerInterface{
 	@Override
 	public void setPhoneInsertionProbability(String phoneInsertionProbability) {
 		this.phoneInsertionProbability = phoneInsertionProbability;
+		
+	}
+	@Override
+	public void setForwardJumpProbability(double prob) {
+		grammar.setForwardJumpProbability(prob);
+		
+	}
+	@Override
+	public void setBackwardJumpProbability(double prob) {
+		grammar.setBackWardTransitionProbability(prob);
+		
+	}
+	@Override
+	public void setSelfLoopProbability(double prob) {
+		grammar.setSelfLoopProbability(prob);
 		
 	}
 }
