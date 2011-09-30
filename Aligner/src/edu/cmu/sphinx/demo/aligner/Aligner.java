@@ -85,8 +85,8 @@ public class Aligner implements AudioAlignerInterface{
 	
 	@Override
 	public boolean setAudio(String path) {
-		
-		return false;
+		this.audioFile = path;
+		return true;
 	}
 
 	@Override
