@@ -1,2 +1,1 @@
 ./resource/transcription/oov_numbers.txt ./resource/wav/oov_numbers.wav
-
