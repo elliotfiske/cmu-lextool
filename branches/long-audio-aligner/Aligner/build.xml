@@ -47,7 +47,7 @@
 	<target name="run" depends="compile">
 		<java jar="${bin_dir}/aligner.jar" fork="true">
 			<jvmarg value="-Xms400m"/>
-			<jvmarg value="-Xmx512m"/>
+			<jvmarg value="-Xmx1500m"/>
 		</java>
 	</target>  
 </project>
