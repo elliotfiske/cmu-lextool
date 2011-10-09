@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 
 public class StringErrorGenerator {
@@ -67,27 +68,15 @@ public class StringErrorGenerator {
 	 */
 	public void process() throws IOException {
 		rand = new Random();
-		if (text != null) {
-			String[] wordTokens = text.split(" ");
-			words = new LinkedList<Word>();
-			for (int i = 0; i < wordTokens.length; i++) {
-				if (wordTokens[i].compareTo("") != 0) {
-					//words.add(new Word(wordTokens[i]));			
-					words.add(new Word(wordTokens[i], 0.0, 0.0, 0.0));
-				}
-			}
-			numWords = words.size();
-			// Load words to inserted from word file
-			BufferedReader reader = new BufferedReader(new InputStreamReader(
-					pathToWordFile.openStream()));
-			String line;
-			wordsToInsert = new LinkedList<String>();
-			while ((line = reader.readLine()) != null) {
-				wordsToInsert.add(line);
-			}
-
-		} else {
-			throw new Error("ERROR: Can not allocate on a <null> text. ");
+		textToWordList();
+		
+		// Load words to inserted from word file
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				pathToWordFile.openStream()));
+		String line;
+		wordsToInsert = new LinkedList<String>();
+		while ((line = reader.readLine()) != null) {
+			wordsToInsert.add(line);
 		}
 		// Check for compatible word error rates
 		check_compatible();
@@ -222,10 +211,40 @@ public class StringErrorGenerator {
 			}
 		}
 	}
-	public LinkedList<Word> getTranscription() {
+	public String getTranscription() {
+		return wordListToString();
+	}
+	
+	public LinkedList<Word> getWordList() {
 		return words;
 	}
 	
+	private void textToWordList() throws IOException{
+		if (text != null) {
+			String[] wordTokens = text.split(" ");
+			words = new LinkedList<Word>();
+			for (int i = 0; i < wordTokens.length; i++) {
+				if (wordTokens[i].compareTo("") != 0) {
+					//words.add(new Word(wordTokens[i]));			
+					words.add(new Word(wordTokens[i], 0.0, 0.0, 0.0));
+				}
+			}
+			numWords = words.size();
+		} else {
+			throw new Error("ERROR: Can not allocate on a <null> text. ");
+		}
+	}
+	
+	private String wordListToString() {
+		ListIterator<Word> iter = words.listIterator();
+		String result="";
+		while(iter.hasNext()){
+			Word nextTok = iter.next();
+			if(!(nextTok.isDeleted() || nextTok.isSubstituted()))
+			result = result.concat(nextTok.getWord()+" ");
+		}
+		return result;
+	}
 	public void printErrorStats() {
 		System.out.println("================== ERROR GENERATOR STATS ======================");
 		System.out.println("Total Number Of Insertions Made:        "+ numInsertions);

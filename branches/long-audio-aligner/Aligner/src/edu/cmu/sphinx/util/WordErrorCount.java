@@ -60,14 +60,14 @@ public class WordErrorCount {
 		correctedSubstitutions = 0;
 		correctedInsertions = 0;
 	}
-	public WordErrorCount(LinkedList<Word> reference, String hypothesis) {
+	public WordErrorCount(String reference, String hypothesis) {
 		this();
-		this.allWordReference = reference;
+		this.allWordReference = textToWordList(reference);
 		this.reference = new LinkedList<Word>();
-		this.hypothesis = new LinkedList<Word>();
 		this.alignedMap = new HashMap<Word, Word>();
 		generateRef();
-		setHypothesis(hypothesis);
+		this.hypothesis = textToWordList(hypothesis);
+		totalNumWords = this.reference.size();
 	}
 	
 	private void generateRef() {
@@ -82,24 +82,27 @@ public class WordErrorCount {
 			}
 		}
 	}
-	// Converts String hypothesis into a LinkedList making it suitable for comparison
-	public void setHypothesis(String hyp) {
-		StringTokenizer st = new StringTokenizer(hyp);
+	
+	public LinkedList<Word> textToWordList(String text) {
+		LinkedList <Word> wordList = new LinkedList<Word>();
+		StringTokenizer st = new StringTokenizer(text);
 		while(st.hasMoreTokens()) {
 			String word = st.nextToken();
-			if(word.compareTo("")!= 0) {
+			if(word.compareTo("") != 0 ) {
 				//hypothesis.add(word);
 				String textPart = word.substring(0,word.indexOf("("));
 				String timedPart = word.substring(word.indexOf("(") + 1,
 								word.indexOf(")"));
 				String startTime = timedPart.substring(0,timedPart.indexOf(","));
-				String endTime = timedPart.substring(timedPart.indexOf(",")+1);					
-				hypothesis.add(new Word(textPart, Double.valueOf(startTime),
-									Double.valueOf(endTime),0.1));
+				String endTime = timedPart.substring(timedPart.indexOf(",")+1);	
+				if(textPart.compareToIgnoreCase("<unk>") != 0) {
+					wordList.add(new Word(textPart, Double.valueOf(startTime),
+										Double.valueOf(endTime),1.0));
+				}
 			}
 		}
+		return wordList;
 	}
-	
 	
 	// Aligns the reference and hypothesis strings and determines the 
 	// number of insertions and deletions made in the hypothesis string.
@@ -114,6 +117,7 @@ public class WordErrorCount {
 		alignedList = traceBack(lattice);
 		
 		generateStats();
+		printStats();
 	}
 	
 	
@@ -271,8 +275,6 @@ public class WordErrorCount {
 	}
 	
 	private void generateStats() {
-		totalNumWords = reference.size();	
-		
 		// Add one final word to allow paritioning of all lists by tokens from
 		// aligned list
 		Word finalWord = new Word("FINAL", 10000000, 10000001, 1);

@@ -12,38 +12,37 @@
 
 package edu.cmu.sphinx.demo.aligner;
 
-
 public interface AudioAlignerInterface {
-	
+
 	// Allow dynamic audio change
 	// returns true if change succeeded
 	public boolean setAudio(String pathToAudio);
-	
+
 	// Allow dynamic transcription change
 	// returns false if change failed
 	public boolean setText(String text) throws Exception;
-	
+
 	// Allow dynamic grammar-type modification
 	public boolean setGrammarType(String grammarType);
-	
+
 	// optimize values for aligner configuration
-	public void optimize() ;
-	
+	public void optimize();
+
 	// align audio and return alignment result
 	public String align() throws Exception;
-	
-	public void setAbsoluteBeamWidth( String absoluteBeamWidth );
-	
-	public void setRelativeBeamWidth( String relativeBeamWidth );
-	
-	public void setOutOfGrammarProbability (String outOfGrammarProbability);
-	
-	public void setPhoneInsertionProbability (String phoneInsertionProbability);
-	
-	public void setForwardJumpProbability( double prob);
-	
-	public void setBackwardJumpProbability( double prob);
-	
-	public void setSelfLoopProbability( double prob);
-	
+
+	public void setAbsoluteBeamWidth(String absoluteBeamWidth);
+
+	public void setRelativeBeamWidth(String relativeBeamWidth);
+
+	public void setOutOfGrammarProbability(String outOfGrammarProbability);
+
+	public void setPhoneInsertionProbability(String phoneInsertionProbability);
+
+	public void setForwardJumpProbability(double prob);
+
+	public void setBackwardJumpProbability(double prob);
+
+	public void setSelfLoopProbability(double prob);
+
 }

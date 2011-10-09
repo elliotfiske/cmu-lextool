@@ -16,6 +16,7 @@ import java.io.FileReader;
 import java.util.StringTokenizer;
 
 import edu.cmu.sphinx.util.AlignerTestCase;
+import edu.cmu.sphinx.util.WordErrorCount;
 
 public class AlignerDemo {
 	public static void main(String Args[]) throws Exception {
@@ -23,27 +24,31 @@ public class AlignerDemo {
 				"./resource/batchFile.txt"));
 		String currFileSet;
 		int lineNum = 1;
-		
+
 		while ((currFileSet = batchReader.readLine()) != null) {
 			StringTokenizer st = new StringTokenizer(currFileSet);
 			if (st.countTokens() != 2) {
-				throw new Exception("Error reading batch file at line #" + lineNum );
+				throw new Exception("Error reading batch file at line #"
+						+ lineNum);
 			}
 			String textFile = st.nextToken();
 			String audioFile = st.nextToken();
-			
+
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
 					textFile);
-			
-			// Simple to use API ;)
-			aligner.setOutOfGrammarProbability("1E-23");
-			aligner.setPhoneInsertionProbability("1E-150");
-			aligner.setRelativeBeamWidth("1E-200");
-			System.out.println(aligner.align());
-			
-			aligner.setGrammarType("MODEL_REPETITIONS");
-			System.out.println(aligner.align());
-			
+
+			// Simple to use API ;)			
+			String reference = aligner.align();
+			System.out.println(reference);
+			aligner.generateError(1.0f);
+			aligner.setOutOfGrammarProbability("1E-3");
+			aligner.setPhoneInsertionProbability("1E-60");
+			aligner.setRelativeBeamWidth("1E-300");
+			aligner.setGrammarType("MODEL_DELETIONS");
+			String hypothesis = aligner.align();
+			System.out.println(hypothesis);
+			WordErrorCount wec = new WordErrorCount(reference, hypothesis);
+			wec.align();
 		}
 	}
 
