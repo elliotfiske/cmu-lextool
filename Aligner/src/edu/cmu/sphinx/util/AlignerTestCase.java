@@ -24,28 +24,28 @@ public class AlignerTestCase {
 	private final String originalTranscription;
 	private LinkedList<Word> corruptedTranscription;
 	
-	public AlignerTestCase (String Text) {
-		originalTranscription = Text;		
+	public AlignerTestCase (String text) {
+		originalTranscription = text;		
 	}
 	
-	public AlignerTestCase (String Text, double wer,String pathToWordFile ) 
+	public AlignerTestCase (String text, double wer,String pathToWordFile ) 
 	throws IOException {
-		this(Text);
+		this(text);
 		
 		StringErrorGenerator seg = new StringErrorGenerator(wer, pathToWordFile);
 		seg.setText(originalTranscription);
 		seg.process();
-		corruptedTranscription = seg.getTranscription();
+		corruptedTranscription = seg.getWordList();
 	}
 	
-	public AlignerTestCase (String Text, double ir, double dr,
+	public AlignerTestCase (String text, double ir, double dr,
 							double sr, String pathToWordFile) throws IOException {
-		this(Text);
+		this(text);
 		
 		StringErrorGenerator seg = new StringErrorGenerator(ir, dr, sr, pathToWordFile);
 		seg.setText(originalTranscription);
 		seg.process();
-		corruptedTranscription = seg.getTranscription();
+		corruptedTranscription = seg.getWordList();
 	}
 
 	public String getCorruptedText() {
@@ -61,7 +61,6 @@ public class AlignerTestCase {
 				result = result.concat(nextWord.getWord() + " ");
 			}
 		}
-		// System.out.println(result);
 		return result;
 	}
 	public LinkedList<Word> getWordList() {
