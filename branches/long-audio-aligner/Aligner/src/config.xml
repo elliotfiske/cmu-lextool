@@ -11,8 +11,8 @@
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-19" />
-	<property name="phoneInsertionProbability" value="1E-100" />
+	<property name="outOfGrammarProbability" value="1E-9" />
+	<property name="phoneInsertionProbability" value="1E-80" />
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
@@ -26,7 +26,7 @@
 		<property name="searchManager" value="searchManager" />
 	</component>
 
-	<component name="searchManager" type="edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager">
+	<component name="searchManager" type="edu.cmu.sphinx.decoder.search.AlignerSearchManager">
 		<property name="logMath" value="logMath" />
 		<property name="linguist" value="aflatLinguist" />
 		<property name="pruner" value="trivialPruner" />
@@ -105,16 +105,6 @@
 	</component>
 
 	<component name="UNITMANAGER" type="edu.cmu.sphinx.linguist.acoustic.UnitManager" />
-
-	<component name="tidigits" type="edu.cmu.sphinx.model.acoustic.TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.Model">
-		<property name="loader" value="sphinx3Loader" />
-		<property name="unitManager" value="unitManager" />
-	</component>
-
-	<component name="sphinx3Loader" type="edu.cmu.sphinx.model.acoustic.TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.ModelLoader">
-		<property name="logMath" value="logMath" />
-		<property name="unitManager" value="UNITMANAGER" />
-	</component>
 	<!-- additions end -->
 
 	<component name="epFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">

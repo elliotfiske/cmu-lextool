@@ -44,5 +44,9 @@ public interface AudioAlignerInterface {
 	public void setBackwardJumpProbability(double prob);
 
 	public void setSelfLoopProbability(double prob);
+	
+	public void setNumGrammarJumps(int n);
+	
+	public void performPhraseSpotting(boolean doPhraseSpotting);
 
 }

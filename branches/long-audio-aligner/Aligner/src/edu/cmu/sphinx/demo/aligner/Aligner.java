@@ -7,11 +7,18 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.StringTokenizer;
 
+import edu.cmu.sphinx.decoder.search.AlignerSearchManager;
 import edu.cmu.sphinx.decoder.search.Token;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.aflat.AFlatLinguist;
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
+import edu.cmu.sphinx.phrasespotter.PhraseSpotterResult;
+import edu.cmu.sphinx.phrasespotter.simplephrasespotter.SimplePhraseSpotter;
 import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.recognizer.Recognizer.State;
 import edu.cmu.sphinx.result.Result;
@@ -25,6 +32,7 @@ public class Aligner implements AudioAlignerInterface {
 	private String PROP_RECOGNIZER; // which recognizer to use from config
 	private String PROP_GRAMMAR_TYPE;
 	private String PROP_AUDIO_DATA_SOURCE;
+	private boolean PROP_PERFORM_SPOTTING;
 
 	private String absoluteBeamWidth;
 	private String relativeBeamWidth;
@@ -39,9 +47,11 @@ public class Aligner implements AudioAlignerInterface {
 	private boolean optimize; // by default set this false
 
 	private String config;
+	private String psConfig;
 	private String audioFile;
 	private String textFile;
 	private String txtInTranscription;
+	private List<PhraseSpotterResult> phraseSpotterResult;
 
 	public Aligner(String config, String audioFile, String textFile)
 			throws IOException {
@@ -74,7 +84,9 @@ public class Aligner implements AudioAlignerInterface {
 		this.PROP_GRAMMAR_TYPE = grammarType;
 		this.PROP_AUDIO_DATA_SOURCE = audioDataSourceName;
 		this.optimize = optimize;
+		this.PROP_PERFORM_SPOTTING = false;
 		txtInTranscription = readTranscription();
+		phraseSpotterResult = new LinkedList<PhraseSpotterResult>();
 
 		cm = new ConfigurationManager(config);
 		absoluteBeamWidth = cm.getGlobalProperty("absoluteBeamWidth");
@@ -113,9 +125,20 @@ public class Aligner implements AudioAlignerInterface {
 				phoneInsertionProbability);
 	}
 
+	public void setPhraseSpottingConfig(String configFile) {
+		psConfig = configFile;
+	}
+
 	@Override
 	public String align() throws Exception {
+		if(PROP_PERFORM_SPOTTING) {
+			phraseSpotterResult = new LinkedList<PhraseSpotterResult>();
+			collectPhraseSpottingResult();
+		}
+			
 		cm = new ConfigurationManager(config);
+		AlignerSearchManager sm = (AlignerSearchManager) cm.lookup("searchManager");
+		sm.setSpotterResult(phraseSpotterResult);
 		optimize();
 		setGlobalProperties();
 		recognizer = (Recognizer) cm.lookup(PROP_RECOGNIZER);
@@ -124,6 +147,48 @@ public class Aligner implements AudioAlignerInterface {
 		datasource.setAudioFile(new File(audioFile), null);
 		allocate();
 		return start_align();
+	}
+	
+	private String start_align() throws IOException {
+		Result result = recognizer.recognize();
+		String timedResult = result.getTimedBestResult(false, true);
+		Token finalToken = result.getBestFinalToken();
+		deallocate();
+		return timedResult;
+	}
+	
+	private void collectPhraseSpottingResult() throws MalformedURLException {
+		StringTokenizer tok = new StringTokenizer(txtInTranscription);
+		while(tok.hasMoreTokens()) {
+			String phraseToSpot = "";
+			int iter = 0;
+			while(iter < 3 && tok.hasMoreTokens()) {
+				phraseToSpot += tok.nextToken() + " ";
+				iter ++;
+			}
+			try {
+				List<PhraseSpotterResult> tmpResult = phraseSpotting(phraseToSpot);
+				ListIterator<PhraseSpotterResult> iterator = tmpResult.listIterator();
+				while(iterator.hasNext()){
+					PhraseSpotterResult nextResult = iterator.next();
+					System.out.println(nextResult);
+					phraseSpotterResult.add(nextResult);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	private List<PhraseSpotterResult> phraseSpotting(
+			String phrase) throws Exception {
+
+		SimplePhraseSpotter phraseSpotter = new SimplePhraseSpotter(psConfig);
+		phraseSpotter.setAudioDataSource(audioFile);
+		phraseSpotter.setPhrase(phrase);
+		phraseSpotter.allocate();
+		long initTime = System.currentTimeMillis();
+		phraseSpotter.startSpotting();
+		return phraseSpotter.getTimedResult();
 	}
 
 	private void allocate() throws IOException {
@@ -149,15 +214,7 @@ public class Aligner implements AudioAlignerInterface {
 		return sc.customise(finalText);
 	}
 
-	private String start_align() throws IOException {
-		Result result = recognizer.recognize();
-		String timedResult = result.getTimedBestResult(false, true);
-		Token finalToken = result.getBestFinalToken();
-		deallocate();
-		return timedResult;
-	}
-
-
+	
 
 	public void generateError(float wer) throws Exception {
 		StringErrorGenerator seg = new StringErrorGenerator(wer,
@@ -167,8 +224,12 @@ public class Aligner implements AudioAlignerInterface {
 		setText(newText);
 	}
 
-	public void generateError(float ir, float dr, float sr) {
-		
+	public void generateError(float ir, float dr, float sr) throws Exception {
+		StringErrorGenerator seg = new StringErrorGenerator(ir, dr, sr,
+				txtInTranscription);
+		seg.process();
+		String newText = seg.getTranscription();
+		setText(newText);
 	}
 
 	@Override
@@ -217,5 +278,15 @@ public class Aligner implements AudioAlignerInterface {
 	public void setSelfLoopProbability(double prob) {
 		grammar.setSelfLoopProbability(prob);
 
+	}
+
+	@Override
+	public void setNumGrammarJumps(int n) {
+		grammar.setNumAllowedGrammarJumps(n);
+	}
+
+	@Override
+	public void performPhraseSpotting(boolean doPhraseSpotting) {
+		this.PROP_PERFORM_SPOTTING = doPhraseSpotting;		
 	}
 }
