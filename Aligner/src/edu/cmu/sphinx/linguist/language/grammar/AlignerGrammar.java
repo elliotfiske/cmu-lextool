@@ -128,9 +128,15 @@ public class AlignerGrammar extends Grammar {
 		forwardJumpProbability = prob;
 	}
 	
+	public void setNumAllowedGrammarJumps(int n){
+		if(n >= 0){
+			numAllowedWordJumps = n;
+		}
+	}
+	
 	@Override
 	protected GrammarNode createGrammar() throws IOException {
-
+		
 		logger.info("Creating Grammar");		
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
