@@ -31,6 +31,7 @@ import edu.cmu.sphinx.util.WordErrorCount;
 
 public class AlignerDemo {
 	public static void main(String Args[]) throws Exception {
+		/**
 		SimplePhraseSpotter ps = new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");
 		ps.setAudioDataSource("./resource/wav/test.wav");
 		ps.setPhrase("state of an");
@@ -40,7 +41,8 @@ public class AlignerDemo {
 		while(iter.hasNext()){
 			System.out.println(iter.next());
 		}
-		//createDB("./resource/batchFile.txt");
+		*/
+		createDB("./resource/batchFile.txt");
 		
 	}
 	
@@ -75,7 +77,7 @@ public class AlignerDemo {
 			aligner.setAddOutOfGrammarBranchProperty("true");
 			aligner.setGrammarType("MODEL_DELETIONS");
 			aligner.setNumGrammarJumps(2);
-			aligner.setForwardJumpProbability(0.001);
+			aligner.setForwardJumpProbability(0.00001);
 			aligner.performPhraseSpotting(true);
 			
 			String alignedResult = aligner.align(); // Aligned result
