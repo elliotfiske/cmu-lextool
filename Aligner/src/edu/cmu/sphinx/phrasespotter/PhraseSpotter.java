@@ -28,9 +28,6 @@ public interface PhraseSpotter extends Configurable {
 	public final static String PROP_LINGUIST = "linguist";
 	public final static String PROP_AUDIO_DATA_SOURCE = "audioFileDataSource";
 	
-	
-	public void allocate();
-	
 	public void deallocate();
 	
 	public void startSpotting() throws Exception;

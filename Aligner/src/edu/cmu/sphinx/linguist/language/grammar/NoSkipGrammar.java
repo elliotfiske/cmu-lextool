@@ -84,7 +84,7 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 			//currNode.add(finalNode, logMath.getLogOne());
 		}
 		lastWordGrammarNode.add(lastNode, logMath.getLogOne());
-		lastNode.add(finalNode, logMath.linearToLog(0.000001));
+		lastNode.add(finalNode, logMath.linearToLog(0.0001));
 		finalNode.setFinalNode(true);
 		return initialNode;		
 	}

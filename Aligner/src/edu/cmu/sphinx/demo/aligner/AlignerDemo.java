@@ -18,9 +18,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.StringTokenizer;
 
 import edu.cmu.sphinx.phrasespotter.PhraseSpotter;
+import edu.cmu.sphinx.phrasespotter.PhraseSpotterResult;
 import edu.cmu.sphinx.phrasespotter.simplephrasespotter.SimplePhraseSpotter;
 import edu.cmu.sphinx.util.AlignerTestCase;
 import edu.cmu.sphinx.util.FragmentAudio;
@@ -29,7 +31,16 @@ import edu.cmu.sphinx.util.WordErrorCount;
 
 public class AlignerDemo {
 	public static void main(String Args[]) throws Exception {
-		createDB("./resource/batchFile.txt");
+		SimplePhraseSpotter ps = new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");
+		ps.setAudioDataSource("./resource/wav/test.wav");
+		ps.setPhrase("state of an");
+		ps.startSpotting();
+		List<PhraseSpotterResult> result = ps.getTimedResult();
+		ListIterator<PhraseSpotterResult> iter = result.listIterator();
+		while(iter.hasNext()){
+			System.out.println(iter.next());
+		}
+		//createDB("./resource/batchFile.txt");
 		
 	}
 	
@@ -60,9 +71,11 @@ public class AlignerDemo {
 			System.out.println("REFERENCE: " + reference);
 			
 			// Demonstrating the use of API
-			aligner.generateError(0.15f, 0.0f, 0.0f);
+			aligner.generateError(0.1f, 0.0f, 0.0f);
+			aligner.setAddOutOfGrammarBranchProperty("true");
 			aligner.setGrammarType("MODEL_DELETIONS");
-			aligner.setForwardJumpProbability(0.1);
+			aligner.setNumGrammarJumps(2);
+			aligner.setForwardJumpProbability(0.001);
 			aligner.performPhraseSpotting(true);
 			
 			String alignedResult = aligner.align(); // Aligned result
