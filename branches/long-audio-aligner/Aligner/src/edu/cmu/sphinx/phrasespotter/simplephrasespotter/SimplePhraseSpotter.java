@@ -76,8 +76,8 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 		setAudioDataSource(new URL("file:" + audioFile));
 	}
 
-	@Override
-	public void allocate() {
+	
+	private void allocate() {
 		if (!isPhraseSet) {
 			throw new Error("Phrase to search can't be null");
 		}
@@ -105,6 +105,7 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 
 	@Override
 	public void startSpotting() throws Exception {
+		allocate();
 		edu.cmu.sphinx.result.Result recognizedResult = recognizer.recognize();
 		String timedResult = recognizedResult.getTimedBestResult(false, true);
 
@@ -115,7 +116,7 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 		// call this a simple Phrase Spotter
 
 		StringTokenizer st = new StringTokenizer(timedResult);
-		// System.out.println(timedResult);
+		//System.out.println(timedResult);
 		timedData = new LinkedList<TimedData>();
 
 		while (st.hasMoreTokens()) {
@@ -151,13 +152,15 @@ public class SimplePhraseSpotter implements PhraseSpotter {
 						startTime = data.getStartTime();
 						startOfPhrase = false;
 					}
-					System.out.println(data.getText());
+					//System.out.println(data.getText());
 					if (!(word.compareToIgnoreCase(data.getText()) == 0)) {
+						grammar.getInitialNode().dumpDot("./PSGraph.dot");
 						throw new Exception("Words in result don't match phrase ("
 								+ word + "," + data.getText() + ")");
 					}
 					endTime = data.getEndTime();
 				} else {
+					grammar.getInitialNode().dumpDot("./PSGraph.dot");
 					throw new Exception(
 							"The recognizer for phrase spotting didn't exit gracefully.");
 				}

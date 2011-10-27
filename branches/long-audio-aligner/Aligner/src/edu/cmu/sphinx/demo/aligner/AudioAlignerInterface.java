@@ -34,6 +34,8 @@ public interface AudioAlignerInterface {
 	public void setAbsoluteBeamWidth(String absoluteBeamWidth);
 
 	public void setRelativeBeamWidth(String relativeBeamWidth);
+	
+	public void setAddOutOfGrammarBranchProperty(String addOutOfGrammarBranch);
 
 	public void setOutOfGrammarProbability(String outOfGrammarProbability);
 

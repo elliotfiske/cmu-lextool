@@ -7,12 +7,13 @@
 	<property name="relativeBeamWidth" value="1E-300" />
 	<property name="wordInsertionProbability" value="0.7" />
 	<property name="languageWeight" value="7" />
+	<property name="addOOVBranch" value="true" />
 
 	<property name="frontend" value="epFrontEnd" />
 	<property name="recognizer" value="recognizer" />
 	<property name="showCreations" value="false" />
-	<property name="outOfGrammarProbability" value="1E-9" />
-	<property name="phoneInsertionProbability" value="1E-80" />
+	<property name="outOfGrammarProbability" value="1E-29" />
+	<property name="phoneInsertionProbability" value="1E-90" />
 
 	<component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
 		<property name="decoder" value="decoder" />
@@ -55,7 +56,7 @@
 		<property name="languageWeight" value="${languageWeight}" />
 		<property name="unitManager" value="unitManager" />
 
-		<property name="addOutOfGrammarBranch" value="true" />
+		<property name="addOutOfGrammarBranch" value="${addOOVBranch}" />
 		<property name="phoneLoopAcousticModel" value="WSJ" />
 		<property name="outOfGrammarProbability" value="${outOfGrammarProbability}" />
 		<property name="phoneInsertionProbability" value="${phoneInsertionProbability}" />

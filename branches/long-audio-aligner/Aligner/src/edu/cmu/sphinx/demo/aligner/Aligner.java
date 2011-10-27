@@ -31,11 +31,16 @@ public class Aligner implements AudioAlignerInterface {
 	private String PROP_GRAMMAR; // which grammar to use from config
 	private String PROP_RECOGNIZER; // which recognizer to use from config
 	private String PROP_GRAMMAR_TYPE;
+	private double PROP_FORWARD_JUMP_PROB = 0.0;
+	private double PROP_BACKWARD_JUMP_PROB = 0.0;
+	private double PROP_SELF_LOOP_PROB = 0.0;
+	private int PROP_NUM_GRAMMAR_JUMPS = 0;
 	private String PROP_AUDIO_DATA_SOURCE;
 	private boolean PROP_PERFORM_SPOTTING;
 
 	private String absoluteBeamWidth;
 	private String relativeBeamWidth;
+	private String addOutOfGrammarBranch;
 	private String outOfGrammarProbability;
 	private String phoneInsertionProbability;
 
@@ -91,6 +96,7 @@ public class Aligner implements AudioAlignerInterface {
 		cm = new ConfigurationManager(config);
 		absoluteBeamWidth = cm.getGlobalProperty("absoluteBeamWidth");
 		relativeBeamWidth = cm.getGlobalProperty("relativeBeamWidth");
+		addOutOfGrammarBranch = cm.getGlobalProperty("addOOVBranch");
 		outOfGrammarProbability = cm
 				.getGlobalProperty("outOfGrammarProbability");
 		phoneInsertionProbability = cm
@@ -120,6 +126,7 @@ public class Aligner implements AudioAlignerInterface {
 	private void setGlobalProperties() {
 		cm.setGlobalProperty("absoluteBeamWidth", absoluteBeamWidth);
 		cm.setGlobalProperty("relativeBeamWidth", relativeBeamWidth);
+		cm.setGlobalProperty("addOOVBranch", addOutOfGrammarBranch);
 		cm.setGlobalProperty("outOfGrammarProbability", outOfGrammarProbability);
 		cm.setGlobalProperty("phoneInsertionProbability",
 				phoneInsertionProbability);
@@ -131,13 +138,14 @@ public class Aligner implements AudioAlignerInterface {
 
 	@Override
 	public String align() throws Exception {
-		if(PROP_PERFORM_SPOTTING) {
+		if (PROP_PERFORM_SPOTTING) {
 			phraseSpotterResult = new LinkedList<PhraseSpotterResult>();
 			collectPhraseSpottingResult();
 		}
-			
+
 		cm = new ConfigurationManager(config);
-		AlignerSearchManager sm = (AlignerSearchManager) cm.lookup("searchManager");
+		AlignerSearchManager sm = (AlignerSearchManager) cm
+				.lookup("searchManager");
 		sm.setSpotterResult(phraseSpotterResult);
 		optimize();
 		setGlobalProperties();
@@ -148,44 +156,58 @@ public class Aligner implements AudioAlignerInterface {
 		allocate();
 		return start_align();
 	}
-	
+
 	private String start_align() throws IOException {
+		// grammar.getInitialNode().dumpDot("./graph.dot");
 		Result result = recognizer.recognize();
 		String timedResult = result.getTimedBestResult(false, true);
 		Token finalToken = result.getBestFinalToken();
 		deallocate();
 		return timedResult;
 	}
-	
+
 	private void collectPhraseSpottingResult() throws MalformedURLException {
 		StringTokenizer tok = new StringTokenizer(txtInTranscription);
-		while(tok.hasMoreTokens()) {
+		while (tok.hasMoreTokens()) {
 			String phraseToSpot = "";
 			int iter = 0;
-			while(iter < 3 && tok.hasMoreTokens()) {
+			while (iter < 3 && tok.hasMoreTokens()) {
 				phraseToSpot += tok.nextToken() + " ";
-				iter ++;
+				iter++;
 			}
+
 			try {
+				
 				List<PhraseSpotterResult> tmpResult = phraseSpotting(phraseToSpot);
-				ListIterator<PhraseSpotterResult> iterator = tmpResult.listIterator();
-				while(iterator.hasNext()){
+				ListIterator<PhraseSpotterResult> iterator = tmpResult
+						.listIterator();
+				//System.out.println(tmpResult.size());
+				while (iterator.hasNext()) {
+					
 					PhraseSpotterResult nextResult = iterator.next();
-					System.out.println(nextResult);
+					//System.out.println(nextResult);
 					phraseSpotterResult.add(nextResult);
 				}
 			} catch (Exception e) {
+				System.out
+						.println("An unknown exception occured in phrase Spotter." +
+								" But Aligner will not stop");
 				e.printStackTrace();
+			}
+			iter = 0;
+			while (iter < 10 && tok.hasMoreTokens()) {
+				tok.nextToken();
+				iter++;
 			}
 		}
 	}
-	private List<PhraseSpotterResult> phraseSpotting(
-			String phrase) throws Exception {
+
+	private List<PhraseSpotterResult> phraseSpotting(String phrase)
+			throws Exception {
 
 		SimplePhraseSpotter phraseSpotter = new SimplePhraseSpotter(psConfig);
 		phraseSpotter.setAudioDataSource(audioFile);
 		phraseSpotter.setPhrase(phrase);
-		phraseSpotter.allocate();
 		long initTime = System.currentTimeMillis();
 		phraseSpotter.startSpotting();
 		return phraseSpotter.getTimedResult();
@@ -195,6 +217,10 @@ public class Aligner implements AudioAlignerInterface {
 		datasource.setAudioFile(new URL("file:" + audioFile), null);
 		grammar.setText(txtInTranscription);
 		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
+		grammar.setBackWardTransitionProbability(PROP_BACKWARD_JUMP_PROB);
+		grammar.setForwardJumpProbability(PROP_FORWARD_JUMP_PROB);
+		grammar.setSelfLoopProbability(PROP_SELF_LOOP_PROB);
+		grammar.setNumAllowedGrammarJumps(PROP_NUM_GRAMMAR_JUMPS);
 
 		recognizer.allocate();
 	}
@@ -213,8 +239,6 @@ public class Aligner implements AudioAlignerInterface {
 		StringCustomise sc = new StringCustomise();
 		return sc.customise(finalText);
 	}
-
-	
 
 	public void generateError(float wer) throws Exception {
 		StringErrorGenerator seg = new StringErrorGenerator(wer,
@@ -264,29 +288,34 @@ public class Aligner implements AudioAlignerInterface {
 
 	@Override
 	public void setForwardJumpProbability(double prob) {
-		grammar.setForwardJumpProbability(prob);
+		this.PROP_FORWARD_JUMP_PROB = prob;
 
 	}
 
 	@Override
 	public void setBackwardJumpProbability(double prob) {
-		grammar.setBackWardTransitionProbability(prob);
+		this.PROP_BACKWARD_JUMP_PROB = prob;
 
 	}
 
 	@Override
 	public void setSelfLoopProbability(double prob) {
-		grammar.setSelfLoopProbability(prob);
+		this.PROP_SELF_LOOP_PROB = prob;
 
 	}
 
 	@Override
 	public void setNumGrammarJumps(int n) {
-		grammar.setNumAllowedGrammarJumps(n);
+		this.PROP_NUM_GRAMMAR_JUMPS = n;
 	}
 
 	@Override
 	public void performPhraseSpotting(boolean doPhraseSpotting) {
-		this.PROP_PERFORM_SPOTTING = doPhraseSpotting;		
+		this.PROP_PERFORM_SPOTTING = doPhraseSpotting;
+	}
+
+	@Override
+	public void setAddOutOfGrammarBranchProperty(String addOutOfGrammarBranch) {
+		this.addOutOfGrammarBranch = addOutOfGrammarBranch;
 	}
 }

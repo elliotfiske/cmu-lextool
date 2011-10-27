@@ -550,7 +550,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 
 		// Idea is to award the favouring token very well
 		if (penalty != 0.0f) {
-			token.setScore(token.getScore() + 1000.0f);
+			token.setScore(token.getScore() + 100000000.0f);
 			setBestToken(token, state);
 		}
 

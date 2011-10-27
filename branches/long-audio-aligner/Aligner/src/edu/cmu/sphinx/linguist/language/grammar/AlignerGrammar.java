@@ -12,6 +12,7 @@
 package edu.cmu.sphinx.linguist.language.grammar;
 
 import java.util.List;
+import java.util.ListIterator;
 import java.util.StringTokenizer;
 import java.io.IOException;
 import java.io.StringReader;
@@ -115,29 +116,30 @@ public class AlignerGrammar extends Grammar {
 		super.newProperties(ps);
 		logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
 	}
-	
-	public void setSelfLoopProbability( double prob) {
+
+	public void setSelfLoopProbability(double prob) {
 		selfLoopProbability = prob;
 	}
-	
-	public void setBackWardTransitionProbability (double prob) {
+
+	public void setBackWardTransitionProbability(double prob) {
 		backwardTransitionProbability = prob;
 	}
-	
-	public void setForwardJumpProbability( double prob) {
+
+	public void setForwardJumpProbability(double prob) {
+
 		forwardJumpProbability = prob;
 	}
-	
-	public void setNumAllowedGrammarJumps(int n){
-		if(n >= 0){
+
+	public void setNumAllowedGrammarJumps(int n) {
+		if (n >= 0) {
 			numAllowedWordJumps = n;
 		}
 	}
-	
+
 	@Override
 	protected GrammarNode createGrammar() throws IOException {
-		
-		logger.info("Creating Grammar");		
+
+		logger.info("Creating Grammar");
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		finalNode.setFinalNode(true);
@@ -153,55 +155,83 @@ public class AlignerGrammar extends Grammar {
 
 		// now connect all the GrammarNodes together
 		initialNode.add(branchNode, LogMath.getLogOne());
+		createBaseGrammar(wordGrammarNodes, branchNode, finalNode);
+		if (modelDeletions) {
+			addForwardJumps(wordGrammarNodes, branchNode, finalNode);
+		}
+		if (modelBackwardJumps) {
+			addBackwardJumps(wordGrammarNodes, branchNode, finalNode);
+		}
+		if (modelRepetitions) {
+			addSelfLoops(wordGrammarNodes);
+		}
+		// initialNode.dumpDot("./graph.dot");
+		return initialNode;
+	}
 
+	private void addSelfLoops(List<GrammarNode> wordGrammarNodes) {
+		ListIterator<GrammarNode> iter = wordGrammarNodes.listIterator();
+		while (iter.hasNext()) {
+			GrammarNode currNode = iter.next();
+			currNode.add(currNode, logMath.linearToLog(selfLoopProbability));
+		}
+
+	}
+
+	private void addBackwardJumps(List<GrammarNode> wordGrammarNodes,
+			GrammarNode branchNode, GrammarNode finalNode2) {
+
+		GrammarNode currNode;
 		for (int i = 0; i < wordGrammarNodes.size(); i++) {
-			final GrammarNode wordNode = wordGrammarNodes.get(i);
-
-			// Link first word nodes with branch node
-			if (i <= numAllowedWordJumps) {
-				if (i != 0) {
-
-					// case when first word can be skipped
-					branchNode.add(wordNode, logMath
-							.linearToLog(forwardJumpProbability));
-				} else {
-					branchNode.add(wordNode, logMath.getLogOne());
-				}
-			}
-
-			// Link last nodes with final node
-			if (i + numAllowedWordJumps + 1 >= wordGrammarNodes.size()) {
-				if (i + 1 != wordGrammarNodes.size()) {
-					wordNode.add(finalNode, logMath
-							.linearToLog(forwardJumpProbability));
-				} else {
-					wordNode.add(finalNode, logMath.getLogOne());
-				}
-			}
-
-			// allowing word repetitions: probability is still under test.
-			wordNode.add(wordNode, logMath.linearToLog(selfLoopProbability));
-
-			// add connections to close words
-			for (int j = i + 1; j <= i + 1 + numAllowedWordJumps; j++) {
-				if (j < wordGrammarNodes.size()) {
-					final GrammarNode neighbour = wordGrammarNodes.get(j);
-					if (j != i + 1) {
-						wordNode.add(neighbour, logMath
-								.linearToLog(forwardJumpProbability));
-
-					} else {
-
-						// immediate neighbour
-						wordNode.add(neighbour, logMath.getLogOne());
-					}
-					neighbour.add(wordNode, logMath
-							.linearToLog(backwardTransitionProbability));
-				}
+			currNode = wordGrammarNodes.get(i);
+			for (int j = Math.max(i - numAllowedWordJumps - 1, 0); j < i - 1; j++) {
+				GrammarNode jumpToNode = wordGrammarNodes.get(j);
+				currNode.add(
+						jumpToNode,
+						logMath.linearToLog(backwardTransitionProbability
+								* Math.pow(Math.E, i - j)));
 			}
 		}
-		logger.info("Grammar Generated");
-		return initialNode;
+	}
+
+	private void addForwardJumps(List<GrammarNode> wordGrammarNodes,
+			GrammarNode branchNode, GrammarNode finalNode) {
+		GrammarNode currNode = branchNode;
+		for (int i = -1; i < wordGrammarNodes.size(); i++) {
+			if (i > -1) {
+				currNode = wordGrammarNodes.get(i);
+			}
+			for (int j = i + 2; j < Math.min(wordGrammarNodes.size(), i
+					+ numAllowedWordJumps + 1); j++) {
+				GrammarNode jumpNode = wordGrammarNodes.get(j);
+				currNode.add(
+						jumpNode,
+						logMath.linearToLog(forwardJumpProbability
+								* Math.pow(Math.E, j - i)));
+			}
+		}
+		for (int i = wordGrammarNodes.size() - numAllowedWordJumps - 1; i < wordGrammarNodes
+				.size() - 1; i++) {
+			int j = wordGrammarNodes.size();
+			currNode = wordGrammarNodes.get(i);
+			currNode.add(
+					finalNode,
+					logMath.linearToLog(forwardJumpProbability
+							* Math.pow(Math.E, j - i)));
+		}
+
+	}
+
+	private void createBaseGrammar(List<GrammarNode> wordGrammarNodes,
+			GrammarNode branchNode, GrammarNode finalNode) {
+		GrammarNode currNode = branchNode;
+		ListIterator<GrammarNode> iter = wordGrammarNodes.listIterator();
+		while (iter.hasNext()) {
+			GrammarNode nextNode = iter.next();
+			currNode.add(nextNode, logMath.getLogOne());
+			currNode = nextNode;
+		}
+		currNode.add(finalNode, logMath.getLogOne());
 	}
 
 }
