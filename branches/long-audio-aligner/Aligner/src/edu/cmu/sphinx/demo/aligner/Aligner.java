@@ -195,7 +195,7 @@ public class Aligner implements AudioAlignerInterface {
 				e.printStackTrace();
 			}
 			iter = 0;
-			while (iter < 10 && tok.hasMoreTokens()) {
+			while (iter < 1 && tok.hasMoreTokens()) {
 				tok.nextToken();
 				iter++;
 			}
