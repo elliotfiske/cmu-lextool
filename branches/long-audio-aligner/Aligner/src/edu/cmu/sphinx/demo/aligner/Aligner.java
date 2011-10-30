@@ -125,6 +125,7 @@ public class Aligner implements AudioAlignerInterface {
 
 	private void setGlobalProperties() {
 		cm.setGlobalProperty("absoluteBeamWidth", absoluteBeamWidth);
+		
 		cm.setGlobalProperty("relativeBeamWidth", relativeBeamWidth);
 		cm.setGlobalProperty("addOOVBranch", addOutOfGrammarBranch);
 		cm.setGlobalProperty("outOfGrammarProbability", outOfGrammarProbability);
@@ -143,7 +144,7 @@ public class Aligner implements AudioAlignerInterface {
 			collectPhraseSpottingResult();
 		}
 
-		cm = new ConfigurationManager(config);
+		cm = new ConfigurationManager(config);		
 		AlignerSearchManager sm = (AlignerSearchManager) cm
 				.lookup("searchManager");
 		sm.setSpotterResult(phraseSpotterResult);
@@ -175,7 +176,7 @@ public class Aligner implements AudioAlignerInterface {
 				phraseToSpot += tok.nextToken() + " ";
 				iter++;
 			}
-
+			System.out.println("\n Spotting Phrase: " + phraseToSpot);
 			try {
 				
 				List<PhraseSpotterResult> tmpResult = phraseSpotting(phraseToSpot);
@@ -185,7 +186,9 @@ public class Aligner implements AudioAlignerInterface {
 				while (iterator.hasNext()) {
 					
 					PhraseSpotterResult nextResult = iterator.next();
-					//System.out.println(nextResult);
+					
+					System.out.println(nextResult);
+					
 					phraseSpotterResult.add(nextResult);
 				}
 			} catch (Exception e) {
@@ -194,8 +197,9 @@ public class Aligner implements AudioAlignerInterface {
 								" But Aligner will not stop");
 				e.printStackTrace();
 			}
+			System.out.println("Skipping 5 words in transcription to select next phrase");
 			iter = 0;
-			while (iter < 1 && tok.hasMoreTokens()) {
+			while (iter < 5 && tok.hasMoreTokens()) {
 				tok.nextToken();
 				iter++;
 			}
@@ -215,6 +219,8 @@ public class Aligner implements AudioAlignerInterface {
 
 	private void allocate() throws IOException {
 		datasource.setAudioFile(new URL("file:" + audioFile), null);
+		
+		System.out.println("Transcription: " + txtInTranscription);
 		grammar.setText(txtInTranscription);
 		grammar.setGrammarType(PROP_GRAMMAR_TYPE);
 		grammar.setBackWardTransitionProbability(PROP_BACKWARD_JUMP_PROB);
