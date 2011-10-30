@@ -223,7 +223,8 @@ public class AlignerSearchManager extends TokenSearchManager {
 	@Override
 	public void startRecognition() {
 		logger.finer("starting recognition");
-
+		
+		//System.out.println("Relative Beam Width: " + logRelativeWordBeamWidth);
 		linguist.startRecognition();
 		pruner.startRecognition();
 		scorer.startRecognition();
@@ -506,6 +507,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 	 */
 	protected void collectSuccessorTokens(Token token) {
 
+		//System.out.println(logRelativeWordBeamWidth);
 		SearchState state = token.getSearchState();
 		// If this is a final state, add it to the final list
 		if (token.isFinal()) {
@@ -550,7 +552,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 
 		// Idea is to award the favouring token very well
 		if (penalty != 0.0f) {
-			token.setScore(token.getScore() + 100000000.0f);
+			token.setScore(token.getScore() + 10000.0f);
 			setBestToken(token, state);
 		}
 

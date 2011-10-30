@@ -74,10 +74,11 @@ public class AlignerDemo {
 			
 			// Demonstrating the use of API
 			aligner.generateError(0.1f, 0.0f, 0.0f);
+			aligner.setRelativeBeamWidth("1E-300");
 			aligner.setAddOutOfGrammarBranchProperty("true");
 			aligner.setGrammarType("MODEL_DELETIONS");
-			aligner.setNumGrammarJumps(2);
-			aligner.setForwardJumpProbability(0.00001);
+			aligner.setNumGrammarJumps(3);
+			aligner.setForwardJumpProbability(0.01);
 			aligner.performPhraseSpotting(true);
 			
 			String alignedResult = aligner.align(); // Aligned result
