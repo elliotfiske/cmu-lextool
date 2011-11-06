@@ -73,20 +73,22 @@ public class AlignerDemo {
 			System.out.println("REFERENCE: " + reference);
 			
 			// Demonstrating the use of API
+			/*
 			aligner.generateError(0.1f, 0.0f, 0.0f);
 			aligner.setRelativeBeamWidth("1E-300");
 			aligner.setAddOutOfGrammarBranchProperty("true");
 			aligner.setGrammarType("MODEL_DELETIONS");
 			aligner.setNumGrammarJumps(3);
 			aligner.setForwardJumpProbability(0.01);
-			aligner.performPhraseSpotting(true);
+			aligner.performPhraseSpotting(false);
 			
 			String alignedResult = aligner.align(); // Aligned result
 			System.out.println("ALIGNED: " + alignedResult);
 			WordErrorCount wec = new WordErrorCount(reference, alignedResult);
 			wec.align(); // align and print stats
-			
-			StringTokenizer tokenizer = new StringTokenizer(alignedResult);
+			*/			
+
+			StringTokenizer tokenizer = new StringTokenizer(reference);
 			String wordToken;			
 			while (tokenizer.hasMoreTokens()) {
 				wordToken = tokenizer.nextToken();
