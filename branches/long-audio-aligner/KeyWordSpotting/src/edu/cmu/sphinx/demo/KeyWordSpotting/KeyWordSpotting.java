@@ -26,8 +26,9 @@ public class KeyWordSpotting {
 		ConfigurationManager cm = new ConfigurationManager("./src/config.xml");
 		Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
 		NoSkipGrammar grammar = (NoSkipGrammar) cm.lookup("NoSkipGrammar");
-		System.out.println("Key Word : quantum number");
-		grammar.setText("quantum number");
+		//System.out.println("Key Word : quantum number");
+		grammar.addKeyword("quantum number");
+        grammar.addKeyword("orbital");
 		// System.out.println(grammar);
 		AudioFileDataSource dataSource = (AudioFileDataSource) cm
 				.lookup("audioFileDataSource");
