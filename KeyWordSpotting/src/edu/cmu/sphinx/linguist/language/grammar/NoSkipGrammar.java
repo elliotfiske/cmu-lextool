@@ -33,7 +33,7 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
     protected GrammarNode finalNode;
     private LogMath logMath;
 
-    private final List<String> tokens = new ArrayList<String>();
+    private final ArrayList<ArrayList<String>> keywords = new ArrayList<ArrayList<String>>();
 
     private int start;
 	public NoSkipGrammar() {
@@ -45,11 +45,12 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 			final boolean addFillerWords, final Dictionary dictionary) {
 		super(showGrammar, optimizeGrammar, addSilenceWords, addFillerWords, dictionary);
         this.logMath = logMath;
-        setText(text);
+        addKeyword(text);
 	}
 	
-	public void setText(String text) {
+	public void addKeyword(String text) {
 		StringTokenizer st = new StringTokenizer(text);
+        ArrayList<String> tokens = new ArrayList<String>();
 		while(st.hasMoreTokens()){
 			String token = st.nextToken();
 			token = token.toLowerCase();
@@ -57,6 +58,7 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 				tokens.add(token);
 			}			
 		}
+        keywords.add(tokens);
 	}
 	
 	/*
@@ -67,22 +69,32 @@ public class NoSkipGrammar extends Grammar implements ResultListener{
 	 */
 	protected GrammarNode createGrammar(){
 		initialNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
-		Iterator<String> iter = tokens.iterator();
+		Iterator<ArrayList<String>> iter = keywords.iterator();
 		finalNode = createGrammarNode(Dictionary.SILENCE_SPELLING);
 		initialNode.add(finalNode, logMath.getLogOne());
 		finalNode.add(initialNode, logMath.getLogOne());
 		GrammarNode lastWordGrammarNode = initialNode;
 		while(iter.hasNext()){
-			GrammarNode currNode = createGrammarNode(iter.next());
-			lastWordGrammarNode.add(currNode, logMath.getLogOne());
-			lastWordGrammarNode = currNode;
-			
+            ArrayList<String> tokens = iter.next();
+            Iterator<String> tokensIter = tokens.iterator();
+            while (tokensIter.hasNext()) {
+                GrammarNode currNode = createGrammarNode(tokensIter.next());
+                float value;
+                if (lastWordGrammarNode == initialNode) {
+                    value = logMath.linearToLog(1.0 / keywords.size());
+                } else {
+                    value = logMath.getLogOne();
+                }
+      		    lastWordGrammarNode.add(currNode, value);
+	       	    lastWordGrammarNode = currNode;
+            }
+		    lastWordGrammarNode.add(finalNode, logMath.getLogOne());
+            lastWordGrammarNode = initialNode;
 			// Parallel keyword topology
 			//initialNode.add(currNode, logMath.getLogOne());
 			
 			//currNode.add(finalNode, logMath.getLogOne());
 		}
-		lastWordGrammarNode.add(finalNode, logMath.getLogOne());
 		return initialNode;		
 	}
 	
