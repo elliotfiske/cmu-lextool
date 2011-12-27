@@ -179,6 +179,7 @@ public class PronunciationGenerator {
 	 * eighty nine point one two three four
 	 */
 	public LinkedList<String> decode_num(String word) throws IOException {
+		
 		if (!num_model_loaded)
 			loadNumModel();
 		LinkedList<String> result = new LinkedList<String>();
@@ -195,6 +196,28 @@ public class PronunciationGenerator {
 					+ simpleNum(word.substring(decimalIndex + 1)));
 		}
 		result.add(simpleResult);
+		
+		return result;
+	}
+
+	private String longNumbers(String word) {
+		
+		String result = "";
+		int length = word.length();
+		if(length % 2 != 0){
+			int n = Integer.valueOf(word.substring(0, 2));
+		}
+		
+		for(int i = 0; 2*i < word.length(); i++){
+			String tmpNum = word.substring(2*i, 2*i + 2);
+			if(tmpNum.compareToIgnoreCase("00") != 0) {
+				result += numberMap.get(tmpNum).getFirst() + " ";
+			} else {
+				result += "hundred ";
+			}
+			
+		}
+
 		return result;
 	}
 
@@ -204,11 +227,17 @@ public class PronunciationGenerator {
 	 */
 	private String simpleNum(String word) {
 		String result = "";
-		for (int i = 0; i < word.length(); i++) {
-			String currNum = word.substring(i, i + 1);
-
-			result = result.concat(" " + numberMap.get(currNum).getFirst());
-			// System.out.println(result);
+		if(word.length() == 0){
+			return result;
+		}
+		if(word.length() % 2 == 0) {
+			for (int i = 0; 2*i < word.length(); i++) {
+				String currNum = word.substring(2*i, 2*i + 2);			
+				result = result.concat(" " + numberMap.get(currNum).getFirst());
+			}
+		} else {
+			String tmpWord = word.substring(0, 1);
+			result = numberMap.get(tmpWord) + " " + simpleNum(word.substring(1, word.length()));
 		}
 		return result;
 	}
@@ -226,7 +255,7 @@ public class PronunciationGenerator {
 		LinkedList<String> phoneResult = new LinkedList<String>();		
 		if (isAbbrev(word)) {
 			textResult = decode_Abb(word);
-
+			
 		} else if (isNum(word)) {
 			textResult = decode_num(word);
 		}
@@ -238,7 +267,7 @@ public class PronunciationGenerator {
 		Iterator iter = textResult.iterator();
 		while (iter.hasNext()) {
 			String text = iter.next().toString();
-			String oneResult = wordPronunciation(text, g2p);			
+			String oneResult = wordPronunciation(text, g2p);
 			phoneResult.add(oneResult);
 		}
 		return phoneResult;
@@ -263,6 +292,7 @@ public class PronunciationGenerator {
 				currPhone = "ah";
 			line = line.concat(" " + currPhone);
 		}
+		
 		return line.toLowerCase();
 	}
 }

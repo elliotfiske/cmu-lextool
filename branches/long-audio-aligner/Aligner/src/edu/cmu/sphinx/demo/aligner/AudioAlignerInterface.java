@@ -21,9 +21,15 @@ public interface AudioAlignerInterface {
 	// Allow dynamic transcription change
 	// returns false if change failed
 	public boolean setText(String text) throws Exception;
-
-	// Allow dynamic grammar-type modification
-	public boolean setGrammarType(String grammarType);
+	
+	// Allow Deletions
+	public boolean allowDeletions();
+	
+	// Allow Repetions
+	public boolean allowRepetions();
+	
+	// Allow BackwardJumps
+	public boolean allowBackwardJumps();
 
 	// optimize values for aligner configuration
 	public void optimize();

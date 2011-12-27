@@ -35,14 +35,14 @@ public class AlignerGrammar extends Grammar {
 	private int start;
 
 	private boolean modelRepetitions = false;
-	private boolean modelInsertions = false;
+
 	private boolean modelDeletions = false;
 	private boolean modelBackwardJumps = false;
 
 	private double selfLoopProbability = 0.0;
 	private double backwardTransitionProbability = 0.0;
 	private double forwardJumpProbability = 0.0;
-	private int numAllowedWordJumps = 2;
+	private int numAllowedWordJumps;
 
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();
@@ -81,34 +81,17 @@ public class AlignerGrammar extends Grammar {
 			e.printStackTrace();
 		}
 	}
-
-	public void setGrammarType(String grammarType) {
-		// Restore Default
-		modelBackwardJumps = false;
-		modelDeletions = false;
-		modelInsertions = false;
-		modelRepetitions = false;
-		StringTokenizer st = new StringTokenizer(grammarType, "|");
-		while (st.hasMoreTokens()) {
-			String type = st.nextToken();
-			if (type.compareToIgnoreCase("MODEL_REPETITIONS") == 0) {
-
-				// allows for a word to repeated a number of times with certain
-				// penality associated with it
-
-				modelRepetitions = true;
-			} else if (type.compareToIgnoreCase("MODEL_DELETIONS") == 0) {
-
-				// grammar allows for forward jumps with certain penalty
-				// associated with it
-				modelDeletions = true;
-			} else if (type.compareToIgnoreCase("MODEL_BACKWARD_JUMPS") == 0) {
-
-				modelBackwardJumps = true;
-			} else {
-				throw new Error("UNKNOWN GRAMMAR MODEL");
-			}
-		}
+	
+	public void allowDeletions(boolean modelDeletions){
+		this.modelDeletions = modelDeletions;
+	}
+	
+	public void allowRepetions(boolean modelRepetitions){
+		this.modelRepetitions = modelRepetitions; 
+	}
+	
+	public void allowBackwardJumps(boolean modelBackwardJumps){
+		this.modelBackwardJumps = modelBackwardJumps;
 	}
 
 	@Override
@@ -148,14 +131,18 @@ public class AlignerGrammar extends Grammar {
 		final List<GrammarNode> wordGrammarNodes = new ArrayList<GrammarNode>();
 		final int end = tokens.size();
 
-		for (final String word : tokens.subList(start, end)) {
+		logger.info("Creating Grammar nodes");
+		for (final String word : tokens.subList(0, end)) {
 			final GrammarNode wordNode = createGrammarNode(word.toLowerCase());
 			wordGrammarNodes.add(wordNode);
 		}
-
+		logger.info("Done creating grammar node");
+		
 		// now connect all the GrammarNodes together
 		initialNode.add(branchNode, LogMath.getLogOne());
+		
 		createBaseGrammar(wordGrammarNodes, branchNode, finalNode);
+		
 		if (modelDeletions) {
 			addForwardJumps(wordGrammarNodes, branchNode, finalNode);
 		}
@@ -165,7 +152,8 @@ public class AlignerGrammar extends Grammar {
 		if (modelRepetitions) {
 			addSelfLoops(wordGrammarNodes);
 		}
-		// initialNode.dumpDot("./graph.dot");
+		logger.info("Done making Grammar");
+		//initialNode.dumpDot("./graph.dot");
 		return initialNode;
 	}
 
