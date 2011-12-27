@@ -58,7 +58,7 @@ public class StringCustomise {
 		if(word.length() >= 4) {
 			if(word.substring(0, 4).compareToIgnoreCase("SIL_") == 0) {
 				
-				return "";
+				return " ";
 			}
 		}
 		word = word.toLowerCase();

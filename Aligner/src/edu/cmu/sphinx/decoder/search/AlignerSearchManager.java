@@ -333,11 +333,6 @@ public class AlignerSearchManager extends TokenSearchManager {
 		boolean more = scoreTokens(); // score emitting tokens
 		phraseDetected = false;
 		if (more) {
-			/*
-			 * if(logCounter % 100 == 0) { System.out.println("Total Memory: " +
-			 * runtime.totalMemory()/(1024 * 1024) + "MB" + " Free Memory: " +
-			 * runtime.freeMemory()/(1024 * 1024) + "MB"); }
-			 */
 			pruneBranches(); // eliminate poor branches
 			if (phraseDetected) {
 				logger.info("Active List Pruned: number of active Token: "
@@ -541,7 +536,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 			float phraseTime = (float) currentFrameNumber / 100;
 			if (spotterContains(word.getSpelling(), phraseTime)) {
 				penalty = 1.0f; // it's more of a reward
-				//System.out.println("spotted");
+				System.out.println("spotted");
 				phraseDetected = true;
 				logger.info("Token prioritized");
 			}
@@ -616,7 +611,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 	}
 
 	private boolean spotterContains(String phraseFirstWord, float time) {
-		// System.out.println(time);
+		
 		if(spotterResult != null) {
 			Iterator<PhraseSpotterResult> iter = spotterResult
 					.iterator();
@@ -736,8 +731,7 @@ public class AlignerSearchManager extends TokenSearchManager {
 	}
 
 	/*
-	 * (non-Javadoc)
-	 * 
+	 * (non-Javadoc) 
 	 * @see edu.cmu.sphinx.decoder.search.SearchManager#allocate()
 	 */
 	@Override

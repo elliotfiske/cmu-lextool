@@ -57,7 +57,6 @@ public class PhoneLoop {
         uws = new UnknownWordState();
         lbsArcSet = new SearchStateArc[1];
         lbsArcSet[0] = lbs;
-
     }
 
 
@@ -163,9 +162,11 @@ public class PhoneLoop {
             List<OogHMM> successorList = new ArrayList<OogHMM>();
             for (Iterator<Unit> i = acousticModel.getContextIndependentUnitIterator(); i.hasNext();) {
                 Unit unit = i.next();
-                OogHMM hmm = new OogHMM(unit);
-                successorList.add(hmm);
-            }
+                if(!unit.isFiller()) {
+                	OogHMM hmm = new OogHMM(unit);                    
+                    successorList.add(hmm);
+                }                
+            }            
             successors = successorList.toArray(new SearchStateArc[successorList.size()]);
         }
 

@@ -31,28 +31,25 @@ import edu.cmu.sphinx.util.WordErrorCount;
 
 public class AlignerDemo {
 	public static void main(String Args[]) throws Exception {
-		/**
-		SimplePhraseSpotter ps = new SimplePhraseSpotter("./src/phraseSpotterConfig.xml");
-		ps.setAudioDataSource("./resource/wav/test.wav");
-		ps.setPhrase("state of an");
-		ps.startSpotting();
-		List<PhraseSpotterResult> result = ps.getTimedResult();
-		ListIterator<PhraseSpotterResult> iter = result.listIterator();
-		while(iter.hasNext()){
-			System.out.println(iter.next());
-		}
-		*/
-		createDB("./resource/batchFile.txt");
 		
+		/*
+		Aligner aligner = new Aligner("./src/config.xml",
+				"./resource/wav/Austen/persuasion_01_austen_64kb.wav",
+				"./resource/transcription/Austen/persuasion_chapter1.txt");
+		System.out.println(aligner.align());
+		*/
+		
+		createDB("./resource/batchFile.txt", 0.005f);
 	}
-	
-	public static void createDB( String batchFile ) throws Exception {
+
+	public static void createDB(String batchFile, float dataBaseErrorRate)
+			throws Exception {
 		BufferedReader batchReader = new BufferedReader(new FileReader(
 				batchFile));
 		String currFileSet;
 		int lineNum = 1;
-		
-		int fileID = 1;		
+
+		int fileID = 1;
 		while ((currFileSet = batchReader.readLine()) != null) {
 			BufferedWriter writer = new BufferedWriter(new FileWriter(
 					"./resource/RitaDB_train.transcription", true));
@@ -65,31 +62,25 @@ public class AlignerDemo {
 			}
 			String textFile = st.nextToken();
 			String audioFile = st.nextToken();
-			
+
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
 					textFile);
 			aligner.setPhraseSpottingConfig("./src/phraseSpotterConfig.xml");
+			
 			String reference = aligner.align();
 			System.out.println("REFERENCE: " + reference);
-			
-			// Demonstrating the use of API
-			/*
-			aligner.generateError(0.1f, 0.0f, 0.0f);
-			aligner.setRelativeBeamWidth("1E-300");
-			aligner.setAddOutOfGrammarBranchProperty("true");
-			aligner.setGrammarType("MODEL_DELETIONS");
-			aligner.setNumGrammarJumps(3);
-			aligner.setForwardJumpProbability(0.01);
-			aligner.performPhraseSpotting(false);
-			
-			String alignedResult = aligner.align(); // Aligned result
-			System.out.println("ALIGNED: " + alignedResult);
-			WordErrorCount wec = new WordErrorCount(reference, alignedResult);
-			wec.align(); // align and print stats
-			*/			
 
-			StringTokenizer tokenizer = new StringTokenizer(reference);
-			String wordToken;			
+			
+			  // Demonstrating the use of API 
+			aligner.generateError(0.0f,dataBaseErrorRate, 0.0f);
+			  
+			String alignedResult = aligner.align(); // Aligned result
+			System.out.println("ALIGNED: " + alignedResult); //WordErrorCount
+			WordErrorCount wec = new WordErrorCount(reference, alignedResult);
+			  //wec.align(); // align and print stats
+			 
+			StringTokenizer tokenizer = new StringTokenizer(alignedResult);
+			String wordToken;
 			while (tokenizer.hasMoreTokens()) {
 				wordToken = tokenizer.nextToken();
 				float startTime = Float.valueOf(getStartTime(wordToken));
@@ -108,12 +99,13 @@ public class AlignerDemo {
 				FragmentAudio fa = new FragmentAudio(audioFile);
 				String outputFile = "./resource/output/" + fileID + ".wav";
 				fa.fragment(outputFile, startTime, endTime);
-				fileID ++;
+				fileID++;
 			}
 			writer.close();
 			fileIDWriter.close();
 		}
 	}
+
 	public static String getStartTime(String wordToken) {
 		String st = wordToken.substring(wordToken.indexOf("(") + 1,
 				wordToken.indexOf(","));
@@ -128,8 +120,8 @@ public class AlignerDemo {
 
 	public static String getWord(String wordToken) {
 		String st = wordToken.substring(0, wordToken.indexOf("("));
-		if(st.compareToIgnoreCase("<unk>") == 0) {
-			st =" ";
+		if (st.compareToIgnoreCase("<unk>") == 0) {
+			st = " ";
 		}
 		return st;
 	}
