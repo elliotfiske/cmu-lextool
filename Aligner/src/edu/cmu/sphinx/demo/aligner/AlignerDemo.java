@@ -30,28 +30,29 @@ import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.WordErrorCount;
 
 public class AlignerDemo {
-	public static void main(String Args[]) throws Exception {
+	public static void main(String Args[]) throws Exception {		
 		
-		
+		/**
 		Aligner aligner = new Aligner("./src/config.xml",
-				"./resource/wav/Austen/persuasion_02_austen_64kb.wav",
-				"./resource/transcription/Austen/persuasion_chapter2.txt");
+				"./resource/wav/oov_numbers1.wav",
+				"./resource/transcription/oov_numbers.txt");
 		aligner.setAddOutOfGrammarBranchProperty("true");
 		aligner.allowDeletions();
 		aligner.setNumGrammarJumps(2); 
 		aligner.allowBackwardJumps();
 		//aligner.setForwardJumpProbability(0.0001);	// This is works as magic for 10sec
-		aligner.setForwardJumpProbability(0.1);
-		aligner.setBackwardJumpProbability(0.0001);
-		//aligner.setSelfLoopProbability(0.1);
+		aligner.setForwardJumpProbability(0.12);
+		aligner.setBackwardJumpProbability(0.001);
 		BufferedWriter writer = new BufferedWriter(new FileWriter(
-				"./result.txt", true));
+				"./result.txt", false));
+		aligner.generateError(0, 0, 0.01f);
 		String result = aligner.align();
 		writer.write(result);
 		System.out.println(result);
-		writer.close();
+		writer.close();		
+		**/
 		
-		//createDB("./resource/batchFile.txt", 0.01f);
+		createDB("./resource/batchFile.txt", 0.01f);
 	}
 
 	public static void createDB(String batchFile, float dataBaseErrorRate)
@@ -74,23 +75,20 @@ public class AlignerDemo {
 			}
 			String textFile = st.nextToken();
 			String audioFile = st.nextToken();
-
+			
+			
+			// Demonstrating the use of API 
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
 					textFile);
-			aligner.setPhraseSpottingConfig("./src/phraseSpotterConfig.xml");
 			aligner.allowDeletions();
-			aligner.allowRepetions();
-			aligner.setForwardJumpProbability(0.2);
-			//aligner.setBackwardJumpProbability(0.00000000002);
-			aligner.setNumGrammarJumps(2);
+			aligner.setNumGrammarJumps(2); 
+			aligner.allowBackwardJumps();
+			aligner.setForwardJumpProbability(0.12);
+			aligner.setBackwardJumpProbability(0.001);		
 			
-			  // Demonstrating the use of API 
-			aligner.generateError(0.0f,0.0f, dataBaseErrorRate);
-			  
-			String alignedResult = aligner.align(); // Aligned result
-			System.out.println("ALIGNED: " + alignedResult); //WordErrorCount
-			//WordErrorCount wec = new WordErrorCount(reference, alignedResult);
-			  //wec.align(); // align and print stats
+			aligner.generateError(0,0, dataBaseErrorRate);			  
+			String alignedResult = aligner.align(); 			// Aligned result
+			System.out.println("ALIGNED: " + alignedResult); 	//WordErrorCount
 			 
 			StringTokenizer tokenizer = new StringTokenizer(alignedResult);
 			String wordToken;

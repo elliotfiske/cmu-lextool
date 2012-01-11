@@ -67,7 +67,7 @@
 	<component name="AlignerGrammar" type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
 		<property name="dictionary" value="dictionary" />
 		<property name="logMath" value="logMath" />
-		<property name="addSilenceWords" value="false" />
+		<property name="addSilenceWords" value="true" />
 		<property name="allowLoopsAndBackwardJumps" value="allowLoopsAndBackwardJumps" />
 		<property name="selfLoopProbability" value="selfLoopProbability" />
 		<property name="backwardTransitionProbability" value="backwardTransitionProbability" />
