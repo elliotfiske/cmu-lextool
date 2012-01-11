@@ -32,14 +32,26 @@ import edu.cmu.sphinx.util.WordErrorCount;
 public class AlignerDemo {
 	public static void main(String Args[]) throws Exception {
 		
-		/*
-		Aligner aligner = new Aligner("./src/config.xml",
-				"./resource/wav/Austen/persuasion_01_austen_64kb.wav",
-				"./resource/transcription/Austen/persuasion_chapter1.txt");
-		System.out.println(aligner.align());
-		*/
 		
-		createDB("./resource/batchFile.txt", 0.005f);
+		Aligner aligner = new Aligner("./src/config.xml",
+				"./resource/wav/Austen/persuasion_02_austen_64kb.wav",
+				"./resource/transcription/Austen/persuasion_chapter2.txt");
+		aligner.setAddOutOfGrammarBranchProperty("true");
+		aligner.allowDeletions();
+		aligner.setNumGrammarJumps(2); 
+		aligner.allowBackwardJumps();
+		//aligner.setForwardJumpProbability(0.0001);	// This is works as magic for 10sec
+		aligner.setForwardJumpProbability(0.1);
+		aligner.setBackwardJumpProbability(0.0001);
+		//aligner.setSelfLoopProbability(0.1);
+		BufferedWriter writer = new BufferedWriter(new FileWriter(
+				"./result.txt", true));
+		String result = aligner.align();
+		writer.write(result);
+		System.out.println(result);
+		writer.close();
+		
+		//createDB("./resource/batchFile.txt", 0.01f);
 	}
 
 	public static void createDB(String batchFile, float dataBaseErrorRate)
@@ -66,17 +78,18 @@ public class AlignerDemo {
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
 					textFile);
 			aligner.setPhraseSpottingConfig("./src/phraseSpotterConfig.xml");
-			
-			String reference = aligner.align();
-			System.out.println("REFERENCE: " + reference);
-
+			aligner.allowDeletions();
+			aligner.allowRepetions();
+			aligner.setForwardJumpProbability(0.2);
+			//aligner.setBackwardJumpProbability(0.00000000002);
+			aligner.setNumGrammarJumps(2);
 			
 			  // Demonstrating the use of API 
-			aligner.generateError(0.0f,dataBaseErrorRate, 0.0f);
+			aligner.generateError(0.0f,0.0f, dataBaseErrorRate);
 			  
 			String alignedResult = aligner.align(); // Aligned result
 			System.out.println("ALIGNED: " + alignedResult); //WordErrorCount
-			WordErrorCount wec = new WordErrorCount(reference, alignedResult);
+			//WordErrorCount wec = new WordErrorCount(reference, alignedResult);
 			  //wec.align(); // align and print stats
 			 
 			StringTokenizer tokenizer = new StringTokenizer(alignedResult);
