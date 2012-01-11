@@ -176,8 +176,7 @@ public class AlignerGrammar extends Grammar {
 				GrammarNode jumpToNode = wordGrammarNodes.get(j);
 				currNode.add(
 						jumpToNode,
-						logMath.linearToLog(backwardTransitionProbability
-								* Math.pow(Math.E, i - j)));
+						logMath.linearToLog(backwardTransitionProbability));
 			}
 		}
 	}
@@ -194,8 +193,7 @@ public class AlignerGrammar extends Grammar {
 				GrammarNode jumpNode = wordGrammarNodes.get(j);
 				currNode.add(
 						jumpNode,
-						logMath.linearToLog(forwardJumpProbability
-								* Math.pow(Math.E, j - i)));
+						logMath.linearToLog(forwardJumpProbability));
 			}
 		}
 		for (int i = wordGrammarNodes.size() - numAllowedWordJumps - 1; i < wordGrammarNodes
@@ -204,7 +202,7 @@ public class AlignerGrammar extends Grammar {
 			currNode = wordGrammarNodes.get(i);
 			currNode.add(
 					finalNode,
-					logMath.linearToLog(forwardJumpProbability
+					logMath.linearToLog((float)forwardJumpProbability
 							* Math.pow(Math.E, j - i)));
 		}
 

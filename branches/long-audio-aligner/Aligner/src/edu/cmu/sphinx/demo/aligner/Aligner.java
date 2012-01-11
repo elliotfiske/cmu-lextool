@@ -168,7 +168,7 @@ public class Aligner implements AudioAlignerInterface {
 		Result result = recognizer.recognize();
 		String timedResult = result.getTimedBestResult(false, true);
 		Token finalToken = result.getBestFinalToken();
-		//System.out.println(result.getBestToken().getWordUnitPath());
+		System.out.println(result.getBestToken().getWordUnitPath());
 		deallocate();
 		return timedResult;
 	}

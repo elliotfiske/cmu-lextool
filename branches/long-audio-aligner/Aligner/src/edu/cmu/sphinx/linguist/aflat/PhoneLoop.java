@@ -161,11 +161,11 @@ public class PhoneLoop {
         FirstBranchState() {
             List<OogHMM> successorList = new ArrayList<OogHMM>();
             for (Iterator<Unit> i = acousticModel.getContextIndependentUnitIterator(); i.hasNext();) {
-                Unit unit = i.next();
-                if(!unit.isFiller()) {
-                	OogHMM hmm = new OogHMM(unit);                    
+                Unit unit = i.next();                
+            	if(!unit.isFiller() || unit.isSilence()) {
+            		OogHMM hmm = new OogHMM(unit);                    
                     successorList.add(hmm);
-                }                
+            	}
             }            
             successors = successorList.toArray(new SearchStateArc[successorList.size()]);
         }
