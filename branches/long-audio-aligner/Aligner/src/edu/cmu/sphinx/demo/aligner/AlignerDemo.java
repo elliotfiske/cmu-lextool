@@ -30,31 +30,41 @@ import edu.cmu.sphinx.util.StringCustomise;
 import edu.cmu.sphinx.util.WordErrorCount;
 
 public class AlignerDemo {
-	public static void main(String Args[]) throws Exception {		
+	public static void main(String Args[]) throws Exception {
 		
-		/**
+		
 		Aligner aligner = new Aligner("./src/config.xml",
-				"./resource/wav/oov_numbers1.wav",
-				"./resource/transcription/oov_numbers.txt");
+				"./resource/wav/Austen/persuasion_20_austen_64kb.wav",
+				"./resource/transcription/Austen/persuasion_chapter20.txt");	
+		
 		aligner.setAddOutOfGrammarBranchProperty("true");
 		aligner.allowDeletions();
-		aligner.setNumGrammarJumps(2); 
+		aligner.setNumGrammarJumps(2);
 		aligner.allowBackwardJumps();
-		//aligner.setForwardJumpProbability(0.0001);	// This is works as magic for 10sec
+		
 		aligner.setForwardJumpProbability(0.12);
 		aligner.setBackwardJumpProbability(0.001);
-		BufferedWriter writer = new BufferedWriter(new FileWriter(
-				"./result.txt", false));
-		aligner.generateError(0, 0, 0.01f);
-		String result = aligner.align();
-		writer.write(result);
-		System.out.println(result);
-		writer.close();		
-		**/
+		//BufferedReader reader = new BufferedReader(new FileReader("./result.txt"));
+		String ref = aligner.align();
+		System.out.println(ref);
 		
-		createDB("./resource/batchFile.txt", 0.01f);
+		/**
+		 * To test robustness of alignment 
+		 * 
+		
+		String hyp = aligner.align();
+		System.out.println(hyp);
+		WordErrorCount wec = new WordErrorCount(ref, hyp);
+		wec.align();
+		wec.printStats();
+		**/
+		//float dataBaseErrorRate = Float.valueOf(Args[0]);
+		//float dataBaseErrorRate = 0.0f;
+		//createDB("./resource/batchFile.txt", dataBaseErrorRate);
 	}
 
+	// Creates a Audio database out of Database from alignment results on
+	// audio available in batchFile
 	public static void createDB(String batchFile, float dataBaseErrorRate)
 			throws Exception {
 		BufferedReader batchReader = new BufferedReader(new FileReader(
@@ -75,21 +85,20 @@ public class AlignerDemo {
 			}
 			String textFile = st.nextToken();
 			String audioFile = st.nextToken();
-			
-			
-			// Demonstrating the use of API 
+
+			// Demonstrating the use of API
 			Aligner aligner = new Aligner("./src/config.xml", audioFile,
 					textFile);
 			aligner.allowDeletions();
-			aligner.setNumGrammarJumps(2); 
+			aligner.setNumGrammarJumps(2);
 			aligner.allowBackwardJumps();
 			aligner.setForwardJumpProbability(0.12);
-			aligner.setBackwardJumpProbability(0.001);		
-			
-			aligner.generateError(0,0, dataBaseErrorRate);			  
-			String alignedResult = aligner.align(); 			// Aligned result
-			System.out.println("ALIGNED: " + alignedResult); 	//WordErrorCount
-			 
+			aligner.setBackwardJumpProbability(0.001);
+
+			aligner.generateError(0, 0, dataBaseErrorRate);
+			String alignedResult = aligner.align(); // Aligned result
+			System.out.println("ALIGNED: " + alignedResult); // WordErrorCount
+
 			StringTokenizer tokenizer = new StringTokenizer(alignedResult);
 			String wordToken;
 			while (tokenizer.hasMoreTokens()) {
@@ -103,14 +112,19 @@ public class AlignerDemo {
 					endTime = Float.valueOf(getEndTime(wordToken));
 					line += " " + getWord(wordToken);
 				}
-				line = line.toUpperCase();
-				line = "<s> " + line + " </s> (" + fileID + ")\n";
-				writer.write(line);
-				fileIDWriter.write("output/" + fileID + "\n");
-				FragmentAudio fa = new FragmentAudio(audioFile);
-				String outputFile = "./resource/output/" + fileID + ".wav";
-				fa.fragment(outputFile, startTime, endTime);
-				fileID++;
+
+				// ensure that the audio size does not exceed a limit of 15
+				// seconds
+				if ((endTime - startTime) < 15.0f) {
+					line = line.toUpperCase();
+					line = "<s> " + line + " </s> (" + fileID + ")\n";
+					writer.write(line);
+					fileIDWriter.write("output/" + fileID + "\n");
+					FragmentAudio fa = new FragmentAudio(audioFile);
+					String outputFile = "./resource/output/" + fileID + ".wav";
+					fa.fragment(outputFile, startTime, endTime);
+					fileID++;
+				}
 			}
 			writer.close();
 			fileIDWriter.close();
