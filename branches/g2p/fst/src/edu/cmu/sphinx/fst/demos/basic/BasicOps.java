@@ -17,6 +17,7 @@ package edu.cmu.sphinx.fst.demos.basic;
 import edu.cmu.sphinx.fst.weight.TropicalSemiring;
 import edu.cmu.sphinx.fst.weight.Weight;
 
+
 /**
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
