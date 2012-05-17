@@ -13,13 +13,16 @@
 
 package edu.cmu.sphinx.fst.weight;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  * @param <T>
  */
-public class Weight<T> {
+public class Weight<T> implements Serializable {
+	private static final long serialVersionUID = 6897737261832081990L;
 	private Class<T> type;
 	private T value;
 

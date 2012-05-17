@@ -12,12 +12,16 @@
 
 package edu.cmu.sphinx.fst.weight;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
  */
-public class TropicalSemiring implements Semiring<Weight<Float>> {
+public class TropicalSemiring implements Semiring<Weight<Float>>, Serializable {
+
+	private static final long serialVersionUID = 2711172386738607866L;
 
 	/**
 	 * 
