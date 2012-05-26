@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" layout="absolute" minWidth="955" minHeight="600"
+				initialize="init();" >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import flash.events.Event;
+			import flash.utils.Timer;
+			
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var urlstr:String="rtmp://localhost/audioRecorder";
+			//private var urlstr:String="rtmp://talknicer.net/audioRecorder";
+			
+			private var datapath:String="audioRecorder";
+			[Bindable] private var audiopath:String;
+			[Bindable] private var quality:int=8;
+			
+			private var delayTimer:Timer=new Timer(500,1);
+			
+			private var userloggedin:Boolean;
+			private var isRecording:Boolean;
+			private var isPlaying:Boolean;
+			
+			[Bindable] private var userid:String="user1";
+			private var nc:NetConnection;
+			private var ns:NetStream;
+			
+			private function updateFileName():void {
+				audiopath=datapath+'/'+userid.replace(/ /g, '_')+'/'+(sentList.selectedLabel).replace(/ /g, '_')+'_q'+quality.toString();
+			}
+				
+			private function sentSelectedEvt(event:Event):void {
+				sentText.text = sentList.selectedItem.data;
+				updateFileName();
+			}
+			
+			private function init():void {
+				userloggedin=false;
+							
+				useridLbl.visible=true;
+				useridTbx.visible=true;
+				useridTbx.editable=true;
+				loginBtn.visible=true;
+				loginBtn.enabled=true;
+				
+				qualityLbl.visible=false;
+				qualityCbx.visible=false;
+				sentLbl.visible=false;
+				sentList.visible=false;
+				sentText.visible=false;
+				recordBtn.visible=false;
+				playBtn.visible=false;
+				
+				delayTimer.addEventListener(TimerEvent.TIMER, stopRecordingDelayFinished);
+				
+			}
+			
+			private function stopRecordingDelayFinished(event:TimerEvent):void {
+				var date:Date=new Date();
+				debug('timer ends at:'+date.milliseconds);
+				closeStream();
+				debug('delay done! Closing stream...');
+			}
+			
+			private function connect(url:String):void {
+				NetConnection.defaultObjectEncoding = ObjectEncoding.AMF0; // MUST SUPPLY THIS!!!
+				
+				if (nc == null) {
+					nc = new NetConnection();
+					nc.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+					nc.addEventListener(IOErrorEvent.IO_ERROR, errorHandler, false, 0, true);
+					nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, errorHandler, false, 0, true);
+					nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, errorHandler, false, 0, true);
+					nc.client = {};
+					
+					debug('connect() ' + url);
+					nc.connect(url);
+				}
+			}
+			
+			private function close():void {
+				debug('close()');
+				if (nc != null) {
+					nc.close();
+					nc = null;
+					closeStream();
+				}
+			}
+
+			
+			private function closeStream():void {
+				if (ns != null) {
+					ns.close();
+					ns = null;
+				}
+			}
+			
+			private function netStatusHandler(event:NetStatusEvent):void {
+				debug('netStatusHandler() ' + event.type + ' ' + event.info.code);
+				switch (event.info.code) {
+					case 'NetConnection.Connect.Success':
+						// only when the connection is succeeded, show the recording interface
+						loginSucceed();
+						break;
+					case 'NetConnection.Connect.Failed':
+						Alert.show("Connection failed! Please try it again!");
+						nc = null;
+						closeStream();
+						break;
+					case 'NetConnection.Connect.Reject':
+						Alert.show("Connection rejected! Checking your settings and retry again!");
+						nc = null;
+						closeStream();
+						break;
+					case 'NetConnection.Connect.Closed':
+						nc = null;
+						closeStream();
+						break;
+					case 'NetStream.Play.Stop':
+						playStopped();
+						break;
+				}
+			}
+			
+			private function errorHandler(event:ErrorEvent):void {
+				debug('errorHandler() ' + event.type + ' ' + event.text);
+				if (nc != null)
+					nc.close();
+				nc = null;
+				closeStream();
+			}
+			
+			private function streamErrorHandler(event:ErrorEvent):void {
+				debug('streamErrorHandler() ' + event.type + ' ' + event.text);
+				closeStream();
+			}
+			
+			private function onMicStatus(event:StatusEvent):void 
+			{ 
+				if (event.code == "Microphone.Unmuted") 
+				{ 
+					debug("Microphone access was allowed.");
+				}  
+				else if (event.code == "Microphone.Muted") 
+				{ 
+					debug("Microphone access was denied.");
+				} 
+			}
+			
+			
+			private function debug(msg:String):void {
+				if (debugTxt != null)
+				{
+					debugTxt.text += msg + '\n';
+					debugTxt.validateNow();
+					debugTxt.verticalScrollPosition=debugTxt.maxVerticalScrollPosition;
+				}
+			}
+			
+			//////////////////////////////////////////////////////////////////////
+			
+			private function loginSucceed(): void {
+				// disable the login part and change to log off
+				useridTbx.enabled=false;
+				loginBtn.label="Log Off";
+				
+				// show up the content if the connection is successful
+				qualityLbl.visible=true;
+				qualityCbx.visible=true;
+				quality=8;
+				sentLbl.visible=true;
+				sentList.visible=true;
+				sentText.visible=true;
+				recordBtn.visible=true;
+				playBtn.visible=true;
+				sentList.selectedIndex=0;
+				sentText.text=sentList.selectedItem.data;
+				updateFileName();
+				
+				userloggedin=true;
+			}
+			
+			private function logoutSucceed(): void {
+				// hide the content
+				qualityLbl.visible=false;
+				qualityCbx.visible=false;
+				sentLbl.visible=false;
+				sentList.visible=false;
+				sentText.visible=false;
+				recordBtn.visible=false;
+				playBtn.visible=false;
+				
+				// enable the login part
+				useridTbx.enabled=true;
+				loginBtn.label="Log In";
+				
+				userloggedin=false;
+			}
+			
+			
+			
+			/////////////////////////////////////////////////////////////////////
+			
+			private function loginBtnClicked(event:Event): void {
+				
+				if (userloggedin)
+				{
+					// log out: disable the UI before closing the connection
+					logoutSucceed(); 
+					
+					// close the connection
+					close();
+					
+				}else{
+				
+					// log in: show the UI only if the connection is successful
+					
+					// connect to the rtmp server 
+					connect(urlstr);
+				}
+			}
+			
+			private function recordBtnClicked(event:Event):void {
+				//debug('recordBtnClicked() ' + event.type + ' ' + event.toString());
+				
+				if(!isRecording)
+				{
+					// disable playing button and combobox
+					playBtn.enabled=false;
+					sentList.enabled=false;
+					recordBtn.selected=true;
+					isRecording=true;
+					
+					if (ns == null && nc != null && nc.connected) {
+						ns = new NetStream(nc);
+						ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+						ns.addEventListener(IOErrorEvent.IO_ERROR, streamErrorHandler, false, 0, true);
+						ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, streamErrorHandler, false, 0, true);
+						ns.client = {};
+						
+						var mic:Microphone = Microphone.getMicrophone(); // little known fact that -1 gives default microphone.
+						mic.setUseEchoSuppression(true);
+						mic.setLoopBack(false);
+						//mic.setSilenceLevel(0);
+						mic.codec = 'Speex';
+						mic.encodeQuality = quality; // 27.8kbits/s
+						mic.gain = 60;
+						
+						mic.addEventListener(StatusEvent.STATUS, this.onMicStatus); 
+						
+						ns.attachAudio(mic);
+						
+						ns.publish(audiopath, 'record');
+						debug("Recording: "+audiopath);
+					}
+				}else
+				{
+					recordBtn.selected=false;
+					isRecording=false;
+					playBtn.enabled=true;
+					sentList.enabled=true;
+					
+					// delay 0.5s before closing the stream
+					var date:Date=new Date();
+					debug('start timer at:'+date.milliseconds);
+					delayTimer.start();
+				}
+				
+				
+			}
+			
+			private function playStopped():void {
+				playBtn.selected=false;
+				isPlaying=false;
+				recordBtn.enabled=true;
+				sentList.enabled=true;
+				
+				closeStream();
+			}
+			
+			private function playBtnClicked(event:Event):void {
+				if(!isPlaying)
+				{
+					// disable recording
+					recordBtn.enabled=false;
+					sentList.enabled=false;
+					playBtn.selected=true;
+					isPlaying=true;
+					
+					if (ns == null && nc != null && nc.connected) {
+						ns = new NetStream(nc);
+						ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+						ns.addEventListener(IOErrorEvent.IO_ERROR, streamErrorHandler, false, 0, true);
+						ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, streamErrorHandler, false, 0, true);
+						ns.client = {};
+						
+						ns.play(audiopath);
+						
+						debug("Playing: "+audiopath);
+					}
+				}else
+				{
+					playStopped();
+				}
+
+			}
+			
+			protected function qualityCbx_changeHandler(event:ListEvent):void
+			{
+				// TODO Auto-generated method stub
+				quality=parseInt(qualityCbx.selectedLabel);
+				updateFileName();
+			}
+			
+		]]>
+	</fx:Script>
+	
+
+	<mx:Label id="useridLbl" top="70" horizontalCenter="-115" text="User ID:"/>
+	<mx:TextInput id="useridTbx" top="70" width="106" horizontalCenter="0" maxChars="10" text="{userid}" change="userid=useridTbx.text"/>
+	<mx:Button id="loginBtn" top="70" label="Log In" horizontalCenter="105" click="loginBtnClicked(event)"/>
+	
+	<mx:ComboBox id="sentList" top="137" editable="false" horizontalCenter="0" change="sentSelectedEvt(event)">
+		<mx:dataProvider>
+			<mx:ArrayCollection>
+				<fx:Object label="Sentence 0" data="No one at the state department wants to let spies in."/>
+				<fx:Object label="Sentence 1" data="The quick brown fox jumps over the lazy dog."/>
+				<fx:Object label="Sentence 2" data="Bother, father caught hot coffee in the car park."/>
+				<fx:Object label="Sentence 3" data="I teach Ferdinand the calm cat to fetch cold cups of coffee."/>
+			</mx:ArrayCollection>
+		</mx:dataProvider>
+	</mx:ComboBox>
+	<mx:Label id="sentLbl" top="141" horizontalCenter="-156" text="Select a sentence to read:"/>
+	<mx:Label id="sentText" top="244" color="#F4DB07" fontFamily="Arial" fontSize="35"
+			  fontWeight="bold" horizontalCenter="0" text="Label" textAlign="center"/>
+	<mx:Button id="recordBtn" top="412" label="" toggle="true"
+			   skin="@Embed('images/microphone_up.png')"
+			   upSkin="@Embed('images/microphone_up.png')"
+			   disabledSkin="@Embed('images/microphone_disabled.png')"
+			   selectedUpSkin="@Embed('images/microphone_down.png')"
+			   selectedOverSkin="@Embed('images/microphone_down.png')"
+			   selectedDownSkin="@Embed('images/microphone_down.png')"
+			   horizontalCenter="-50"
+			   overSkin="@Embed('images/microphone_over.png')"
+			   click="recordBtnClicked(event)"/>
+	<mx:Button id="playBtn" top="412" label="" toggle="true"
+			   skin="@Embed('images/play_up.png')"
+			   upSkin="@Embed('images/play_up.png')"
+			   disabledSkin="@Embed('images/play_disabled.png')"
+			   selectedUpSkin="@Embed('images/play_down.png')"
+			   selectedOverSkin="@Embed('images/play_down.png')"
+			   selectedDownSkin="@Embed('images/play_down.png')"
+			   horizontalCenter="50"
+			   overSkin="@Embed('images/play_over.png')" 
+			   click="playBtnClicked(event)"/>
+	<mx:TextArea id="debugTxt" bottom="0" width="100%" height="121" horizontalCenter="0"/>
+	<mx:Label id="qualityLbl" top="141" horizontalCenter="113" text="Quality:"/>
+	<mx:ComboBox id="qualityCbx" top="137" width="65" change="qualityCbx_changeHandler(event)"
+				 editable="false" horizontalCenter="176" selectedIndex="{quality}">
+		<mx:dataProvider>
+			<mx:ArrayCollection>
+				<fx:Object label="0" data="3.95kbps"/>
+				<fx:Object label="1" data="5.75kbps"/>
+				<fx:Object label="2" data="7.75kbps"/>
+				<fx:Object label="3" data="9.80kbps"/>
+				<fx:Object label="4" data="12.8kbps"/>
+				<fx:Object label="5" data="16.8kbps"/>
+				<fx:Object label="6" data="20.6kbps"/>
+				<fx:Object label="7" data="23.8kbps"/>
+				<fx:Object label="8" data="27.8kbps"/>
+				<fx:Object label="9" data="34.2kbps"/>
+				<fx:Object label="10" data="42.2kbps"/>
+			</mx:ArrayCollection>
+		</mx:dataProvider>
+	</mx:ComboBox>
+
+</mx:Application>
