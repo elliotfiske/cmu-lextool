@@ -1,28 +1,17 @@
-This is a GSoC 2012 Project Brunch.
+This is a GSoC 2012 Project Brunch for Pronunciation Evaluation.
 
-The project proposal can be found at: https://google-melange.appspot.com/gsoc/proposal/review/google/gsoc2012/troylee2008/1
-
-Project Title: Accurate and Efficient Pronunciation Evaluation using CMUSphinx for Spoken Language Learning
-Student: Troy Lee (troy.lee2008@gmail.com)
 Mentor: James Salsman (jsalsman@gmail.com)
 
+Students: Srikanth Ronanki (srikanth.143.iiit@gmail.com)
+		  Troy Lee (troy.lee2008@gmail.com)
 
-################################################
-# Dependencies:
-################################################
-
-===============
-| rtmplite
-===============
-
-The rtmplite package (http://code.google.com/p/rtmplite/) is used as the server side application for our audio recording. 
-
-The main file used is: http://code.google.com/p/rtmplite/source/browse/trunk/rtmp.py
-
-The process is started on the server side by following command:
-
-$python rtmp.py -r [path_to_save_data]/ &
-
-This process can be started anywhere, no need to be under the same folder as the recording client which would probably under the www directory. However, it would be good to set the root path; by default, the data will be stored under the same folder as the rtmp.py script.
-
+Our GSoC 2012 projects are:
+================================================================================
+Pronunciation Evaluation using CMU Sphinx3
+Srikanth Ronanki
+http://www.google-melange.com/gsoc/proposal/review/google/gsoc2012/ronanki/1
+================================================================================
+Accurate and Efficient Pronunciation Evaluation using CMUSphinx for Spoken Language Learning
+Troy Lee
+http://www.google-melange.com/gsoc/proposal/review/google/gsoc2012/troylee2008/1
 
