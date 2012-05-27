@@ -553,8 +553,7 @@ class FLV(object):
             wavfname=self.fname[:self.fname.rfind('.flv')]+'.wav'
             cmd='/usr/bin/ffmpeg -y -i '+self.fname+' -vn -f wav -ar 16000 -ac 1 '+wavfname
             if _debug: print 'command: '+cmd
-            try: ptmp=(subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)).communicate()
-            except: pass
+            ptmp=(subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)).communicate()
             if _debug:
                 print '##OUTPUT##'+(ptmp[0]).rstrip(' \n')
                 print '##ERROR##'+(ptmp[1]).rstrip(' \n')
