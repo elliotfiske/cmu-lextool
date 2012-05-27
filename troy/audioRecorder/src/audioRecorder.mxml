@@ -14,8 +14,8 @@
 			import mx.events.ListEvent;
 			import mx.rpc.events.ResultEvent;
 			
-			//private var urlstr:String="rtmp://localhost/audioRecorder";
-			private var urlstr:String="rtmp://talknicer.net/audioRecorder";
+			private var urlstr:String="rtmp://localhost/audioRecorder";
+			//private var urlstr:String="rtmp://talknicer.net/audioRecorder";
 			
 			private var datapath:String="audioRecorder";
 			[Bindable] private var audiopath:String;
@@ -120,10 +120,15 @@
 						break;
 					case 'NetConnection.Connect.Closed':
 						nc = null;
+						logoutSucceed();
 						closeStream();
 						break;
 					case 'NetStream.Play.Stop':
 						playStopped();
+						break;
+					case 'NetStream.Publish.Start':
+						recordBtn.selected=true;
+						isRecording=true;
 						break;
 				}
 			}
@@ -234,8 +239,6 @@
 					// disable playing button and combobox
 					playBtn.enabled=false;
 					sentList.enabled=false;
-					recordBtn.selected=true;
-					isRecording=true;
 					
 					if (ns == null && nc != null && nc.connected) {
 						ns = new NetStream(nc);
