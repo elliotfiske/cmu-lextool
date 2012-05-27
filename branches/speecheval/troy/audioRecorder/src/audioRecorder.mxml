@@ -14,8 +14,8 @@
 			import mx.events.ListEvent;
 			import mx.rpc.events.ResultEvent;
 			
-			private var urlstr:String="rtmp://localhost/audioRecorder";
-			//private var urlstr:String="rtmp://talknicer.net/audioRecorder";
+			//private var urlstr:String="rtmp://localhost/audioRecorder";
+			private var urlstr:String="rtmp://talknicer.net/audioRecorder";
 			
 			private var datapath:String="audioRecorder";
 			[Bindable] private var audiopath:String;
