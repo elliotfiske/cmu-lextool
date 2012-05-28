@@ -4,9 +4,17 @@
 				initialize="init();" >
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
+		<mx:HTTPService result="flv2wavDone(event);" fault="flv2wavFault(event);" id="flv2wavHttp" url="flv2wav.php" method="POST" useProxy="false" resultFormat="text">
+			<mx:request xmlns="">
+				<flvname>
+					{audiopath}
+				</flvname>
+			</mx:request>
+		</mx:HTTPService>
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[
+			import mx.rpc.events.ResultEvent;
 			import flash.events.Event;
 			import flash.utils.Timer;
 			
@@ -14,8 +22,8 @@
 			import mx.events.ListEvent;
 			import mx.rpc.events.ResultEvent;
 			
-			private var urlstr:String="rtmp://localhost/audioRecorder";
-			//private var urlstr:String="rtmp://talknicer.net/audioRecorder";
+			//private var urlstr:String="rtmp://localhost/audioRecorder";
+			private var urlstr:String="rtmp://talknicer.net/audioRecorder";
 			
 			private var datapath:String="audioRecorder";
 			[Bindable] private var audiopath:String;
@@ -66,6 +74,8 @@
 				debug('timer ends at:'+date.milliseconds);
 				closeStream();
 				debug('delay done! Closing stream...');
+				debug('Sending conversion request...');
+				flv2wavHttp.send();
 			}
 			
 			private function connect(url:String):void {
@@ -319,6 +329,21 @@
 				// TODO Auto-generated method stub
 				quality=parseInt(qualityCbx.selectedLabel);
 				updateFileName();
+			}
+			
+			
+			/////////////////////////////////////////////////////////////////////
+			// HTTPService event functions
+			private function flv2wavDone(event:ResultEvent): void
+			{
+				debug("flv2wavDone: "+event.type+" " +event.result.toString());
+				debug("FLV to WAV conversion done!");
+			}
+			
+			private function flv2wavFault(event:Event): void
+			{
+				debug("flv2wavFault: "+event.type+" "+event.toString());
+				debug("FLV to WAV conversion failed!");
 			}
 			
 		]]>
