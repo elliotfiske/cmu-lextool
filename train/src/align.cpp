@@ -11,8 +11,8 @@
  */
 
 #include <cstring>
-#include "phonetisaurus/M2MFstAligner.hpp"
 #include <getopt.h>
+#include "phonetisaurus/M2MFstAligner.hpp"
 
 void print_help(char* appname) {
 	cout << "Usage: " << appname << " [--seq1_del] [--seq2_del] [--seq1_max SEQ1_MAX] [--seq2_max SEQ2_MAX]" << endl;
@@ -174,7 +174,8 @@ int main(int argc, char* argv[]) {
 			seq2_sep, s1s2_sep, eps, skip, true);
 
 	string line;
-	ifstream infile(input_file.c_str(), ifstream::in);
+	ifstream infile(input_file.c_str(),  ifstream::in);
+
 	vector<string> tokens;
 	vector<string> seq1;
 	vector<string> seq2;
@@ -217,7 +218,7 @@ int main(int argc, char* argv[]) {
 		for (int k = 0; k < paths.size(); k++) {
 			for (int j = 0; j < paths[k].path.size(); j++) {
 				ofile << paths[k].path[j];
-				if (j < paths[k].path.size() - 1)
+				//if (j < paths[k].path.size() - 1)
 					ofile << " ";
 			}
 			ofile << endl;

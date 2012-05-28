@@ -23,6 +23,7 @@
 							<builder buildPath="${workspace_loc:/train/Default}" id="cdt.managedbuild.target.gnu.builder.base.292181575" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1754462237" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.243150446" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
+								<option id="gnu.cpp.compiler.option.include.paths.41584590" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.982869959" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.132115364" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
@@ -44,21 +45,6 @@
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
-	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.454581495;cdt.managedbuild.config.gnu.exe.release.454581495.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1913257400;cdt.managedbuild.tool.gnu.c.compiler.input.1479176868">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.454581495;cdt.managedbuild.config.gnu.exe.release.454581495.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1034898987;cdt.managedbuild.tool.gnu.cpp.compiler.input.1179937791">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1788792495;cdt.managedbuild.config.gnu.exe.debug.1788792495.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.744722873;cdt.managedbuild.tool.gnu.c.compiler.input.26895870">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1788792495;cdt.managedbuild.config.gnu.exe.debug.1788792495.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.243053620;cdt.managedbuild.tool.gnu.cpp.compiler.input.1579156785">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
-		</scannerConfigBuildInfo>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="train.null.1148496551" name="train"/>
@@ -85,5 +71,26 @@
 				<runAllBuilders>true</runAllBuilders>
 			</target>
 		</buildTargets>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.454581495;cdt.managedbuild.config.gnu.exe.release.454581495.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.1913257400;cdt.managedbuild.tool.gnu.c.compiler.input.1479176868">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.454581495;cdt.managedbuild.config.gnu.exe.release.454581495.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1034898987;cdt.managedbuild.tool.gnu.cpp.compiler.input.1179937791">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1788792495;cdt.managedbuild.config.gnu.exe.debug.1788792495.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.744722873;cdt.managedbuild.tool.gnu.c.compiler.input.26895870">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.925708426;cdt.managedbuild.toolchain.gnu.base.925708426.1002543032;cdt.managedbuild.tool.gnu.c.compiler.base.132115364;cdt.managedbuild.tool.gnu.c.compiler.input.1186318833">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.1788792495;cdt.managedbuild.config.gnu.exe.debug.1788792495.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.243053620;cdt.managedbuild.tool.gnu.cpp.compiler.input.1579156785">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.925708426;cdt.managedbuild.toolchain.gnu.base.925708426.1002543032;cdt.managedbuild.tool.gnu.cpp.compiler.base.243150446;cdt.managedbuild.tool.gnu.cpp.compiler.input.982869959">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileCPP"/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
