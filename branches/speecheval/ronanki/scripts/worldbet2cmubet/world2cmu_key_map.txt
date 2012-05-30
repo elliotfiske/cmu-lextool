@@ -1,0 +1,49 @@
+i:   IY   beet    high front long
+I    IH   bit     mid-high mid-front short
+E    EH   bet     mid-low front short
+@    AE   bat     mid-low front long
+A    AA   father  low back
+^    AH   but     mid-low central
+>    AO   caught  mid-low mid-back rounded
+U    UH   book    mid-high back rounded short
+u    UW   boot    high back rounded
+I_x  IX   roses   high-central short
+u_x  UW   suit    high-central short
+&    AX   about   schwa, mid-central short
+3r   ER   bird    rhotacized mid-central (stressed)
+ei   EY   fate    low-high front
+>i   OY   boy     mid back-front
+aI   AY   pie     low-mid front
+aU   AW   how     low-high front-back
+oU   OW   boat    mid-high back
+iU   [I]Y+UW   few     high front-back  *** catch in cmudict?
+ph   P    pie     voiceless bilabial stop
+th   T    tie     voiceless alveolar stop
+kh   K    cry     voiceless velar stop
+b    B    buy     voiced bilabial stop
+d    D    dye     voiced alveolar stop
+g    G    guy     voiced velar stop
+f    F    fie     voiceless labiodental fricative
+v    V    vie     voiced labiodental fricative
+T    TH   thigh   voiceless dental fricative
+D    DH   thy     voiced dental fricative
+s    S    sigh    voiceless alveolar sibilant
+z    Z    zebra   voiced alveolar sibilant
+S    SH   shy     voiceless alveo-palatal sibilant
+Z    ZH   azure   voiced alveo-palatal sibilant
+h    HH   high    voiceless glottal fricative
+tS   CH   church  voiceless alveo-palatal affricate
+dZ   JH   judge   voiced alveo-palatal affricate
+l    L    lent    alveolar glide
+9r   R    rent    retroflex glide
+j    Y    yes     palatal glide
+w    W    went    labio-velar glide
+m    M    me      labial nasal
+n    N    knee    alveolar nasal
+N    NG   sing    velar nasal
+th_( DX   writer  voiceless alveolar flap
+d_(  DX   rider   voiced alveolar flap
+n_(  N    winner  nasal flap
+m=   M-AX? M-IX? bottom  syllabic labial nasal
+n=   N-{A,I}X? button  syllabic alveolar nasal
+l=   L-{A,I}X? bottle  syllabic alveolar glide
