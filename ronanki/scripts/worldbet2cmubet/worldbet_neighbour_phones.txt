@@ -1,0 +1,49 @@
+i: neighbors: i:, I, I_x
+I neighbors: I, i:, &, E
+E neighbors: E, I, &, 3r, @
+@ neighbors: @, E, 3r, ^
+^ neighbors: ^, @, 3r, A
+A neighbors: A, ^, 3r, >
+> neighbors: >, A, 3r, &, U
+U neighbors: U, >, &, u_x, u
+u neighbors: u, U, &, u_x
+u_x neighbors: u_x, I_x, &, U, u
+I_x neighbors: I_x, i:, I, &, u_x
+& neighbors: &, I_x, 3r, u_x
+3r neighbors: 3r, E, ^, >, &
+ei neighbors: ei, E, i:, aI
+>i neighbors: >i, >, i:, aI
+aI neighbors: aI, A, i:, >i, ei
+aU neighbors: aU, A, U, oU
+oU neighbors: oU, >, U, aU
+iU neighbors: iU, i:, U, I_x, u_x
+ph neighbors: ph, th, b, h
+th neighbors: th, tS, kh, d, ph, h
+tS neighbors: tS, S, dZ, th
+kh neighbors: kh, g, th, h
+S neighbors: S, s, Z, tS
+s neighbors: s, S, z, T
+b neighbors: b, ph, d
+d neighbors: d, th, dZ, g, b
+dZ neighbors: dZ, tS, Z, d
+g neighbors: g, kh, d
+Z neighbors: Z, S, z, dZ
+z neighbors: z, s, D, Z
+T neighbors: T, s, D, f, h
+f neighbors: f, h, T, v
+D neighbors: D, T, z, v
+v neighbors: v, f, D
+h neighbors: h, T, f, ph, th, kh
+l neighbors: l, 9r, w
+9r neighbors: 9r, j, l
+j neighbors: j, w, 9r
+w neighbors: w, l, j
+m neighbors: m, n
+n neighbors: n, m, N
+N neighbors: N, n
+m= neighbors: m=, &, n=
+n= neighbors: n=, &, m=
+l= neighbors: l=, &, 3r
+th_( neighbors: th_(, d_(, s, h, D
+d_( neighbors: d_(, th_(, th
+n_( neighbors: n_(, &, m, N

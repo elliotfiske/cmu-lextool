@@ -1,0 +1,21 @@
+
+Here is a step-by-step procedure on how to obtain neighboring phonemes of CMUbet from a file which contains a string of phonemes:
+
+$ cd worldbet2cmubet
+
+To convert Worldbet phonetic alphabet to CMUbet 
+Usage: 
+
+$ python convert_world2cmu.py <input_worldbet_phone> <input_key_map> <output_cmubet_phone>
+
+To convert input list of phonemes to neighboring phones 
+Usage: 
+
+$ cd phonemes2ngbphones
+$ python convert2_ngbphones.py <input_phoneme_list> <input_phone_map> <output_neighboring_phone_list>
+
+For Ex: "I had faith in them" (arctic_a0030) - a sentence from arctic database
+
+<input_phoneme_list> AY HH AE D F EY TH IH N DH EH M (arctic_a0030)
+
+<output_neighboring_phone_list> {AY|AA|IY|OY|EY} {HH|TH|F|P|T|K} {AE|EH|ER|AH} {D|T|JH|G|B} {F|HH|TH|V} {EY|EH|IY|AY} {TH|S|DH|F|HH} {IH|IY|AX|EH} {N|M|NG} {DH|TH|Z|V} {EH|IH|AX|ER|AE} {M|N} (arctic_a0030)
