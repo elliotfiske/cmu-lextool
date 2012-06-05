@@ -1,0 +1,35 @@
+How to create a corpus from Wikipedia?
+==================================================
+Author: Wencan Luo (wencanluo.cn@gmail.com)
+Date: 06/15/2012
+
+Purpose
+-------
+To train a LSA (Latent Semantic Analysis) Language Model, a text corpus is needed. In order to do so, we can take advantage 
+of free Wikipedia corpus.
+
+This document is a modification of Wikipedia Extractor introduced in http://medialab.di.unipi.it/wiki/Wikipedia_Extractor.
+Here we only focus on English Wikipedia.
+
+Step by Step
+--------------
+1. Download the Wikipeda dump from Wikipedia database(http://en.wikipedia.org/wiki/Wikipedia:Database_download), or just use
+$ wget http://download.wikimedia.org/enwiki/latest/enwiki-latest-pages-articles.xml.bz2
+
+2. Download Wikipedia Extractor tool by Giuseppe Attardi (attardi@di.unipi.it)
+$ wget http://medialab.di.unipi.it/Project/SemaWiki/Tools/WikiExtractor.py
+
+3. Change some lines in WikiExtractor.py
+Line 59 to:  prefix = 'http://it.wikipedia.org/wiki/'
+Line 106 to: print>> out, '<doc id="%s" url="%s">' % (id, url)
+Line 107 to: print >> out, title.encode('utf-8') + '\n'
+
+4. Extracted articles from the dump. (It will take a long time, so please be patient)
+$ bzcat enwiki-latest-pages-articles.xml.bz2 | python WikiExtractor.py -cb 250K -o extracted
+
+5. Union the articles into one XML file
+$ find extracted -name '*bz2' -exec bunzip2 -c {} \; > text.xml
+
+The format of the XML file can be found at http://medialab.di.unipi.it/wiki/Wikipedia_Extractor
+This method is tested on Ubuntu 12.04 with Python 2.7
+
