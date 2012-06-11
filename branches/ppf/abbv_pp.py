@@ -20,8 +20,8 @@ for line in abb_list:
 ars_o = open(sys.argv[1], 'r')
 ars_po = open(sys.argv[1] + "_processed", 'w')
 
-for line in g:
+for line in ars_o:
     for key in d.keys():
         line = line.replace(key, d[key])
 
-    h.write(line)
+    ars_po.write(line)
