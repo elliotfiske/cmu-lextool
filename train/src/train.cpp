@@ -80,7 +80,8 @@ void print_help(char* appname) {
 	cout << "Usage: " << appname << " [--seq1_del] [--seq2_del] [--seq1_max SEQ1_MAX] [--seq2_max SEQ2_MAX]" << endl;
 	cout << "               [--seq1_sep SEQ1_SEP] [--seq2_sep SEQ2_SEP] [--s1s2_sep S1S2_SEP] " << endl;
 	cout << "               [--eps EPS] [--skip SKIP] [--seq1in_sep SEQ1IN_SEP] [--seq2in_sep SEQ2IN_SEP]" << endl;
-	cout << "               [--s1s2_delim S1S2_DELIM] [--iter ITER] --ifile IFILE --ofile OFILE" << endl;
+	cout << "               [--s1s2_delim S1S2_DELIM] [--iter ITER] [--order ORDER] [--smooth SMOOTH] " << endl;
+	cout << "               [--noalign] --ifile IFILE --ofile OFILE" << endl;
 	cout << endl;
 	cout << "  --seq1_del,              Allow deletions in sequence 1. Defaults to false." << endl;
 	cout << "  --seq2_del,              Allow deletions in sequence 2. Defaults to false." << endl;
@@ -97,7 +98,12 @@ void print_help(char* appname) {
 	cout << "  --iter ITER,             Maximum number of iterations for EM. Defaults to 10." << endl;
 	cout << "  --ifile IFILE,           File containing sequences to be aligned. " << endl;
 	cout << "  --ofile OFILE,           Write the alignments to file." << endl;
-
+	cout << "  --noalign,               Do not align. Assume that the aligned corpus already exists." << endl;
+	cout << "                           Defaults to false." << endl;
+	cout << "  --order ORDER,           N-gram order. Defaults to 9." << endl;
+	cout << "  --smooth SMOOTH,         Smoothing method. Available options are: " << endl;
+	cout << "                           \"presmoothed\", \"unsmoothed\", \"kneser_ney\", \"absolute\", " << endl;
+	cout << "                           \"katz\", \"witten_bell\", \"unsmoothed\". Defaults to \"kneser_ney\"." << endl;
 }
 
 void split_string(string* input, vector<string>* tokens, string* delim) {
@@ -331,7 +337,7 @@ int main(int argc, char* argv[]) {
 	string s1s2_delim = "  ";
 	int iter = 10;
 	int order = 9;
-	string smooth = "witten_bell";
+	string smooth = "kneser_ney";
 	string input_file = "";
 	string output_file = "";
 
