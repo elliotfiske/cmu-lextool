@@ -1,24 +1,23 @@
-SRC = src/align.cpp \
+SRC = src/train.cpp \
       src/phonetisaurus/M2MFstAligner.cpp \
       src/phonetisaurus/FstPathFinder.cpp 
-OBJS = src/align.o \
+OBJS = src/train.o \
       src/phonetisaurus/M2MFstAligner.o \
       src/phonetisaurus/FstPathFinder.o 
 
-LDLIBS = -l fst -l dl
+LDLIBS = -L/usr/local/lib64/fst -lfst -lfstfar -lfstfarscript -ldl -lngram
 
 CFLAGS = -c -O2 
 LDFLAGS = -O2 
 
-all: align  
+all: train  
 
-align: $(OBJS)
-	g++ ${LDFLAGS} ${LDLIBS} -o src/align ${OBJS}  
-	
+train: $(OBJS)
+	g++ ${LDFLAGS} ${LDLIBS} -o train ${OBJS}  
 	
 %.o: %.cpp
 	g++ ${CFLAGS} -o $@ $<
 	
 clean: 
-	rm src/align src/*.o src/phonetisaurus/*.o
+	rm train src/*.o src/phonetisaurus/*.o
 
