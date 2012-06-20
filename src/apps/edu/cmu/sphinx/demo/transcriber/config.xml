@@ -8,7 +8,7 @@
 <!--  an4 configuration file                             -->
 <!-- ******************************************************** -->
 
-<config>        
+<config>
     
     <!-- ******************************************************** -->
     <!-- frequently tuned properties                              -->
@@ -16,15 +16,20 @@
 
     <property name="logLevel" value="WARNING"/>
     
-    <property name="absoluteBeamWidth"  value="-1"/>
-    <property name="relativeBeamWidth"  value="1E-80"/>
-    <property name="wordInsertionProbability" value="1E-36"/>
-    <property name="languageWeight"     value="8"/>
+    <property name="absoluteWordBeamWidth" value="22"/>
+    <property name="relativeBeamWidth" value="1E-60"/>
+    <property name="wordInsertionProbability" value=".2"/>
+    <property name="languageWeight" value="10.5"/>
+    
+    <property name="relativeWordBeamWidth" value="1E-30"/>
+    <property name="silenceInsertionProbability" value=".1"/>
+    <property name="acousticLookahead" value="1.7"/>
     
     <property name="frontend" value="epFrontEnd"/>
     <property name="recognizer" value="recognizer"/>
     <property name="showCreations" value="false"/>
     
+    <property name="recognizer" value="recognizer"/>
     
     <!-- ******************************************************** -->
     <!-- word recognizer configuration                            -->
@@ -36,6 +41,8 @@
             <item>accuracyTracker </item>
             <item>speedTracker </item>
             <item>memoryTracker </item>
+            <item>recognizerMonitor</item>
+            <item>beamFinder</item>
         </propertylist>
    </component>
     
@@ -43,81 +50,64 @@
     <!-- The Decoder   configuration                              -->
     <!-- ******************************************************** --> 
     
-    <component name="decoder" type="edu.cmu.sphinx.decoder.Decoder">
-        <property name="searchManager" value="searchManager"/>
+    <component name="decoder"
+          type="edu.cmu.sphinx.decoder.Decoder">
+        <property name="searchManager" value="wordPruningSearchManager"/>
     </component>
-    
-    <component name="searchManager" 
-        type="edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager">
-        <property name="logMath" value="logMath"/>
-        <property name="linguist" value="flatLinguist"/>
-        <property name="pruner" value="trivialPruner"/>
+
+    <!-- ************************************************** -->
+    <!-- wordPruningSearchManager                           -->
+    <!-- ************************************************** -->
+
+    <component name="wordPruningSearchManager"
+          type="edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstSearchManager">
         <property name="scorer" value="threadedScorer"/>
-        <property name="activeListFactory" value="activeList"/>
-    </component>
-    
-    
-    <component name="activeList" 
-             type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+        <property name="pruner" value="trivialPruner"/>
+        <property name="acousticLookaheadFrames" value="2.0"/>
         <property name="logMath" value="logMath"/>
-        <property name="absoluteBeamWidth" value="${absoluteBeamWidth}"/>
-        <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+        <property name="activeListManager" value="activeListManager"/>
+        <property name="buildWordLattice" value="false"/>
+        <property name="relativeBeamWidth" value="1E-60"/>
+        <property name="growSkipInterval" value="8"/>
+        <property name="linguist" value="lexTreeLinguist"/>
+        <property name="checkStateOrder" value="false"/>
+        <property name="keepAllTokens" value="true"/>
     </component>
     
-    <component name="trivialPruner" 
-                type="edu.cmu.sphinx.decoder.pruner.SimplePruner"/>
-    
-    <component name="threadedScorer" 
-                type="edu.cmu.sphinx.decoder.scorer.ThreadedAcousticScorer">
-        <property name="frontend" value="${frontend}"/>
-    </component>
-    
-    <!-- ******************************************************** -->
-    <!-- The linguist  configuration                              -->
-    <!-- ******************************************************** -->
+    <!-- ************************************************** -->
+    <!-- logMath                                            -->
+    <!-- ************************************************** -->
 
-    <component name="flatLinguist"
-                type="edu.cmu.sphinx.linguist.flat.FlatLinguist">
-        <property name="logMath" value="logMath"/>
-        <property name="grammar" value="jsgfGrammar"/>
+    <component name="logMath"
+          type="edu.cmu.sphinx.util.LogMath">
+        <property name="logBase" value="1.0001"/>
+        <property name="useAddTable" value="true"/>
+    </component>
+
+    <!-- ************************************************** -->
+    <!-- lexTreeLinguist                                    -->
+    <!-- ************************************************** -->
+
+    <component name="lexTreeLinguist"
+          type="edu.cmu.sphinx.linguist.lextree.LexTreeLinguist">
+        <property name="silenceInsertionProbability"
+         value="${silenceInsertionProbability}"/>
+        <property name="wantUnigramSmear" value="true"/>
+        <property name="fillerInsertionProbability" value=".02"/>
+        <property name="addFillerWords" value="true"/>
         <property name="acousticModel" value="wsj"/>
+        <property name="languageModel" value="trigramModel"/>
         <property name="wordInsertionProbability"
-                value="${wordInsertionProbability}"/>
-        <property name="languageWeight" value="${languageWeight}"/>
-        <property name="unitManager" value="unitManager"/>
-    </component>
-
-
-    <!-- ******************************************************** -->
-    <!-- The Grammar  configuration                               -->
-    <!-- ******************************************************** -->
-            
-    <component name="jsgfGrammar" type="edu.cmu.sphinx.jsgf.JSGFGrammar">
+         value="${wordInsertionProbability}"/>
+        <property name="languageWeight" value="11"/>
+        <property name="logMath" value="logMath"/>
         <property name="dictionary" value="dictionary"/>
-        <property name="grammarLocation" 
-             value="resource:/edu/cmu/sphinx/demo/transcriber/"/>
-        <property name="grammarName" value="digits"/>
-	<property name="logMath" value="logMath"/>
+        <property name="unigramSmearWeight" value="1"/>
+        <property name="cacheSize" value="0"/>
+        <property name="generateUnitStates" value="false"/>
+        <property name="unitManager" value="unitManager"/>
     </component>
     
-    <!-- ******************************************************** -->
-    <!-- The Dictionary configuration                            -->
-    <!-- ******************************************************** -->
-    <component name="dictionary" 
-        type="edu.cmu.sphinx.linguist.dictionary.FastDictionary">
-        <property name="dictionaryPath"
-                  value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d"/>
-        <property name="fillerPath" 
-	          value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/noisedict"/>
-        <property name="addSilEndingPronunciation" value="false"/>
-        <property name="wordReplacement" value="&lt;sil&gt;"/>
-        <property name="unitManager" value="unitManager"/>
-    </component>
-        
-
-    <!-- ******************************************************** -->
-    <!-- The acoustic model configuration                         -->
-    <!-- ******************************************************** -->
     <component name="wsj"
                type="edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel">
         <property name="loader" value="wsjLoader"/>
@@ -138,6 +128,91 @@
     <component name="unitManager" 
         type="edu.cmu.sphinx.linguist.acoustic.UnitManager"/>
 
+    <!-- ************************************************** -->
+    <!-- trigramModel                                       -->
+    <!-- ************************************************** -->
+
+    <component name="trigramModel"
+          type="edu.cmu.sphinx.linguist.language.ngram.large.LargeTrigramModel">
+        <property name="unigramWeight" value=".5"/>
+        <property name="maxDepth" value="3"/>
+        <property name="logMath" value="logMath"/>
+        <property name="dictionary" value="dictionary"/>
+        <property name="location"
+                  value="/media/PRIVATE/loop/project/workspace/sphinx4/data/lm/HUB4_trigram_lm/language_model.arpaformat.DMP"/>
+    </component>
+    
+    <!-- ******************************************************** -->
+    <!-- The Dictionary configuration                            -->
+    <!-- ******************************************************** -->
+    <component name="dictionary" 
+        type="edu.cmu.sphinx.linguist.dictionary.FastDictionary">
+        <property name="dictionaryPath"
+                  value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d"/>
+        <property name="fillerPath" 
+	          value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/noisedict"/>
+        <property name="addSilEndingPronunciation" value="false"/>
+        <property name="wordReplacement" value="&lt;sil&gt;"/>
+        <property name="unitManager" value="unitManager"/>
+    </component>
+    
+    <component name="trivialPruner" 
+                type="edu.cmu.sphinx.decoder.pruner.SimplePruner"/>
+        
+    <component name="threadedScorer" 
+                type="edu.cmu.sphinx.decoder.scorer.ThreadedAcousticScorer">
+        <property name="frontend" value="${frontend}"/>
+    </component>
+    
+   <!-- ************************************************** -->
+    <!-- activeListManager                                  -->
+    <!-- ************************************************** -->
+
+    <component name="activeListManager"
+          type="edu.cmu.sphinx.decoder.search.SimpleActiveListManager">
+        <propertylist name="activeListFactories">
+            <item>unitExitActiveList</item>
+            <item>wordActiveList</item>
+            <item>wordActiveList</item>
+            <item>activeList</item>
+            <item>activeList</item>
+            <item>activeList</item>
+        </propertylist>
+    </component>
+
+    <!-- ************************************************** -->
+    <!-- unitExitActiveList                                 -->
+    <!-- ************************************************** -->
+
+    <component name="unitExitActiveList"
+          type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+        <property name="absoluteBeamWidth" value="-1"/>
+        <property name="logMath" value="logMath"/>
+        <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+    </component>
+
+    <!-- ************************************************** -->
+    <!-- wordActiveList                                     -->
+    <!-- ************************************************** -->
+
+    <component name="wordActiveList"
+          type="edu.cmu.sphinx.decoder.search.WordActiveListFactory">
+        <property name="absoluteBeamWidth" value="21"/>
+        <property name="logMath" value="logMath"/>
+        <property name="relativeBeamWidth" value="1E-25"/>
+    </component>
+
+    <!-- ************************************************** -->
+    <!-- activeList                                         -->
+    <!-- ************************************************** -->
+
+    <component name="activeList"
+          type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+        <property name="absoluteBeamWidth" value="25000"/>
+        <property name="logMath" value="logMath"/>
+        <property name="relativeBeamWidth" value="1E-60"/>
+    </component>
+    
     <!-- ******************************************************** -->
     <!-- The live frontend configuration                          -->
     <!-- ******************************************************** -->
@@ -166,12 +241,18 @@
 
     <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
     
-    <component name="speechClassifier" type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier"/>
+     <component name="speechClassifier" 
+                type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier">
+        <property name="threshold" value="16"/>
+    </component>
     
     <component name="nonSpeechDataFilter" 
                type="edu.cmu.sphinx.frontend.endpoint.NonSpeechDataFilter"/>
     
-    <component name="speechMarker" type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" />
+     <component name="speechMarker" 
+                type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" >
+        <property name="speechTrailer" value="50"/>
+    </component>
         
     <component name="preemphasizer"
                type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
@@ -220,33 +301,47 @@
                 type="edu.cmu.sphinx.instrumentation.SpeedTracker">
         <property name="recognizer" value="${recognizer}"/>
         <property name="frontend" value="${frontend}"/>
-	<property name="showSummary" value="true"/>
+	<property name="showSummary" value="false"/>
 	<property name="showDetails" value="false"/>
     </component>
     
+    <!-- ************************************************** -->
+    <!-- recognizerMonitor                                  -->
+    <!-- ************************************************** -->
+
+    <component name="recognizerMonitor"
+          type="edu.cmu.sphinx.instrumentation.RecognizerMonitor">
+        <property name="recognizer" value="${recognizer}"/>
+        <propertylist name="allocatedMonitors">
+            <item>configMonitor</item>
+        </propertylist>
+    </component>
+
+    <!-- ************************************************** -->
+    <!-- configMonitor                                      -->
+    <!-- ************************************************** -->
+
+    <component name="configMonitor"
+          type="edu.cmu.sphinx.instrumentation.ConfigMonitor">
+        <property name="saveConfigAsXML" value="true"/>
+        <property name="showConfig" value="false"/>
+    </component>
+
+    <!-- ************************************************** -->
+    <!-- beamFinder                                         -->
+    <!-- ************************************************** -->
+
+    <component name="beamFinder"
+          type="edu.cmu.sphinx.instrumentation.BeamFinder">
+        <property name="showDetails" value="true"/>
+        <property name="logMath" value="logMath"/>
+        <property name="showSummary" value="true"/>
+        <property name="recognizer" value="${recognizer}"/>
+        <property name="enable" value="false"/>
+    </component>
     
     <!-- ******************************************************* -->
     <!--  Miscellaneous components                               -->
     <!-- ******************************************************* -->
     
-    <component name="logMath" type="edu.cmu.sphinx.util.LogMath">
-        <property name="logBase" value="1.0001"/>
-        <property name="useAddTable" value="true"/>
-    </component>
-    
 </config>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
