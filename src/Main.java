@@ -1,6 +1,23 @@
+/*                                                                              
+ * 
+ * Copyright 1999-2004 Carnegie Mellon University.  
+ * Portions Copyright 2004 Sun Microsystems, Inc.  
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ * 
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * WARRANTIES.
+ *
+ */
+
+import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import org.apache.commons.lang.WordUtils;
 
+import edu.cmu.sphinx.linguist.WordSequence;
+import edu.cmu.sphinx.linguist.dictionary.Word;
 public class Main {
 	
 	/**
@@ -23,9 +40,15 @@ public class Main {
 	}
 	
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		
-		Hyperstring h = new Hyperstring("This is a sentence", true);
+		// hyperstring FSA
+		FSA h = new FSA("This is a sentence", true);
 		System.out.println(h.toString());
+		
+		// language model FSA
+		LM_FSA lm_fsa = new LM_FSA(new URL("file:sas_lm"), 
+				new URL("file:lm_giga_5k_nvp.sphinx.dic"), new URL("file:lm_giga_5k_nvp.sphinx.filler"));
+
 	}
 }
