@@ -1,7 +1,25 @@
+/*                                                                              
+ * 
+ * Copyright 1999-2004 Carnegie Mellon University.  
+ * Portions Copyright 2004 Sun Microsystems, Inc.  
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ * 
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * WARRANTIES.
+ *
+ */
+
+import java.util.Iterator;
 import java.util.LinkedList;
 
+import edu.cmu.sphinx.linguist.WordSequence;
+import edu.cmu.sphinx.linguist.dictionary.Word;
+
+
 /**
- * State objects are the nodes in the hyperstring
+ * State objects are the nodes in the FSA
  * @author Alexandru Tomescu
  *
  */
@@ -14,6 +32,20 @@ public class State {
 	private Type type;
 	private State nextState, previousState;
 	private LinkedList<Trans> transitions;
+	private WordSequence words;
+	
+	public State() {
+		transitions = new LinkedList<Trans>();
+		nextState = null;
+		previousState = null;
+	}
+	
+	public State(WordSequence words) {
+		this.words = words;
+		transitions = new LinkedList<Trans>();
+		nextState = null;
+		previousState = null;
+	}
 	
 	public State(int seq, Type type) {
 		this.seq = seq;
@@ -67,4 +99,17 @@ public class State {
 		return this.type + "" + this.seq;
 	}
 	
+	public State containsTransition(Word w) {
+		Iterator<Trans> it = transitions.iterator();
+		while (it.hasNext()) {
+			Trans t = it.next();
+			if (t.getWord().equals(w)) 
+				return t.getFinish();
+		}
+		return null;
+	}
+	
+	public WordSequence getWords() {
+		return this.words;
+	}
 }
