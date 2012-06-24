@@ -11,6 +11,9 @@
  *
  */
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -28,6 +31,7 @@ public class State {
 		s, t
 	}
 	
+	private boolean languageModel;
 	private int seq;
 	private Type type;
 	private State nextState, previousState;
@@ -38,6 +42,7 @@ public class State {
 		transitions = new LinkedList<Trans>();
 		nextState = null;
 		previousState = null;
+		languageModel = true;
 	}
 	
 	public State(WordSequence words) {
@@ -45,6 +50,7 @@ public class State {
 		transitions = new LinkedList<Trans>();
 		nextState = null;
 		previousState = null;
+		languageModel = true;
 	}
 	
 	public State(int seq, Type type) {
@@ -53,10 +59,25 @@ public class State {
 		transitions = new LinkedList<Trans>();
 		nextState = null;
 		previousState = null;
+		languageModel = false;
 	}
 	
 	public void addTransition(Trans t) {
 		transitions.add(t);
+		if (languageModel == true) {
+			try {
+				Main.out.write(
+						t.getStart().words.toString() + '\t' + 
+						t.getFinish().words.toString() + '\t' + 
+						t.getWord().toString() + '\t' + 
+						t.getProbability() + '\n');
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		
 	}
 	
 	public LinkedList<Trans> getTransitions() {
