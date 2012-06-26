@@ -11,8 +11,6 @@
  *
  */
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -62,19 +60,23 @@ public class State {
 		languageModel = false;
 	}
 	
-	public void addTransition(Trans t) {
+	public void addTransition(Trans t) throws IOException {
 		transitions.add(t);
+		
+		// when a transition is added, it's also written in the output file
 		if (languageModel == true) {
-			try {
-				Main.out.write(
-						t.getStart().words.toString() + '\t' + 
-						t.getFinish().words.toString() + '\t' + 
-						t.getWord().toString() + '\t' + 
-						t.getProbability() + '\n');
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			LanguageModelFSA.out.write(
+					t.getStart().words.toString() + '\t' + 
+					t.getFinish().words.toString() + '\t' + 
+					t.getWord().toString() + '\t' + t.getWord().toString() + '\t' +
+					t.getProbability() + '\n');
+		} else {
+			FSA.out.write(
+					t.getStart().type.toString() + t.getStart().seq + '\t' + 
+					t.getFinish().type.toString() + t.getFinish().seq + '\t' + 
+					t.getWord().toString() + '\t' +
+					t.getWord().toString() + '\t' +
+					0 + '\n');
 		}
 		
 		
