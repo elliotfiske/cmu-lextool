@@ -11,6 +11,9 @@
  *
  */
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import org.apache.commons.lang.WordUtils;
@@ -27,12 +30,61 @@ public class FSA {
 	private LinkedList<Word> punctuation;
 	private int current;
 	private boolean process_punctuation;
+	
+	public static FileWriter FSA_output;
+	public static BufferedWriter out;
+	public static FileWriter isyms;
+	public static BufferedWriter isyms_out;
+	public static FileWriter ssyms;
+	public static BufferedWriter ssyms_out;
+	int i, j;
 	/**
 	 * 
 	 * @param sentence
 	 * @param process_punctuation - if true, punctuation will be processed
+	 * @throws IOException 
 	 */
-	public FSA(String sentence, boolean process_punctuation) {
+	public FSA(String sentence, boolean process_punctuation) throws IOException {
+		
+		allocate(sentence, process_punctuation);
+		
+		// write punctuation marks as symbols
+		isyms_out.write(new Word("<COMMA>", null, false) + " " + j++ + '\n');
+		isyms_out.write(new Word("<PERIOD>", null, false) + " " + j++ +'\n');
+		isyms_out.write(new Word("<NONE>", null, false) + " " + j++ + '\n');
+		
+		states.add(new State(0, State.Type.s));
+		ssyms_out.write("s0 0 \n");
+				
+		String[] words = parseSentence();
+		for (String word : words) {
+			LinkedList<Word> word_form = new LinkedList<Word>();
+			word_form.add(new Word(word.toLowerCase(), null, false));
+			isyms_out.write(word.toLowerCase() + " " + j++ + '\n');
+			word_form.add(new Word(WordUtils.capitalize(word), null, false));
+			isyms_out.write(WordUtils.capitalize(word) + " " + j++ + '\n');
+			word_form.add(new Word(word.toUpperCase(), null, false));
+			isyms_out.write(word.toUpperCase() + " " + j++ + '\n');
+			
+			this.addTransitions(word_form);
+			if (process_punctuation) {
+				this.addTransitions(punctuation);
+			}
+		}
+		out.close();
+		ssyms_out.close();
+		isyms_out.close();
+	}
+	
+	private void allocate(String sentence, boolean process_punctuation) throws IOException {
+		FSA_output = new FileWriter("hyperstring_fsa");
+	    out = new BufferedWriter(FSA_output);
+	    isyms = new FileWriter("hyperstring_fsa_isyms");
+		isyms_out = new BufferedWriter(isyms);
+		ssyms = new FileWriter("hyperstring_fsa_ssyms");
+		ssyms_out = new BufferedWriter(ssyms);
+		i = 1; j = 0;
+		states = new LinkedList<State>();
 		this.sentence = sentence;
 		this.current = 0;
 		this.process_punctuation = process_punctuation;
@@ -40,22 +92,7 @@ public class FSA {
 		this.punctuation.add(new Word("<COMMA>", null, false));
 		this.punctuation.add(new Word("<PERIOD>", null, false));
 		this.punctuation.add(new Word("<NONE>", null, false));
-		states = new LinkedList<State>();
-		states.add(new State(0, State.Type.s));
-				
-		String[] words = parseSentence();
-		for (String word : words) {
-			LinkedList<Word> word_form = new LinkedList<Word>();
-			word_form.add(new Word(word.toLowerCase(), null, false));
-			word_form.add(new Word(WordUtils.capitalize(word), null, false));
-			word_form.add(new Word(word.toUpperCase(), null, false));
-			this.addTransitions(word_form);
-			if (process_punctuation) {
-				this.addTransitions(punctuation);
-			}
-		}
 	}
-	
 	
 	String[] parseSentence() {
 		String[] words = this.sentence.split(" "); 
@@ -63,12 +100,13 @@ public class FSA {
 	}
 
 	
-	private void addTransitions(LinkedList<Word> word) { 
+	private void addTransitions(LinkedList<Word> word) throws IOException { 
 		
 		State current_state = states.getLast();
 		State st = new State(current, (this.process_punctuation) ? 
 				((this.states.getLast().getType() == State.Type.s) ? 
 						State.Type.t : State.Type.s) : State.Type.s);
+		ssyms_out.write(st.getType().toString() + st.getSeq() + " " + i++ + '\n');
 		
 		Iterator<Word> it = word.iterator();
 		while(it.hasNext()) {
