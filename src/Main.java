@@ -20,7 +20,7 @@ public class Main {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 	
 		// hyperstring FSA
-		FSA h = new FSA("This is exciting", true);
+		FSA h = new FSA(args[3], true);
 		System.out.println(h.toString());
 		
 		// language model FSA
