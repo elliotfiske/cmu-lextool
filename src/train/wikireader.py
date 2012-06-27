@@ -1,4 +1,6 @@
 #!/usr/bin/python
+#load wikipedia corpus, remove blank line, split it into different part: train, valid, test
+
 import sys
 
 def load(wiki, out):

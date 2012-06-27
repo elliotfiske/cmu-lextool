@@ -1,4 +1,5 @@
 #!/bin/sh
+#get recognition results using sphinx4
 
 for f in IEEE/*.wav
 do

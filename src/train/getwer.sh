@@ -1,4 +1,7 @@
 #!/bin/sh
+#Get WER after you get the recognition result
+#Need word_align.py from sphinxtrain
+#*.nrm is the reference text, *.rec is the recognition result
 
 for f in IEEE/*.nrm
 do
