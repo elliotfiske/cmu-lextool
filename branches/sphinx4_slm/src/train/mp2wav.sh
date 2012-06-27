@@ -1,3 +1,7 @@
+#!/bin/sh
+#convert mp3 to wav using three different methods: mplayer, mpg123, ffmpeg
+#you need to install these tools before run it
+
 for f in IEEE/*.mp3
 do
 	fn=`basename $f .mp3`

@@ -1,12 +1,12 @@
 #!/bin/bash
 
+#train a rnnlm model using the tool rnnlm (http://www.fit.vutbr.cz/~imikolov/rnnlm/)
+#in order to run it, you need to download rnnlm first and inilialize $rnnpath to the path of the tool
+
 rnnpath=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/rnnlm-0.3e
 trainfile=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/train
-#trainfile=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/simple-examples/data/ptb.train.txt
 validfile=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/valid
-#validfile=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/simple-examples/data/ptb.valid.txt
 testfile=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/test
-#testfile=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/simple-examples/data/ptb.test.txt
 rnnmodel=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/wiki.model.hidden100.class100.rnnlm
 temp=../temp
 
