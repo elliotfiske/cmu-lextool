@@ -20,12 +20,12 @@ public class Main {
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 	
 		// hyperstring FSA
-		FSA h = new FSA("This is a sentence", true);
+		FSA h = new FSA("This is exciting", true);
 		System.out.println(h.toString());
 		
 		// language model FSA
-		LanguageModelFSA lm_fsa = new LanguageModelFSA(new URL("file:text.arpa"), 
-				new URL("file:lm_giga_5k_nvp.sphinx.dic"), new URL("file:lm_giga_5k_nvp.sphinx.filler"));
+		LanguageModelFSA lm_fsa = new LanguageModelFSA(new URL("file:"+ args[0]), 
+				new URL("file:" + args[1]), new URL("file:" + args[2]));
 
 	}
 }
