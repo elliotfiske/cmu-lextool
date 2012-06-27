@@ -177,7 +177,7 @@ public class LanguageModelFSA {
 	}
 	
 	private void readLanguageModel(URL lm_location) throws IOException {
-		LogMath logm = new LogMath((float)1.0001, true);
+		LogMath logm = new LogMath((float)10, false);
 		model = new SimpleNGramModel(lm_location, dict, (float)0.7, logm, 3);
 		
 		model.allocate();
