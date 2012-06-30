@@ -11,7 +11,6 @@
  *
  */
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -29,18 +28,17 @@ public class State {
 		s, t
 	}
 	
-	private boolean languageModel;
 	private int seq;
 	private Type type;
 	private State nextState, previousState;
 	private LinkedList<Trans> transitions;
 	private WordSequence words;
+	private String symbol;
 	
 	public State() {
 		transitions = new LinkedList<Trans>();
 		nextState = null;
 		previousState = null;
-		languageModel = true;
 	}
 	
 	public State(WordSequence words) {
@@ -48,7 +46,6 @@ public class State {
 		transitions = new LinkedList<Trans>();
 		nextState = null;
 		previousState = null;
-		languageModel = true;
 	}
 	
 	public State(int seq, Type type) {
@@ -57,29 +54,17 @@ public class State {
 		transitions = new LinkedList<Trans>();
 		nextState = null;
 		previousState = null;
-		languageModel = false;
 	}
 	
-	public void addTransition(Trans t) throws IOException {
+	public State(String symbol) {
+		this.symbol = symbol;
+		transitions = new LinkedList<Trans>();
+		nextState = null;
+		previousState = null;
+	}
+	
+	public void addTransition(Trans t){
 		transitions.add(t);
-		
-		// when a transition is added, it's also written in the output file
-		if (languageModel == true) {
-			LanguageModelFSA.out.write(
-					t.getStart().words.toString() + '\t' + 
-					t.getFinish().words.toString() + '\t' + 
-					t.getWord().toString() + '\t' + t.getWord().toString() + '\t' +
-					t.getProbability() + '\n');
-		} else {
-			FSA.out.write(
-					t.getStart().type.toString() + t.getStart().seq + '\t' + 
-					t.getFinish().type.toString() + t.getFinish().seq + '\t' + 
-					t.getWord().toString() + '\t' +
-					t.getWord().toString() + '\t' +
-					0 + '\n');
-		}
-		
-		
 	}
 	
 	public LinkedList<Trans> getTransitions() {
@@ -134,5 +119,14 @@ public class State {
 	
 	public WordSequence getWords() {
 		return this.words;
+	}
+	
+	public static Type getOtherLabel(Type label) {
+		if (label == Type.s) return Type.t;
+		else return Type.s;
+	}
+	
+	public String getSymbol() {
+		return this.symbol;
 	}
 }
