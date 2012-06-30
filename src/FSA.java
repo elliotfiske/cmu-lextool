@@ -79,6 +79,7 @@ public class FSA implements FiniteStateAutomata {
 		Word[] sentenceEnd = {new Word("</s>", null, false)};
 		this.addTransitions(sentenceEnd);
 		symbolSet.add(new Word("</s>", null, false));
+		transitions.getFirst().setProbability(0.1f);
 	}
 	
 	private void addTransitions(Word[] words) throws IOException { 
@@ -146,7 +147,7 @@ public class FSA implements FiniteStateAutomata {
 						t.getFinish().toString() + " " +
 						t.getWord().toString() + " " +
 						t.getWord().toString() + " " +
-						0 + '\n');
+						t.getProbability() + '\n');
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -237,5 +238,9 @@ public class FSA implements FiniteStateAutomata {
 	
 	public LinkedList<State> getStates() {
 		return this.states;
+	}
+	
+	public HashSet<Word> getSymbols() {
+		return this.symbolSet;
 	}
 }

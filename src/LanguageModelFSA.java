@@ -68,7 +68,6 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 		State backoff_state = new State(epsWS);
 		states.add(backoff_state);		
 		state_map.put(epsWS, backoff_state);
-		symbolSet.add(epsW);
 		
 		Iterator<WordSequence> it = NGrams.iterator();
 		
@@ -80,53 +79,55 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 			if (current.size() == 1) {
 				Word current_word = current.getWord(0);
 				if (current_word.equals(sbW)) {
-					this.addTransition(initialState, newState, sbW, 0f);
-					this.addTransition(newState, state_map.get(epsWS), epsW, model.getBackoff(sbWS));
+					this.addTransition(initialState, newState, sbW, 0f, true);
+					this.addTransition(newState, state_map.get(epsWS), epsW, model.getBackoff(sbWS), false);
 				}
 				else if (current_word.equals(seW)) {
 					finalState = newState;
-					this.addTransition(state_map.get(epsWS), newState, seW, model.getProbability(epsWS));
+					this.addTransition(state_map.get(epsWS), newState, seW, model.getProbability(epsWS), false);
 				}
 				else {
 					float weight = 0.0f;
 					if (model.getBackoff(current) != 0) {
 						weight = model.getBackoff(current);
 					}
-					this.addTransition(newState, state_map.get(epsWS), epsW, weight);
-					this.addTransition(state_map.get(epsWS), newState, current_word, model.getProbability(current));
+					this.addTransition(newState, state_map.get(epsWS), epsW, weight, false);
+					this.addTransition(state_map.get(epsWS), newState, current_word, model.getProbability(current), false);
 				}
 			}
 			else if (current.size() < model.getMaxDepth()) {
 				if (current.getWord(current.size()-1).equals(seW)) {
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(seWS), seW, model.getProbability(current));					
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(seWS), seW, model.getProbability(current), false);					
 				}
 				else {
 					float weight = 0.0f;
 					if (model.getBackoff(current) != 0) {
 						weight = model.getBackoff(current);
 					}
-					this.addTransition(newState, state_map.get(current.getSubSequence(1, current.size())), epsW, weight);
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), newState, current.getWord(current.size()-1), model.getProbability(current));
+					this.addTransition(newState, state_map.get(current.getSubSequence(1, current.size())), epsW, weight, false);
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), newState, current.getWord(current.size()-1), model.getProbability(current), false);
 				}
 			}
 			else if (current.size() == model.getMaxDepth()) {
 				if (current.getWord(current.size()-1).equals(seW)) {
 					Word[] temp = {current.getWord(current.size()-1)};
 					WordSequence temp_seq = new WordSequence(temp);
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(temp_seq), current.getWord(current.size()-1), model.getProbability(current));
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(temp_seq), current.getWord(current.size()-1), model.getProbability(current), false);
 				}
 				else {
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(current.getSubSequence(1, current.size())), current.getWord(current.size()-1), model.getProbability(current));
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(current.getSubSequence(1, current.size())), current.getWord(current.size()-1), model.getProbability(current), false);
 				}
 			}
 		}
 		
 	}
 	
-	private void addTransition(State start, State finish, Word word, float probability) {
+	private void addTransition(State start, State finish, Word word, float probability, boolean first) {
 		Trans t = new Trans(start, finish, word, probability);
 		start.addTransition(t);
-		transitions.add(t);
+		if (!first)
+			transitions.add(t);
+		else transitions.addFirst(t);
 		symbolSet.add(word);
 	}
 	
@@ -183,13 +184,14 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 		
 		BufferedWriter out = new BufferedWriter(fsaFile);
 		
+		
 		for (Trans t : transitions) {
 			try {
 				out.write(t.getStart().getWords().toString() + " " +
 						t.getFinish().getWords().toString() + " " +
 						t.getWord().toString() + " " +
 						t.getWord().toString() + " " +
-						t.getProbability() + '\n');
+						-t.getProbability() + '\n');
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -233,11 +235,19 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 		BufferedWriter isyms = new BufferedWriter(inputFile);
 		BufferedWriter ssyms = new BufferedWriter(stateFile);
 		
+		try {
+			writeSymbols("<eps>", isyms, symbolId++);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
 		for (Word s : symbolSet) {
-			try {
-				writeSymbols(s.toString(), isyms, symbolId++);
-			} catch (IOException e) {
-				e.printStackTrace();
+			if (s.toString() != "<eps>") {
+				try {
+					writeSymbols(s.toString(), isyms, symbolId++);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -273,5 +283,9 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 	
 	public LinkedList<State> getStates() {
 		return this.states;
+	}
+	
+	public HashSet<Word> getSymbols() {
+		return this.symbolSet;
 	}
 }
