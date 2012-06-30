@@ -1,6 +1,4 @@
 #!/usr/bin/python
-#load wikipedia corpus, remove blank line, split it into different part: train, valid, test
-
 import sys
 
 def load(wiki, out):
@@ -25,9 +23,8 @@ def load(wiki, out):
 				fout_valid.write(line+"\n")
 		line = f.readline()
 	f.close()
-	print "ndoc=%d" % ndoc
+	print "number of docs: %d" % ndoc
 	
-	fout.close()
 	fout_train.close()
 	fout_test.close()
 	fout_valid.close()

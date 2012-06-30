@@ -1,4 +1,7 @@
 #!/bin/sh
-#split the corpus file into three parts: train, test, and valid
+# split the wiki corpus into three sets: train, valid, test
 
-python wikireader.py wiki_corpus.txt ./rnnlm/
+corpus='../../data/wikipedia/wiki.transcript'
+outdir='../../data/wikipedia/rnnlm/'
+
+python wikireader.py $corpus $outdir
