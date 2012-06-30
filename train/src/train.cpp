@@ -14,7 +14,7 @@
  */
 
 #include <cstring>
-#include <string>
+#include <typeinfo>
 #include <getopt.h>
 #include <ngram/ngram-input.h>
 #include <ngram/ngram-make.h>
@@ -23,9 +23,11 @@
 #include <ngram/ngram-katz.h>
 #include <ngram/ngram-wittenbell.h>
 #include <ngram/ngram-unsmoothed.h>
+#include <fst/symbol-table.h>
 #include <fst/extensions/far/farscript.h>
 #include <fst/extensions/far/main.h>
 #include "phonetisaurus/M2MFstAligner.hpp"
+#include "utils.hpp"
 
 #define arc_type "standard"
 #define fst_type "vector"
@@ -33,7 +35,6 @@
 #define entry_type "line"
 #define token_type "symbol"
 #define generate_keys 0
-#define symbols "corpus.syms"
 #define unknown_symbol "<unk>"
 #define keep_symbols true
 #define initial_symbols true
@@ -53,7 +54,7 @@ namespace fst {
 
 typedef LogWeightTpl<double> Log64Weight;
 typedef ArcTpl<Log64Weight> Log64Arc;
-
+typedef int StateId;
 template <class Arc>
 struct ToLog64Mapper {
   typedef Arc FromArc;
@@ -73,13 +74,14 @@ struct ToLog64Mapper {
 };
 }
 
+using namespace std;
 using namespace ngram;
 using namespace fst;
 
 void print_help(char* appname) {
 	cout << "Usage: " << appname << " [--seq1_del] [--seq2_del] [--seq1_max SEQ1_MAX] [--seq2_max SEQ2_MAX]" << endl;
-	cout << "               [--seq1_sep SEQ1_SEP] [--seq2_sep SEQ2_SEP] [--s1s2_sep S1S2_SEP] " << endl;
-	cout << "               [--eps EPS] [--skip SKIP] [--seq1in_sep SEQ1IN_SEP] [--seq2in_sep SEQ2IN_SEP]" << endl;
+	cout << "               [--seq_sep SEQ_SEP] [--s1s2_sep S1S2_SEP] [--eps EPS] " << endl;
+	cout << "               [--skip SKIP] [--seq1in_sep SEQ1IN_SEP] [--seq2in_sep SEQ2IN_SEP]" << endl;
 	cout << "               [--s1s2_delim S1S2_DELIM] [--iter ITER] [--order ORDER] [--smooth SMOOTH] " << endl;
 	cout << "               [--noalign] --ifile IFILE --ofile OFILE" << endl;
 	cout << endl;
@@ -87,8 +89,7 @@ void print_help(char* appname) {
 	cout << "  --seq2_del,              Allow deletions in sequence 2. Defaults to false." << endl;
 	cout << "  --seq1_max SEQ1_MAX,     Maximum subsequence length for sequence 1. Defaults to 2." << endl;
 	cout << "  --seq2_max SEQ2_MAX,     Maximum subsequence length for sequence 2. Defaults to 2." << endl;
-	cout << "  --seq1_sep SEQ1_SEP,     Separator token for sequence 1. Defaults to '|'." << endl;
-	cout << "  --seq2_sep SEQ2_SEP,     Separator token for sequence 2. Defaults to '|'." << endl;
+	cout << "  --seq_sep SEQ_SEP,       Separator token for sequences 1 and 2. Defaults to '|'." << endl;
 	cout << "  --s1s2_sep S1S2_SEP,     Separator token for seq1 and seq2 alignments. Defaults to '}'." << endl;
 	cout << "  --eps EPS,               Epsilon symbol.  Defaults to '<eps>'." << endl;
 	cout << "  --skip SKIP,             Skip/null symbol.  Defaults to '_'." << endl;
@@ -96,49 +97,120 @@ void print_help(char* appname) {
 	cout << "  --seq2in_sep SEQ2IN_SEP, Separator for seq2 in the input training file. Defaults to ' '." << endl;
 	cout << "  --s1s2_delim S1S2_DELIM, Separator for seq1/seq2 in the input training file. Defaults to '  '." << endl;
 	cout << "  --iter ITER,             Maximum number of iterations for EM. Defaults to 10." << endl;
-	cout << "  --ifile IFILE,           File containing sequences to be aligned. " << endl;
-	cout << "  --ofile OFILE,           Write the alignments to file." << endl;
-	cout << "  --noalign,               Do not align. Assume that the aligned corpus already exists." << endl;
-	cout << "                           Defaults to false." << endl;
 	cout << "  --order ORDER,           N-gram order. Defaults to 9." << endl;
 	cout << "  --smooth SMOOTH,         Smoothing method. Available options are: " << endl;
 	cout << "                           \"presmoothed\", \"unsmoothed\", \"kneser_ney\", \"absolute\", " << endl;
-	cout << "                           \"katz\", \"witten_bell\", \"unsmoothed\". Defaults to \"kneser_ney\"." << endl;
+	cout << "                           \"katz\", \"witten_bell\". Defaults to \"kneser_ney\"." << endl;
+	cout << "  --noalign,               Do not align. Assume that the aligned corpus already exists." << endl;
+	cout << "                           Defaults to false." << endl;
+	cout << "  --ifile IFILE,           File containing sequences to be aligned. " << endl;
+	cout << "  --ofile OFILE,           Write the alignments to file." << endl;
 }
 
-void split_string(string* input, vector<string>* tokens, string* delim) {
-	size_t start = 0;
-	size_t len = 0;
-	size_t pos = 0;
 
-	while (start < input->size()) {
-		if (delim->empty()) {
-			len = 1;
-		} else {
-			pos = input->find(*delim, start);
-			if (pos != string::npos) {
-				len = pos - start;
-			} else {
-				len = input->size() - start;
-			}
+void addarcs(StateId state_id, StateId newstate, const SymbolTable* oldsyms, SymbolTable* isyms,
+		SymbolTable* osyms,	SymbolTable* ssyms,	string eps,	string s1s2_sep, StdMutableFst *fst,
+		StdMutableFst *out) {
+	for (ArcIterator<StdFst> aiter(*fst, state_id); !aiter.Done(); aiter.Next()) {
+		StdArc arc = aiter.Value();
+		string oldlabel = oldsyms->Find(arc.ilabel);
+		if(oldlabel == eps) {
+			oldlabel = oldlabel.append("}");
+			oldlabel = oldlabel.append(eps);
 		}
-		tokens->push_back(input->substr(start, len));
-		if (delim->empty()) {
-			start = start + len;
-		} else {
-			start = start + len + delim->size();
+		vector<string> tokens;
+		split_string(&oldlabel, &tokens, &s1s2_sep, true);
+		int64 ilabel = isyms->AddSymbol(tokens.at(0));
+		int64 olabel = osyms->AddSymbol(tokens.at(1));
+
+		int64 nextstate = ssyms->Find(convertInt(arc.nextstate));
+		if(nextstate  == -1 ) {
+			out->AddState();
+			ssyms->AddSymbol(convertInt(arc.nextstate));
+			nextstate = ssyms->Find(convertInt(arc.nextstate));
 		}
+		out->AddArc(newstate, StdArc(ilabel, olabel, (arc.weight != TropicalWeight::Zero())?arc.weight:TropicalWeight::One(), nextstate));
+		//out->AddArc(newstate, StdArc(ilabel, olabel, arc.weight, nextstate));
 	}
 }
 
-void train_model(string eps, int order, string smooth, string out_name) {
+void relabel(StdMutableFst *fst, StdMutableFst *out, string eps, string skip, string s1s2_sep, string seq_sep) {
+	ArcSort(fst, StdILabelCompare());
+	const SymbolTable *oldsyms = fst->InputSymbols();
+
+	// Uncomment the next line in order to save the original model
+	// as created by ngram
+	// fst->Write("org.fst");
+
+	// generate new input, output and states SymbolTables
+	SymbolTable *ssyms = new SymbolTable("ssyms");
+	SymbolTable *isyms = new SymbolTable("isyms");
+	SymbolTable *osyms = new SymbolTable("osyms");
+
+	out->AddState();
+	ssyms->AddSymbol("s0");
+	out->SetStart(0);
+
+	out->AddState();
+	ssyms->AddSymbol("f");
+	out->SetFinal(1, TropicalWeight::One());
+
+	isyms->AddSymbol(eps);
+	osyms->AddSymbol(eps);
+
+	//Add separator, phi, start and end symbols
+	isyms->AddSymbol(seq_sep);
+	osyms->AddSymbol(seq_sep);
+	isyms->AddSymbol("<phi>");
+	osyms->AddSymbol("<phi>");
+	int istart = isyms->AddSymbol("<s>");
+	int iend = isyms->AddSymbol("</s>");
+	int ostart = osyms->AddSymbol("<s>");
+	int oend = osyms->AddSymbol("</s>");
+
+	out->AddState();
+	ssyms->AddSymbol("s1");
+	out->AddArc(0, StdArc(istart, ostart, TropicalWeight::One(), 2));
+
+	for (StateIterator<StdFst> siter(*fst); !siter.Done(); siter.Next()) {
+		StateId state_id = siter.Value();
+
+		int64 newstate;
+		if (state_id == fst->Start()) {
+			newstate = 2;
+		} else {
+			newstate = ssyms->Find(convertInt(state_id));
+			if(newstate == -1 ) {
+				out->AddState();
+				ssyms->AddSymbol(convertInt(state_id));
+				newstate = ssyms->Find(convertInt(state_id));
+			}
+		}
+
+		TropicalWeight weight = fst->Final(state_id);
+
+		if (weight != TropicalWeight::Zero()) {
+			// this is a final state
+			StdArc a = StdArc(iend, oend, weight, 1);
+			out->AddArc(newstate, a);
+			out->SetFinal(newstate, TropicalWeight::Zero());
+		}
+		addarcs(state_id, newstate, oldsyms, isyms, osyms, ssyms, eps, s1s2_sep, fst, out);
+	}
+
+	out->SetInputSymbols(isyms);
+	out->SetOutputSymbols(osyms);
+	ArcSort(out, StdOLabelCompare());
+	ArcSort(out, StdILabelCompare());
+}
+
+void train_model(string eps, string s1s2_sep, string skip, int order, string smooth, string out_name, string seq_sep) {
 	// create symbols file
 	cout << "Generating symbols..." << endl;
-
-  NGramInput *ingram = new NGramInput(
-	"corpus.aligned", "corpus.syms",
-	"", eps, "<unk>", "<s>", "</s>");
-  ingram->ReadInput(0, 1);
+	NGramInput *ingram = new NGramInput(
+		"corpus.aligned", "corpus.syms",
+		"", eps, unknown_symbol, "", "");
+	ingram->ReadInput(0, 1);
 
 	// compile strings into a far archive
 	cout << "Compiling symbols into FAR archive..." << endl;
@@ -151,7 +223,6 @@ void train_model(string eps, int order, string smooth, string out_name) {
     vector<string> in_fname;
     in_fname.push_back("corpus.aligned");
 
-
 	fst::script::FarCompileStrings(in_fname, "corpus.far", arc_type, fst_type,
 						fartype, generate_keys, fet, ftt,
 	                       "corpus.syms", unknown_symbol,
@@ -162,25 +233,25 @@ void train_model(string eps, int order, string smooth, string out_name) {
 
 	//count n-grams
 	cout << "Counting n-grams..." << endl;
-	  NGramCounter<Log64Weight> ngram_counter(order, true);
+	NGramCounter<Log64Weight> ngram_counter(order, true);
 
-	  FstReadOptions opts;
-	  FarReader<StdArc>* far_reader;
-	  far_reader = FarReader<StdArc>::Open("corpus.far");
-	  int fstnumber = 1;
-	  const Fst<StdArc> *ifst = 0, *lfst = 0;
-	  while (!far_reader->Done()) {
-	    if (ifst)
-	      delete ifst;
-	    ifst = far_reader->GetFst().Copy();
+	FstReadOptions opts;
+	FarReader<StdArc>* far_reader;
+	far_reader = FarReader<StdArc>::Open("corpus.far");
+	int fstnumber = 1;
+	const Fst<StdArc> *ifst = 0, *lfst = 0;
+	while (!far_reader->Done()) {
+		if (ifst)
+			delete ifst;
+		ifst = far_reader->GetFst().Copy();
 
-	    VLOG(1) << opts.source << "#" << fstnumber;
-	    if (!ifst) {
-	      LOG(ERROR) << "ngramcount: unable to read fst #" << fstnumber;
-	      exit(1);
-	    }
+		VLOG(1) << opts.source << "#" << fstnumber;
+		if (!ifst) {
+			LOG(ERROR) << "ngramcount: unable to read fst #" << fstnumber;
+		exit(1);
+		}
 
-	    bool counted = false;
+		bool counted = false;
 	    if (ifst->Properties(kString | kUnweighted, true)) {
 	        counted = ngram_counter.Count(*ifst);
 	    } else {
@@ -192,73 +263,81 @@ void train_model(string eps, int order, string smooth, string out_name) {
 	      LOG(ERROR) << "ngramcount: fst #" << fstnumber << " skipped";
 
 	    if (ifst->InputSymbols() != 0) {  // retain for symbol table
-	      if (lfst)
-		delete lfst;  // delete previously observed symbol table
-	      lfst = ifst;
-	      ifst = 0;
+	        if (lfst)
+	    		delete lfst;  // delete previously observed symbol table
+	        lfst = ifst;
+	        ifst = 0;
 	    }
 	    far_reader->Next();
 	    ++fstnumber;
-	  }
-	  delete far_reader;
+	}
+	delete far_reader;
 
-	  if (!lfst) {
-	    LOG(ERROR) << "None of the input FSTs had a symbol table";
-	    exit(1);
-	  }
+	if (!lfst) {
+		LOG(ERROR) << "None of the input FSTs had a symbol table";
+		exit(1);
+	}
 
-	  VectorFst<StdArc> vfst;
-	  ngram_counter.GetFst(&vfst);
-	  ArcSort(&vfst, StdILabelCompare());
-	  vfst.SetInputSymbols(lfst->InputSymbols());
-	  vfst.SetOutputSymbols(lfst->InputSymbols());
-	  vfst.Write("corpus.cnts");
+	VectorFst<StdArc> vfst;
+	ngram_counter.GetFst(&vfst);
+	ArcSort(&vfst, StdILabelCompare());
+	vfst.SetInputSymbols(lfst->InputSymbols());
+	vfst.SetOutputSymbols(lfst->InputSymbols());
+	vfst.Write("corpus.cnts");
 
-	  // convert to WFST model
-	  bool prefix_norm = 0;
-	  if (smooth == "presmoothed") {  // only for use with randgen counts
-	    prefix_norm = 1;
-	    smooth = "unsmoothed";  // normalizes only based on prefix count
-	  }
-	  StdMutableFst *mfst = StdMutableFst::Read("corpus.cnts", true);
-	  if (smooth == "kneser_ney") {
-	    NGramKneserNey ngram(mfst, backoff, backoff_label,
+	cout << "Smoothing model..." << endl;
+
+	// convert to WFST model
+	bool prefix_norm = 0;
+	StdMutableFst* fst;
+	if (smooth == "presmoothed") {  // only for use with randgen counts
+		prefix_norm = 1;
+		smooth = "unsmoothed";  // normalizes only based on prefix count
+	}
+	StdMutableFst *mfst = StdMutableFst::Read("corpus.cnts", true);
+	if (smooth == "kneser_ney") {
+		NGramKneserNey ngram(mfst, backoff, backoff_label,
 				 norm_eps, check_consistency,
 				 discount_D, bins);
-	    ngram.MakeNGramModel();
-	    ngram.GetFst().Write(out_name);
-	  } else if (smooth == "absolute") {
-	    NGramAbsolute ngram(mfst, backoff, backoff_label,
+		ngram.MakeNGramModel();
+		fst = ngram.GetMutableFst();
+	} else if (smooth == "absolute") {
+		NGramAbsolute ngram(mfst, backoff, backoff_label,
 				norm_eps, check_consistency,
 				discount_D, bins);
-	    ngram.MakeNGramModel();
-	    ngram.GetFst().Write(out_name);
-	  } else if (smooth == "katz") {
-	    NGramKatz ngram(mfst, backoff, backoff_label,
-			    norm_eps, check_consistency,
-			    bins);
-	    ngram.MakeNGramModel();
-	    ngram.GetFst().Write(out_name);
-	  } else if (smooth == "witten_bell") {
-	    NGramWittenBell ngram(mfst, backoff, backoff_label,
+		ngram.MakeNGramModel();
+		fst = ngram.GetMutableFst();
+	} else if (smooth == "katz") {
+		NGramKatz ngram(mfst, backoff, backoff_label,
+				norm_eps, check_consistency,
+				bins);
+		ngram.MakeNGramModel();
+		fst = ngram.GetMutableFst();
+	} else if (smooth == "witten_bell") {
+		NGramWittenBell ngram(mfst, backoff, backoff_label,
 				  norm_eps, check_consistency,
-				  witten_bell_k);
-	    ngram.MakeNGramModel();
-	    ngram.GetFst().Write(out_name);
-	  } else if (smooth == "unsmoothed") {
-	    NGramUnsmoothed ngram(mfst, 1, prefix_norm, backoff_label,
+					  witten_bell_k);
+			ngram.MakeNGramModel();
+			fst = ngram.GetMutableFst();
+	} else if (smooth == "unsmoothed") {
+		NGramUnsmoothed ngram(mfst, 1, prefix_norm, backoff_label,
 				  norm_eps, check_consistency);
-	    ngram.MakeNGramModel();
-	    ngram.GetFst().Write(out_name);
-	  } else {
-	    LOG(ERROR) << "Bad smoothing method: " << smooth;
-	    exit(1);
-	  }
+		ngram.MakeNGramModel();
+		fst = ngram.GetMutableFst();
+	} else {
+		LOG(ERROR) << "Bad smoothing method: " << smooth;
+		exit(1);
+	}
+	cout << "Correcting final model..." << endl;
+	StdMutableFst* out = new StdVectorFst();
+	out->Write("ort.fst");
+	relabel(fst, out, eps, skip, s1s2_sep, seq_sep);
+	out->Write(out_name);
 }
 
 
 void align(string input_file, int seq1_del, int seq2_del, int seq1_max,
-		int seq2_max, string seq1_sep, string seq2_sep, string s1s2_sep,
+		int seq2_max, string seq_sep, string s1s2_sep,
 		string eps, string skip, string seq1in_sep, string seq2in_sep,
 		string s1s2_delim, int iter) {
 
@@ -266,8 +345,8 @@ void align(string input_file, int seq1_del, int seq2_del, int seq1_max,
 
 	ofstream ofile("corpus.aligned", ifstream::out);
 	cout << "Loading..." << endl;
-	M2MFstAligner fstaligner(seq1_del, seq2_del, seq1_max, seq2_max, seq1_sep,
-			seq2_sep, s1s2_sep, eps, skip, true);
+	M2MFstAligner fstaligner(seq1_del, seq2_del, seq1_max, seq2_max, seq_sep,
+			seq_sep, s1s2_sep, eps, skip, true);
 
 
 	string line;
@@ -327,8 +406,7 @@ int main(int argc, char* argv[]) {
 	int noalign = 0;
 	int seq1_max = 2;
 	int seq2_max = 2;
-	string seq1_sep = "|";
-	string seq2_sep = "|";
+	string seq_sep = "|";
 	string s1s2_sep = "}";
 	string eps = "<eps>";
 	string skip = "_";
@@ -347,19 +425,18 @@ int main(int argc, char* argv[]) {
 			{ "noalign",	no_argument, 		&noalign, 	1 },
 			{ "seq1_max",	required_argument,	NULL, 		'a' },
 			{ "seq2_max",	required_argument,	NULL,		'b' },
-			{ "seq1_sep",	required_argument,	NULL,		'c' },
-			{ "seq2_sep",	required_argument,	NULL,		'd' },
-			{ "s1s2_sep",	required_argument,	NULL,		'e' },
-			{ "eps",		required_argument,	NULL,		'f' },
-			{ "skip", 		required_argument,	NULL,		'g' },
-			{ "seq1in_sep", required_argument,	NULL,		'h' },
-			{ "seq2in_sep",	required_argument,	NULL,		'i' },
-			{ "s1s2_delim",	required_argument,	NULL,		'j' },
-			{ "iter", 		required_argument,	NULL,		'k' },
-			{ "order",		required_argument,	NULL,		'l' },
-			{ "smooth",		required_argument,	NULL,		'm' },
-			{ "ifile",		required_argument,	NULL,		'n' },
-			{ "ofile",		required_argument,	NULL,		'o' },
+			{ "seq_sep",	required_argument,	NULL,		'c' },
+			{ "s1s2_sep",	required_argument,	NULL,		'd' },
+			{ "eps",		required_argument,	NULL,		'e' },
+			{ "skip", 		required_argument,	NULL,		'f' },
+			{ "seq1in_sep", required_argument,	NULL,		'g' },
+			{ "seq2in_sep",	required_argument,	NULL,		'h' },
+			{ "s1s2_delim",	required_argument,	NULL,		'i' },
+			{ "iter", 		required_argument,	NULL,		'j' },
+			{ "order",		required_argument,	NULL,		'k' },
+			{ "smooth",		required_argument,	NULL,		'l' },
+			{ "ifile",		required_argument,	NULL,		'm' },
+			{ "ofile",		required_argument,	NULL,		'n' },
 			{ NULL, 		0, 					NULL, 		0 }
 	};
 	int option_index = 0;
@@ -380,42 +457,39 @@ int main(int argc, char* argv[]) {
 			seq2_max = (atoi(optarg) == 0) ? 2 : atoi(optarg);
 			break;
 		case 'c':
-			seq1_sep = std::string(optarg);
+			seq_sep = std::string(optarg);
 			break;
 		case 'd':
-			seq2_sep = std::string(optarg);
-			break;
-		case 'e':
 			s1s2_sep = std::string(optarg);
 			break;
-		case 'f':
+		case 'e':
 			eps = std::string(optarg);
 			break;
-		case 'g':
+		case 'f':
 			skip = std::string(optarg);
 			break;
-		case 'h':
+		case 'g':
 			seq1in_sep = std::string(optarg);
 			break;
-		case 'i':
+		case 'h':
 			seq2in_sep = std::string(optarg);
 			break;
-		case 'j':
+		case 'i':
 			s1s2_delim = std::string(optarg);
 			break;
-		case 'k':
+		case 'j':
 			iter = atoi(optarg);
 			break;
-		case 'l':
+		case 'k':
 			order = atoi(optarg);
 			break;
-		case 'm':
+		case 'l':
 			smooth = std::string(optarg);
 			break;
-		case 'n':
+		case 'm':
 			input_file = std::string(optarg);
 			break;
-		case 'o':
+		case 'n':
 			output_file = std::string(optarg);
 			break;
 		case '?':
@@ -441,12 +515,12 @@ int main(int argc, char* argv[]) {
 	if (noalign == 0) {
 		cout << "Using file: " << input_file << endl;
 		align(input_file, seq1_del, seq2_del, seq1_max,
-				seq2_max, seq1_sep, seq2_sep, s1s2_sep,
+				seq2_max, seq_sep, s1s2_sep,
 				eps, skip, seq1in_sep, seq2in_sep,
 				s1s2_delim, iter);
 	}
 
-	train_model(eps, order, smooth, output_file);
+	train_model(eps, s1s2_sep, skip, order, smooth, output_file, seq_sep);
 
 	return 0;
 }
