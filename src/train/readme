@@ -11,6 +11,7 @@ This is an introduction to set up a basic experiment to get the WER for a new da
 	Thirdly, run the scripts (change the path in rec.sh first)
 	$ ./rec.sh
 4. Get WER
-	Just run
+	Download word_align.py from https://cmusphinx.svn.sourceforge.net/svnroot/cmusphinx/trunk/SphinxTrain/scripts/decode/word_align.py
+	Run
 	$ ./getwer.sh > log.txt
 	You will get WER for your files in log.txt
