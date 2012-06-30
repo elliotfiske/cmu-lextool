@@ -1,0 +1,1 @@
+#!/usr/bin/pythonimport sys#format the WER file to a tablelines = sys.stdin.readlines()n = len(lines);wer = []i = 0while i+4 < n:	line = lines[i+4]	numbers = line.split()	wer.append(numbers[1]) #get the WER number from the line		i = i + 5for w in wer:	print w
