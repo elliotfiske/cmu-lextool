@@ -1,0 +1,16 @@
+This is an introduction to set up a basic experiment to get the WER for a new data set
+
+1. Get a test data set
+    Basically, you need audio files and coresponding trainscripts
+2. convert the files into wav format.  If they are mp3, you can use the following script. Before running it, you need to change $path to your own audio folder
+    $ ./mp2wav.sh	
+3. recognition them using the demo transcriber, using
+	First, you need to make some changes of the config file for the demo transcriber (.\src\apps\edu\cmu\sphinx\demo\transcriber\config.xml); usually, you only need to change the location of the trigramModel
+	Secondly, build sphinx4. Go the main folder of sphinx4 and run
+	$ ant
+	Thirdly, run the scripts (change the path in rec.sh first)
+	$ ./rec.sh
+4. Get WER
+	Just run
+	$ ./getwer.sh > log.txt
+	You will get WER for your files in log.txt
