@@ -61,14 +61,7 @@ public class FstTest {
 		
 		// Save to disk
 		try {
-			FileOutputStream fileOut = new FileOutputStream("test.fst");
-	        ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	        out.writeObject(fst);
-	        out.close();
-	        fileOut.close();			
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			fst.saveModel("test.fst.ser");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
