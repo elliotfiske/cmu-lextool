@@ -1,6 +1,0 @@
-#JSGF V1.0;
-
-grammar phonelist;
-
-public <phonelist> = ((T) (IY|IH|IX) (CH));
-
