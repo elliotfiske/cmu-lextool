@@ -1,0 +1,10 @@
+README
+------
+
+1. Each folder contains a different algorithm for decoding a wave file using Java Speech Grammar Format (JSGF) files
+
+2. All scripts are written either in python or shell
+
+3. Each folder in turn contains a README file which explains how to setup and run the algorithm
+
+4. The outputs are written in output_*.txt files

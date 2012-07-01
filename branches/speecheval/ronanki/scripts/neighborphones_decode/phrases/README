@@ -1,0 +1,24 @@
+STEPS TO RUN:
+
+Method 1: (Single/Batch Decode)
+
+1. Run decode.sh to get necessary output in sample.out
+
+2. Construct grammar file (JSGF) using my earlier scripts from phonemes2ngbphones
+
+Method 2: (single phrase)
+
+1. Use construct_grammar.py to construct different grammar using .phseg file using neighboring phones for each phone at a time and fixing all other phones
+
+2. Create split.ctl file using extracted FSG_phrase/JSGF/
+
+3. Run feature_extract.sh program to extract features for individual phoeme wav files
+
+4. Java Speech Grammar Format (JSGF) files are already created in FSG_phoneme
+
+5. Run jsgf2fsg.sh in FSG_3phoneme to convert from jsgf to fsg.
+
+6. Run decode_phrase.py to decode to output_decoded_phrase.txt
+
+
+

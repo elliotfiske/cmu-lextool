@@ -1,0 +1,6 @@
+#JSGF V1.0;
+
+grammar phonelist;
+
+public <phonelist> = ( (P) (R) (AH) (N|M|NG) (AH) (N) (S) (IY) (EY) (SH) (AH) (N));
+
