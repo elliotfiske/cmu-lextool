@@ -5,12 +5,12 @@ TRAIN_OBJS = src/train.o  \
 EVALUATE_OBJS = src/evaluate.o  \
 				src/g2p.o
 
-LDLIBS = -L/usr/local/lib64/fst -lfst -lfstfar -lfstfarscript -lfstscript -ldl -lngram
+LDLIBS = -L/usr/local/lib64/fst -L/usr/local/lib/fst -lfst -lfstfar -lfstfarscript -lfstscript -ldl -lngram
 
 CFLAGS = -c -O2 -I src/include 
 LDFLAGS = -O2 
 
-all: train
+all: train swig
 
 train: $(TRAIN_OBJS)
 	g++ ${LDFLAGS} ${LDLIBS} -o train ${TRAIN_OBJS} 
@@ -21,6 +21,9 @@ evaluate: $(EVALUATE_OBJS)
 %.o: %.cpp
 	g++ ${CFLAGS} -o $@ $<
 	
-clean: 
-	rm train evaluate src/*.o src/phonetisaurus/*.o
+swig: train
+	$(MAKE) --directory=swig
 
+clean: 
+	rm -f train evaluate src/*.o src/phonetisaurus/*.o;
+	$(MAKE) --directory=swig clean;
