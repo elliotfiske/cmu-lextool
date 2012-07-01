@@ -42,21 +42,21 @@ public class FstTest {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		Fst<Weight<Double>> fst = new Fst<Weight<Double>>();
+		Fst<Double> fst = new Fst<Double>();
 		
 		// State 0
-		State<Weight<Double>> s = new State<Weight<Double>>(); 
-		s.AddArc(new Arc<Weight<Double>>(new Weight<Double>(0.5), 1, 1, 1));
-		s.AddArc(new Arc<Weight<Double>>(new Weight<Double>(1.5), 2, 2, 1));
+		State<Double> s = new State<Double>(); 
+		s.AddArc(new Arc<Double>(new Weight<Double>(0.5), 1, 1, 1));
+		s.AddArc(new Arc<Double>(new Weight<Double>(1.5), 2, 2, 1));
 		fst.AddState(s);
 		
 		// State 1
-		s = new State<Weight<Double>>();
-		s.AddArc(new Arc<Weight<Double>>(new Weight<Double>(2.5), 3, 3, 2));
+		s = new State<Double>();
+		s.AddArc(new Arc<Double>(new Weight<Double>(2.5), 3, 3, 2));
 		fst.AddState(s);
 
 		// State 2 (final)
-		s = new State<Weight<Double>>(new Weight<Double>(3.5));
+		s = new State<Double>(new Weight<Double>(3.5));
 		fst.AddState(s);
 		
 		// Save to disk

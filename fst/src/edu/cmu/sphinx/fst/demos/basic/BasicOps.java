@@ -30,10 +30,10 @@ public class BasicOps {
 	 */
 	public static void main(String[] args) {
 		TropicalSemiring s = new TropicalSemiring();
-		Weight<Float> w1 = new Weight<Float>(0.1f);
-		Weight<Float> w2 = new Weight<Float>(0.5f);
-		Weight<Float> one = s.one();
-		Weight<Float> zero = s.zero();
+		Weight<Double> w1 = new Weight<Double>(0.1);
+		Weight<Double> w2 = new Weight<Double>(0.5);
+		Weight<Double> one = s.one();
+		Weight<Double> zero = s.zero();
 		
 		
 		System.out.println("w1: " + w1);

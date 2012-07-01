@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse.ant.import?>
+<project basedir="bin" default="jar" name="jar">
+    <target name="jar">
+	<antcall target="build"/>
+	<jar destfile="fst.jar" basedir="bin" includes="**/*.class"/>
+    </target>
+    <target name="jarclean">
+	<delete file="fst.jar"/>
+	<antcall target="clean"/>
+    </target>
+</project>
+

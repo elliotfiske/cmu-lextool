@@ -24,15 +24,15 @@ import edu.cmu.sphinx.fst.weight.Weight;
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class State<W extends Weight<?>> implements Serializable {
+public class State<T> implements Serializable {
 	
 	private static final long serialVersionUID = -405571712671111894L;
 
 	// Final weight
-	W fnlWeight;
+	Weight<T> fnlWeight;
 
 	// Outgoing arcs collection 
-	ArrayList<Arc<W>> arcs = new ArrayList<Arc<W>>();
+	ArrayList<Arc<T>> arcs = new ArrayList<Arc<T>>();
 	
 	// # of input epsilons
 	int iEpsilons = 0;
@@ -49,28 +49,28 @@ public class State<W extends Weight<?>> implements Serializable {
 	 * 
 	 * @param fnlWeight
 	 */
-	public State(W fnlWeight) {
+	public State(Weight<T> fnlWeight) {
 		this.fnlWeight = fnlWeight;
 	}
 
 	/**
 	 * @return the Final weight
 	 */
-	public W getFinalWeight() {
+	public Weight<T> getFinalWeight() {
 		return fnlWeight;
 	}
 
 	/**
 	 * @param fnlWeight the Final weight to set
 	 */
-	public void setFinalWeight(W fnlWeight) {
+	public void setFinalWeight(Weight<T> fnlWeight) {
 		this.fnlWeight = fnlWeight;
 	}
 
 	/**
 	 * @return the arcs
 	 */
-	public ArrayList<Arc<W>> getArcs() {
+	public ArrayList<Arc<T>> getArcs() {
 		return arcs;
 	}
 
@@ -102,11 +102,34 @@ public class State<W extends Weight<?>> implements Serializable {
 	 * @param a the arc to add
 	 * @return the arc's index
 	 */
-	public int AddArc(Arc<W> a) {
+	public int AddArc(Arc<T> a) {
 		this.arcs.add(a);
 		return this.arcs.size() - 1; 
 		
 	}
 	
+	/**
+	 * 
+	 * @param aIndex
+	 * @param a
+	 */
+	public void setArc(int aIndex, Arc<T> a) {
+		if (aIndex < this.arcs.size()) {
+			this.arcs.set(aIndex, a);
+		}
+	}
+
+	/**
+	 * 
+	 * @param aIndex the arc's index
+	 * @return the arc
+	 */
+	public Arc<T> getArc(int aIndex) {
+		if (aIndex<this.arcs.size()) {
+			return this.arcs.get(aIndex);
+		}
+		
+		return null;
+	}
 	
 }

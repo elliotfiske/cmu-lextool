@@ -19,7 +19,7 @@ import java.io.Serializable;
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
  */
-public class TropicalSemiring implements Semiring<Weight<Float>>, Serializable {
+public class TropicalSemiring implements Semiring<Double>, Serializable {
 
 	private static final long serialVersionUID = 2711172386738607866L;
 
@@ -33,11 +33,11 @@ public class TropicalSemiring implements Semiring<Weight<Float>>, Serializable {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see edu.cmu.fst.weight.AbstractSemiring#Plus(edu.cmu.fst.weight.Weight,
-	 * edu.cmu.fst.weight.Weight)
+	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#Plus(edu.cmu.sphinx.fst.weight.Weight,
+	 * edu.cmu.sphinx.fst.weight.Weight)
 	 */
 	@Override
-	public Weight<Float> plus(Weight<Float> w1, Weight<Float> w2) {
+	public Weight<Double> plus(Weight<Double> w1, Weight<Double> w2) {
 		if (!isMember(w1) || !isMember(w2)) {
 			return null;
 		}
@@ -48,26 +48,26 @@ public class TropicalSemiring implements Semiring<Weight<Float>>, Serializable {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see edu.cmu.fst.weight.AbstractSemiring#Times(edu.cmu.fst.weight.Weight,
-	 * edu.cmu.fst.weight.Weight)
+	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#Times(edu.cmu.sphinx.fst.weight.Weight,
+	 * edu.cmu.sphinx.fst.weight.Weight)
 	 */
 	@Override
-	public Weight<Float> times(Weight<Float> w1, Weight<Float> w2) {
+	public Weight<Double> times(Weight<Double> w1, Weight<Double> w2) {
 		if (!isMember(w1) || !isMember(w2)) {
 			return null;
 		}
 
-		return new Weight<Float>(w1.getValue() + w2.getValue());
+		return new Weight<Double>(w1.getValue() + w2.getValue());
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see edu.cmu.fst.weight.AbstractSemiring#Divide(edu.cmu.fst.weight.Weight,
-	 * edu.cmu.fst.weight.Weight)
+	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#Divide(edu.cmu.sphinx.fst.weight.Weight,
+	 * edu.cmu.sphinx.fst.weight.Weight)
 	 */
 	@Override
-	public Weight<Float> divide(Weight<Float> w1, Weight<Float> w2) {
+	public Weight<Double> divide(Weight<Double> w1, Weight<Double> w2) {
 		if (!isMember(w1) || !isMember(w2)) {
 			return null;
 		}
@@ -78,39 +78,39 @@ public class TropicalSemiring implements Semiring<Weight<Float>>, Serializable {
 			return zero();
 		}
 
-		return new Weight<Float>(w1.getValue() - w2.getValue());
+		return new Weight<Double>(w1.getValue() - w2.getValue());
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see edu.cmu.fst.weight.AbstractSemiring#zero()
+	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#zero()
 	 */
 	@Override
-	public Weight<Float> zero() {
-		return new Weight<Float>(Float.POSITIVE_INFINITY);
+	public Weight<Double> zero() {
+		return new Weight<Double>(Double.POSITIVE_INFINITY);
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see edu.cmu.fst.weight.AbstractSemiring#one()
+	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#one()
 	 */
 	@Override
-	public Weight<Float> one() {
-		return new Weight<Float>(0.f);
+	public Weight<Double> one() {
+		return new Weight<Double>(0.);
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see edu.cmu.fst.weight.AbstractSemiring#isMember(edu.cmu.fst.weight.Weight)
+	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#isMember(edu.cmu.sphinx.fst.weight.Weight)
 	 */
 	@Override
-	public boolean isMember(Weight<Float> w) {
+	public boolean isMember(Weight<Double> w) {
 		return (w != null)                                          // The weight should not be null,
 				&& (w.getValue() != null)                           // it must hold a valid value,
-				&& (!Float.isNaN(w.getValue()))                     // not a NaN
+				&& (!Double.isNaN(w.getValue()))                     // not a NaN
 				&& (!w.getValue().equals(Float.NEGATIVE_INFINITY)); // and different from -inf
 	}
 }

@@ -14,9 +14,19 @@
 
 package edu.cmu.sphinx.fst.fst;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
+import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.weight.Weight;
 
@@ -26,18 +36,24 @@ import edu.cmu.sphinx.fst.weight.Weight;
  *
  * @param <W>
  */
-public class Fst<W extends Weight<?>> implements Serializable {
+public class Fst<T> implements Serializable {
 	
 	private static final long serialVersionUID = -7821842965064006073L;
 	
 	// holds the fst states
-	private ArrayList<State<W>> states = new ArrayList<State<W>>();
+	private ArrayList<State<T>> states = new ArrayList<State<T>>();
 	
 	// the initial state
 	private int start;
 
+	// input symbols map
+	private HashMap<Integer, String> isyms;
+	
+	// output symbols map
+	private HashMap<Integer, String> osyms;
+
 	/**
-	 * 
+	 *  Default constructor
 	 */
 	public Fst() {	}
 
@@ -61,7 +77,7 @@ public class Fst<W extends Weight<?>> implements Serializable {
 	 * @param sIndex the state
 	 * @return the state's weight
 	 */
-	public W getFinal(int sIndex) {
+	public Weight<T> getFinal(int sIndex) {
 		return this.states.get(sIndex).getFinalWeight();
 	}
 	
@@ -71,7 +87,7 @@ public class Fst<W extends Weight<?>> implements Serializable {
 	 * @param sIndex the state
 	 * @param w the state's weight
 	 */
-	public void setFinal(int sIndex, W w) {
+	public void setFinal(int sIndex, Weight<T> w) {
 		this.states.get(sIndex).setFinalWeight(w);
 	}
 
@@ -89,7 +105,7 @@ public class Fst<W extends Weight<?>> implements Serializable {
 	 * @param s the state to be added
 	 * @return the state's index 
 	 */
-	public int AddState(State<W> s) {
+	public int AddState(State<T> s) {
 		this.states.add(s);
 		return states.size() - 1;
 	}
@@ -98,7 +114,7 @@ public class Fst<W extends Weight<?>> implements Serializable {
 	 * 
 	 * @return the states array list
 	 */
-	public ArrayList<State<W>> getStates() {
+	public ArrayList<State<T>> getStates() {
 		return this.states; 
 	}
 	
@@ -107,7 +123,7 @@ public class Fst<W extends Weight<?>> implements Serializable {
 	 * @param sIndex the state's index
 	 * @return the state
 	 */
-	public State<W> getState(int sIndex) {
+	public State<T> getState(int sIndex) {
 		if (sIndex<this.states.size()) {
 			return this.states.get(sIndex);
 		}
@@ -120,10 +136,88 @@ public class Fst<W extends Weight<?>> implements Serializable {
 	 * @param sIndex
 	 * @param s
 	 */
-	public void setState(int sIndex, State<W> s) {
+	public void setState(int sIndex, State<T> s) {
 		if (sIndex < this.states.size()) {
 			this.states.set(sIndex, s);
 		}
 	}
 
+	/**
+	 * @return the isyms
+	 */
+	public HashMap<Integer, String> getIsyms() {
+		return isyms;
+	}
+
+	/**
+	 * @param isyms the isyms to set
+	 */
+	public void setIsyms(HashMap<Integer, String> isyms) {
+		this.isyms = isyms;
+	}
+
+	/**
+	 * @return the osyms
+	 */
+	public HashMap<Integer, String> getOsyms() {
+		return osyms;
+	}
+
+	/**
+	 * @param osyms the osyms to set
+	 */
+	public void setOsyms(HashMap<Integer, String> osyms) {
+		this.osyms = osyms;
+	}
+	
+	/**
+	 * adds a new outgoing arc from a state 
+	 * 
+	 * @param stateId the state's id
+	 * @param arc the arc
+	 */
+	public void addArc(int stateId, Arc<T> arc) {
+		State<T> s = states.get(stateId);
+		s.getArcs().add(arc);
+	}
+
+	/**
+	 *  saves compressed binary model to disk
+	 * @param filename the binary model filename
+	 * @throws IOException
+	 */
+	public void saveModel(String filename) throws IOException {
+		FileOutputStream fos = new FileOutputStream(filename);
+		GZIPOutputStream gos = new GZIPOutputStream(fos);
+		ObjectOutputStream oos = new ObjectOutputStream(gos);
+		oos.writeObject(this);
+		oos.flush();
+        oos.close();
+        gos.close();
+        fos.close();
+	}
+	
+	/**
+	 * Loads a compressed binary model from disk
+	 * @param filename the binary model filename
+	 * @throws IOException
+	 * @throws ClassNotFoundException 
+	 */
+	public static Object loadModel(String filename) throws IOException, ClassNotFoundException {
+		Object obj = null;
+	    FileInputStream fis = null;
+	    GZIPInputStream gis = null;
+	    ObjectInputStream ois = null;
+	    
+	    fis = new FileInputStream(filename);
+        gis = new GZIPInputStream(fis);
+        ois = new ObjectInputStream(gis);
+        obj = ois.readObject();
+        ois.close();
+        gis.close();
+        fis.close();
+
+        return obj;		
+	}
 }
+
