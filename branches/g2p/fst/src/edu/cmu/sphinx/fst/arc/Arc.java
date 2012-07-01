@@ -24,12 +24,12 @@ import edu.cmu.sphinx.fst.weight.Weight;
  *
  * @param <W>
  */
-public class Arc<W extends Weight<?>> implements Serializable{
+public class Arc<T> implements Serializable{
 	
 	private static final long serialVersionUID = -7996802366816336109L;
 	
 	// Arc's weight
-	protected W weight;
+	protected Weight<T> weight;
 	
 	// input label
 	protected int iLabel;
@@ -47,7 +47,7 @@ public class Arc<W extends Weight<?>> implements Serializable{
 	 * @param oLabel
 	 * @param nextState
 	 */
-	public Arc(W weight, int iLabel, int oLabel, int nextState) {
+	public Arc(Weight<T> weight, int iLabel, int oLabel, int nextState) {
 		this.weight = weight;
 		this.iLabel = iLabel;
 		this.oLabel = oLabel;
@@ -57,14 +57,14 @@ public class Arc<W extends Weight<?>> implements Serializable{
 	/**
 	 * @return the weight
 	 */
-	public W getWeight() {
+	public Weight<T> getWeight() {
 		return weight;
 	}
 
 	/**
 	 * @param weight the weight to set
 	 */
-	public void setWeight(W weight) {
+	public void setWeight(Weight<T> weight) {
 		this.weight = weight;
 	}
 

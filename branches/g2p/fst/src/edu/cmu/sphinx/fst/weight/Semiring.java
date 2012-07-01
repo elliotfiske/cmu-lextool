@@ -20,22 +20,14 @@ package edu.cmu.sphinx.fst.weight;
  * @param <T>
  *
  */
-public interface Semiring<W extends Weight<?>> {
+public interface Semiring<T> {
 	/**
 	 * 
 	 * @param w1
 	 * @param w2
 	 * @return
 	 */
-	public abstract W plus(W w1, W w2);
-	
-	/**
-	 * 
-	 * @param w1
-	 * @param w2
-	 * @return
-	 */
-	public abstract W times(W w1, W w2);
+	public abstract Weight<T> plus(Weight<T> w1, Weight<T> w2);
 	
 	/**
 	 * 
@@ -43,24 +35,32 @@ public interface Semiring<W extends Weight<?>> {
 	 * @param w2
 	 * @return
 	 */
-	public abstract W divide(W w1, W w2);
+	public abstract Weight<T> times(Weight<T> w1, Weight<T> w2);
+	
+	/**
+	 * 
+	 * @param w1
+	 * @param w2
+	 * @return
+	 */
+	public abstract Weight<T> divide(Weight<T> w1, Weight<T> w2);
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public abstract W zero();
+	public abstract Weight<T> zero();
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public abstract W one();
+	public abstract Weight<T> one();
 
 	/**
 	 * 
 	 * @param w
 	 * @return
 	 */
-	public abstract boolean isMember(W w);
+	public abstract boolean isMember(Weight<T> w);
 }

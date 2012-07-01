@@ -20,7 +20,7 @@ import java.io.Serializable;
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class LogSemiring implements Semiring<Weight<Double>>, Serializable {
+public class LogSemiring implements Semiring<Double>, Serializable {
 
 	private static final long serialVersionUID = 5212106775584311083L;
 
@@ -38,8 +38,6 @@ public class LogSemiring implements Semiring<Weight<Double>>, Serializable {
 		} else if(w2.getValue().equals(Double.POSITIVE_INFINITY)) {
 			return w1;
 		} 
-		// TODO: OpenFST uses a different calculation in documentation and in code
-		// I use documentation here. Maybe both are equivalent. Need to check.
 		return new Weight<Double>(-Math.log(Math.exp(-w1.getValue()) + Math.exp(-w2.getValue())));
 	}
 
