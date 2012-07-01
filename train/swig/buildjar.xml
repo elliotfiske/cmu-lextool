@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse.ant.import?>
+<project basedir="." default="jar" name="jar">
+    <target name="jar">
+      <antcall target="build"/>
+      <jar destfile="openfst.jar" basedir="." includes="**/*.class">
+            <manifest>
+                <attribute name="Main-Class" value="edu.cmu.sphinx.fst.openfst.Import"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+        </jar>
+    </target>
+    <target name="jarclean">
+        <delete file="openfst.jar"/>
+        <antcall target="clean"/>
+    </target>
+</project>
