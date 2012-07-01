@@ -28,7 +28,7 @@ for k in in_phone.readlines():
 			n1[n1.index(i)] = cmu_phones[i]
 	for i in n1:
 		if '(' not in i:
-			out_phone.write('{'+i+'} ')
+			out_phone.write('('+i+') ')
 		else:
 			out_phone.write(i)
 			
