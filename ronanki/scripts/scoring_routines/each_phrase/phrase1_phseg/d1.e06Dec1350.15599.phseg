@@ -1,0 +1,50 @@
+	 SFrm  EFrm   SegAScr Phone
+	    0    46   -162407 SIL
+	   47    83   -142970 +SMACK+
+	   84   103   -209812 AH SIL P b
+	  104   110   -197514 P AH R i
+	  111   117    -83953 R P OW i
+	  118   126   -107394 OW R CH i
+	  127   141   -169485 CH OW SIL e
+	  142   144    -71221 +NOISE+
+	  145   147    -91743 DH SIL IY b
+	  148   153    -73792 IY DH SIL e
+	  154   156    -46566 +NOISE+
+	  157   166   -106330 T SIL IY b
+	  167   175    -50327 IY T CH i
+	  176   188   -166622 CH IY IH i
+	  189   195   -132861 IH CH NG i
+	  196   205    -57464 NG IH AH e
+	  206   208     -8781 AH NG V b
+	  209   214    -19775 V AH SIL e
+	  215   217    -22982 +NOISE+
+	  218   220    -72918 P SIL R b
+	  221   224    -69797 R P AH i
+	  225   227    -82866 AH R N i
+	  228   231    -24082 N AH AH i
+	  232   240    -41090 AH N N i
+	  241   247   -153586 N AH S i
+	  248   250   -259295 S N IY i
+	  251   268   -308423 IY S EY i
+	  269   280   -119562 EY IY SH i
+	  281   288   -117518 SH EY AH i
+	  289   294    -95332 AH SH N i
+	  295   299    -35450 N AH W e
+	  300   304    -59906 W N IH b
+	  305   308    -23959 IH W DH i
+	  309   311    -64814 DH IH M e
+	  312   325    -46907 M DH AO b
+	  326   339   -164995 AO M R i
+	  340   345    -72538 R AO K e
+	  346   358   -211090 K R AA b
+	  359   371   -101280 AA K N i
+	  372   375    -15538 N AA F i
+	  376   383    -78696 F N AH i
+	  384   386    -11752 AH F D i
+	  387   391    -10866 D AH AH i
+	  392   398    -79225 AH D N i
+	  399   401    -63263 N AH S i
+	  402   404   -137336 S N SIL e
+	  405   415    -90163 +NOISE+
+	  416   470   -217155 SIL
+ Total score:    -4751401

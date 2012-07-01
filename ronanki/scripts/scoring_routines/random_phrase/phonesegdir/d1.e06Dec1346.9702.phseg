@@ -1,0 +1,47 @@
+	 SFrm  EFrm   SegAScr Phone
+	    0    14   -118593 SIL
+	   15    25    -59472 AH SIL P b
+	   26    37   -184527 P AH R i
+	   38    44    -16814 R P OW i
+	   45    58   -126982 OW R CH i
+	   59    70   -112074 CH OW DH e
+	   71    77    -57729 DH CH AH b
+	   78    84    -44198 AH DH T e
+	   85    97   -194799 T AH IY b
+	   98   105    -82056 IY T CH i
+	  106   114    -90381 CH IY IH i
+	  115   122    -30330 IH CH NG i
+	  123   133    -33180 NG IH AH e
+	  134   145    -63452 AH NG V b
+	  146   150    -28059 V AH SIL e
+	  151   160    -67656 +GARBAGE+
+	  161   163   -140400 P SIL R b
+	  164   166    -25935 R P AH i
+	  167   170    -20800 AH R N i
+	  171   175    -11736 N AH AH i
+	  176   183    -32101 AH N N i
+	  184   191    -58135 N AH S i
+	  192   202   -119622 S N IY i
+	  203   215    -58489 IY S EY i
+	  216   226    -45347 EY IY SH i
+	  227   238    -30936 SH EY AH i
+	  239   246    -89193 AH SH N i
+	  247   249    -21722 N AH W e
+	  250   259    -58505 W N IH b
+	  260   262     -9518 IH W TH i
+	  263   272   -118616 TH IH M e
+	  273   280    -34917 M TH AO b
+	  281   289    -34194 AO M R i
+	  290   293    -11616 R AO K e
+	  294   307    -78798 K R AA b
+	  308   317   -108570 AA K N i
+	  318   322    -49786 N AA F i
+	  323   329   -126106 F N AH i
+	  330   335    -60002 AH F D i
+	  336   339    -41615 D AH AH i
+	  340   348    -56424 AH D N i
+	  349   352    -19083 N AH S i
+	  353   366   -142875 S N SIL e
+	  367   379    -66337 +NOISE+
+	  380   382    -84341 SIL
+ Total score:    -3066021
