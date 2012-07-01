@@ -1,0 +1,5 @@
+#JSGF V1.0;
+
+grammar phonelist;
+
+public <phonelist> = (SIL (AH|AE|ER|AA) (P|T|B|HH) (R|Y|L) (OW|AO|UH|AW) (CH|SH|JH|T) (DH|TH|Z|V) (AH|AE|ER|AA) (T|CH|K|D|P|HH) (IY|IH|IX) (CH|SH|JH|T) (IH|IY|AX|EH) (NG|N) (AH|AE|ER|AA) (V|F|DH) (P|T|B|HH) (R|Y|L) (AH|AE|ER|AA) (N|M|NG) (AH|AE|ER|AA) (N|M|NG) (S|SH|Z|TH) (IY|IH|IX) (EY|EH|IY|AY) (SH|S|ZH|CH) (AH|AE|ER|AA) (N|M|NG) (W|L|Y) (IH|IY|AX|EH) (TH|S|DH|F|HH) (M|N) (AO|AA|ER|AX|UH) (R|Y|L) (K|G|T|HH) (AA|AH|ER|AO) (N|M|NG) (F|HH|TH|V) (AH|AE|ER|AA) (D|T|JH|G|B) (AH|AE|ER|AA) (N|M|NG) (S|SH|Z|TH) SIL);

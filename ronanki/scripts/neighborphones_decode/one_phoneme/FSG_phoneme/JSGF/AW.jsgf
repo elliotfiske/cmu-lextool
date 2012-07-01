@@ -1,0 +1,7 @@
+#JSGF V1.0;
+
+grammar phonelist;
+
+public <phonelist> = (<phones>);
+
+<phones>=(AW|AA|UH|OW);
