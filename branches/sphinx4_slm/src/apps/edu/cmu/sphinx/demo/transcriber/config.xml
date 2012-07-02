@@ -5,7 +5,7 @@
 -->
 
 <!-- ******************************************************** -->
-<!--  an4 configuration file                             -->
+<!--  an4 configuration file for 8k                         -->
 <!-- ******************************************************** -->
 
 <config>
@@ -16,14 +16,16 @@
 
     <property name="logLevel" value="WARNING"/>
     
+	<property name="absoluteBeamWidth" value="30000"/>
+
     <property name="absoluteWordBeamWidth" value="22"/>
-    <property name="relativeBeamWidth" value="1E-60"/>
-    <property name="wordInsertionProbability" value=".2"/>
+	<property name="relativeWordBeamWidth" value="1E-30"/>
+	<property name="wordInsertionProbability" value=".2"/>
     <property name="languageWeight" value="10.5"/>
-    
-    <property name="relativeWordBeamWidth" value="1E-30"/>
-    <property name="silenceInsertionProbability" value=".1"/>
+	<property name="silenceInsertionProbability" value=".1"/>
     <property name="acousticLookahead" value="1.7"/>
+	
+    <property name="relativeBeamWidth" value="1E-60"/>
     
     <property name="frontend" value="epFrontEnd"/>
     <property name="recognizer" value="recognizer"/>
@@ -63,7 +65,7 @@
           type="edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstSearchManager">
         <property name="scorer" value="threadedScorer"/>
         <property name="pruner" value="trivialPruner"/>
-        <property name="acousticLookaheadFrames" value="2.0"/>
+        <property name="acousticLookaheadFrames" value="1.8"/>
         <property name="logMath" value="logMath"/>
         <property name="activeListManager" value="activeListManager"/>
         <property name="buildWordLattice" value="false"/>
@@ -108,6 +110,21 @@
         <property name="unitManager" value="unitManager"/>
     </component>
     
+	<!-- ******************************************************** -->
+    <!-- The Dictionary configuration                            -->
+    <!-- ******************************************************** -->
+    <component name="dictionary" 
+        type="edu.cmu.sphinx.linguist.dictionary.FastDictionary">
+        <property name="dictionaryPath"
+                  value="/afs/cs.pitt.edu/usr0/wencan/private/project/Gsoc2012/sphinx4/bld/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz/dict/cmudict.0.6d"/>
+        <property name="fillerPath" 
+	          value="/afs/cs.pitt.edu/usr0/wencan/private/project/Gsoc2012/sphinx4/bld/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz/noisedict"/>
+        <property name="addSilEndingPronunciation" value="false"/>
+        <property name="wordReplacement" value="&lt;sil&gt;"/>
+        <property name="unitManager" value="unitManager"/>
+    </component>
+    
+	
     <component name="wsj"
                type="edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel">
         <property name="loader" value="wsjLoader"/>
@@ -117,7 +134,7 @@
     <component name="wsjLoader" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
         <property name="logMath" value="logMath"/>
         <property name="unitManager" value="unitManager"/>
-        <property name="location" value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz"/>
+        <property name="location" value="/afs/cs.pitt.edu/usr0/wencan/private/project/Gsoc2012/sphinx4/bld/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz"/>
     </component>
     
         
@@ -139,22 +156,11 @@
         <property name="logMath" value="logMath"/>
         <property name="dictionary" value="dictionary"/>
         <property name="location"
-                  value="/media/PRIVATE/loop/project/workspace/sphinx4/data/lm/HUB4_trigram_lm/language_model.arpaformat.DMP"/>
+					value="/afs/cs.pitt.edu/usr0/wencan/private/project/Gsoc2012/sphinx4/data/lm/HUB4_trigram_lm/language_model.arpaformat.DMP"/>
+                  <!-- value="/afs/cs.pitt.edu/usr0/wencan/private/project/Gsoc2012/sphinx4/data/wikipedia/wiki-10k-01.lm.DMP"/> -->
+				  
     </component>
     
-    <!-- ******************************************************** -->
-    <!-- The Dictionary configuration                            -->
-    <!-- ******************************************************** -->
-    <component name="dictionary" 
-        type="edu.cmu.sphinx.linguist.dictionary.FastDictionary">
-        <property name="dictionaryPath"
-                  value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d"/>
-        <property name="fillerPath" 
-	          value="resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/noisedict"/>
-        <property name="addSilEndingPronunciation" value="false"/>
-        <property name="wordReplacement" value="&lt;sil&gt;"/>
-        <property name="unitManager" value="unitManager"/>
-    </component>
     
     <component name="trivialPruner" 
                 type="edu.cmu.sphinx.decoder.pruner.SimplePruner"/>
@@ -197,9 +203,9 @@
 
     <component name="wordActiveList"
           type="edu.cmu.sphinx.decoder.search.WordActiveListFactory">
-        <property name="absoluteBeamWidth" value="21"/>
+        <property name="absoluteBeamWidth" value="25"/>
         <property name="logMath" value="logMath"/>
-        <property name="relativeBeamWidth" value="1E-25"/>
+        <property name="relativeBeamWidth" value="1E-40"/>
     </component>
 
     <!-- ************************************************** -->
@@ -208,9 +214,9 @@
 
     <component name="activeList"
           type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
-        <property name="absoluteBeamWidth" value="25000"/>
+        <property name="absoluteBeamWidth" value="-1"/>
         <property name="logMath" value="logMath"/>
-        <property name="relativeBeamWidth" value="1E-60"/>
+        <property name="relativeBeamWidth" value="1E-80"/>
     </component>
     
     <!-- ******************************************************** -->
@@ -265,8 +271,11 @@
             type="edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform">
     </component>
     
-    <component name="melFilterBank" 
-        type="edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank">
+     <component name="melFilterBank"
+          type="edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank">
+          <property name="numberFilters" value="31"/>
+          <property name="minimumFrequency" value="200"/>
+          <property name="maximumFrequency" value="3500"/>
     </component>
     
     <component name="dct" 
