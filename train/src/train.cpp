@@ -26,6 +26,7 @@
 #include <fst/symbol-table.h>
 #include <fst/extensions/far/farscript.h>
 #include <fst/extensions/far/main.h>
+#include <fst/script/print.h>
 #include "phonetisaurus/M2MFstAligner.hpp"
 #include "utils.hpp"
 
@@ -35,7 +36,7 @@
 #define entry_type "line"
 #define token_type "symbol"
 #define generate_keys 0
-#define unknown_symbol "<unk>"
+#define unknown_symbol ""
 #define keep_symbols true
 #define initial_symbols true
 #define allow_negative_labels false
@@ -49,6 +50,9 @@
 #define check_consistency false
 #define discount_D -1
 #define witten_bell_k 1
+#define acceptor false
+#define show_weight_one true
+#define epsilon_as_backoff false
 
 namespace fst {
 
@@ -134,7 +138,11 @@ void addarcs(StateId state_id, StateId newstate, const SymbolTable* oldsyms, Sym
 	}
 }
 
-void relabel(StdMutableFst *fst, StdMutableFst *out, string eps, string skip, string s1s2_sep, string seq_sep) {
+void relabel(StdMutableFst *fst, StdMutableFst *out, string out_name, string eps, string skip, string s1s2_sep, string seq_sep) {
+	namespace s = fst::script;
+	using fst::ostream;
+	using fst::SymbolTable;
+
 	ArcSort(fst, StdILabelCompare());
 	const SymbolTable *oldsyms = fst->InputSymbols();
 
@@ -152,7 +160,7 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string eps, string skip, st
 	out->SetStart(0);
 
 	out->AddState();
-	ssyms->AddSymbol("f");
+	ssyms->AddSymbol("s1");
 	out->SetFinal(1, TropicalWeight::One());
 
 	isyms->AddSymbol(eps);
@@ -169,7 +177,7 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string eps, string skip, st
 	int oend = osyms->AddSymbol("</s>");
 
 	out->AddState();
-	ssyms->AddSymbol("s1");
+	ssyms->AddSymbol("s2");
 	out->AddArc(0, StdArc(istart, ostart, TropicalWeight::One(), 2));
 
 	for (StateIterator<StdFst> siter(*fst); !siter.Done(); siter.Next()) {
@@ -198,10 +206,23 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string eps, string skip, st
 		addarcs(state_id, newstate, oldsyms, isyms, osyms, ssyms, eps, s1s2_sep, fst, out);
 	}
 
+
 	out->SetInputSymbols(isyms);
 	out->SetOutputSymbols(osyms);
-	ArcSort(out, StdOLabelCompare());
-	ArcSort(out, StdILabelCompare());
+//	ArcSort(out, StdOLabelCompare());
+//	ArcSort(out, StdILabelCompare());
+
+	isyms->WriteText("input.syms");
+	osyms->WriteText("output.syms");
+
+	cout << "Writing text model to disk..." << endl;
+	string dest = out_name.append(".txt");
+	ostream *ostrm = new fst::ofstream(dest.c_str());
+	ostrm->precision(9);
+	s::FstClass *fstc = new s::FstClass(out);
+	s::PrintFst(*fstc, *ostrm, dest, isyms, osyms, NULL, acceptor, show_weight_one);
+	ostrm->flush();
+	delete ostrm;
 }
 
 void train_model(string eps, string s1s2_sep, string skip, int order, string smooth, string out_name, string seq_sep) {
@@ -233,7 +254,7 @@ void train_model(string eps, string s1s2_sep, string skip, int order, string smo
 
 	//count n-grams
 	cout << "Counting n-grams..." << endl;
-	NGramCounter<Log64Weight> ngram_counter(order, true);
+	NGramCounter<Log64Weight> ngram_counter(order, epsilon_as_backoff);
 
 	FstReadOptions opts;
 	FarReader<StdArc>* far_reader;
@@ -330,8 +351,9 @@ void train_model(string eps, string s1s2_sep, string skip, int order, string smo
 	}
 	cout << "Correcting final model..." << endl;
 	StdMutableFst* out = new StdVectorFst();
-	out->Write("ort.fst");
-	relabel(fst, out, eps, skip, s1s2_sep, seq_sep);
+	relabel(fst, out, out_name, eps, skip, s1s2_sep, seq_sep);
+
+	cout << "Writing binary model to disk..." << endl;
 	out->Write(out_name);
 }
 

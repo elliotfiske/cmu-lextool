@@ -10,7 +10,7 @@ LDLIBS = -L/usr/local/lib64/fst -L/usr/local/lib/fst -lfst -lfstfar -lfstfarscri
 CFLAGS = -c -g -I src/include
 LDFLAGS = -g
 
-all: train swig
+all: train 
 
 train: $(TRAIN_OBJS)
 	g++ ${LDFLAGS} ${LDLIBS} -o train ${TRAIN_OBJS} 
@@ -21,9 +21,5 @@ evaluate: $(EVALUATE_OBJS)
 %.o: %.cpp
 	g++ ${CFLAGS} -o $@ $<
 
-swig: train
-	$(MAKE) --directory=swig
-
 clean: 
-	rm train evaluate src/*.o src/phonetisaurus/*.o;
-	$(MAKE) --directory=swig clean;
+	rm train evaluate src/*.o src/phonetisaurus/*.o
