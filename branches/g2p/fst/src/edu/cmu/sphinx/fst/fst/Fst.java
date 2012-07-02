@@ -46,10 +46,10 @@ public class Fst<T> implements Serializable {
 	private int start;
 
 	// input symbols map
-	private HashMap<Integer, String> isyms;
+	private HashMap<String, Integer> isyms;
 	
 	// output symbols map
-	private HashMap<Integer, String> osyms;
+	private HashMap<String, Integer> osyms;
 
 	/**
 	 *  Default constructor
@@ -144,28 +144,28 @@ public class Fst<T> implements Serializable {
 	/**
 	 * @return the isyms
 	 */
-	public HashMap<Integer, String> getIsyms() {
+	public HashMap<String, Integer> getIsyms() {
 		return isyms;
 	}
 
 	/**
 	 * @param isyms the isyms to set
 	 */
-	public void setIsyms(HashMap<Integer, String> isyms) {
+	public void setIsyms(HashMap<String, Integer> isyms) {
 		this.isyms = isyms;
 	}
 
 	/**
 	 * @return the osyms
 	 */
-	public HashMap<Integer, String> getOsyms() {
+	public HashMap<String, Integer> getOsyms() {
 		return osyms;
 	}
 
 	/**
 	 * @param osyms the osyms to set
 	 */
-	public void setOsyms(HashMap<Integer, String> osyms) {
+	public void setOsyms(HashMap<String, Integer> osyms) {
 		this.osyms = osyms;
 	}
 	
