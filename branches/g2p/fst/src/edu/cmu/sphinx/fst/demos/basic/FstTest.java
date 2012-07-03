@@ -13,11 +13,7 @@
 
 package edu.cmu.sphinx.fst.demos.basic;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
-
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.state.State;

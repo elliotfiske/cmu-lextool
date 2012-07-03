@@ -62,19 +62,6 @@ public class Weight<T> implements Serializable {
 
 	/*
 	 * (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public boolean equals(Object obj) {
-		if(!(obj instanceof Weight<?>)) {
-			return false;
-		}
-		return this.getValue().equals( ((Weight<T>) obj).getValue());
-	}
-	
-	/*
-	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -82,5 +69,28 @@ public class Weight<T> implements Serializable {
 		String res = "Weight<"+type.getSimpleName()+">: " + value;
 		return res;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		@SuppressWarnings("unchecked")
+		Weight<T> other = (Weight<T>) obj;
+		if (value == null) {
+			if (other.value != null)
+				return false;
+		} else if (!value.equals(other.value))
+			return false;
+		return true;
+	}
+	
+	
 
 }

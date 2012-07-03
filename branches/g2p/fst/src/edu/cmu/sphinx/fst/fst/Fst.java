@@ -15,15 +15,16 @@
 package edu.cmu.sphinx.fst.fst;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import com.google.common.collect.HashBiMap;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.state.State;
@@ -46,10 +47,10 @@ public class Fst<T> implements Serializable {
 	private int start;
 
 	// input symbols map
-	private HashMap<String, Integer> isyms;
+	private HashBiMap<Integer, String> isyms;
 	
 	// output symbols map
-	private HashMap<String, Integer> osyms;
+	private HashBiMap<Integer, String> osyms;
 
 	/**
 	 *  Default constructor
@@ -110,7 +111,6 @@ public class Fst<T> implements Serializable {
 	}
 	
 	/**
-	 * 
 	 * @return the states array list
 	 */
 	public ArrayList<State<T>> getStates() {
@@ -144,28 +144,28 @@ public class Fst<T> implements Serializable {
 	/**
 	 * @return the isyms
 	 */
-	public HashMap<String, Integer> getIsyms() {
+	public HashBiMap<Integer, String> getIsyms() {
 		return isyms;
 	}
 
 	/**
 	 * @param isyms the isyms to set
 	 */
-	public void setIsyms(HashMap<String, Integer> isyms) {
+	public void setIsyms(HashBiMap<Integer, String> isyms) {
 		this.isyms = isyms;
 	}
 
 	/**
 	 * @return the osyms
 	 */
-	public HashMap<String, Integer> getOsyms() {
+	public HashBiMap<Integer, String> getOsyms() {
 		return osyms;
 	}
 
 	/**
 	 * @param osyms the osyms to set
 	 */
-	public void setOsyms(HashMap<String, Integer> osyms) {
+	public void setOsyms(HashBiMap<Integer, String> osyms) {
 		this.osyms = osyms;
 	}
 	
@@ -202,21 +202,80 @@ public class Fst<T> implements Serializable {
 	 * @throws IOException
 	 * @throws ClassNotFoundException 
 	 */
-	public static Object loadModel(String filename) throws IOException, ClassNotFoundException {
+	public static Object loadModel(String filename) {
 		Object obj = null;
 	    FileInputStream fis = null;
 	    GZIPInputStream gis = null;
 	    ObjectInputStream ois = null;
 	    
-	    fis = new FileInputStream(filename);
-        gis = new GZIPInputStream(fis);
-        ois = new ObjectInputStream(gis);
-        obj = ois.readObject();
-        ois.close();
-        gis.close();
-        fis.close();
+	    try {
+			fis = new FileInputStream(filename);
+			gis = new GZIPInputStream(fis);
+	        ois = new ObjectInputStream(gis);
+	        obj = ois.readObject();
+	        ois.close();
+	        gis.close();
+	        fis.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(1);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(1);
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			System.exit(1);
+		}
 
         return obj;		
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		@SuppressWarnings("unchecked")
+		Fst<T> other = (Fst<T>) obj;
+		if (isyms == null) {
+			if (other.isyms != null)
+				return false;
+		} else if (!isyms.equals(other.isyms))
+			return false;
+		if (osyms == null) {
+			if (other.osyms != null)
+				return false;
+		} else if (!osyms.equals(other.osyms))
+			return false;
+		if (start != other.start)
+			return false;
+		if (states == null) {
+			if (other.states != null)
+				return false;
+		} else if (!states.equals(other.states))
+			return false;
+		return true;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Fst [states=" + states + ", start=" + start + ", isyms="
+				+ isyms + ", osyms=" + osyms + "]";
+	}
+	
+	
+	
 }
 

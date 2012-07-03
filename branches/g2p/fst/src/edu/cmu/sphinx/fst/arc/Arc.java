@@ -109,4 +109,43 @@ public class Arc<T> implements Serializable{
 	public void setNextState(int nextState) {
 		this.nextState = nextState;
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		@SuppressWarnings("unchecked")
+		Arc<T> other = (Arc<T>) obj;
+		if (iLabel != other.iLabel)
+			return false;
+		if (nextState != other.nextState)
+			return false;
+		if (oLabel != other.oLabel)
+			return false;
+		if (weight == null) {
+			if (other.weight != null)
+				return false;
+		} else if (!weight.equals(other.weight))
+			return false;
+		return true;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Arc [weight=" + weight + ", iLabel=" + iLabel + ", oLabel="
+				+ oLabel + ", nextState=" + nextState + "]";
+	}
+	
+	
+	
 }
