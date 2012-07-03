@@ -1,0 +1,28 @@
+This tool can be used to create Finite State Transducers from hyperstrings and
+language models. These are actually Finite State Automata with the same input
+and output labels for transitions.
+
+The results can be written to file for further usage: a file with the
+transitions and two files for the symbols (input/output and states).
+
+These files can be used for capitalization and punctuation recovery by composing
+a hyperstring FST with a punctuated and capitalized Language Model.
+
+The Language Model has to be trained from a text containing capitalized text and
+punctuation normalized as <COMMA> and <PERIOD>. Whitespaces have to be
+represented by <NONE>.
+
+The resulted FSTs from hyperstring and language model have to be composed
+(OpenFst can be used). A shortest-path tool can be the used to output the
+capitalized and punctuated string.
+
+To compile the script used 'make' command in the root of the branch. The bash
+scripts in the scripts/ folder can be used:
+
+sh ./scrips/hyperstring2fst.sh -text t -path output_path 
+sh ./scripts/lm2fst.sh -lm lm_path -path output_path 
+sh ./scripts/generateFST.sh -text t -lm lm_path -path output_path
+
+The hyperstring2fst and lm2fst scrips will create the .fst.txt and individual
+isyms and ssyms files, and the generateFST scripts will create the .fst.txt
+files and identical isyms and ssyms files for composition.
