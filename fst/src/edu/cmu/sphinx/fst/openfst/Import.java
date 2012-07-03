@@ -9,8 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.google.common.collect.HashBiMap;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
@@ -24,40 +23,31 @@ import edu.cmu.sphinx.fst.weight.Weight;
  *
  */
 public class Import {
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		if(args.length < 2) {
-			System.err.println("Input and output files not provided");
-			System.err.println("You need to provide both the input binary openfst model");
-			System.err.println("and the output serialized java fst model.");
-			System.exit(1);
-		}
-		
+	private Import() {}
+	
+	public static Fst<Double> convert(String input_file) {
 		Fst<Double> fst = new Fst<Double>();
 		TropicalSemiring ts = new TropicalSemiring();
-		HashMap<String, Integer> isyms = new HashMap<String, Integer>();
-		HashMap<String, Integer> osyms = new HashMap<String, Integer>();
+		HashBiMap<Integer, String> isyms = HashBiMap.create();
+		HashBiMap<Integer, String> osyms = HashBiMap.create();
 		
 		//Add eps, separator, phi, start and end symbols
-		isyms.put("<eps>", 0);
-		osyms.put("<eps>", 0);
-		isyms.put("}", 1);
-		osyms.put("}", 1);
-		isyms.put("<phi>", 2);
-		osyms.put("<phi>", 2);
-		isyms.put("<s>", 3);
-		osyms.put("<s>", 3);
-		isyms.put("</s>", 4);
-		osyms.put("</s>", 4);
+		isyms.put(0, "<eps>");
+		osyms.put(0, "<eps>");
+		isyms.put(1, "|");
+		osyms.put(1, "|");
+		isyms.put(2, "<phi>");
+		osyms.put(2, "<phi>");
+		isyms.put(3, "<s>");
+		osyms.put(3, "<s>");
+		isyms.put(4, "</s>");
+		osyms.put(4, "</s>");
 		
 		// Parse input
 		System.out.println("Parsing input model...");
 		FileInputStream fis = null;
 		try {
-			fis = new FileInputStream(args[0]);
+			fis = new FileInputStream(input_file);
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 			System.exit(1);
@@ -70,6 +60,7 @@ public class Import {
 		try {
 			while ((strLine = br.readLine()) != null) {
 				String[] tokens = strLine.split("\\t");
+				if (tokens.length > 2) {
 				int inputState = Integer.parseInt(tokens[0]);
 				int nextState = Integer.parseInt(tokens[1]);
 				// Check for states and insert all missing.
@@ -77,28 +68,30 @@ public class Import {
 				int newStates = ((inputState<nextState)?nextState:inputState) - fst.getStates().size() + 1;
 				for(int i=0; i<newStates; i++) {
 					State<Double> s = new State<Double>();
-					s.setFinalWeight(ts.one());
+					s.setFinalWeight(ts.zero());
 					fst.AddState(s);
 				}
 				
-				if (tokens.length > 2) {
 					// Adding arc
-					if (isyms.get(tokens[2]) == null) {
-						isyms.put(tokens[2], isyms.size());
+					if (isyms.inverse().get(tokens[2]) == null) {
+						isyms.put(isyms.size(), tokens[2]);
 					}
-					int iLabel = isyms.get(tokens[2]);
+					int iLabel = isyms.inverse().get(tokens[2]);
 					
-					if (osyms.get(tokens[3]) == null) {
-						osyms.put(tokens[3], osyms.size());
+					if (osyms.inverse().get(tokens[3]) == null) {
+						osyms.put(osyms.size(), tokens[3]);
 					}
-					int oLabel = osyms.get(tokens[3]);
+					int oLabel = osyms.inverse().get(tokens[3]);
 					Weight<Double> arcWeight = new Weight<Double>(Double.parseDouble(tokens[4]));
 					Arc<Double> arc = new Arc<Double>(arcWeight, iLabel, oLabel, nextState);
 					fst.addArc(inputState, arc);
 					numArcs++;
 				} else {
 					// This is a final State
-					fst.setFinal(inputState, ts.zero());
+					int inputState = Integer.parseInt(tokens[0]);
+					Weight<Double> finalWeight = new Weight<Double>(Double.parseDouble(tokens[1]));
+
+					fst.setFinal(inputState, finalWeight);
 				}
 			}
 			dis.close();
@@ -109,6 +102,24 @@ public class Import {
 		fst.setStart(0);
 		fst.setIsyms(isyms);
 		fst.setOsyms(osyms);
+        System.out.println("Import completed.");
+        System.out.println("Total States Imported: " + fst.getNumStates());
+        System.out.println("Total Arcs Imported: " + numArcs);
+        return fst;
+	}
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		if(args.length < 2) {
+			System.err.println("Input and output files not provided");
+			System.err.println("You need to provide both the input binary openfst model");
+			System.err.println("and the output serialized java fst model.");
+			System.exit(1);
+		}
+		
+		Fst<Double> fst = Import.convert(args[0]);
 		
 		// Serialize the java fst model to disk
 		System.out.println("Saving as binary java fst model...");
@@ -118,8 +129,6 @@ public class Import {
 			System.err.println("Cannot write to file " + args[1]);
 			System.exit(1); 
 		}
-        System.out.println("Import completed.");
-        System.out.println("Total States Imported: " + fst.getNumStates());
-        System.out.println("Total Arcs Imported: " + numArcs);
+		
 	}
 }

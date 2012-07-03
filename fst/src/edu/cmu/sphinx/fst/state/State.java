@@ -16,6 +16,8 @@ package edu.cmu.sphinx.fst.state;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.weight.Weight;
@@ -131,5 +133,50 @@ public class State<T> implements Serializable {
 		
 		return null;
 	}
+	
+	public void arcSort(Comparator<Arc<T>> cmp) {
+		Collections.sort(arcs, cmp);
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		@SuppressWarnings("unchecked")
+		State<T> other = (State<T>) obj;
+		if (arcs == null) {
+			if (other.arcs != null)
+				return false;
+		} else if (!arcs.equals(other.arcs))
+			return false;
+		if (fnlWeight == null) {
+			if (other.fnlWeight != null)
+				return false;
+		} else if (!fnlWeight.equals(other.fnlWeight))
+			return false;
+		if (iEpsilons != other.iEpsilons)
+			return false;
+		if (pEpsilons != other.pEpsilons)
+			return false;
+		return true;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "State [fnlWeight=" + fnlWeight + ", arcs=" + arcs
+				+ ", iEpsilons=" + iEpsilons + ", pEpsilons=" + pEpsilons + "]";
+	}
+	
+	
 	
 }
