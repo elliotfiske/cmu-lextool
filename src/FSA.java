@@ -82,6 +82,11 @@ public class FSA implements FiniteStateAutomata {
 		transitions.getFirst().setProbability(0.1f);
 	}
 	
+	/**
+	 * Add new transitions from the last state to a new one.
+	 * @param words - Each word represents a transition
+	 * @throws IOException
+	 */
 	private void addTransitions(Word[] words) throws IOException { 
 		
 		State currentState = states.getLast();
@@ -129,6 +134,9 @@ public class FSA implements FiniteStateAutomata {
 		return s;
 	}
 
+	/**
+	 * Write the transitions to file as an FST: State1 State2 Input_Label Output_Label Probability 
+	 */
 	public void writeToFile(String path) {
 		FileWriter fsaFile = null;
 		String lastState = null;
@@ -170,6 +178,9 @@ public class FSA implements FiniteStateAutomata {
 		
 	}
 
+	/**
+	 * Write input/output and state symbols to file: Symbol Id
+	 */
 	public void writeSymbolsToFile(String inputSymbolsPath,
 			String outputSymbolsPath) {
 		

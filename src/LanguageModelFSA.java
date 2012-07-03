@@ -71,11 +71,13 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 		
 		Iterator<WordSequence> it = NGrams.iterator();
 		
+		// Iterate through the ngrams and make states and transitions according to orders
 		while (it.hasNext()) {
 			WordSequence current = it.next();
 			State newState = new State(current);
 			state_map.put(current, newState);
 			states.add(newState);
+			// 1grams
 			if (current.size() == 1) {
 				Word current_word = current.getWord(0);
 				if (current_word.equals(sbW)) {
@@ -95,33 +97,49 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 					this.addTransition(state_map.get(epsWS), newState, current_word, model.getProbability(current), false);
 				}
 			}
+			// middle ngrams
 			else if (current.size() < model.getMaxDepth()) {
 				if (current.getWord(current.size()-1).equals(seW)) {
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(seWS), seW, model.getProbability(current), false);					
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(seWS), 
+							seW, model.getProbability(current), false);					
 				}
 				else {
 					float weight = 0.0f;
 					if (model.getBackoff(current) != 0) {
 						weight = model.getBackoff(current);
 					}
-					this.addTransition(newState, state_map.get(current.getSubSequence(1, current.size())), epsW, weight, false);
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), newState, current.getWord(current.size()-1), model.getProbability(current), false);
+					this.addTransition(newState, state_map.get(current.getSubSequence(1, current.size())), 
+							epsW, weight, false);
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), newState, 
+							current.getWord(current.size()-1), model.getProbability(current), false);
 				}
 			}
+			// ngrams
 			else if (current.size() == model.getMaxDepth()) {
 				if (current.getWord(current.size()-1).equals(seW)) {
 					Word[] temp = {current.getWord(current.size()-1)};
 					WordSequence temp_seq = new WordSequence(temp);
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(temp_seq), current.getWord(current.size()-1), model.getProbability(current), false);
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(temp_seq), 
+							current.getWord(current.size()-1), model.getProbability(current), false);
 				}
 				else {
-					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), state_map.get(current.getSubSequence(1, current.size())), current.getWord(current.size()-1), model.getProbability(current), false);
+					this.addTransition(state_map.get(current.getSubSequence(0, current.size()-1)), 
+							state_map.get(current.getSubSequence(1, current.size())), current.getWord(current.size()-1), 
+							model.getProbability(current), false);
 				}
 			}
 		}
 		
 	}
 	
+	/**
+	 * Add transition between two states containing a word and the probability
+	 * @param start - the state from which the transition is made
+	 * @param finish - the state to which the transition is made
+	 * @param word - the word which is represented by the transition
+	 * @param probability - the probability of the obtained ngram
+	 * @param first - decide if the transition should be put first in the list of transitions
+	 */
 	private void addTransition(State start, State finish, Word word, float probability, boolean first) {
 		Trans t = new Trans(start, finish, word, probability);
 		start.addTransition(t);
@@ -131,6 +149,13 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 		symbolSet.add(word);
 	}
 	
+	/**
+	 * Allocate the needed resources
+	 * @param lm_location
+	 * @param dict_location
+	 * @param filler_location
+	 * @throws IOException
+	 */
 	private void allocate(URL lm_location, URL dict_location, URL filler_location) throws IOException {
 		// set up dictionary and language model
 		readDictionary(dict_location, filler_location);
@@ -173,6 +198,9 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 
 	}
 
+	/**
+	 * Write the transitions to file as an FST: State1 State2 Input_Label Output_Label Probability 
+	 */
 	public void writeToFile(String path) {
 		FileWriter fsaFile = null;
 		
@@ -211,6 +239,9 @@ public class LanguageModelFSA implements FiniteStateAutomata {
 		
 	}
 
+	/**
+	 * Write input/output and state symbols to file: Symbol Id
+	 */
 	public void writeSymbolsToFile(String inputSymbolsPath,
 			String outputSymbolsPath) {
 		
