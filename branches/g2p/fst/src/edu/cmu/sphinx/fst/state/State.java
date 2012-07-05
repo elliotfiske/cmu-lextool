@@ -45,7 +45,9 @@ public class State<T> implements Serializable {
 	/**
 	 * 
 	 */
-	public State() {}
+	public State(T weight) {
+		fnlWeight = new Weight<T>(weight);
+	}
 
 	/**
 	 * 

@@ -1,3 +1,16 @@
+/**
+ * 
+ * Copyright 1999-2012 Carnegie Mellon University.  
+ * Portions Copyright 2002 Sun Microsystems, Inc.  
+ * Portions Copyright 2002 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ * 
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * WARRANTIES.
+ *
+ */
+
 package edu.cmu.sphinx.fst.openfst;
 
 import static org.junit.Assert.*;
@@ -6,16 +19,25 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 
+/**
+ * 
+ * @author "John Salatas <jsalatas@users.sourceforge.net>"
+ * 
+ */
 public class ImportTest {
 
 	@Test
 	public void testConvert() {
-		Fst<Double> fst1 = Import.convert("data/openfst/basic.fst.txt");
+		System.out.println("Testing Import...");
+		
+		Fst<Double> fst1 = Convert.importDouble("data/openfst/basic.fst.txt");
 		
 		@SuppressWarnings("unchecked")
 		Fst<Double> fst2 = (Fst<Double>) Fst.loadModel("data/openfst/basic.fst.ser");
 		
-		assertEquals(fst2, fst1);
+		assertTrue(fst1.equals(fst2));
+
+		System.out.println("Testing Import Completed!\n");
 	}
 
 }

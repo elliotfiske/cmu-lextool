@@ -1,71 +1,95 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- WARNING: Eclipse auto-generated file.
-              Any modifications will be overwritten.
-              To include a user specific buildfile here, simply create one in the same
-              directory with the processing instruction <?eclipse.ant.import?>
-              as the first entry and export the buildfile again. -->
-<project basedir="." default="build" name="fst">
-    <property environment="env"/>
-    <property name="junit.output.dir" value="junit"/>
-    <property name="debuglevel" value="source,lines,vars"/>
-    <property name="target" value="1.7"/>
-    <property name="source" value="1.7"/>
-    <import file="buildjar.xml"/>
-    <path id="fst.classpath">
-        <pathelement location="bin"/>
-    </path>
-    <target name="init">
-        <mkdir dir="bin"/>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="src">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-        <copy includeemptydirs="false" todir="bin">
-            <fileset dir="test">
-                <exclude name="**/*.java"/>
-            </fileset>
-        </copy>
-    </target>
-    <target name="clean">
-        <delete dir="bin"/>
-    </target>
-    <target depends="clean" name="cleanall"/>
-    <target depends="build-subprojects,build-project" name="build"/>
-    <target name="build-subprojects"/>
-    <target depends="init" name="build-project">
-        <echo message="${ant.project.name}: ${ant.file}"/>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
-            <src path="src"/>
-            <classpath refid="fst.classpath"/>
-        </javac>
-        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
-            <src path="test"/>
-            <classpath refid="fst.classpath"/>
-        </javac>
-    </target>
-    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
-    <target name="TropicalWeightTest">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <test name="edu.cmu.sphinx.fst.weight.TropicalWeightTest" todir="${junit.output.dir}"/>
-            <classpath refid="fst.classpath"/>
-        </junit>
-    </target>
-    <target name="fst">
-        <mkdir dir="${junit.output.dir}"/>
-        <junit fork="yes" printsummary="withOutAndErr">
-            <formatter type="xml"/>
-            <classpath refid="fst.classpath"/>
-        </junit>
-    </target>
-    <target name="junitreport">
-        <junitreport todir="${junit.output.dir}">
-            <fileset dir="${junit.output.dir}">
-                <include name="TEST-*.xml"/>
-            </fileset>
-            <report format="frames" todir="${junit.output.dir}"/>
-        </junitreport>
-    </target>
-</project>
+<?xml version="1.0"?>
+<project name="fst" default="main" basedir=".">
+	<!-- Sets variables which can later be used. -->
+	<!-- The value of a property is accessed via ${} -->
+	<property name="src.dir" location="src" />
+	<property name="test.src.dir" location="test" />
+	<property name="build.dir" location="bin" />
+	<property name="dist.dir" location="dist" />
+	<property name="docs.dir" location="docs" />
+	<property name="junit.dir" location="junit" />
+	<property name="junit.report.dir" location="junit/report" />
+	
+	<!-- Define the compile time classpath -->
+	<path id="javac.class.path">
+		<pathelement location="lib/guava-12.0.jar" />
+	</path>
+	    
+	<!-- Define the classpath which includes the junit.jar and the classes after compiling-->
+	<path id="junit.class.path">
+		<pathelement location="lib/junit4-4.5.jar" />
+		<pathelement location="lib/ant-junit.jar" />
+		<pathelement location="lib/guava-12.0.jar" />
+		<pathelement location="${build.dir}" />
+		<pathelement location="${junit.dir}" />
+	</path>
+	
+		
+	<!-- Deletes the existing build, docs and dist directory-->
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${docs.dir}" />
+		<delete dir="${dist.dir}" />
+		<delete dir="${junit.dir}" />
+		<delete dir="${junit.report.dir}" />
+	</target>
+
+	<!-- Creates the  build, docs and dist directory-->
+	<target name="makedir">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${docs.dir}" />
+		<mkdir dir="${dist.dir}" />
+		<mkdir dir="${junit.dir}" />
+		<mkdir dir="${junit.report.dir}" />
+	</target>
+
+	<!-- Compiles the java code -->
+	<target name="compile" depends="clean, makedir">
+		<javac srcdir="${src.dir}" destdir="${build.dir}">
+		    <classpath refid="javac.class.path" />
+		</javac>
+
+	</target>
+
+	<!-- Compiles the junit test -->
+	<target name="compile-tests" depends="clean, makedir, compile">
+		<javac srcdir="${test.src.dir}" destdir="${junit.dir}">
+		    <classpath refid="junit.class.path" />
+		</javac>
+
+	</target>
+
+	<!-- Creates Javadoc -->
+	<target name="docs" depends="compile">
+		<javadoc packagenames="*." sourcepath="${src.dir}" destdir="${docs.dir}">
+		  <classpath refid="javac.class.path" />
+		</javadoc>
+	</target>
+
+	<!--Creates the deployable jar file  -->
+	<target name="jar" depends="compile">
+		<jar destfile="${dist.dir}\fst.jar" basedir="${build.dir}" />
+	</target>
+
+	<!-- Run the JUnit Tests -->
+	<!-- Output is XML, could also be plain-->
+	<target name="run-tests" depends="compile-tests">
+		<junit printsummary="yes" haltonfailure="yes" showoutput="yes" >
+			<classpath refid="junit.class.path" />
+			<formatter type="plain" />
+			<batchtest fork="true" todir="${junit.report.dir}">
+				<fileset dir="${test.src.dir}">
+					<include name="**/*.java"/>
+					<exclude name="**/AllTests.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+	
+	<target name="main" depends="compile, run-tests, jar, docs">
+		<description>Main target</description>
+	</target>
+
+</project> 
+
+
