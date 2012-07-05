@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sphingidconfiguration>
+	<paths>
+		<temp>/tmp/sphingid</temp>
+		<urls>urls</urls>
+		<crawl>crawl</crawl>
+		<dump>dump</dump>
+		<segments>crawl/segments</segments>
+		<extractedDocuments>extracted</extractedDocuments>
+		<startendAddedDocuments>startendsadded</startendAddedDocuments>
+		<clusterLMs>clusterlms</clusterLMs>
+	</paths>
+
+	<crawl>
+		<enabled>true</enabled>
+		<crawlThreads>50</crawlThreads>
+		<crawlDepth>3</crawlDepth>
+		<crawlTopN>1000</crawlTopN>
+	</crawl>
+
+	<dump>
+		<enabled>true</enabled>
+		<!-- dumpContent must be true for extraction -->
+		<dumpContent>true</dumpContent>
+		<dumpFetch>false</dumpFetch>
+		<dumpGenerate>false</dumpGenerate>
+		<dumpParse>false</dumpParse>
+		<dumpParseData>false</dumpParseData>
+		<dumpParseText>false</dumpParseText>
+	</dump>
+
+	<extract>
+		<enabled>true</enabled>
+		<extractorClass>ArticleExtractor</extractorClass>
+	</extract>
+
+	<addStartends>
+		<enabled>true</enabled>
+	</addStartends>
+
+	<kmeans>
+		<enabled>false</enabled>
+		<numClusters>3</numClusters>
+	</kmeans>
+</sphingidconfiguration>
+
+

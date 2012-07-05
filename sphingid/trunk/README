@@ -1,0 +1,29 @@
+Sphingid Readme Version 0.01 - Thu Jul  5 21:49:10 EEST 2012
+
+1. Installation instructions
+
+You will need
+
+* JDK 1.6
+* maven
+* IRST LM 5.70.04: http://sourceforge.net/projects/irstlm/files/irstlm/irstlm-5.70/
+* Apache Nutch 1.5 plugins and configuration files: http://www.apache.org/dyn/closer.cgi/nutch/ (download binaries - 45 MB)
+
+to be able to use Sphingid.
+
+Run "mvn package" without the quotes in the project folder to build it. Installation archives will be created in "target" folder. Pick one that is suitable for you (they all contain the same files) and extract it wherever you like. 
+
+You will see empty folders with the names of "irstlm", "nutch-config" and "plugins". You have to download IRST LM and build it. Copy everything from the binary folder into "irstlm" folder of Sphingid. Afterwards, download Nutch binaries. Read this paragraph fully before proceeding: Copy everything in "conf" and "plugins" folder of Nutch to "nutch-config" and "plugins" folder respectively, but do not overwrite anything. "nutch-site.xml" must remain intact.
+
+2. Usage
+
+The workflow of Sphingid is as follows: Crawling websites using Nutch, dumping their HTML data to a file, extracting articles from the dump using boilerpipe and training models on them using IRST LM. Models part do not work currently and is intended to work in future versions.
+
+You can configure Sphingid using "config.xml" file. You can enable or disable certain parts of it.
+
+To use the crawler, you must designate an URLs folder that will contain a "seed.txt". This text file must contain starting websites for the crawler. Refer to Nutch documentation for additional details.
+
+3. Changelog
+
+0.0.1 ===============-
+Initial version. Builds with Maven, can crawl, dump and extract. Includes IRST LM k-means that does not work.

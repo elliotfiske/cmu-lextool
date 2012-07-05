@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly>
+    <id>installation</id>
+    <includeBaseDirectory>false</includeBaseDirectory>
+		<formats>
+    		<format>tar.gz</format>
+   			<format>tar.bz2</format>
+  			<format>zip</format>
+ 		</formats>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>sphingid-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+       	<fileSet>
+      		<directory>${project.basedir}</directory>
+      		<outputDirectory></outputDirectory>
+      		<includes>
+        		<include>README*</include>
+        		<include>LICENSE*</include>
+        		<include>NOTICE*</include>
+        		<include>irstlm</include>
+        		<include>nutch-config</include>
+        		<include>plugins</include>
+        		<include>config.xml</include>
+      		</includes>
+    	</fileSet>
+    	<fileSet>
+      		<directory>${project.basedir}/nutch-config</directory>
+      		<outputDirectory>nutch-config/</outputDirectory>
+      		<includes>
+        		<include>*</include>
+      		</includes>
+    	</fileSet>
+    </fileSets>
+</assembly>
