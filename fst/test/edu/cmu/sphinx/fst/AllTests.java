@@ -8,11 +8,22 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import edu.cmu.sphinx.fst.openfst.ImportTest;
-import edu.cmu.sphinx.fst.operations.OperationsTest;
+import edu.cmu.sphinx.fst.operations.ArcSortTest;
+import edu.cmu.sphinx.fst.operations.ComposeTest;
+import edu.cmu.sphinx.fst.operations.ComposeEpsilonTest;
+import edu.cmu.sphinx.fst.operations.ProjectTest;
 
+/**
+ * 
+ * @author "John Salatas <jsalatas@users.sourceforge.net>"
+ * 
+ */
 @RunWith(Suite.class)
 @SuiteClasses({ImportTest.class,
-	OperationsTest.class})
+	ArcSortTest.class, 
+	ComposeTest.class, 
+	ComposeEpsilonTest.class,
+	ProjectTest.class})
 public class AllTests {
 
 	/**

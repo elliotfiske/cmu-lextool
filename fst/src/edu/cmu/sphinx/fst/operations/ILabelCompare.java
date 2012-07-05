@@ -1,6 +1,16 @@
 /**
  * 
+ * Copyright 1999-2012 Carnegie Mellon University.  
+ * Portions Copyright 2002 Sun Microsystems, Inc.  
+ * Portions Copyright 2002 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ * 
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * WARRANTIES.
+ *
  */
+
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.Comparator;
@@ -21,7 +31,7 @@ public class ILabelCompare<T> implements Comparator<Arc<T>> {
 	 */
 	@Override
 	public int compare(Arc<T> o1, Arc<T> o2) {
-		return (o1.getiLabel() < o2.getiLabel()) ? -1 : ((o1.getiLabel() == o2.getiLabel()) ? 0 : 1);
+		return (o1.getIlabel() < o2.getIlabel()) ? -1 : ((o1.getIlabel() == o2.getIlabel()) ? 0 : 1);
 	}
 
 }

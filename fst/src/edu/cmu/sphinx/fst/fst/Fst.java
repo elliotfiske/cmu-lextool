@@ -11,9 +11,10 @@
  *
  */
 
-
 package edu.cmu.sphinx.fst.fst;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -24,8 +25,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import com.google.common.collect.HashBiMap;
-
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.weight.Weight;
@@ -44,13 +43,13 @@ public class Fst<T> implements Serializable {
 	private ArrayList<State<T>> states = new ArrayList<State<T>>();
 	
 	// the initial state
-	private int start;
+	private Integer start = null;
 
 	// input symbols map
-	private HashBiMap<Integer, String> isyms;
+	private SymbolTable isyms;
 	
 	// output symbols map
-	private HashBiMap<Integer, String> osyms;
+	private SymbolTable osyms;
 
 	/**
 	 *  Default constructor
@@ -60,14 +59,14 @@ public class Fst<T> implements Serializable {
 	/**
 	 * @return the initial state
 	 */
-	public int getStart() {
+	public Integer getStart() {
 		return start;
 	}
 
 	/**
 	 * @param start the initial state to set
 	 */
-	public void setStart(int start) {
+	public void setStart(Integer start) {
 		this.start = start;
 	}
 	
@@ -105,7 +104,7 @@ public class Fst<T> implements Serializable {
 	 * @param s the state to be added
 	 * @return the state's index 
 	 */
-	public int AddState(State<T> s) {
+	public int addState(State<T> s) {
 		this.states.add(s);
 		return states.size() - 1;
 	}
@@ -144,28 +143,28 @@ public class Fst<T> implements Serializable {
 	/**
 	 * @return the isyms
 	 */
-	public HashBiMap<Integer, String> getIsyms() {
+	public SymbolTable getIsyms() {
 		return isyms;
 	}
 
 	/**
 	 * @param isyms the isyms to set
 	 */
-	public void setIsyms(HashBiMap<Integer, String> isyms) {
+	public void setIsyms(SymbolTable isyms) {
 		this.isyms = isyms;
 	}
 
 	/**
 	 * @return the osyms
 	 */
-	public HashBiMap<Integer, String> getOsyms() {
+	public SymbolTable getOsyms() {
 		return osyms;
 	}
 
 	/**
 	 * @param osyms the osyms to set
 	 */
-	public void setOsyms(HashBiMap<Integer, String> osyms) {
+	public void setOsyms(SymbolTable osyms) {
 		this.osyms = osyms;
 	}
 	
@@ -256,7 +255,10 @@ public class Fst<T> implements Serializable {
 				return false;
 		} else if (!osyms.equals(other.osyms))
 			return false;
-		if (start != other.start)
+		if (start == null) {
+			if (other.start != null)
+				return false;
+		} else if (!start.equals(other.start))
 			return false;
 		if (states == null) {
 			if (other.states != null)
@@ -274,8 +276,37 @@ public class Fst<T> implements Serializable {
 		return "Fst [states=" + states + ", start=" + start + ", isyms="
 				+ isyms + ", osyms=" + osyms + "]";
 	}
-	
-	
-	
+		
+	 
+	/**
+	 * A quick way to perform a deep copy of an existing FST:
+	 * just serializing it and deserialize again on a new FST.
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public Fst<T> copy() {
+		Fst<T> fst = null;
+        try {
+            // Write the object out to a byte array
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(bos);
+            out.writeObject(this);
+            out.flush();
+            out.close();
+
+            // Make an input stream from the byte array and read
+            // a copy of the object back in.
+            ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bos.toByteArray()));
+            fst = (Fst<T>) in.readObject();
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+        catch(ClassNotFoundException cnfe) {
+            cnfe.printStackTrace();
+        }
+        return fst;
+    }
 }
 

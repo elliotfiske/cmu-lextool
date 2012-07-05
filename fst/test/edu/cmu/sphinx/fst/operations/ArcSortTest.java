@@ -1,3 +1,16 @@
+/**
+ * 
+ * Copyright 1999-2012 Carnegie Mellon University.  
+ * Portions Copyright 2002 Sun Microsystems, Inc.  
+ * Portions Copyright 2002 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ * 
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * WARRANTIES.
+ *
+ */
+
 package edu.cmu.sphinx.fst.operations;
 
 import static org.junit.Assert.*;
@@ -9,7 +22,8 @@ import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.weight.Weight;
 
-public class OperationsTest {
+public class ArcSortTest {
+	
 
 	/**
 	 * Create an output label sorted fst
@@ -20,24 +34,24 @@ public class OperationsTest {
 	private Fst<Double> createOsorted() {
 		Fst<Double> fst = new Fst<Double>();
 		// State 0
-		State<Double> s = new State<Double>(); 
+		State<Double> s = new State<Double>(0.); 
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 4, 1, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 5, 2, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 2, 3, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 1, 4, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 3, 5, 1));
-		fst.AddState(s);
+		fst.addState(s);
 
 		// State 1
-		s = new State<Double>(); 
+		s = new State<Double>(0.); 
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 3, 1, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 1, 2, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 2, 3, 1));
-		fst.AddState(s);
+		fst.addState(s);
 
 		// State 2 (final)
 		s = new State<Double>(new Weight<Double>(0.));
-		fst.AddState(s);
+		fst.addState(s);
 		
 		return fst;
 	}
@@ -51,24 +65,24 @@ public class OperationsTest {
 	private Fst<Double> createIsorted() {
 		Fst<Double> fst = new Fst<Double>();
 		// State 0
-		State<Double> s = new State<Double>(); 
+		State<Double> s = new State<Double>(0.); 
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 1, 4, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 2, 3, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 3, 5, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 4, 1, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 5, 2, 2));
-		fst.AddState(s);
+		fst.addState(s);
 
 		// State 1
-		s = new State<Double>(); 
+		s = new State<Double>(0.); 
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 1, 2, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 2, 3, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 3, 1, 2));
-		fst.AddState(s);
+		fst.addState(s);
 
 		// State 2 (final)
 		s = new State<Double>(new Weight<Double>(0.));
-		fst.AddState(s);
+		fst.addState(s);
 		
 		return fst;
 	}
@@ -82,27 +96,28 @@ public class OperationsTest {
 	private Fst<Double> createUnsorted() {
 		Fst<Double> fst = new Fst<Double>();
 		// State 0
-		State<Double> s = new State<Double>(); 
+		State<Double> s = new State<Double>(0.); 
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 1, 4, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 3, 5, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 2, 3, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 5, 2, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 4, 1, 2));
-		fst.AddState(s);
+		fst.addState(s);
 
 		// State 1
-		s = new State<Double>(); 
+		s = new State<Double>(0.); 
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 2, 3, 1));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 3, 1, 2));
 		s.AddArc(new Arc<Double>(new Weight<Double>(0.), 1, 2, 2));
-		fst.AddState(s);
+		fst.addState(s);
 
 		// State 2 (final)
 		s = new State<Double>(new Weight<Double>(0.));
-		fst.AddState(s);
+		fst.addState(s);
 
 		return fst;
 	}
+
 	@Test
 	public void testArcSort() {
 		System.out.println("Testing Arc Sort...");
@@ -110,15 +125,18 @@ public class OperationsTest {
 		Fst<Double> fst1 = createUnsorted();
 		Fst<Double> fst2 = createIsorted();
 		assertTrue(!fst1.equals(fst2));
-		Operations.ArcSort(fst1, new ILabelCompare<Double>());
+		ArcSort.apply(fst1, new ILabelCompare<Double>());
 		assertTrue(fst1.equals(fst2));
 		
 		// Output label sort test
 		fst1 = createUnsorted();
 		fst2 = createOsorted();
 		assertTrue(!fst1.equals(fst2));
-		Operations.ArcSort(fst1, new OLabelCompare<Double>());
+		ArcSort.apply(fst1, new OLabelCompare<Double>());
 		assertTrue(fst1.equals(fst2));
+
+		System.out.println("Testing Arc Sort Completed!\n");
+
 	}
 
 }

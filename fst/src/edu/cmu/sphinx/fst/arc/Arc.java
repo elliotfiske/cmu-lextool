@@ -71,28 +71,28 @@ public class Arc<T> implements Serializable{
 	/**
 	 * @return the inout label
 	 */
-	public int getiLabel() {
+	public int getIlabel() {
 		return iLabel;
 	}
 
 	/**
 	 * @param iLabel the input label to set
 	 */
-	public void setiLabel(int iLabel) {
+	public void setIlabel(int iLabel) {
 		this.iLabel = iLabel;
 	}
 
 	/**
 	 * @return the output label
 	 */
-	public int getoLabel() {
+	public int getOlabel() {
 		return oLabel;
 	}
 
 	/**
 	 * @param oLabel the output label to set
 	 */
-	public void setoLabel(int oLabel) {
+	public void setOlabel(int oLabel) {
 		this.oLabel = oLabel;
 	}
 
@@ -145,7 +145,4 @@ public class Arc<T> implements Serializable{
 		return "Arc [weight=" + weight + ", iLabel=" + iLabel + ", oLabel="
 				+ oLabel + ", nextState=" + nextState + "]";
 	}
-	
-	
-	
 }
