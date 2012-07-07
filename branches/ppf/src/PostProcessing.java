@@ -115,8 +115,28 @@ public class PostProcessing {
 			}
 		}
 		
-		System.out.println(finalSequence.toString() + " with probability " + finalSequence.getProbability());
+		System.out.println(formatOutput(finalSequence.getWordSequence()) + " ---- with probability " + finalSequence.getProbability());
 	} 
+	
+	static String formatOutput(WordSequence output) {
+		
+		String newOutput = "";
+		
+		for (Word w : output.getWords()) {
+			if (w.toString().equals("<NONE>")) {
+				newOutput += " ";
+			} else if (w.toString().equals("<PERIOD>")) {
+				newOutput += ". ";
+			} else if (w.toString().equals("<COMMA>")) {
+				newOutput += ", ";
+			} else {
+				newOutput += w.toString();
+			}
+			
+		}
+		
+		return newOutput;
+	}
 	
 	static WordSequence breakIntoWords(String sentence) {
 		LinkedList<Word> list = new LinkedList<Word>();
