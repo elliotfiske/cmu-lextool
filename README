@@ -1,3 +1,32 @@
+This project aims at postprocessing the ASR output. This means recovering 
+capitalization and punctuation. 
+At this stage, capitalization and punctuation recovery is done only based
+on a capitalized and punctuated Language Model. All commas and periods have
+been replaced with <COMMA> and <PERIOD> tokens, and whitespaces with <NONE>.
+
+The project contains two implementations: using WFST and with Viterbi Algorithm.
+The WFST method relies on openFST for composition and bestpath. The Viterbi
+Algorithm outputs the postprocessed text with no further processing.
+
+== Viterbi Algorithm ==
+
+This method relies on iterating through word symbols, and considering all the
+cases, and putting the results in a stack. When the stack gets full, it gets
+sorted (by probability) and the lowest scoring half is discarded. This way only
+the best solutions are considered.
+The final solution (contains </s> word symbol) with the best probabilty is
+considered the output.
+
+To compile the script used 'make' command in the root of the branch. The bash
+script in the scripts/ folder can be used:
+
+sh ./postp.sh -text t -lm lm_path
+
+
+
+
+== WFST postprocessing ==
+
 This tool can be used to create Finite State Transducers from hyperstrings and
 language models. These are actually Finite State Automata with the same input
 and output labels for transitions.
@@ -26,3 +55,4 @@ sh ./scripts/generateFST.sh -text t -lm lm_path -path output_path
 The hyperstring2fst and lm2fst scrips will create the .fst.txt and individual
 isyms and ssyms files, and the generateFST scripts will create the .fst.txt
 files and identical isyms and ssyms files for composition.
+
