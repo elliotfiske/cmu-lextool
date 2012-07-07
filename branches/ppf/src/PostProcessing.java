@@ -12,8 +12,6 @@
  */
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.LinkedList;
 
 import org.apache.commons.lang.WordUtils;
@@ -42,25 +40,33 @@ public class PostProcessing {
 	 */
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		
-		String text = args[0].toLowerCase();
-		String modelPath = args[1];
+		String text = null, lm_path = null;
+		
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].equals("-text")) text = args[i+1].toLowerCase();
+			else if (args[i].equals("-lm")) lm_path = args[i+1];
+		}
+		
+		if (args.length < 4 || text == null || lm_path == null) {
+			System.out.println("Usage: sh ./postp.sh -text t -lm lm_path ");
+			return;
+		}
+		
 		float max = -10000;
 		Sequence finalSequence = null;
 		
 		// load dictionary and language model		
-		FastDictionary dict = new FastDictionary("models/lm_giga_5k_nvp.sphinx.dic", 
-				"models/lm_giga_5k_nvp.sphinx.filler",
+		FastDictionary dict = new FastDictionary("../models/lm_giga_5k_nvp.sphinx.dic", 
+				"../models/lm_giga_5k_nvp.sphinx.filler",
 				null, false, "<sil>", true, false, new UnitManager());
 		dict.allocate();
 		
-		lm = new SimpleNGramModel(modelPath, dict, 0.7f, 
+		lm = new SimpleNGramModel(lm_path, dict, 0.7f, 
 				new LogMath(10, false), 3);
 		lm.allocate();
 		
 		// put the words in the text into a Word Sequence
 		WordSequence inputWords = breakIntoWords(text);
-				
-		LinkedList<Sequence> sequences = new LinkedList<Sequence>();
 		
 		// consider <s> the first symbol
 		Word[] temp = {new Word("<s>", null, false)};
