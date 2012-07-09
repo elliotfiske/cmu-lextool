@@ -67,15 +67,57 @@
 
 <property>
   <name>fetcher.server.delay</name>
-  <value>1</value>
+  <value>5</value>
   <description>The number of seconds the fetcher will delay between 
    successive requests to the same server.</description>
 </property>
+
 <property>
   <name>parser.html.impl</name>
   <value>tagsoup</value>
   <description>HTML Parser implementation. Currently the following keywords
   are recognized: "neko" uses NekoHTML, "tagsoup" uses TagSoup.
+  </description>
+</property>
+
+<property>
+  <name>db.ignore.internal.links</name>
+  <value>true</value>
+  <description>If true, when adding new links to a page, links from
+  the same host are ignored.  This is an effective way to limit the
+  size of the link database, keeping only the highest quality
+  links.
+  </description>
+</property>
+
+<property>
+  <name>db.ignore.external.links</name>
+  <value>true</value>
+  <description>If true, outlinks leading from a page to external hosts
+  will be ignored. This is an effective way to limit the crawl to include
+  only initially injected hosts, without creating complex URLFilters.
+  </description>
+</property>
+
+<property>
+ <name>fetcher.max.crawl.delay</name>
+ <value>6</value>
+ <description>
+ If the Crawl-Delay in robots.txt is set to greater than this value (in
+ seconds) then the fetcher will skip this page, generating an error report.
+ If set to -1 the fetcher will never skip such pages and will wait the
+ amount of time retrieved from robots.txt Crawl-Delay, however long that
+ might be.
+ </description>
+</property> 
+
+<property>
+  <name>http.content.limit</name>
+  <value>500000</value>
+  <description>The length limit for downloaded content using the file://
+  protocol, in bytes. If this value is nonnegative (>=0), content longer
+  than it will be truncated; otherwise, no truncation at all. Do not
+  confuse this setting with the http.content.limit setting.
   </description>
 </property>
 

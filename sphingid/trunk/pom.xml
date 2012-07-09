@@ -5,10 +5,10 @@
 
 	<groupId>edu.cmu.sphinx</groupId>
 	<artifactId>sphingid</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<packaging>jar</packaging>
 
-	<name>sphingid</name>
+	<name>Sphingid</name>
 	<url>http://cmusphinx.sourceforge.net/</url>
 
 	<properties>
@@ -91,7 +91,7 @@
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>edu.cmu.sphinx.sphingid.Sphingid</mainClass>
 									<manifestEntries>
-										<Class-Path>nutch-config/</Class-Path>
+										<Class-Path>. nutch-config/</Class-Path>
 										<Version>${project.version}</Version>
 									</manifestEntries>
 								</transformer>

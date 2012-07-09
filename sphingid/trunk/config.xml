@@ -5,7 +5,6 @@
 		<urls>urls</urls>
 		<crawl>crawl</crawl>
 		<dump>dump</dump>
-		<segments>crawl/segments</segments>
 		<extractedDocuments>extracted</extractedDocuments>
 		<startendAddedDocuments>startendsadded</startendAddedDocuments>
 		<clusterLMs>clusterlms</clusterLMs>
@@ -13,8 +12,9 @@
 
 	<crawl>
 		<enabled>true</enabled>
-		<crawlThreads>50</crawlThreads>
+		<incrementalCrawl>true</incrementalCrawl>
 		<crawlDepth>3</crawlDepth>
+		<fetchThreads>250</fetchThreads>
 		<crawlTopN>1000</crawlTopN>
 	</crawl>
 
@@ -35,7 +35,7 @@
 	</extract>
 
 	<addStartends>
-		<enabled>true</enabled>
+		<enabled>false</enabled>
 	</addStartends>
 
 	<kmeans>
