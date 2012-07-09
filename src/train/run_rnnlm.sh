@@ -1,13 +1,10 @@
 #!/bin/bash
 
-rnnpath=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/rnnlm-0.3e
-trainfile=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/train
-#trainfile=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/simple-examples/data/ptb.train.txt
-validfile=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/valid
-#validfile=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/simple-examples/data/ptb.valid.txt
-testfile=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/test
-#testfile=/media/PRIVATE/loop/project/workspace/sphinx4/src/train/rnnlm/simple-examples/data/ptb.test.txt
-rnnmodel=/media/PRIVATE/loop/project/workspace/sphinx4/data/wiki/rnnlm/wiki.model.hidden100.class100.rnnlm
+rnnpath=$HOME/private/project/Gsoc2012/rnnlm/rnnlm-0.3e
+trainfile=../../data/wikipedia/rnnlm/train3
+validfile=../../data/wikipedia/rnnlm/valid3
+testfile=../../data/wikipedia/rnnlm/test3
+rnnmodel=../../data/wikipedia/rnnlm/wiki.model.hidden100.class100.rnnlm
 temp=../temp
 
 hidden_size=100
