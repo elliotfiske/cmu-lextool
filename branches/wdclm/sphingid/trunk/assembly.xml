@@ -26,6 +26,7 @@
         		<include>nutch-config</include>
         		<include>plugins</include>
         		<include>config.xml</include>
+        		<include>log4j.properties</include>
       		</includes>
     	</fileSet>
     	<fileSet>

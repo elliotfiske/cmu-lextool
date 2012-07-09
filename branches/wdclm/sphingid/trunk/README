@@ -1,4 +1,4 @@
-Sphingid Readme Version 0.01 - Thu Jul  5 21:49:10 EEST 2012
+Sphingid Readme Version 0.0.2 - Mon Jul  9 16:30:03 EEST 2012
 
 1. Installation instructions
 
@@ -24,6 +24,10 @@ You can configure Sphingid using "config.xml" file. You can enable or disable ce
 To use the crawler, you must designate an URLs folder that will contain a "seed.txt". This text file must contain starting websites for the crawler. Refer to Nutch documentation for additional details.
 
 3. Changelog
+
+0.0.2 ===============-
+Implemented iterative crawling.
+Implemented logging with slf4j.
 
 0.0.1 ===============-
 Initial version. Builds with Maven, can crawl, dump and extract. Includes IRST LM k-means that does not work.

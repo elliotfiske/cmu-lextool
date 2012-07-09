@@ -11,6 +11,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.ibm.icu.util.StringTokenizer;
 
 import de.l3s.boilerpipe.extractors.ExtractorBase;
@@ -21,6 +24,9 @@ import de.l3s.boilerpipe.extractors.ExtractorBase;
  * @author Emre Çelikten
  */
 public class TextExtractor {
+	private static final Logger logger = LoggerFactory
+			.getLogger(TextExtractor.class);
+
 
 	/**
 	 * Extracts a Nutch dump file nutchDump. Each web page is saved as a text
@@ -119,7 +125,7 @@ public class TextExtractor {
 			 */
 			text = (String) textExtractionMethod.invoke(extractor, html);
 			if (text.isEmpty()) {
-				System.out.println("Empty record found at " + i
+				logger.warn("Empty record found at " + i
 						+ ". Skipping...");
 				continue;
 			}
