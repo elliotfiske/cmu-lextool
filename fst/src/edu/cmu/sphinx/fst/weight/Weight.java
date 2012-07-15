@@ -21,11 +21,11 @@ import java.io.Serializable;
  *
  * @param <T>
  */
-public class Weight<T> implements Serializable {
+public class Weight<T extends Comparable<T>> implements Serializable, Comparable<Weight<T>> {
 	private static final long serialVersionUID = 6897737261832081990L;
 	private Class<T> type;
 	private T value;
-
+	
 	/**
 	 * 
 	 * @param value
@@ -66,7 +66,7 @@ public class Weight<T> implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		String res = "Weight<"+type.getSimpleName()+">: " + value;
+		String res = "" + value;
 		return res;
 	}
 
@@ -89,6 +89,11 @@ public class Weight<T> implements Serializable {
 		} else if (!value.equals(other.value))
 			return false;
 		return true;
+	}
+
+	@Override
+	public int compareTo(Weight<T> o) {
+		return this.value.compareTo(o.value);
 	}
 	
 	

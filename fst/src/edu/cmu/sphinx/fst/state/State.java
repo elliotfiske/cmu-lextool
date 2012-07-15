@@ -18,35 +18,41 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
+import edu.cmu.sphinx.fst.weight.Semiring;
 import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class State<T> implements Serializable {
+public class State<T extends Comparable<T>> implements Serializable {
 	
 	private static final long serialVersionUID = -405571712671111894L;
+	
+	// Id
+	private String id;
 
 	// Final weight
-	Weight<T> fnlWeight;
+	private Weight<T> fnlWeight;
 
 	// Outgoing arcs collection 
-	ArrayList<Arc<T>> arcs = new ArrayList<Arc<T>>();
-	
-	// # of input epsilons
-	int iEpsilons = 0;
-	
-	// # of output epsilons
-	int pEpsilons = 0;
+	private ArrayList<Arc<T>> arcs = new ArrayList<Arc<T>>();
 
+	// holds the semiring
+	private Semiring<T> semiring;
+	
 	/**
 	 * 
 	 */
 	public State(T weight) {
 		fnlWeight = new Weight<T>(weight);
+	}
+	
+	public void arcSort(Comparator<Arc<T>> cmp) {
+		Collections.sort(arcs, cmp);
 	}
 
 	/**
@@ -56,7 +62,7 @@ public class State<T> implements Serializable {
 	public State(Weight<T> fnlWeight) {
 		this.fnlWeight = fnlWeight;
 	}
-
+	
 	/**
 	 * @return the Final weight
 	 */
@@ -72,29 +78,36 @@ public class State<T> implements Serializable {
 	}
 
 	/**
-	 * @return the arcs
+	 * @return the id
 	 */
-	public ArrayList<Arc<T>> getArcs() {
-		return arcs;
+	public String getId() {
+		return id;
 	}
 
 	/**
-	 * @return the # of input epsilons
+	 * @param id the id to set
 	 */
-	public int getiEpsilons() {
-		return iEpsilons;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	/**
-	 * @return the # of output epsilons
+	 * @return the semiring
 	 */
-	public int getpEpsilons() {
-		return pEpsilons;
+	public Semiring<T> getSemiring() {
+		return semiring;
 	}
-	
+
+	/**
+	 * @param semiring the semiring to set
+	 */
+	public void setSemiring(Semiring<T> semiring) {
+		this.semiring = semiring;
+	}
+
 	/**
 	 * 
-	 * @return the {@link #AddArc(Arc)}of outgoing arcs
+	 * @return the {@link #addArc(Arc)}of outgoing arcs
 	 */
 	public int getNumArcs() {
 		return this.arcs.size();
@@ -103,41 +116,37 @@ public class State<T> implements Serializable {
 	/**
 	 * Adds an arc
 	 * 
-	 * @param a the arc to add
+	 * @param arc the arc to add
 	 * @return the arc's index
 	 */
-	public int AddArc(Arc<T> a) {
-		this.arcs.add(a);
-		return this.arcs.size() - 1; 
-		
+	public void addArc(Arc<T> arc) {
+		if(this.semiring != null) {
+			// Check if there is already an arc with same input/output labels and nextstate
+			for (Iterator<Arc<T>> it = arcs.iterator(); it.hasNext();) {
+				Arc<T> oldArc = it.next();
+				if((oldArc.getIlabel() == arc.getIlabel()) &&
+						(oldArc.getOlabel() == arc.getOlabel()) &&
+						(oldArc.getNextStateId().equals(arc.getNextStateId()))) {
+					//newArc = oldArc.copy();
+					oldArc.setWeight(semiring.plus(oldArc.getWeight(), arc.getWeight()));
+					return;
+				}
+			}
+		} else {
+			System.out.println(("Semiring is null. Merging of arcs will not happen"));
+		}
+
+		this.arcs.add(arc);
 	}
 	
-	/**
-	 * 
-	 * @param aIndex
-	 * @param a
-	 */
-	public void setArc(int aIndex, Arc<T> a) {
-		if (aIndex < this.arcs.size()) {
-			this.arcs.set(aIndex, a);
-		}
-	}
 
 	/**
 	 * 
 	 * @param aIndex the arc's index
 	 * @return the arc
 	 */
-	public Arc<T> getArc(int aIndex) {
-		if (aIndex<this.arcs.size()) {
-			return this.arcs.get(aIndex);
-		}
-		
-		return null;
-	}
-	
-	public void arcSort(Comparator<Arc<T>> cmp) {
-		Collections.sort(arcs, cmp);
+	public Arc<T> getArc(int index) {
+			return this.arcs.get(index);
 	}
 
 	/* (non-Javadoc)
@@ -163,10 +172,6 @@ public class State<T> implements Serializable {
 				return false;
 		} else if (!fnlWeight.equals(other.fnlWeight))
 			return false;
-		if (iEpsilons != other.iEpsilons)
-			return false;
-		if (pEpsilons != other.pEpsilons)
-			return false;
 		return true;
 	}
 
@@ -175,10 +180,22 @@ public class State<T> implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		return "State [fnlWeight=" + fnlWeight + ", arcs=" + arcs
-				+ ", iEpsilons=" + iEpsilons + ", pEpsilons=" + pEpsilons + "]";
+		StringBuilder sb = new StringBuilder();
+		sb.append("("+id+ ", "+ fnlWeight+")");
+		return sb.toString();
+//		return id;
 	}
-	
-	
-	
+
+	// delete an arc
+	public Arc<T> deleteArc(int index) {
+		return this.arcs.remove(index);
+	}
+
+	public boolean isFinal() {
+		if(semiring == null) {
+			System.out.println(("Semiring is null. Cannot determine if state is final."));
+			return false;
+		}
+		return !this.fnlWeight.equals(semiring.zero());
+	}	
 }

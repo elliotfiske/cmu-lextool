@@ -24,44 +24,63 @@ import edu.cmu.sphinx.fst.weight.Weight;
  *
  * @param <W>
  */
-public class Arc<T> implements Serializable{
+public class Arc<T extends Comparable<T>> implements Serializable{
 	
 	private static final long serialVersionUID = -7996802366816336109L;
 	
 	// Arc's weight
 	protected Weight<T> weight;
-	
+
 	// input label
 	protected int iLabel;
 	
 	// output label 
 	protected int oLabel;
 	
-	// next state
-	protected int nextState;
+	// next state's id
+	protected String nextStateId;
+
 
 	/**
+	 * Creates a new arc
 	 * 
-	 * @param weight
-	 * @param iLabel
-	 * @param oLabel
-	 * @param nextState
+	 * @param iLabel the input label's id
+	 * @param oLabel the output label's id
+	 * @param weight  the arc's weight
+	 * @param nextStateId the next state's id
 	 */
-	public Arc(Weight<T> weight, int iLabel, int oLabel, int nextState) {
+	public Arc(int iLabel, int oLabel, Weight<T> weight, String nextStateId) {
 		this.weight = weight;
 		this.iLabel = iLabel;
 		this.oLabel = oLabel;
-		this.nextState = nextState;
+		this.nextStateId = nextStateId;
 	}
 
 	/**
+	 * Creates a new arc
+	 * 
+	 * @param iLabel the input label's id
+	 * @param oLabel the output label's id
+	 * @param weightValue the arc's weight value
+	 * @param nextStateId the next state's id
+	 */
+	public Arc(int iLabel, int oLabel, T weightValue, String nextStateId) {
+		this(iLabel, oLabel, new Weight<T>(weightValue), nextStateId);
+	}
+	
+	/**
+	 * Get the arc's weight
+	 * 
 	 * @return the weight
 	 */
 	public Weight<T> getWeight() {
 		return weight;
 	}
 
+
 	/**
+	 * Set the arc's weight
+	 * 
 	 * @param weight the weight to set
 	 */
 	public void setWeight(Weight<T> weight) {
@@ -69,45 +88,57 @@ public class Arc<T> implements Serializable{
 	}
 
 	/**
-	 * @return the inout label
+	 * Get the input label's id
+	 * 
+	 * @return the input label's id
 	 */
 	public int getIlabel() {
 		return iLabel;
 	}
 
 	/**
-	 * @param iLabel the input label to set
+	 * Set the input label's id
+	 * 
+	 * @param iLabel the input label's to set
 	 */
 	public void setIlabel(int iLabel) {
 		this.iLabel = iLabel;
 	}
 
 	/**
-	 * @return the output label
+	 * Get the output label's id
+	 * 
+	 * @return the output label's id
 	 */
 	public int getOlabel() {
 		return oLabel;
 	}
 
 	/**
-	 * @param oLabel the output label to set
+	 * Set the output label's id
+	 * 
+	 * @param oLabel the output label's to set
 	 */
 	public void setOlabel(int oLabel) {
 		this.oLabel = oLabel;
 	}
 
 	/**
-	 * @return the next state
+	 * Get the next state's id
+	 * 
+	 * @return the next state's id
 	 */
-	public int getNextState() {
-		return nextState;
+	public String getNextStateId() {
+		return nextStateId;
 	}
 
 	/**
-	 * @param nextState the next state to set
+	 * Set the next state's id
+	 * 
+	 * @param nextStateId the next state's id to set
 	 */
-	public void setNextState(int nextState) {
-		this.nextState = nextState;
+	public void setNextState(String nextStateId) {
+		this.nextStateId = nextStateId;
 	}
 
 	/* (non-Javadoc)
@@ -125,7 +156,7 @@ public class Arc<T> implements Serializable{
 		Arc<T> other = (Arc<T>) obj;
 		if (iLabel != other.iLabel)
 			return false;
-		if (nextState != other.nextState)
+		if (!nextStateId.equals(other.nextStateId))
 			return false;
 		if (oLabel != other.oLabel)
 			return false;
@@ -142,7 +173,6 @@ public class Arc<T> implements Serializable{
 	 */
 	@Override
 	public String toString() {
-		return "Arc [weight=" + weight + ", iLabel=" + iLabel + ", oLabel="
-				+ oLabel + ", nextState=" + nextState + "]";
+		return "(" + iLabel + ", " + oLabel + ", " + weight + ", " + nextStateId + ")";
 	}
 }

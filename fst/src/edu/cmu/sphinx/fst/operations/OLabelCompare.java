@@ -23,7 +23,7 @@ import edu.cmu.sphinx.fst.arc.Arc;
  * @param <T>
  *
  */
-public class OLabelCompare<T> implements Comparator<Arc<T>> {
+public class OLabelCompare<T extends Comparable<T>> implements Comparator<Arc<T>> {
 
 	/*
 	 * (non-Javadoc)

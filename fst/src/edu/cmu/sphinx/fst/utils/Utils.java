@@ -20,7 +20,7 @@ import java.util.Vector;
  *
  */
 public class Utils {
-
+	
 	public static Vector<String> split_string(String input, String delim) {
 		Vector<String> res = new Vector<String>();
 		
@@ -51,7 +51,6 @@ public class Utils {
 		return res;
 	}
 	
-	
 	public static int search(Vector<String> src, Vector<String> pattern,
 			int srcStart, int srcEnd, int pattternStart, int patternEnd) {
 		//      first1        last1       first2             last2)
@@ -70,5 +69,14 @@ public class Utils {
 		  }
 		  return srcEnd;		
 	}
+	
+	public static Double round(Double value, int digits) {
+		if(Double.isInfinite(value) || Double.isNaN(value)) {
+			return value;
+		}
+		Double res = new Double((double) Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits));
+		return res;
+	}
+
 
 }

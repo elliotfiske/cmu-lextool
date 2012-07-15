@@ -14,13 +14,14 @@
 
 package edu.cmu.sphinx.fst.weight;
 
-import java.io.Serializable;
+import edu.cmu.sphinx.fst.utils.Utils;
+
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class LogSemiring implements Semiring<Double>, Serializable {
+public class LogSemiring extends AbstactSemiring<Double> {
 
 	private static final long serialVersionUID = 5212106775584311083L;
 
@@ -38,7 +39,7 @@ public class LogSemiring implements Semiring<Double>, Serializable {
 		} else if(w2.getValue().equals(Double.POSITIVE_INFINITY)) {
 			return w1;
 		} 
-		return new Weight<Double>(-Math.log(Math.exp(-w1.getValue()) + Math.exp(-w2.getValue())));
+		return new Weight<Double>(Utils.round(-Math.log(Math.exp(-w1.getValue()) + Math.exp(-w2.getValue())), accuracy));
 	}
 
 	/*
@@ -51,7 +52,7 @@ public class LogSemiring implements Semiring<Double>, Serializable {
 			return null;
 		}
 
-		return new Weight<Double>(w1.getValue() + w2.getValue());
+		return new Weight<Double>(Utils.round(w1.getValue() + w2.getValue(), accuracy));
 	}
 
 	/*
@@ -101,6 +102,13 @@ public class LogSemiring implements Semiring<Double>, Serializable {
 				&& (w.getValue() != null)                           // it must hold a valid value,
 				&& (!Double.isNaN(w.getValue()))                     // not a NaN
 				&& (!w.getValue().equals(Double.NEGATIVE_INFINITY)); // and different from -inf
+	}
+	
+	@Override
+	public Weight<Double> reverse(Weight<Double> w1) {
+		// TODO: ???
+		System.out.println("Not Implemented");
+		return null;
 	}
 
 }

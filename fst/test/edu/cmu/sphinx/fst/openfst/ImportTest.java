@@ -18,6 +18,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.weight.TropicalSemiring;
 
 /**
  * 
@@ -25,12 +26,12 @@ import edu.cmu.sphinx.fst.fst.Fst;
  * 
  */
 public class ImportTest {
-
+	
 	@Test
 	public void testConvert() {
 		System.out.println("Testing Import...");
 		
-		Fst<Double> fst1 = Convert.importDouble("data/openfst/basic.fst.txt");
+		Fst<Double> fst1 = Convert.importDouble("data/openfst/basic", new TropicalSemiring());
 		
 		@SuppressWarnings("unchecked")
 		Fst<Double> fst2 = (Fst<Double>) Fst.loadModel("data/openfst/basic.fst.ser");

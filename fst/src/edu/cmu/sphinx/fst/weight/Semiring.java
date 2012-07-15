@@ -20,7 +20,9 @@ package edu.cmu.sphinx.fst.weight;
  * @param <T>
  *
  */
-public interface Semiring<T> {
+public interface Semiring<T extends Comparable<T>> {
+	static final int accuracy = 5; 
+	
 	/**
 	 * 
 	 * @param w1
@@ -28,6 +30,9 @@ public interface Semiring<T> {
 	 * @return
 	 */
 	public abstract Weight<T> plus(Weight<T> w1, Weight<T> w2);
+	
+	
+	public abstract Weight<T> reverse(Weight<T> w1);
 	
 	/**
 	 * 
@@ -63,4 +68,9 @@ public interface Semiring<T> {
 	 * @return
 	 */
 	public abstract boolean isMember(Weight<T> w);
+	
+	
+	public boolean naturalLess(Weight<T> w1, Weight<T> w2);
+	
+	
 }
