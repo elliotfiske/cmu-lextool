@@ -16,6 +16,7 @@ package edu.cmu.sphinx.fst.openfst;
 import java.io.IOException;
 
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.weight.TropicalSemiring;
 
 /**
  * 
@@ -36,7 +37,7 @@ public class Import {
 			System.exit(1);
 		}
 		
-		Fst<Double> fst = Convert.importDouble(args[0]);
+		Fst<Double> fst = Convert.importDouble(args[0], new TropicalSemiring());
 		
 		// Serialize the java fst model to disk
 		System.out.println("Saving as binary java fst model...");

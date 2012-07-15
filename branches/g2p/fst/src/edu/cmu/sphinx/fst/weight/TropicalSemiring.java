@@ -12,24 +12,17 @@
 
 package edu.cmu.sphinx.fst.weight;
 
-import java.io.Serializable;
+import edu.cmu.sphinx.fst.utils.Utils;
 
 /**
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
  */
-public class TropicalSemiring implements Semiring<Double>, Serializable {
+public class TropicalSemiring extends AbstactSemiring<Double> {
 
 	private static final long serialVersionUID = 2711172386738607866L;
-
-	/**
-	 * 
-	 */
-	public TropicalSemiring() {
-		super();
-	}
-
+	
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -57,7 +50,7 @@ public class TropicalSemiring implements Semiring<Double>, Serializable {
 			return null;
 		}
 
-		return new Weight<Double>(w1.getValue() + w2.getValue());
+		return new Weight<Double>(Utils.round(w1.getValue() + w2.getValue(), accuracy));
 	}
 
 	/*
@@ -78,7 +71,7 @@ public class TropicalSemiring implements Semiring<Double>, Serializable {
 			return zero();
 		}
 
-		return new Weight<Double>(w1.getValue() - w2.getValue());
+		return new Weight<Double>(Utils.round(w1.getValue() - w2.getValue(), accuracy));
 	}
 
 	/*
@@ -112,5 +105,10 @@ public class TropicalSemiring implements Semiring<Double>, Serializable {
 				&& (w.getValue() != null)                           // it must hold a valid value,
 				&& (!Double.isNaN(w.getValue()))                     // not a NaN
 				&& (!w.getValue().equals(Float.NEGATIVE_INFINITY)); // and different from -inf
+	}
+
+	@Override
+	public Weight<Double> reverse(Weight<Double> w1) {
+		return w1;
 	}
 }

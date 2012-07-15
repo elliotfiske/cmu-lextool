@@ -14,7 +14,7 @@ import edu.cmu.sphinx.fst.state.State;
 public class Project {
 	private Project() {}
 
-	public static <T> void apply(Fst<T> fst, ProjectType pType) {
+	public static <T extends Comparable<T>> void apply(Fst<T> fst, ProjectType pType) {
 		if(pType == ProjectType.INPUT) {
 			fst.setOsyms(fst.getIsyms());
 		} else if (pType == ProjectType.OUTPUT) {
@@ -22,7 +22,7 @@ public class Project {
 		}
 
 		for(int i=0; i<fst.getNumStates(); i++) {
-			State<T> s = fst.getState(i);
+			State<T> s = fst.getStateByIndex(i);
 			for(int j=0; j<s.getNumArcs(); j++) {
 				Arc<T> arc = s.getArc(j);
 				

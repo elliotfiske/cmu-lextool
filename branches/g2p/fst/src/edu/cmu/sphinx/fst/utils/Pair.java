@@ -13,7 +13,7 @@
 package edu.cmu.sphinx.fst.utils;
 
 /**
- * Obtained by
+ * Original code obtained by
  * http://stackoverflow.com/questions/521171/a-java-collection-of-value
  * -pairs-tuples
  * 
@@ -21,13 +21,31 @@ package edu.cmu.sphinx.fst.utils;
  * 
  */
 public class Pair<L, R> {
-	private final L left;
-	private final R right;
 
+	private L left;
+	private R right;
+	
 	public Pair(L left, R right) {
 		this.left = left;
 		this.right = right;
 	}
+
+	
+	/**
+	 * @param left the left to set
+	 */
+	public void setLeft(L left) {
+		this.left = left;
+	}
+
+
+	/**
+	 * @param right the right to set
+	 */
+	public void setRight(R right) {
+		this.right = right;
+	}
+
 
 	public L getLeft() {
 		return left;
@@ -61,7 +79,7 @@ public class Pair<L, R> {
 	 */
 	@Override
 	public String toString() {
-		return "Pair [left=" + left + ", right=" + right + "]";
+		return "(" + left + ", " + right + ")";
 	}
 
 }

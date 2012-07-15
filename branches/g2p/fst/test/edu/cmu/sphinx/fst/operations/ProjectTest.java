@@ -19,9 +19,8 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
-import edu.cmu.sphinx.fst.fst.SymbolTable;
-import edu.cmu.sphinx.fst.openfst.Convert;
 import edu.cmu.sphinx.fst.state.State;
+import edu.cmu.sphinx.fst.utils.Mapper;
 import edu.cmu.sphinx.fst.weight.TropicalSemiring;
 import edu.cmu.sphinx.fst.weight.Weight;
 
@@ -38,9 +37,9 @@ public class ProjectTest {
 	 */
 	private Fst<Double> createFst() {
 		TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<>();
+		Fst<Double> fst = new Fst<Double>(ts);
 		
-		SymbolTable isyms = new SymbolTable();
+		Mapper<Integer, String> isyms = new Mapper<Integer, String>();
 		isyms.put(0, "<eps>");
 		isyms.put(1, "a");
 		isyms.put(2, "b");
@@ -48,7 +47,7 @@ public class ProjectTest {
 		isyms.put(4, "c");
 		isyms.put(5, "f");
 		
-		SymbolTable osyms = new SymbolTable();
+		Mapper<Integer, String> osyms = new Mapper<Integer, String>();
 		osyms.put(0, "<eps>");
 		osyms.put(1, "u");
 		osyms.put(2, "w");
@@ -58,21 +57,21 @@ public class ProjectTest {
 
 		// State 0
 		State<Double> s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(1.), 1, 5, 1));
-		s.AddArc(new Arc<Double>(new Weight<Double>(3.), 2, 4, 1));
 		fst.addState(s);
-		fst.setStart(0);
+		s.addArc(new Arc<Double>(1, 5, 1., "1"));
+		s.addArc(new Arc<Double>(2, 4, 3., "1"));
+		fst.setStart(s.getId());
 		
 		// State 1
 		s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(7.), 3, 3, 1));
-		s.AddArc(new Arc<Double>(new Weight<Double>(5.), 4, 2, 2));
 		fst.addState(s);
+		s.addArc(new Arc<Double>(3, 3, 7., "1"));
+		s.addArc(new Arc<Double>(4, 2, 5., "2"));
 
 		// State 2
 		s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(9.), 5, 1, 3));
 		fst.addState(s);
+		s.addArc(new Arc<Double>(5, 1, 9., "3"));
 
 		// State 3
 		s = new State<Double>(new Weight<Double>(2.)); 
@@ -92,9 +91,9 @@ public class ProjectTest {
 	 */
 	private Fst<Double> createPi() {
 		TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<>();
+		Fst<Double> fst = new Fst<Double>(ts);
 		
-		SymbolTable syms = new SymbolTable();
+		Mapper<Integer, String> syms = new Mapper<Integer, String>();
 		syms.put(0, "<eps>");
 		syms.put(1, "a");
 		syms.put(2, "b");
@@ -104,21 +103,21 @@ public class ProjectTest {
 		
 		// State 0
 		State<Double> s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(1.), 1, 1, 1));
-		s.AddArc(new Arc<Double>(new Weight<Double>(3.), 2, 2, 1));
 		fst.addState(s);
-		fst.setStart(0);
+		s.addArc(new Arc<Double>(1, 1, 1., "1"));
+		s.addArc(new Arc<Double>(2, 2, 3., "1"));
+		fst.setStart(s.getId());
 		
 		// State 1
 		s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(7.), 3, 3, 1));
-		s.AddArc(new Arc<Double>(new Weight<Double>(5.), 4, 4, 2));
 		fst.addState(s);
+		s.addArc(new Arc<Double>(3, 3, 7., "1"));
+		s.addArc(new Arc<Double>(4, 4, 5., "2"));
 
 		// State 2
 		s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(9.), 5, 5, 3));
 		fst.addState(s);
+		s.addArc(new Arc<Double>(5, 5, 9., "3"));
 
 		// State 3
 		s = new State<Double>(new Weight<Double>(2.)); 
@@ -138,9 +137,9 @@ public class ProjectTest {
 	 */
 	private Fst<Double> createPo() {
 		TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<>();
+		Fst<Double> fst = new Fst<Double>(ts);
 		
-		SymbolTable syms = new SymbolTable();
+		Mapper<Integer, String> syms = new Mapper<Integer, String>();
 		syms.put(0, "<eps>");
 		syms.put(1, "u");
 		syms.put(2, "w");
@@ -150,21 +149,21 @@ public class ProjectTest {
 
 		// State 0
 		State<Double> s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(1.), 5, 5, 1));
-		s.AddArc(new Arc<Double>(new Weight<Double>(3.), 4, 4, 1));
 		fst.addState(s);
-		fst.setStart(0);
+		s.addArc(new Arc<Double>(5, 5, 1., "1"));
+		s.addArc(new Arc<Double>(4, 4, 3., "1"));
+		fst.setStart(s.getId());
 		
 		// State 1
 		s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(7.), 3, 3, 1));
-		s.AddArc(new Arc<Double>(new Weight<Double>(5.), 2, 2, 2));
 		fst.addState(s);
+		s.addArc(new Arc<Double>(3, 3, 7., "1"));
+		s.addArc(new Arc<Double>(2, 2, 5., "2"));
 
 		// State 2
 		s = new State<Double>(ts.zero()); 
-		s.AddArc(new Arc<Double>(new Weight<Double>(9.), 1, 1, 3));
 		fst.addState(s);
+		s.addArc(new Arc<Double>(1, 1, 9., "3"));
 
 		// State 3
 		s = new State<Double>(new Weight<Double>(2.)); 
@@ -180,19 +179,14 @@ public class ProjectTest {
 		System.out.println("Testing Project...");
 		// Project on Input label 
 		Fst<Double> fst = createFst();
-		Convert.export(fst, new TropicalSemiring(), "/home/john/projects/cmusphinx/software/data/20120705/A");
 		Fst<Double> p = createPi();
-		Convert.export(p, new TropicalSemiring(), "/home/john/projects/cmusphinx/software/data/20120705/Pi");
 		Project.apply(fst, ProjectType.INPUT);
-		Convert.export(fst, new TropicalSemiring(), "/home/john/projects/cmusphinx/software/data/20120705/Project_i");
 		assertTrue(fst.equals(p));
 		
 		// Project on Output label 
 		fst = createFst();
 		p = createPo();
-		Convert.export(p, new TropicalSemiring(), "/home/john/projects/cmusphinx/software/data/20120705/Po");
 		Project.apply(fst, ProjectType.OUTPUT);
-		Convert.export(fst, new TropicalSemiring(), "/home/john/projects/cmusphinx/software/data/20120705/Project_o");
 		assertTrue(fst.equals(p));
 
 		System.out.println("Testing Project Completed!\n");
