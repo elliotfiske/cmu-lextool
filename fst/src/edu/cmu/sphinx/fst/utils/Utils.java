@@ -20,7 +20,7 @@ import java.util.Vector;
  *
  */
 public class Utils {
-	
+
 	public static Vector<String> split_string(String input, String delim) {
 		Vector<String> res = new Vector<String>();
 		
@@ -50,25 +50,41 @@ public class Utils {
 		
 		return res;
 	}
-	
-	public static int search(Vector<String> src, Vector<String> pattern,
-			int srcStart, int srcEnd, int pattternStart, int patternEnd) {
-		//      first1        last1       first2             last2)
-		if (pattternStart==patternEnd) return srcStart;
+
+	public static int search(Vector<String> src, Vector<String> pattern, int start) {
+		int index = -1;
+		int pos = -1;
+		int startpos =0;
+		if(start > src.size() - pattern.size()) {
+			return -1;
+		}
 		
-		while (srcStart!=srcEnd)
-		  {
-		    int it1 = srcStart;
-		    int it2 = pattternStart;
-		    while (src.get(it1).equals(pattern.get(it2))) {
-		        ++it1; ++it2;
-		        if (it2==patternEnd - 1) return srcStart;
-		        if (it1==srcEnd - 1) return srcEnd - 1;
-		    }
-		    ++srcStart;
-		  }
-		  return srcEnd;		
+		do {
+			pos = src.subList(startpos + start, src.size()-pattern.size()+1).indexOf(pattern.get(0));
+			if (pos == -1){
+				return pos;
+			}
+				
+			boolean flag = true;
+			for(int i = 1; i< pattern.size(); i++) {
+				if(!src.get(startpos + start+pos+i).equals(pattern.get(i))) {
+					index = -1;
+					flag = false;
+					break;
+				}
+			}
+			
+			if(flag) {
+				index = startpos + pos;
+				break;
+			} else {
+				startpos += pos + pattern.size();
+			}
+		} while (startpos + start < src.size());
+		
+		return index;
 	}
+
 	
 	public static Double round(Double value, int digits) {
 		if(Double.isInfinite(value) || Double.isNaN(value)) {
