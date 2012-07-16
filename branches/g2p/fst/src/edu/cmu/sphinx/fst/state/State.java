@@ -162,6 +162,11 @@ public class State<T extends Comparable<T>> implements Serializable {
 			return false;
 		@SuppressWarnings("unchecked")
 		State<T> other = (State<T>) obj;
+		if (id == null) {
+			if (id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
 		if (arcs == null) {
 			if (other.arcs != null)
 				return false;
