@@ -163,7 +163,7 @@ public class State<T extends Comparable<T>> implements Serializable {
 		@SuppressWarnings("unchecked")
 		State<T> other = (State<T>) obj;
 		if (id == null) {
-			if (id != null)
+			if (other.id != null)
 				return false;
 		} else if (!id.equals(other.id))
 			return false;
