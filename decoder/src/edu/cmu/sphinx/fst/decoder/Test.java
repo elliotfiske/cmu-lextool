@@ -4,12 +4,10 @@
 package edu.cmu.sphinx.fst.decoder;
 
 import java.util.ArrayList;
-import java.util.GregorianCalendar;
 import java.util.Vector;
 
 import edu.cmu.sphinx.fst.decoder.Decoder;
 import edu.cmu.sphinx.fst.decoder.Path;
-import edu.cmu.sphinx.fst.utils.MemoryStats;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
