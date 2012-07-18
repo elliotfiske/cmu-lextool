@@ -174,13 +174,25 @@ public class Compose {
 	private static <T extends Comparable<T>> Fst<T> augment(int label, Fst<T> fst, Semiring<T> semiring) {
 		// label: 0->augment on ilabel
 		//        1->augment on olabel
-		Fst<T> res = fst.copy();
 
-		Mapper<Integer, String> isyms = copyAndExtendSyms(fst.getIsyms());
-		Mapper<Integer, String> osyms = copyAndExtendSyms(fst.getOsyms());
+		Fst<T> res = fst;
+		Mapper<Integer, String> isyms = res.getIsyms();
+		Mapper<Integer, String> osyms = res.getOsyms();
+
+		if(isyms.getKey("<e1>") == null) {
+			isyms.put(isyms.size(), "<e1>");
+		}
+		if(isyms.getKey("<e2>") == null) {
+			isyms.put(isyms.size(), "<e2>");
+		}
 		
-		res.setIsyms(isyms);
-		res.setOsyms(osyms);
+		if(osyms.getKey("<e1>") == null) {
+			osyms.put(osyms.size(), "<e1>");
+		}
+		if(osyms.getKey("<e2>") == null) {
+			osyms.put(osyms.size(), "<e2>");
+		}
+
 		
 		for(int i=0; i<res.getNumStates(); i++) {
 			State<T> s = res.getStateByIndex(i);
