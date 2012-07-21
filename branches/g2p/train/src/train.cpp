@@ -212,10 +212,18 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string out_name, string eps
 //	ArcSort(out, StdOLabelCompare());
 //	ArcSort(out, StdILabelCompare());
 
-	isyms->WriteText("input.syms");
-	osyms->WriteText("output.syms");
-
 	cout << "Writing text model to disk..." << endl;
+	int index = out_name.find(".");
+	string symsname;
+	if(index != string::npos) {
+		symsname = out_name.substr(0, index).append(".");
+	} else {
+		symsname = out_name.append(".");
+	}
+	//Save syms tables
+	isyms->WriteText(symsname + "input.syms");
+	osyms->WriteText(symsname + "output.syms");
+
 	string dest = out_name.append(".txt");
 	ostream *ostrm = new fst::ofstream(dest.c_str());
 	ostrm->precision(9);
