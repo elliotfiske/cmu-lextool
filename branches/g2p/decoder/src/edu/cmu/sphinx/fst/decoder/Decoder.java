@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst.decoder;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,26 +46,26 @@ public class Decoder {
     String sb = "<s>";
     String skip = "_";
     String tie;
-    int order = 9;
-    float precision = 0.85f;
-    float ratio = 0.72f;
+
     Vector<Double> thetas = new Vector<Double>();
     HashSet<String> skipSeqs = new HashSet<String>();
     Mapper<Vector<String>, Integer> clusters = new Mapper<Vector<String>, Integer>();
     //FST stuff
     Fst<Double> g2pmodel;
+    Fst<Double> g2pmodel_copy;
     Mapper<Integer, String> isyms;
     Mapper<Integer, String> osyms;
+    boolean persistModel = false;
 
-	@SuppressWarnings("unchecked")
-	public Decoder(String g2pmodel_file) {
+	public Decoder(String g2pmodel_file, boolean persistModel) {
         skipSeqs.add(eps);
         skipSeqs.add(sb);
         skipSeqs.add(se);
         skipSeqs.add(skip);
         skipSeqs.add("-");
+        this.persistModel = persistModel;
         
-        g2pmodel = (Fst<Double>) Fst.loadModel(g2pmodel_file);
+        g2pmodel = Fst.loadModel(g2pmodel_file);
         
         isyms = g2pmodel.getIsyms();
         osyms = g2pmodel.getOsyms();
@@ -73,21 +74,21 @@ public class Decoder {
         loadClusters();
 
         ArcSort.apply(g2pmodel, new ILabelCompare<Double>());
+        
+        if (this.persistModel) {
+        	// keep a copy 
+        	g2pmodel_copy = g2pmodel.copy();
+        }
     }
     
+	
+	
 	/**
-	 * 
-	 * @param g2pmodel_file
-	 * @param precision
-	 * @param ratio
-	 * @param order
+	 * @return the isyms
 	 */
-	public Decoder(String g2pmodel_file, float precision, float ratio, int order) {
-    	this(g2pmodel_file);
-    	this.precision = precision;
-    	this.ratio = ratio;
-    	this.order = order;
-    }
+	public Mapper<Integer, String> getIsyms() {
+		return isyms;
+	}
 
 	/**
 	 * 
@@ -116,17 +117,20 @@ public class Decoder {
      * @return
      */
     public ArrayList<Path<Double>> phoneticize(Vector<String> entry, int nbest) {
-    	Fst<Double> result;
-    	Fst<Double> shortest;
+    	if(persistModel) {
+    		g2pmodel = g2pmodel_copy.copy();
+    	}
     	Fst<Double> efst = entryToFSA(entry);
         
-        result = Compose.get(efst, g2pmodel, new TropicalSemiring());
+    	Fst<Double> result = Compose.get(efst, g2pmodel, new TropicalSemiring());
         
         Project.apply(result, ProjectType.OUTPUT);
-    	shortest = NShortestPaths.get(result, nbest);
+    	
+    	Fst<Double> shortest = NShortestPaths.get(result, nbest, false);
+
     	shortest = RmEpsilon.get(shortest);
 
-    	ArrayList<Path<Double>> paths = Decoder.findAllPaths(shortest);
+    	ArrayList<Path<Double>> paths = Decoder.findAllPaths(shortest, skipSeqs, tie);
         
 		return paths;
     }
@@ -188,7 +192,7 @@ public class Decoder {
      * @return
      */
     @SuppressWarnings("unchecked")
-	public static ArrayList<Path<Double>> findAllPaths(Fst<Double> fst) {
+	public static ArrayList<Path<Double>> findAllPaths(Fst<Double> fst, HashSet<String> skipSeqs, String tie) {
     	Semiring<Double> semiring =fst.getSemiring();
     	    	
     	ArrayList<Path<Double>> finalPaths = new ArrayList<Path<Double>>();
@@ -214,8 +218,12 @@ public class Decoder {
         		Path<Double> cur = paths.get(s);
         		p.setCost(cur.getCost());
         		p.setPath((ArrayList<String>) cur.getPath().clone());
-        			
-        		p.getPath().add(fst.getOsyms().getValue(a.getOlabel()));
+
+        		String sym = fst.getOsyms().getValue(a.getOlabel());
+        		sym = sym.replace(tie, " ");
+        		if(!skipSeqs.contains(sym)) {
+        			p.getPath().add(sym);
+        		}
         		p.setCost(semiring.times(p.getCost(), a.getWeight()));
         		State<Double> nextState = fst.getStateById(a.getNextStateId());
         		paths.put(nextState, p);
@@ -225,6 +233,7 @@ public class Decoder {
     		}
     	}
     	
+    	Collections.sort(finalPaths, new PathComparator<Double>());
     	
     	return finalPaths;
     }
