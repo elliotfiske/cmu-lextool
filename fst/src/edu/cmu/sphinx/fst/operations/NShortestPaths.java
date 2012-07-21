@@ -73,12 +73,12 @@ public class NShortestPaths {
 				}
 			}
 		}
-		
+
 		return d;
 	}
 	
 	
-	public static <T extends Comparable<T>> Fst<T> get(Fst<T> fst, int n) {
+	public static <T extends Comparable<T>> Fst<T> get(Fst<T> fst, int n, boolean determinize) {
 		if( fst == null) {
 			return null;
 		}
@@ -86,7 +86,10 @@ public class NShortestPaths {
 		if( fst.getSemiring() == null) {
 			return null;
 		}
-		Fst<T> fstdet = Determinize.get(fst);
+		Fst<T> fstdet = fst;
+		if(determinize) {
+			fstdet = Determinize.get(fst);
+		}
 		Semiring<T> semiring = fstdet.getSemiring();
 		Fst<T> res = new Fst<T>(semiring);
 		res.setIsyms(fstdet.getIsyms());
@@ -137,7 +140,7 @@ public class NShortestPaths {
 			r[stateIndex]++;
 
 			if((r[stateIndex] == n) && (p.isFinal())) {
-				continue;
+				break;
 			}
 			
 			if(r[stateIndex] <= n) {

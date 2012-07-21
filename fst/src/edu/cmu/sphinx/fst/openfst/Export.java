@@ -34,8 +34,7 @@ public class Export {
 			System.exit(1);
 		}
 		
-		@SuppressWarnings("unchecked")
-		Fst<Double> fst = (Fst<Double>) Fst.loadModel(args[0]);
+		Fst<Double> fst = Fst.loadModel(args[0]);
 		
 		// Serialize the java fst model to disk
 		System.out.println("Saving as openfst text model...");

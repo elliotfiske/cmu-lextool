@@ -101,6 +101,7 @@ public class RmEpsilon {
 
 			// Add non-epsilon arcs
 			State<T> newState = new State<T>(s.getFinalWeight());
+			newState.setId(s.getId());
 			res.addState(newState);
 			for(int j=0; j<s.getNumArcs(); j++) {
 				Arc<T> arc = s.getArc(j);
@@ -136,7 +137,7 @@ public class RmEpsilon {
 									semiring.times(arc.getWeight(), getPathWeight(s.getId(), pathFinalState, cl)), 
 									arc.getNextStateId()
 									);  	
-							s.addArc(newArc);
+								s.addArc(newArc);
 						}					
 					}
 				}
@@ -147,8 +148,9 @@ public class RmEpsilon {
 		res.setStart(fst.getStartId());
 		res.setIsyms(fst.getIsyms());
 		res.setOsyms(fst.getOsyms());
-		
+
 		Connect.apply(res);
+
 		return res;
 	}
 }

@@ -78,7 +78,7 @@ public class Utils {
 				index = startpos + pos;
 				break;
 			} else {
-				startpos += pos + pattern.size();
+				startpos += pos + 1;
 			}
 		} while (startpos + start < src.size());
 		

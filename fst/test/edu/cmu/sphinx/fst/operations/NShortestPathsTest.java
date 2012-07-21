@@ -24,7 +24,7 @@ public class NShortestPathsTest {
 		Fst<Double> fst = Convert.importDouble("data/tests/algorithms/shortestpath/A", new TropicalSemiring());
 		Fst<Double> nsp = Convert.importDouble("data/tests/algorithms/shortestpath/nsp", new TropicalSemiring());
 		
-		Fst<Double> fstNsp = NShortestPaths.get(fst, 6);
+		Fst<Double> fstNsp = NShortestPaths.get(fst, 6, true);
 		
 		assertTrue(nsp.equals(fstNsp));
 		
