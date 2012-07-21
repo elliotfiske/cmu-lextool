@@ -33,8 +33,7 @@ public class ImportTest {
 		
 		Fst<Double> fst1 = Convert.importDouble("data/openfst/basic", new TropicalSemiring());
 		
-		@SuppressWarnings("unchecked")
-		Fst<Double> fst2 = (Fst<Double>) Fst.loadModel("data/openfst/basic.fst.ser");
+		Fst<Double> fst2 = Fst.loadModel("data/openfst/basic.fst.ser");
 		
 		assertTrue(fst1.equals(fst2));
 

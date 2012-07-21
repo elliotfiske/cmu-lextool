@@ -13,8 +13,6 @@
 
 package edu.cmu.sphinx.fst.fst;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -242,8 +240,9 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	 * @throws IOException
 	 * @throws ClassNotFoundException 
 	 */
-	public static Object loadModel(String filename) {
-		Object obj = null;
+	@SuppressWarnings("unchecked")
+	public static<T extends Comparable<T>> Fst<T> loadModel(String filename) {
+		Fst<T> obj = null;
 	    FileInputStream fis = null;
 	    //GZIPInputStream gis = null;
 	    ObjectInputStream ois = null;
@@ -253,7 +252,7 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 //			gis = new GZIPInputStream(fis);
 //	        ois = new ObjectInputStream(gis);
 	        ois = new ObjectInputStream(fis);
-	        obj = ois.readObject();
+	        obj = (Fst<T>) ois.readObject();
 	        ois.close();
 //	        gis.close();
 	        fis.close();
@@ -353,35 +352,39 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 		return sb.toString();
 	}
 		
+	private static Mapper<Integer, String> copySyms(Mapper<Integer, String> syms) {
+		Mapper<Integer, String> newsyms = new Mapper<Integer, String>();
+		
+		for(Iterator<Integer> it = syms.keySet().iterator(); it.hasNext();) {
+			Integer key = it.next(); 
+			newsyms.put(key, syms.getValue(key));
+		}
+		return newsyms; 
+	}
 	 
 	/**
-	 * A quick way to perform a deep copy of an existing FST:
-	 * just serializing it and deserialize again on a new FST.
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	public Fst<T> copy() {
-		Fst<T> fst = null;
-        try {
-            // Write the object out to a byte array
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            out.writeObject(this);
-            out.flush();
-            out.close();
-
-            // Make an input stream from the byte array and read
-            // a copy of the object back in.
-            ObjectInputStream in = new ObjectInputStream(
-                new ByteArrayInputStream(bos.toByteArray()));
-            fst = (Fst<T>) in.readObject();
-        }
-        catch(IOException e) {
-            e.printStackTrace();
-        }
-        catch(ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
-        }
+//		System.out.println("Start Copy Model: " + GregorianCalendar.getInstance().getTime());
+		Fst<T> fst = new Fst<T>(this.getSemiring());
+		fst.setIsyms(copySyms(this.isyms));
+		fst.setOsyms(copySyms(this.osyms));
+		
+		for(int i=0; i<this.states.size(); i++) {
+			State<T> oldState = this.states.get(i);
+			State<T> newState = new State<T>(oldState.getFinalWeight());
+			newState.setId(oldState.getId());
+			fst.addState(newState);
+			for(int j=0; j<oldState.getNumArcs(); j++) {
+				Arc<T> oldArc = oldState.getArc(j);
+				Arc<T> newArc = new Arc<T>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
+				newState.addArc(newArc);
+			}
+		}
+		fst.setStart(this.start);
+		
+//		System.out.println("End   Copy Model: " + GregorianCalendar.getInstance().getTime());
         return fst;
     }
 
