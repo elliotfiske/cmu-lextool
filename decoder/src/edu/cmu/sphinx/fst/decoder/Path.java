@@ -15,6 +15,7 @@ package edu.cmu.sphinx.fst.decoder;
 
 import java.util.ArrayList;
 
+import edu.cmu.sphinx.fst.utils.Utils;
 import edu.cmu.sphinx.fst.weight.Semiring;
 import edu.cmu.sphinx.fst.weight.Weight;
 
@@ -75,7 +76,15 @@ public class Path<T extends Comparable<T>> {
 	 */
 	@Override
 	public String toString() {
-		return cost + ": " + path;
+		StringBuilder sb = new StringBuilder();
+		sb.append(cost + "\t");
+		for(int i=0; i<path.size();i++) {
+			sb.append(path.get(i));
+			if(i<path.size() - 1) {
+				sb.append(" ");
+			}
+		}
+		return sb.toString();
 	}
 	
 	
