@@ -15,8 +15,6 @@ package edu.cmu.sphinx.fst.decoder;
 
 import java.util.Comparator;
 
-import edu.cmu.sphinx.fst.weight.Weight;
-
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *

@@ -22,9 +22,7 @@ import java.util.Vector;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
-import edu.cmu.sphinx.fst.operations.ArcSort;
 import edu.cmu.sphinx.fst.operations.Compose;
-import edu.cmu.sphinx.fst.operations.ILabelCompare;
 import edu.cmu.sphinx.fst.operations.NShortestPaths;
 import edu.cmu.sphinx.fst.operations.Project;
 import edu.cmu.sphinx.fst.operations.ProjectType;
@@ -73,8 +71,6 @@ public class Decoder {
         
         loadClusters();
 
-        ArcSort.apply(g2pmodel, new ILabelCompare<Double>());
-        
         if (this.persistModel) {
         	// keep a copy 
         	g2pmodel_copy = g2pmodel.copy();
@@ -109,7 +105,73 @@ public class Decoder {
 		}
 		
 	}
+    
+	private static Mapper<Integer, String> copySyms(Mapper<Integer, String> syms) {
+		Mapper<Integer, String> newsyms = new Mapper<Integer, String>();
+		
+		Integer key;
+		for(Iterator<Integer> it = syms.keySet().iterator(); it.hasNext();) {
+			key = it.next(); 
+			newsyms.put(key, syms.getValue(key));
+		}
+		return newsyms; 
+	}
+	 
 
+    private Fst<Double> partialCopy(Fst<Double> fst, Fst<Double> ref) {
+    	Fst<Double> res = new Fst<Double>(fst.getSemiring());
+    	
+    	HashSet<Integer> usedSyms = new HashSet<Integer>();
+    	HashSet<String> addedStates = new HashSet<String>();
+    	usedSyms.add(0);
+    	State<Double> s;
+    	Arc<Double> a;
+    	for(int i=0; i< ref.getNumStates(); i++) {
+    		s = ref.getStateByIndex(i);
+    		for(int j=0;j<s.getNumArcs();j++) {
+    			a = s.getArc(j);
+    			usedSyms.add(a.getIlabel());
+    		}
+    	}
+    	
+    	res.setIsyms(copySyms(fst.getIsyms()));
+    	res.setOsyms(copySyms(fst.getOsyms()));
+    	ArrayList<String> queue = new ArrayList<String>();
+    	
+    	Arc<Double> oldArc;
+    	Arc<Double> newArc;
+    	
+    	State<Double> oldState = fst.getStart();
+    	State<Double> newState;
+		
+    	queue.add(oldState.getId());
+    	
+    	while(queue.size() > 0) {
+    		String stateId = queue.remove(0);
+    		oldState = fst.getStateById(stateId);
+    		newState = res.getStateById(stateId);
+        	if(newState == null) {
+        		newState= new State<Double>(oldState.getFinalWeight());
+        		newState.setId(oldState.getId());
+        		res.addState(newState);
+        		addedStates.add(newState.getId());
+        	}
+			
+    		for(int j=0; j<oldState.getNumArcs(); j++) {
+				oldArc = oldState.getArc(j);
+				if(usedSyms.contains(oldArc.getIlabel())) {
+					newArc = new Arc<Double>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
+					newState.addArc(newArc);
+					if(res.getStateById(oldArc.getNextStateId()) == null) {
+						queue.add(oldArc.getNextStateId());
+					}
+				}
+			}
+    	}
+		res.setStart(fst.getStartId());
+		
+    	return res;
+    }
     /**
      * 
      * @param entry
@@ -117,10 +179,15 @@ public class Decoder {
      * @return
      */
     public ArrayList<Path<Double>> phoneticize(Vector<String> entry, int nbest) {
-    	if(persistModel) {
-    		g2pmodel = g2pmodel_copy.copy();
-    	}
+    	//if(persistModel) {
+    	//	g2pmodel = g2pmodel_copy.copy();
+    	//}
     	Fst<Double> efst = entryToFSA(entry);
+    	
+    	// test
+    	if(persistModel) {
+    		g2pmodel = partialCopy(g2pmodel_copy, efst);
+    	}
         
     	Fst<Double> result = Compose.get(efst, g2pmodel, new TropicalSemiring());
         
@@ -161,17 +228,17 @@ public class Decoder {
 		}
     	
     	//Add any cluster arcs
+    	Vector<String> cluster;
     	for(Iterator<Vector<String>> it = clusters.keySet().iterator(); it.hasNext();) {
     		int start = 0;
     		int k = 0;
-    		Vector<String> cluster = it.next();
+    		cluster = it.next();
     		while(k != -1) {
     			k = Utils.search(entry, cluster, start);
     			if (k != -1) {
     				efst.addArc(Integer.toString(start+k+1), new Arc<Double>(clusters.getValue(cluster),clusters.getValue(cluster), 0., Integer.toString(start+k+cluster.size()+1)));
     				start = start + k + cluster.size();
     			}
-    			
     		}
     	}
     	
@@ -211,8 +278,9 @@ public class Decoder {
     			finalPaths.add(paths.get(s));
     		}
     		
+    		Arc<Double> a;
     		for(int i=0; i<s.getNumArcs(); i++) {
-        		Arc<Double> a = s.getArc(i);
+        		a = s.getArc(i);
 
         		p = new Path<Double>(fst.getSemiring());
         		Path<Double> cur = paths.get(s);

@@ -15,7 +15,6 @@ package edu.cmu.sphinx.fst.decoder;
 
 import java.util.ArrayList;
 
-import edu.cmu.sphinx.fst.utils.Utils;
 import edu.cmu.sphinx.fst.weight.Semiring;
 import edu.cmu.sphinx.fst.weight.Weight;
 
