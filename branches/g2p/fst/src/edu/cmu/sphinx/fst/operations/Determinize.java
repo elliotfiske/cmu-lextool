@@ -36,16 +36,19 @@ public class Determinize {
 	}
 	private static <T extends Comparable<T>> ArrayList<Integer> getUniqueLabels(Fst<T> fst, ArrayList<Pair<State<T>, Weight<T>>> pa) {
 		ArrayList<Integer> res = new ArrayList<Integer>();
+		Pair<State<T>, Weight<T>> p;
+		State<T> s;
+		Arc<T> arc;
 		for(int i=0; i<pa.size(); i++) {
-			Pair<State<T>, Weight<T>> p = pa.get(i);
-				State<T> s = p.getLeft();
+			p = pa.get(i);
+			s = p.getLeft();
 				
-				for(int j=0; j< s.getNumArcs();j++) {
-					Arc<T> arc = s.getArc(j);
-					if(!res.contains(arc.getIlabel())) {
-						res.add(arc.getIlabel());
-					}
+			for(int j=0; j< s.getNumArcs();j++) {
+				arc = s.getArc(j);
+				if(!res.contains(arc.getIlabel())) {
+					res.add(arc.getIlabel());
 				}
+			}
 		}
 		return res;
 	}
@@ -53,8 +56,9 @@ public class Determinize {
 	private static <T extends Comparable<T>> String getStateLabel(ArrayList<Pair<State<T>, Weight<T>>> pa) {
 		StringBuilder sb = new StringBuilder();
 		
+		Pair<State<T>, Weight<T>> p;
 		for(int i=0; i<pa.size(); i++) {
-			Pair<State<T>, Weight<T>> p = pa.get(i);
+			p = pa.get(i);
 			if(sb.length()> 0) {
 				sb.append(",");
 			}
@@ -89,20 +93,33 @@ public class Determinize {
 		res.addState(s);
 		res.setStart(s.getId());
 		
+		ArrayList<Pair<State<T>, Weight<T>>> p;
+		State<T> pnew;
+		Weight<T> wnew;
+		Pair<State<T>, Weight<T>> ps;
+		State<T> old;
+		Weight<T> u;
+		Arc<T> arc;
+		Weight<T> wnewRevert;
+		State<T> oldstate;
+		Pair<State<T>, Weight<T>> pair;
+		Weight<T> unew;
+		Weight<T> fw;
+		
 		while(queue.size() > 0) {
-			ArrayList<Pair<State<T>, Weight<T>>> p = queue.get(0); 
-			State<T> pnew = res.getStateById(getStateLabel(p));
+			p = queue.get(0); 
+			pnew = res.getStateById(getStateLabel(p));
 			queue.remove(0);
 			ArrayList<Integer> labels = getUniqueLabels(fst, p);
 			for(int j=0; j <labels.size(); j++) {
-				Weight<T> wnew = semiring.zero();
+				wnew = semiring.zero();
 				// calc w'
 				for(int k=0; k<p.size(); k++) {
-					Pair<State<T>, Weight<T>> ps = p.get(k);
-					State<T> old = ps.getLeft(); 
-					Weight<T> u = p.get(k).getRight();
+					ps = p.get(k);
+					old = ps.getLeft(); 
+					u = p.get(k).getRight();
 					for (int i=0;i<old.getNumArcs(); i++) {
-						Arc<T> arc = old.getArc(i);
+						arc = old.getArc(i);
 						if(labels.get(j).equals(arc.getIlabel())) {
 							wnew = semiring.plus(wnew, semiring.times(u, arc.getWeight()));
 						}
@@ -113,15 +130,15 @@ public class Determinize {
 				// keep residual weights to variable forQueue 
 				ArrayList<Pair<State<T>, Weight<T>>> forQueue = new ArrayList<Pair<State<T>, Weight<T>>>();
 				for(int k=0; k<p.size(); k++) {
-					Pair<State<T>, Weight<T>> ps = p.get(k);
-					State<T> old = ps.getLeft(); 
-					Weight<T> u = p.get(k).getRight();
-					Weight<T> wnewRevert = semiring.divide(semiring.one(), wnew);
+					ps = p.get(k);
+					old = ps.getLeft(); 
+					u = p.get(k).getRight();
+					wnewRevert = semiring.divide(semiring.one(), wnew);
 					for (int i=0;i<old.getNumArcs(); i++) {
-						Arc<T> arc = old.getArc(i);
+						arc = old.getArc(i);
 						if(labels.get(j).equals(arc.getIlabel())) {
-							State<T> oldstate = fst.getStateById(arc.getNextStateId());
-							Pair<State<T>, Weight<T>> pair = getPair(forQueue, oldstate, semiring.zero());
+							oldstate = fst.getStateById(arc.getNextStateId());
+							pair = getPair(forQueue, oldstate, semiring.zero());
 							pair.setRight(semiring.plus(pair.getRight(), semiring.times(wnewRevert, semiring.times(u, arc.getWeight()))));
 						}
 					}
@@ -130,8 +147,8 @@ public class Determinize {
 				// build new state's id and new elements for queue 
 				String qnewid = "";
 				for(int i=0; i<forQueue.size(); i++) {
-					State<T> old = forQueue.get(i).getLeft();
-					Weight<T> unew = forQueue.get(i).getRight();
+					old = forQueue.get(i).getLeft();
+					unew = forQueue.get(i).getRight();
 					if (!qnewid.equals("")) {
 						qnewid =qnewid +",";
 					}
@@ -144,7 +161,7 @@ public class Determinize {
 					qnew.setId(qnewid);
 					res.addState(qnew);
 					// update new state's weight
-					Weight<T> fw = qnew.getFinalWeight();
+					fw = qnew.getFinalWeight();
 					for(int i=0; i<forQueue.size(); i++) {
 						Pair<State<T>, Weight<T>> fp = forQueue.get(i);
 						fw = semiring.plus(fw, semiring.times(fp.getLeft().getFinalWeight(), fp.getRight()));

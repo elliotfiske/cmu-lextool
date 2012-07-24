@@ -64,13 +64,15 @@ public class Convert {
 					out.println(s.getId() + "\t" + s.getFinalWeight().getValue());
 				}
 			}
-			
+			Arc<T> arc;
+			String isym;
+			String osym;
 			for(int i = 0; i < fst.getNumStates(); i++) {
 				s = fst.getStateById(ssyms.getValue(i));
 				for(int j=0; j<s.getNumArcs(); j++) {
-					Arc<T> arc = s.getArc(j);
-					String isym = (fst.getIsyms()!=null)?fst.getIsyms().getValue(arc.getIlabel()):Integer.toString(arc.getIlabel());
-					String osym = (fst.getOsyms()!=null)?fst.getOsyms().getValue(arc.getOlabel()):Integer.toString(arc.getOlabel());
+					arc = s.getArc(j);
+					isym = (fst.getIsyms()!=null)?fst.getIsyms().getValue(arc.getIlabel()):Integer.toString(arc.getIlabel());
+					osym = (fst.getOsyms()!=null)?fst.getOsyms().getValue(arc.getOlabel()):Integer.toString(arc.getOlabel());
 					
 					out.println(s.getId() + "\t" + arc.getNextStateId() + "\t" + isym + "\t" + osym + "\t" + arc.getWeight().getValue());
 				}

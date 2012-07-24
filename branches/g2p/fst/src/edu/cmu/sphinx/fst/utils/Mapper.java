@@ -14,9 +14,9 @@
 package edu.cmu.sphinx.fst.utils;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Set;
-
-import com.google.common.collect.HashBiMap;
 
 /**
  * A one-to-one map generic class the wraps around
@@ -29,13 +29,15 @@ public class Mapper<K, V> implements Serializable {
 
 	private static final long serialVersionUID = -6780807561998593228L;
 
-	private HashBiMap<K, V> map;
+	private HashMap<K, V> map;
+	private HashMap<V, K> reverse;
 
 	/**
 	 * Default Constructor
 	 */
 	public Mapper() {
-		map = HashBiMap.create();
+		map = new HashMap<K, V>();
+		reverse = new HashMap<V, K>();
 	}
 	
 	/*
@@ -43,6 +45,7 @@ public class Mapper<K, V> implements Serializable {
 	 * @see com.google.common.collect.HashBiMap#put(K key, V value)
 	 */
 	public V put(K key, V value) {
+		reverse.put(value, key);
 		return map.put(key, value); 
 		
 	}
@@ -61,7 +64,7 @@ public class Mapper<K, V> implements Serializable {
 	 * @return the corresponding key
 	 */
 	public K getKey(V value) {
-		return map.inverse().get(value);
+		return reverse.get(value);
 	}
 	
 	/**
@@ -83,6 +86,7 @@ public class Mapper<K, V> implements Serializable {
 		K key = this.getKey(value);
 		if (key != null) {
 			map.remove(key);
+			reverse.remove(value);
 		}
 		return key;
 	}
@@ -98,6 +102,7 @@ public class Mapper<K, V> implements Serializable {
 		if (key != null) {
 			value = map.get(key);
 			map.remove(key);
+			reverse.remove(value);
 		}
 		return value;
 	}
@@ -114,7 +119,7 @@ public class Mapper<K, V> implements Serializable {
 	 * (non-Javadoc)
 	 * @see com.google.common.collect.AbstractBiMap#values()
 	 */
-	public Set<V> valueSet() {
+	public Collection<V> valueSet() {
 		return map.values();
 	}
 	
@@ -136,6 +141,12 @@ public class Mapper<K, V> implements Serializable {
 				return false;
 		} else 
 			if (!map.equals(other.map))
+			return false;
+		if (reverse == null) {
+			if (other.reverse != null)
+				return false;
+		} else 
+			if (!reverse.equals(other.reverse))
 			return false;
 		return true;
 	}

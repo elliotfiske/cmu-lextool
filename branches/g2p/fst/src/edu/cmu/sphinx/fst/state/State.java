@@ -122,8 +122,9 @@ public class State<T extends Comparable<T>> implements Serializable {
 	public void addArc(Arc<T> arc) {
 		if(this.semiring != null) {
 			// Check if there is already an arc with same input/output labels and nextstate
+			Arc<T> oldArc;
 			for (Iterator<Arc<T>> it = arcs.iterator(); it.hasNext();) {
-				Arc<T> oldArc = it.next();
+				oldArc = it.next();
 				if((oldArc.getIlabel() == arc.getIlabel()) &&
 						(oldArc.getOlabel() == arc.getOlabel()) &&
 						(oldArc.getNextStateId().equals(arc.getNextStateId()))) {
@@ -167,11 +168,11 @@ public class State<T extends Comparable<T>> implements Serializable {
 				return false;
 		} else if (!id.equals(other.id))
 			return false;
-		if (arcs == null) {
-			if (other.arcs != null)
-				return false;
-		} else if (!arcs.equals(other.arcs))
-			return false;
+//		if (arcs == null) {
+//			if (other.arcs != null)
+//				return false;
+//		} else if (!arcs.equals(other.arcs))
+//			return false;
 		if (fnlWeight == null) {
 			if (other.fnlWeight != null)
 				return false;

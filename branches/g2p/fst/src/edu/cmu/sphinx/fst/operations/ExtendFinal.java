@@ -32,8 +32,9 @@ public class ExtendFinal {
 		Semiring<T> semiring = fst.getSemiring();
 		ArrayList<State<T>> fStates = new ArrayList<State<T>>();
 		
+		State<T> s;
 		for(int i=0; i<fst.getNumStates();i++) {
-			State<T> s = fst.getStateByIndex(i);
+			s = fst.getStateByIndex(i);
 			if (!s.getFinalWeight().equals(semiring.zero())) {
 				fStates.add(s);
 			}
@@ -43,7 +44,7 @@ public class ExtendFinal {
 		State<T> newFinal = new State<T>(semiring.one());
 		fst.addState(newFinal);
 		for(int i=0; i<fStates.size(); i++) {
-			State<T> s = fStates.get(i);
+			s = fStates.get(i);
 			// add epsilon transition from the old final to the new one 
 			s.addArc(new Arc<T>(0, 0, s.getFinalWeight(), newFinal.getId()));
 			// set old state's weight to zero
@@ -60,10 +61,12 @@ public class ExtendFinal {
 			// TODO: Find it!
 		}
 		
+		State<T> s;
+		Arc<T> a;
 		for(int i=0; i<fst.getNumStates(); i++) {
-			State<T> s = fst.getStateByIndex(i);
+			s = fst.getStateByIndex(i);
 			for(int j=0; j<s.getNumArcs(); j++) {
-				Arc<T> a = s.getArc(j);
+				a = s.getArc(j);
 				if(a.getIlabel()==0 && a.getOlabel() == 0 && a.getNextStateId().equals(f.getId())) {
 					s.setFinalWeight(a.getWeight());
 				}

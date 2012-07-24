@@ -39,9 +39,11 @@ public class Reverse {
 		res.setIsyms(fst.getOsyms());
 		res.setOsyms(fst.getIsyms());
 		
+		State<T> is;
+		State<T> s;
 		for(int i=0; i < fst.getNumStates(); i++) {
-			State<T> is = fst.getStateByIndex(i);
-			State<T> s = new State<>(semiring.zero());
+			is = fst.getStateByIndex(i);
+			s = new State<>(semiring.zero());
 			s.setId(is.getId());
 			res.addState(s);
 			if(!is.getFinalWeight().equals(semiring.zero())) {
@@ -51,13 +53,18 @@ public class Reverse {
 		
 		res.getStateById(fst.getStartId()).setFinalWeight(semiring.one());
 		
+		State<T> news;
+		State<T> olds;
+		Arc<T> olda;
+		Arc<T> newa;
+		State<T> next;
 		for(int i=0; i < res.getNumStates(); i++) {
-			State<T> news = res.getStateByIndex(i);
-			State<T> olds = fst.getStateById(news.getId());
+			news = res.getStateByIndex(i);
+			olds = fst.getStateById(news.getId());
 			for(int j=0; j<olds.getNumArcs(); j++) {
-				Arc<T> olda = olds.getArc(j);
-				State<T> next = res.getStateById(olda.getNextStateId());
-				Arc<T> newa = new Arc<T>(olda.getIlabel(), olda.getOlabel(), semiring.reverse(olda.getWeight()),news.getId());
+				olda = olds.getArc(j);
+				next = res.getStateById(olda.getNextStateId());
+				newa = new Arc<T>(olda.getIlabel(), olda.getOlabel(), semiring.reverse(olda.getWeight()),news.getId());
 				next.addArc(newa);
 			}
 			

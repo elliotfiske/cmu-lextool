@@ -28,8 +28,9 @@ public class ArcSort {
 	private ArcSort() {}
 	
 	public static <T extends Comparable<T>> void apply(Fst<T> fst, Comparator<Arc<T>> cmp) {
+		State<T> s;
 		for(int i=0;i<fst.getNumStates(); i++) {
-			State<T> s = fst.getStateByIndex(i);
+			s = fst.getStateByIndex(i);
 			s.arcSort(cmp);
 		}
 	}
