@@ -113,12 +113,22 @@ public class NShortestPaths {
 		queue.add(new Pair<State<T>, Weight<T>>(start, semiring.one()));
 		previous.put(queue.get(0), null);
 		
+		Pair<State<T>, Weight<T>> pair;
+		State<T> p;
+		Weight<T> c;
+		State<T> s;
+		State<T> previouState;
+		State<T> previousOldState;
+		Arc<T> arc;
+		Weight<T> cnew;
+		Pair<State<T>, Weight<T>> next;
+
 		while(queue.size() > 0) {
-			Pair<State<T>, Weight<T>> pair = getLess(queue, d, semiring, ssyms);
-			State<T> p = pair.getLeft();
-			Weight<T> c = pair.getRight();
+			pair = getLess(queue, d, semiring, ssyms);
+			p = pair.getLeft();
+			c = pair.getRight();
 			
-			State<T> s = new State<T>(p.getFinalWeight());
+			s = new State<T>(p.getFinalWeight());
 			res.addState(s);
 			stateMap.put(pair, s);
 			if(previous.get(pair) == null) {
@@ -126,10 +136,10 @@ public class NShortestPaths {
 				res.setStart(s.getId());
 			} else {
 				// add the incoming arc from previous to current
-				State<T> previouState = stateMap.get(previous.get(pair));
-				State<T> previousOldState = previous.get(pair).getLeft();
+				previouState = stateMap.get(previous.get(pair));
+				previousOldState = previous.get(pair).getLeft();
 				for(int i=0; i < previousOldState.getNumArcs(); i++) {
-					Arc<T> arc = previousOldState.getArc(i);
+					arc = previousOldState.getArc(i);
 					if(arc.getNextStateId().equals(p.getId())) {
 						res.addArc(previouState.getId(), new Arc<T>(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), s.getId()));
 					}
@@ -145,16 +155,16 @@ public class NShortestPaths {
 			
 			if(r[stateIndex] <= n) {
 				for(int i=0; i<p.getNumArcs(); i++) {
-					Arc<T> arc = p.getArc(i);
-					Weight<T> cnew = semiring.times(c, arc.getWeight());
-					Pair<State<T>, Weight<T>> next = new Pair<State<T>, Weight<T>>(fstdet.getStateById(arc.getNextStateId()), cnew); 
+					arc = p.getArc(i);
+					cnew = semiring.times(c, arc.getWeight());
+					next = new Pair<State<T>, Weight<T>>(fstdet.getStateById(arc.getNextStateId()), cnew); 
 					previous.put(next, pair);
 					queue.add(next);
 				}
 			}
 		}
 		
-		Connect.apply(res);
+//		Connect.apply(res);
 
 		return res;
 	
@@ -164,11 +174,15 @@ public class NShortestPaths {
 		Pair<State<T>, Weight<T>> res = queue.get(0);
 		int pos = 0;
 		
+		State<T> previousState;
+		State<T> nextState;
+		Weight<T> previous;
+		Weight<T> next;
 		for(int i = 1; i< queue.size(); i++) {
-			State<T> previousState = res.getLeft();
-			State<T> nextState = queue.get(i).getLeft();
-			Weight<T> previous = res.getRight();
-			Weight<T> next = queue.get(i).getRight();
+			previousState = res.getLeft();
+			nextState = queue.get(i).getLeft();
+			previous = res.getRight();
+			next = queue.get(i).getRight();
 			if (semiring.naturalLess(semiring.times(next, d[ssyms.getKey(nextState.getId())]), 
 					semiring.times(previous, d[ssyms.getKey(previousState.getId())]))) {
 				pos = i;

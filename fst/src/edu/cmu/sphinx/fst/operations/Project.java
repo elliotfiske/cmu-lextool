@@ -21,10 +21,12 @@ public class Project {
 			fst.setIsyms(fst.getOsyms());
 		}
 
+		State<T> s;
+		Arc<T> arc;
 		for(int i=0; i<fst.getNumStates(); i++) {
-			State<T> s = fst.getStateByIndex(i);
+			s = fst.getStateByIndex(i);
 			for(int j=0; j<s.getNumArcs(); j++) {
-				Arc<T> arc = s.getArc(j);
+				arc = s.getArc(j);
 				
 				if(pType == ProjectType.INPUT) {
 					arc.setOlabel(arc.getIlabel());

@@ -31,7 +31,7 @@ import edu.cmu.sphinx.fst.weight.Semiring;
 public class Compose {
 	private Compose() {}
 	
-	private static <T extends Comparable<T>> Fst<T> compose(Fst<T> fst1, Fst<T> fst2, Semiring<T> semiring) {
+	public static <T extends Comparable<T>> Fst<T> compose(Fst<T> fst1, Fst<T> fst2, Semiring<T> semiring) {
 		if(!fst1.getOsyms().equals(fst2.getIsyms())) {
 			// symboltables do not match
 			return null;
@@ -61,6 +61,14 @@ public class Compose {
 		stateMap.put(p, s);
 		queue.add(p);
 		
+		Arc<T> a1;
+		Arc<T> a2;
+		State<T> nextState1;
+		State<T> nextState2;
+		Pair<State<T>, State<T>> nextPair;
+		State<T> nextState;
+		Arc<T> a;
+		
 		while(queue.size() > 0) {
 			p = queue.get(0);
 			queue.remove(0);
@@ -68,21 +76,21 @@ public class Compose {
 			s2 = p.getRight();
 			s = stateMap.getValue(p);
 			for(int i=0; i<s1.getNumArcs();i++) {
-				Arc<T> a1 = s1.getArc(i);
+				a1 = s1.getArc(i);
 				for(int j=0; j<s2.getNumArcs(); j++) {
-					Arc<T> a2 = s2.getArc(j);
+					a2 = s2.getArc(j);
 					if(a1.getOlabel() == a2.getIlabel()) {
-						State<T> nextState1 = fst1.getStateById(a1.getNextStateId());
-						State<T> nextState2 = fst2.getStateById(a2.getNextStateId());
-						Pair<State<T>, State<T>> nextPair = new Pair<State<T>, State<T>>(nextState1, nextState2);
-						State<T> nextState = stateMap.getValue(nextPair); 
+						nextState1 = fst1.getStateById(a1.getNextStateId());
+						nextState2 = fst2.getStateById(a2.getNextStateId());
+						nextPair = new Pair<State<T>, State<T>>(nextState1, nextState2);
+						nextState = stateMap.getValue(nextPair); 
 						if(nextState == null) {
 							nextState = new State<T>(semiring.times(nextState1.getFinalWeight(), nextState2.getFinalWeight()));
 							res.addState(nextState);
 							stateMap.put(nextPair, nextState);
 							queue.add(nextPair);
 						}
-						Arc<T> a = new Arc<T>(a1.getIlabel(), a2.getOlabel(), semiring.times(a1.getWeight(), a2.getWeight()), nextState.getId());
+						a = new Arc<T>(a1.getIlabel(), a2.getOlabel(), semiring.times(a1.getWeight(), a2.getWeight()), nextState.getId());
 						s.addArc(a);
 					}
 				}
@@ -116,7 +124,7 @@ public class Compose {
 		res.getOsyms().removeValue("<e1>");
 		res.getOsyms().removeValue("<e2>");
 		
-		Connect.apply(res);
+//		Connect.apply(res);
 
 		return res;
 	}
@@ -160,9 +168,9 @@ public class Compose {
 	
 	private static Mapper<Integer, String> copyAndExtendSyms(Mapper<Integer, String> syms) {
 		Mapper<Integer, String> newsyms = new Mapper<Integer, String>();
-		
+		Integer key;
 		for(Iterator<Integer> it = syms.keySet().iterator(); it.hasNext();) {
-			Integer key = it.next(); 
+			key = it.next(); 
 			newsyms.put(key, syms.getValue(key));
 		}
 		newsyms.put(newsyms.size(), "<e1>");
@@ -193,11 +201,12 @@ public class Compose {
 			osyms.put(osyms.size(), "<e2>");
 		}
 
-		
+		State<T> s;
+		Arc<T> arc;
 		for(int i=0; i<res.getNumStates(); i++) {
-			State<T> s = res.getStateByIndex(i);
+			s = res.getStateByIndex(i);
 			for(int j=0; j<s.getNumArcs();j++) {
-				Arc<T> arc = s.getArc(j);
+				arc = s.getArc(j);
 				if((label == 1) && (arc.getOlabel() == 0)) {
 					arc.setOlabel(osyms.getKey("<e2>"));
 				} else if((label == 0) && (arc.getIlabel() == 0)) {

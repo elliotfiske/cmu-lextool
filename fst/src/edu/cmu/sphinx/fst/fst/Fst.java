@@ -317,11 +317,15 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 				if(ssyms.size() != other.ssyms.size())
 					return false;
 				// ssyms have same size. check states by looking up index on ssyms
+				Integer key;
+				String id;
+				State<T> s;
+				State<T> others;
 				for (Iterator<Integer> it = ssyms.keySet().iterator(); it.hasNext();) {
-					Integer key = it.next();
-					String id = ssyms.getValue(key);
-					State<T> s = getStateByIndex(key);
-					State<T> others = other.getStateById(id);
+					key = it.next();
+					id = ssyms.getValue(key);
+					s = getStateByIndex(key);
+					others = other.getStateById(id);
 					if(!s.equals(others))
 						return false;
 				}
@@ -351,7 +355,7 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 
 		return sb.toString();
 	}
-		
+
 	private static Mapper<Integer, String> copySyms(Mapper<Integer, String> syms) {
 		Mapper<Integer, String> newsyms = new Mapper<Integer, String>();
 		
@@ -366,28 +370,30 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	 * @return
 	 */
 	public Fst<T> copy() {
-//		System.out.println("Start Copy Model: " + GregorianCalendar.getInstance().getTime());
 		Fst<T> fst = new Fst<T>(this.getSemiring());
 		fst.setIsyms(copySyms(this.isyms));
 		fst.setOsyms(copySyms(this.osyms));
 		
+		State<T> oldState;
+		State<T> newState;
+		Arc<T> oldArc;
+		Arc<T> newArc;
 		for(int i=0; i<this.states.size(); i++) {
-			State<T> oldState = this.states.get(i);
-			State<T> newState = new State<T>(oldState.getFinalWeight());
+			oldState = this.states.get(i);
+			newState = new State<T>(oldState.getFinalWeight());
 			newState.setId(oldState.getId());
 			fst.addState(newState);
 			for(int j=0; j<oldState.getNumArcs(); j++) {
-				Arc<T> oldArc = oldState.getArc(j);
-				Arc<T> newArc = new Arc<T>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
+				oldArc = oldState.getArc(j);
+				newArc = new Arc<T>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
 				newState.addArc(newArc);
 			}
 		}
 		fst.setStart(this.start);
 		
-//		System.out.println("End   Copy Model: " + GregorianCalendar.getInstance().getTime());
         return fst;
     }
-
+	
 	/**
 	 * Remaps the states
 	 */
@@ -420,20 +426,22 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 		remapStates();
 		
 		// delete arc's with nextstate equal to stateid
-		
+		State<T> s;
+		Arc<T> arc;
 		for(Iterator<State<T>> itState = this.states.iterator(); itState.hasNext();) {
-			State<T> s = itState.next();
+			s = itState.next();
 			ArrayList<Integer> toDelete = new ArrayList<Integer>();
 			for(int i=0; i< s.getNumArcs(); i++) {
-				Arc<T> arc = s.getArc(i);
+				arc = s.getArc(i);
 				if(arc.getNextStateId().equals(stateId)) {
 					toDelete.add(i);
 				}				
 			}
 			// indices so not change when deleting in reverse ordering
 			Collections.sort(toDelete, Collections.reverseOrder());
+			Integer index;
 			for(int i=0; i< toDelete.size(); i++) {
-				Integer index = toDelete.get(i);
+				index = toDelete.get(i);
 				s.deleteArc(index);
 			}
 		}

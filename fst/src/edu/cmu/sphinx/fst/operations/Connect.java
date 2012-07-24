@@ -14,7 +14,6 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
@@ -28,14 +27,14 @@ import edu.cmu.sphinx.fst.weight.Semiring;
  *
  */
 public class Connect {
-	private static <T extends Comparable<T>> void calcCoAccessible(State<T> state, ArrayList<ArrayList<State<T>>> paths, HashSet<State<T>> coaccessible  ) {
+	private static <T extends Comparable<T>> void calcCoAccessible(Fst<T> fst, String stateId, ArrayList<ArrayList<String>> paths, ArrayList<String> coaccessible) {
 		// hold the coaccessible added in this loop
-		ArrayList<State<T>> newCoAccessibles = new ArrayList<State<T>>(); 
+		ArrayList<String> newCoAccessibles = new ArrayList<String>(); 
 		for(int i=0;i<paths.size(); i++) {
-			ArrayList<State<T>> path = paths.get(i);
-			int index = path.lastIndexOf(state);
+			ArrayList<String> path = paths.get(i);
+			int index = path.lastIndexOf(stateId);
 			if(index != -1) {
-				if(state.isFinal() || coaccessible.contains(state)) {
+				if(fst.getStateById(stateId).isFinal() || coaccessible.contains(stateId)) {
 					for(int j=index; j>-1; j--) {
 						if(!coaccessible.contains(path.get(j))) {
 							newCoAccessibles.add(path.get(j));
@@ -48,36 +47,36 @@ public class Connect {
 		
 		// run again for the new coaccessibles
 		for(int i=0;i<newCoAccessibles.size();i++) {
-			calcCoAccessible(newCoAccessibles.get(i), paths, coaccessible);
+			calcCoAccessible(fst, newCoAccessibles.get(i), paths, coaccessible);
 		}
 	}
 
-	private static <T extends Comparable<T>> void duplicatePath(int lastPathIndex, State<T> fromState, State<T> toState, ArrayList<ArrayList<State<T>>> paths) {
-		ArrayList<State<T>> lastPath = paths.get(lastPathIndex);
+	private static <T extends Comparable<T>> void duplicatePath(int lastPathIndex, State<T> fromState, State<T> toState, ArrayList<ArrayList<String>> paths) {
+		ArrayList<String> lastPath = paths.get(lastPathIndex);
 		// copy the last path to a new one, from start to current state
-		int fromIndex = lastPath.indexOf(fromState);
-		int toIndex = lastPath.indexOf(toState);
+		int fromIndex = lastPath.indexOf(fromState.getId());
+		int toIndex = lastPath.indexOf(toState.getId());
 		if(toIndex == -1) {
 			toIndex = lastPath.size() -1;
 		}
-		ArrayList<State<T>> newPath = new ArrayList<State<T>>(lastPath.subList(fromIndex, toIndex));
+		ArrayList<String> newPath = new ArrayList<String>(lastPath.subList(fromIndex, toIndex));
 		paths.add(newPath);
 	}
 	
-	private static <T extends Comparable<T>> State<T> dfs(Fst<T> fst, State<T> start, ArrayList<ArrayList<State<T>>> paths, Mapper<State<T>, ArrayList<Arc<T>>> exploredArcs , HashSet<State<T>> accessible) {
+	private static <T extends Comparable<T>> State<T> dfs(Fst<T> fst, State<T> start, ArrayList<ArrayList<String>> paths, Mapper<String, ArrayList<Arc<T>>> exploredArcs , ArrayList<String> accessible) {
 		int lastPathIndex = paths.size() - 1;
 
-		paths.get(lastPathIndex).add(start);
+		paths.get(lastPathIndex).add(start.getId());
 		if(start.getNumArcs() != 0) {
 			int arcCount = 0;
 			for(int i=0; i<start.getNumArcs(); i++) {
 				Arc<T> arc = start.getArc(i);
-				if ((exploredArcs.getValue(start) == null) || !exploredArcs.getValue(start).contains(arc)) {
+				if ((exploredArcs.getValue(start.getId()) == null) || !exploredArcs.getValue(start.getId()).contains(arc)) {
 					lastPathIndex = paths.size() - 1;
 					if(arcCount++ > 0) {
 						duplicatePath(lastPathIndex, fst.getStart(), start, paths);
 						lastPathIndex = paths.size() - 1;
-						paths.get(lastPathIndex).add(start);
+						paths.get(lastPathIndex).add(start.getId());
 					}
 					State<T> next = fst.getStateById(arc.getNextStateId());
 					addExploredArc(start, arc, exploredArcs, accessible);
@@ -89,31 +88,32 @@ public class Connect {
 			}
 		} 
 		lastPathIndex = paths.size() - 1;
-		accessible.add(start);
+		accessible.add(start.getId());
 		
 		return start;
 	}
 
-	private static <T extends Comparable<T>> void addExploredArc(State<T> state, Arc<T> arc, Mapper<State<T>, ArrayList<Arc<T>>> exploredArcs, HashSet<State<T>> accessible) {
-		if(!accessible.contains(state)) {
-			exploredArcs.put(state, new ArrayList<Arc<T>>());
+	private static <T extends Comparable<T>> void addExploredArc(State<T> state, Arc<T> arc, Mapper<String, ArrayList<Arc<T>>> exploredArcs, ArrayList<String> accessible) {
+		if(!accessible.contains(state.getId())) {
+			exploredArcs.put(state.getId(), new ArrayList<Arc<T>>());
 		}
-		exploredArcs.getValue(state).add(arc);
+		exploredArcs.getValue(state.getId()).add(arc);
 		
 	}
 	
-	private static <T extends Comparable<T>> void depthFirstSearch(Fst<T> fst, HashSet<State<T>> accessible, ArrayList<ArrayList<State<T>>> paths, Mapper<State<T>, ArrayList<Arc<T>>> exploredArcs, HashSet<State<T>> coaccessible ) {
+	private static <T extends Comparable<T>> void depthFirstSearch(Fst<T> fst, ArrayList<String> accessible, ArrayList<ArrayList<String>> paths, Mapper<String, ArrayList<Arc<T>>> exploredArcs, ArrayList<String> coaccessible ) {
 		State<T> currentState = fst.getStart();
 		State<T> nextState = currentState;
 		do {
-			if(!accessible.contains(currentState)) {
+			if(!accessible.contains(currentState.getId())) {
 				nextState = dfs(fst, currentState, paths, exploredArcs, accessible);
 			}
 		} while(!currentState.equals(nextState));
+		State<T> s;
 		for(int i=0;i<fst.getNumStates();i++) {
-			State<T> s = fst.getStateByIndex(i);
+			s = fst.getStateByIndex(i);
 			if(s.isFinal()) {
-				calcCoAccessible(s, paths, coaccessible);
+				calcCoAccessible(fst, s.getId(), paths, coaccessible);
 			}
 		}
 	}
@@ -125,28 +125,30 @@ public class Connect {
 			return;
 		}
 		
-		HashSet<State<T>> accessible = new HashSet<State<T>>();
-		HashSet<State<T>> coaccessible = new HashSet<State<T>>();
-		Mapper<State<T>, ArrayList<Arc<T>>> exploredArcs = new Mapper<State<T>, ArrayList<Arc<T>>>();
-		ArrayList<ArrayList<State<T>>> paths = new ArrayList<ArrayList<State<T>>>();
-		paths.add(new ArrayList<State<T>>());
+		ArrayList<String> accessible = new ArrayList<String>();
+		ArrayList<String> coaccessible = new ArrayList<String>();
+		Mapper<String, ArrayList<Arc<T>>> exploredArcs = new Mapper<String, ArrayList<Arc<T>>>();
+		ArrayList<ArrayList<String>> paths = new ArrayList<ArrayList<String>>();
+		paths.add(new ArrayList<String>());
 
 		depthFirstSearch(fst, accessible, paths, exploredArcs, coaccessible);
 		
 		ArrayList<String> toDelete = new ArrayList<String>();
+		State<T> s;
+		String id;
 		for (int i=0; i<fst.getNumStates(); i++) {
-			State<T> s = fst.getStateByIndex(i);
-			String id = s.getId(); 
-			if(!accessible.contains(s)) { 
+			s = fst.getStateByIndex(i);
+			id = s.getId(); 
+			if(!accessible.contains(id)) { 
 				toDelete.add(id);
-			} else if (!coaccessible.contains(s)) {
+			} else if (!coaccessible.contains(id)) {
 				// inaccessible
 				toDelete.add(id);
 			}
 		}
 		
 		for(Iterator<String> it = toDelete.iterator(); it.hasNext();) {
-			String id = it.next();
+			id = it.next();
 			fst.deleteState(id);
 		}
 	}

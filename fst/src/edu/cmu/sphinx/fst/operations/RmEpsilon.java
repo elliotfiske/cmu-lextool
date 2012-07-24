@@ -51,16 +51,20 @@ public class RmEpsilon {
 	
 	private static <T extends Comparable<T>> void calcClosure(Fst<T> fst, String stateid, HashMap<String, HashMap<String, Weight<T>>> cl, Semiring<T> semiring) {
 		State<T> s = fst.getStateById(stateid);
+
+		Arc<T> arc;
+		String pathFinalState;
+		Weight<T> pathWeight;
 		for(int i=0; i<s.getNumArcs();i++) {
-			Arc<T> arc = s.getArc(i);
+			arc = s.getArc(i);
 			if((arc.getIlabel() == 0) && (arc.getOlabel() == 0)) {
 				if (cl.get(arc.getNextStateId()) == null) {
 					calcClosure(fst, arc.getNextStateId(), cl, semiring);
 				}
 				if (cl.get(arc.getNextStateId()) != null) {
 					for (Iterator<String> itPath = cl.get(arc.getNextStateId()).keySet().iterator(); itPath.hasNext();) {
-						String pathFinalState = itPath.next();
-						Weight<T> pathWeight = semiring.times(getPathWeight(arc.getNextStateId(), pathFinalState, cl), arc.getWeight());
+						pathFinalState = itPath.next();
+						pathWeight = semiring.times(getPathWeight(arc.getNextStateId(), pathFinalState, cl), arc.getWeight());
 						add(stateid, pathFinalState, pathWeight, cl, semiring);
 					}
 				}
@@ -96,15 +100,18 @@ public class RmEpsilon {
 		Fst<T> res = new Fst<T>(semiring);
 		
 		cl = new HashMap<String, HashMap<String, Weight<T>>>();
+		State<T> s;
+		State<T> newState;
+		Arc<T> arc;
 		for(int i=0; i<fst.getNumStates(); i++) {
-			State<T> s = fst.getStateByIndex(i);
+			s = fst.getStateByIndex(i);
 
 			// Add non-epsilon arcs
-			State<T> newState = new State<T>(s.getFinalWeight());
+			newState = new State<T>(s.getFinalWeight());
 			newState.setId(s.getId());
 			res.addState(newState);
 			for(int j=0; j<s.getNumArcs(); j++) {
-				Arc<T> arc = s.getArc(j);
+				arc = s.getArc(j);
 				if((arc.getIlabel() != 0) || (arc.getOlabel() != 0)) {
 					newState.addArc(new Arc<T>(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), arc.getNextStateId()));
 				}
@@ -117,21 +124,24 @@ public class RmEpsilon {
 		}
 
 		// augment fst with arcs generated from epsilon moves.
+		String pathFinalState;
+		State<T> s1;
+		Arc<T> newArc;
 		for(int i=0; i<res.getNumStates(); i++) {
-			State<T> s = res.getStateByIndex(i);
+			s = res.getStateByIndex(i);
 			if(cl.get(s.getId()) != null) {
 				for (Iterator<String> it = cl.get(s.getId()).keySet().iterator(); it.hasNext();) {
-					String pathFinalState = it.next();
-					State<T> s1 = fst.getStateById(pathFinalState);
+					pathFinalState = it.next();
+					s1 = fst.getStateById(pathFinalState);
 
 					if(!s1.getFinalWeight().equals(semiring.zero())) {
 						s.setFinalWeight(semiring.plus(s.getFinalWeight(), semiring.times(getPathWeight(s.getId(), pathFinalState, cl), s1.getFinalWeight())));
 					}
 					
 					for(int j=0; j<s1.getNumArcs(); j++) {
-						Arc<T> arc = s1.getArc(j);
+						arc = s1.getArc(j);
 						if((arc.getIlabel() != 0) || (arc.getOlabel() != 0)) {
-							Arc<T> newArc = new Arc<T>(
+							newArc = new Arc<T>(
 									arc.getIlabel(), 
 									arc.getOlabel(), 
 									semiring.times(arc.getWeight(), getPathWeight(s.getId(), pathFinalState, cl)), 
