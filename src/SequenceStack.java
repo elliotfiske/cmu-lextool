@@ -34,4 +34,8 @@ public class SequenceStack {
 		if (stack.isEmpty()) return true;
 		return false;
 	}
+	
+	public int getSize() {
+		return this.stack.size();
+	}
 }
