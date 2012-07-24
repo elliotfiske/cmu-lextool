@@ -11,7 +11,10 @@
  *
  */
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.util.LinkedList;
 
 import org.apache.commons.lang.WordUtils;
@@ -19,9 +22,16 @@ import org.apache.commons.lang.WordUtils;
 import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.acoustic.UnitManager;
 import edu.cmu.sphinx.linguist.dictionary.FastDictionary;
+import edu.cmu.sphinx.linguist.dictionary.FullDictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.SimpleNGramModel;
+import edu.cmu.sphinx.linguist.language.ngram.large.LargeNGramModel;
 import edu.cmu.sphinx.util.LogMath;
+import weka.classifiers.Classifier;
+import weka.classifiers.trees.J48;
+import weka.classifiers.trees.REPTree;
+import weka.core.Instances;
+
 
 
 /**
@@ -31,7 +41,14 @@ import edu.cmu.sphinx.util.LogMath;
 public class PostProcessing {
 	
 	static int maxSequenceSize = 1000;	
-	static SimpleNGramModel lm;
+	static LargeNGramModel lm;
+	
+	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
+		if (ws.size() > 3) {
+			ws = ws.getSubSequence(ws.size() - 3, ws.size());
+		}
+		return lm.getProbability(ws);
+	}
 
 	/**
 	 * @param args
@@ -52,38 +69,48 @@ public class PostProcessing {
 			return;
 		}
 		
-		float max = -10000;
+		float max = Integer.MIN_VALUE;
 		Sequence finalSequence = null;
 		
-		// load dictionary and language model		
-		FastDictionary dict = new FastDictionary("../models/lm_giga_5k_nvp.sphinx.dic", 
-				"../models/lm_giga_5k_nvp.sphinx.filler",
-				null, false, "<sil>", true, false, new UnitManager());
+		// load dictionary and language model
+		FullDictionary dict = new FullDictionary(
+				new URL("file:models/lm_giga_5k_nvp.sphinx.dic"), 
+				new URL("file:models/lm_giga_5k_nvp.sphinx.filler"),
+				null, false, null, true, true, new UnitManager());
+		
 		dict.allocate();
 		
-		lm = new SimpleNGramModel(lm_path, dict, 0.7f, 
-				new LogMath(10, false), 3);
+		lm = new LargeNGramModel("", new URL("file:" + lm_path), 
+				"file:logfile", 0, false, 3, 
+				new LogMath((float)10, false),
+				dict, false, 0.0f, 0.0, 0.7f, false);
+		
 		lm.allocate();
+		
+		
 		
 		// put the words in the text into a Word Sequence
 		WordSequence inputWords = breakIntoWords(text);
 		
 		// consider <s> the first symbol
 		Word[] temp = {new Word("<s>", null, false)};
-		Sequence firstSymbol = new Sequence(new WordSequence(temp), lm.getProbability(new WordSequence(temp)), -1);
+		Sequence firstSymbol = new Sequence(new WordSequence(temp), getWSProb(new WordSequence(temp), lm), -1);
 		
 		SequenceStack stack = new SequenceStack(10000);
 		stack.addSequence(firstSymbol);
 		
 		while (!stack.isEmpty()) {
+			// retrieve the first sequence in the stack
 			Sequence h = stack.getSequence();
-			
+
 			int current = h.getSequenceNumber() + 1;
 			
+			// if the retrieved sequence is full-sized, add </s> and keep the sequence with the 
+			// biggest probability
 			if (current == inputWords.size()) {
 				WordSequence fullSentence = h.getWordSequence().addWord(new Word("</s>", null, false), maxSequenceSize);
 				
-				Sequence fullSentenceSymbol = new Sequence(fullSentence, lm.getProbability(fullSentence), current);
+				Sequence fullSentenceSymbol = new Sequence(fullSentence, getWSProb(fullSentence, lm), current);
 				if (fullSentenceSymbol.getProbability() > max) {
 					finalSequence = fullSentenceSymbol;
 					max = fullSentenceSymbol.getProbability();
@@ -91,8 +118,8 @@ public class PostProcessing {
 				continue;
 			}
 			
+			// get the next word that needs to be added and compute it's written forms
 			Word currentWord = inputWords.getWord(current);
-			
 			
 			Word[] currentWordForms = {currentWord, 
 					new Word(WordUtils.capitalize(currentWord.toString()), null, false),
@@ -103,20 +130,27 @@ public class PostProcessing {
 					new Word("<PERIOD>", null, false)}; 
 			
 			for (Word wordForm : currentWordForms) {
-				WordSequence previousWords = new WordSequence(h.getWords());				
-				WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);				
-				
-				for (Word punctuation : punctuationMarks) {
-					WordSequence punctSequence = newSequence.addWord(punctuation, maxSequenceSize);
+				// verify if the written form currentWord is in the LM
+				if (lm.hasUnigram(wordForm)) {
+					WordSequence previousWords = new WordSequence(h.getWords());	
+					WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);			
 					
-					Sequence newSequenceHistory = new Sequence(punctSequence, lm.getProbability(newSequence), current);
-					stack.addSequence(newSequenceHistory);
+					for (Word punctuation : punctuationMarks) {
+						WordSequence punctSequence = newSequence.addWord(punctuation, maxSequenceSize);
+						
+						Sequence newSequenceHistory = new Sequence(punctSequence, getWSProb(newSequence, lm), current);
+						stack.addSequence(newSequenceHistory);
+					}
 				}
 			}
 		}
 		
-		System.out.println(formatOutput(finalSequence.getWordSequence()) + " ---- with probability " + finalSequence.getProbability());
+		System.out.println(formatOutput(finalSequence.getWordSequence()));
 	} 
+	
+	
+	
+	
 	
 	static String formatOutput(WordSequence output) {
 		
