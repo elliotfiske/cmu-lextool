@@ -25,6 +25,9 @@
 #include <ngram/ngram-unsmoothed.h>
 #include <fst/symbol-table.h>
 #include <fst/extensions/far/farscript.h>
+#include <fst/script/fst-class.h>
+#include <fst/script/determinize.h>
+#include <fst/script/minimize.h>
 #include <fst/extensions/far/main.h>
 #include <fst/script/print.h>
 #include "phonetisaurus/M2MFstAligner.hpp"
@@ -234,6 +237,12 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string out_name, string eps
 }
 
 void train_model(string eps, string s1s2_sep, string skip, int order, string smooth, string out_name, string seq_sep) {
+	namespace s = fst::script;
+	using fst::script::FstClass;
+	using fst::script::MutableFstClass;
+	using fst::script::VectorFstClass;
+    using fst::script::WeightClass;
+
 	// create symbols file
 	cout << "Generating symbols..." << endl;
 	NGramInput *ingram = new NGramInput(
@@ -357,9 +366,17 @@ void train_model(string eps, string s1s2_sep, string skip, int order, string smo
 		LOG(ERROR) << "Bad smoothing method: " << smooth;
 		exit(1);
 	}
+
+	// Minimize
+	cout << "Minimizing model..." << endl;
+	MutableFstClass *fst1 = new s::MutableFstClass(fst);
+	Minimize(fst1, 0, fst::kDelta);
+
+	StdMutableFst *fst2 = fst1->GetMutableFst<StdArc>();
+
 	cout << "Correcting final model..." << endl;
 	StdMutableFst* out = new StdVectorFst();
-	relabel(fst, out, out_name, eps, skip, s1s2_sep, seq_sep);
+	relabel(fst2, out, out_name, eps, skip, s1s2_sep, seq_sep);
 
 	cout << "Writing binary model to disk..." << endl;
 	out->Write(out_name);
