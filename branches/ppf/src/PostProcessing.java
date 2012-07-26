@@ -44,9 +44,11 @@ public class PostProcessing {
 	static LargeNGramModel lm;
 	
 	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
+		//System.out.println(ws);
 		if (ws.size() > 3) {
 			ws = ws.getSubSequence(ws.size() - 3, ws.size());
 		}
+		
 		return lm.getProbability(ws);
 	}
 
@@ -58,6 +60,7 @@ public class PostProcessing {
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		
 		String text = null, lm_path = null;
+		int stackSize = 100;
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-text")) text = args[i+1].toLowerCase();
@@ -94,77 +97,79 @@ public class PostProcessing {
 		
 		// consider <s> the first symbol
 		Word[] temp = {new Word("<s>", null, false)};
-		Sequence firstSymbol = new Sequence(new WordSequence(temp), getWSProb(new WordSequence(temp), lm), -1);
+		Sequence firstSymbol = new Sequence(new WordSequence(temp), 0f, -1);
 		
-		SequenceStack stack = new SequenceStack(10000);
+		SequenceStack stack = new SequenceStack(stackSize);
 		stack.addSequence(firstSymbol);
 		
 		while (!stack.isEmpty()) {
 			// retrieve the first sequence in the stack
-			Sequence h = stack.getSequence();
+			Sequence currentSequence = stack.getSequence();
+			WordSequence currentWordSequence = currentSequence.getWordSequence();
+			
+			//System.out.println(currentSequence.getWordSequence() + " " + currentSequence.getProbability());
 
-			int current = h.getSequenceNumber() + 1;
+			int currentSize = currentSequence.getSize() + 1;
 			
 			// if the retrieved sequence is full-sized, add </s> and keep the sequence with the 
 			// biggest probability
-			if (current == inputWords.size()) {
-				WordSequence fullSentence = h.getWordSequence().addWord(new Word("</s>", null, false), maxSequenceSize);
+			if (currentSize == inputWords.size()) {
+				WordSequence fullSentence = currentWordSequence.addWord(new Word("</s>", null, false), maxSequenceSize);
+				Sequence fullSentenceSequence = new Sequence(fullSentence, (currentSequence.getProbability() + getWSProb(fullSentence, lm))/fullSentence.size(), currentSize);
+
+				System.out.println(fullSentenceSequence.getWordSequence() + " " + fullSentenceSequence.getProbability());
 				
-				Sequence fullSentenceSymbol = new Sequence(fullSentence, getWSProb(fullSentence, lm), current);
-				if (fullSentenceSymbol.getProbability() > max) {
-					finalSequence = fullSentenceSymbol;
-					max = fullSentenceSymbol.getProbability();
+				if (fullSentenceSequence.getProbability() > max) {
+					finalSequence = fullSentenceSequence;
+					max = fullSentenceSequence.getProbability();
 				}
 				continue;
 			}
 			
 			// get the next word that needs to be added and compute it's written forms
-			Word currentWord = inputWords.getWord(current);
+			Word currentWord = inputWords.getWord(currentSize);
 			
 			Word[] currentWordForms = {currentWord, 
-					new Word(WordUtils.capitalize(currentWord.toString()), null, false),
-					new Word(currentWord.toString().toUpperCase(), null, false)}; 
+					new Word(WordUtils.capitalize(currentWord.toString()), null, false)}; 
 			
-			Word[] punctuationMarks = {new Word("<NONE>", null, false), 
-					new Word("<COMMA>", null, false),
+			Word[] punctuationMarks = {new Word("<COMMA>", null, false),
 					new Word("<PERIOD>", null, false)}; 
 			
 			for (Word wordForm : currentWordForms) {
 				// verify if the written form currentWord is in the LM
+				
 				if (lm.hasUnigram(wordForm)) {
-					WordSequence previousWords = new WordSequence(h.getWords());	
+					WordSequence previousWords = new WordSequence(currentSequence.getWords());
 					WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);			
+					
+
+					Sequence unpunctuated = new Sequence(newSequence, currentSequence.getProbability() + getWSProb(newSequence, lm), currentSize);
+					stack.addSequence(unpunctuated);
 					
 					for (Word punctuation : punctuationMarks) {
 						WordSequence punctSequence = newSequence.addWord(punctuation, maxSequenceSize);
 						
-						Sequence newSequenceHistory = new Sequence(punctSequence, getWSProb(newSequence, lm), current);
+						Sequence newSequenceHistory = new Sequence(punctSequence, unpunctuated.getProbability() + getWSProb(punctSequence, lm), currentSize);
 						stack.addSequence(newSequenceHistory);
 					}
 				}
 			}
 		}
 		
-		System.out.println(formatOutput(finalSequence.getWordSequence()));
+		System.out.println(formatOutput(finalSequence.getWordSequence()) + " " + finalSequence.getProbability());
 	} 
-	
-	
-	
-	
 	
 	static String formatOutput(WordSequence output) {
 		
 		String newOutput = "";
 		
 		for (Word w : output.getWords()) {
-			if (w.toString().equals("<NONE>")) {
-				newOutput += " ";
-			} else if (w.toString().equals("<PERIOD>")) {
+			if (w.toString().equals("<PERIOD>")) {
 				newOutput += ". ";
 			} else if (w.toString().equals("<COMMA>")) {
 				newOutput += ", ";
 			} else {
-				newOutput += w.toString();
+				newOutput += w.toString() + " ";
 			}
 			
 		}

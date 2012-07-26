@@ -7,16 +7,17 @@ import edu.cmu.sphinx.linguist.dictionary.Word;
 public class Sequence implements Comparable<Sequence>{
 	private WordSequence words;
 	private float probability;
-	private int sequenceNumber;
+	private int size;
+	private Sequence previous;
 	
 	public Sequence(WordSequence words, float probability, int sequenceNumber) {
 		this.words = words;
 		this.probability = probability;
-		this.sequenceNumber = sequenceNumber;
+		this.size = sequenceNumber;
 	}
 	
-	public int getSequenceNumber() {
-		return this.sequenceNumber;
+	public int getSize() {
+		return this.size;
 	}
 	
 	public float getProbability() {
@@ -39,5 +40,9 @@ public class Sequence implements Comparable<Sequence>{
 		if (this.probability > s.getProbability()) return -1;
 		else if (this.probability == s.getProbability()) return 0;
 		return 1;
+	}
+	
+	public Sequence getPrev() {
+		return this.previous;
 	}
 }
