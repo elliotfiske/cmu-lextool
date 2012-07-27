@@ -69,8 +69,8 @@ public class Connect {
 		paths.get(lastPathIndex).add(start.getId());
 		if(start.getNumArcs() != 0) {
 			int arcCount = 0;
-			for(int i=0; i<start.getNumArcs(); i++) {
-				Arc<T> arc = start.getArc(i);
+			for(Iterator<Arc<T>> itA = start.arcIterator(); itA.hasNext();) {
+				Arc<T> arc = itA.next();
 				if ((exploredArcs.getValue(start.getId()) == null) || !exploredArcs.getValue(start.getId()).contains(arc)) {
 					lastPathIndex = paths.size() - 1;
 					if(arcCount++ > 0) {
@@ -110,8 +110,10 @@ public class Connect {
 			}
 		} while(!currentState.equals(nextState));
 		State<T> s;
-		for(int i=0;i<fst.getNumStates();i++) {
-			s = fst.getStateByIndex(i);
+//		for(int i=0;i<fst.getNumStates();i++) {
+//			s = fst.getStateByIndex(i);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			s = itS.next();
 			if(s.isFinal()) {
 				calcCoAccessible(fst, s.getId(), paths, coaccessible);
 			}

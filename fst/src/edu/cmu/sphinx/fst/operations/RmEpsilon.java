@@ -55,8 +55,8 @@ public class RmEpsilon {
 		Arc<T> arc;
 		String pathFinalState;
 		Weight<T> pathWeight;
-		for(int i=0; i<s.getNumArcs();i++) {
-			arc = s.getArc(i);
+		for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+			arc = itA.next();
 			if((arc.getIlabel() == 0) && (arc.getOlabel() == 0)) {
 				if (cl.get(arc.getNextStateId()) == null) {
 					calcClosure(fst, arc.getNextStateId(), cl, semiring);
@@ -103,15 +103,15 @@ public class RmEpsilon {
 		State<T> s;
 		State<T> newState;
 		Arc<T> arc;
-		for(int i=0; i<fst.getNumStates(); i++) {
-			s = fst.getStateByIndex(i);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			s = itS.next();
 
 			// Add non-epsilon arcs
 			newState = new State<T>(s.getFinalWeight());
 			newState.setId(s.getId());
 			res.addState(newState);
-			for(int j=0; j<s.getNumArcs(); j++) {
-				arc = s.getArc(j);
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				arc = itA.next();
 				if((arc.getIlabel() != 0) || (arc.getOlabel() != 0)) {
 					newState.addArc(new Arc<T>(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), arc.getNextStateId()));
 				}
@@ -127,8 +127,8 @@ public class RmEpsilon {
 		String pathFinalState;
 		State<T> s1;
 		Arc<T> newArc;
-		for(int i=0; i<res.getNumStates(); i++) {
-			s = res.getStateByIndex(i);
+		for(Iterator<State<T>> itS = res.stateIterator(); itS.hasNext();) {
+			s = itS.next();
 			if(cl.get(s.getId()) != null) {
 				for (Iterator<String> it = cl.get(s.getId()).keySet().iterator(); it.hasNext();) {
 					pathFinalState = it.next();
@@ -138,8 +138,8 @@ public class RmEpsilon {
 						s.setFinalWeight(semiring.plus(s.getFinalWeight(), semiring.times(getPathWeight(s.getId(), pathFinalState, cl), s1.getFinalWeight())));
 					}
 					
-					for(int j=0; j<s1.getNumArcs(); j++) {
-						arc = s1.getArc(j);
+					for(Iterator<Arc<T>> itA = s1.arcIterator(); itA.hasNext();) {
+						arc = itA.next();
 						if((arc.getIlabel() != 0) || (arc.getOlabel() != 0)) {
 							newArc = new Arc<T>(
 									arc.getIlabel(), 

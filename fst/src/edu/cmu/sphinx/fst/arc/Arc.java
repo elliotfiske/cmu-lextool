@@ -14,8 +14,6 @@
 
 package edu.cmu.sphinx.fst.arc;
 
-import java.io.Serializable;
-
 import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
@@ -24,9 +22,7 @@ import edu.cmu.sphinx.fst.weight.Weight;
  *
  * @param <W>
  */
-public class Arc<T extends Comparable<T>> implements Serializable{
-	
-	private static final long serialVersionUID = -7996802366816336109L;
+public class Arc<T extends Comparable<T>> {
 	
 	// Arc's weight
 	protected Weight<T> weight;
@@ -41,6 +37,7 @@ public class Arc<T extends Comparable<T>> implements Serializable{
 	protected String nextStateId;
 
 
+	public Arc() {}
 	/**
 	 * Creates a new arc
 	 * 
@@ -175,4 +172,21 @@ public class Arc<T extends Comparable<T>> implements Serializable{
 	public String toString() {
 		return "(" + iLabel + ", " + oLabel + ", " + weight + ", " + nextStateId + ")";
 	}
+
+//	@Override
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//		out.writeInt(iLabel);
+//		out.writeInt(oLabel);
+//		out.writeObject(weight);
+//		out.writeObject(nextStateId);
+//	}
+//
+//	@SuppressWarnings("unchecked")
+//	@Override
+//	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+//		iLabel = in.readInt();
+//		oLabel = in.readInt();
+//		weight = (Weight<T>) in.readObject();
+//		nextStateId = (String) in.readObject();
+//	}
 }

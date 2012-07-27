@@ -4,6 +4,7 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
@@ -43,8 +44,8 @@ public class Determinize {
 			p = pa.get(i);
 			s = p.getLeft();
 				
-			for(int j=0; j< s.getNumArcs();j++) {
-				arc = s.getArc(j);
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				arc = itA.next();
 				if(!res.contains(arc.getIlabel())) {
 					res.add(arc.getIlabel());
 				}
@@ -118,8 +119,8 @@ public class Determinize {
 					ps = p.get(k);
 					old = ps.getLeft(); 
 					u = p.get(k).getRight();
-					for (int i=0;i<old.getNumArcs(); i++) {
-						arc = old.getArc(i);
+					for(Iterator<Arc<T>> itA = old.arcIterator(); itA.hasNext();) {
+						arc = itA.next();
 						if(labels.get(j).equals(arc.getIlabel())) {
 							wnew = semiring.plus(wnew, semiring.times(u, arc.getWeight()));
 						}
@@ -134,8 +135,8 @@ public class Determinize {
 					old = ps.getLeft(); 
 					u = p.get(k).getRight();
 					wnewRevert = semiring.divide(semiring.one(), wnew);
-					for (int i=0;i<old.getNumArcs(); i++) {
-						arc = old.getArc(i);
+					for(Iterator<Arc<T>> itA = old.arcIterator(); itA.hasNext();) {
+						arc = itA.next();
 						if(labels.get(j).equals(arc.getIlabel())) {
 							oldstate = fst.getStateById(arc.getNextStateId());
 							pair = getPair(forQueue, oldstate, semiring.zero());

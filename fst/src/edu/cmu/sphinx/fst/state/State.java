@@ -14,7 +14,6 @@
 
 package edu.cmu.sphinx.fst.state;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -28,9 +27,7 @@ import edu.cmu.sphinx.fst.weight.Weight;
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class State<T extends Comparable<T>> implements Serializable {
-	
-	private static final long serialVersionUID = -405571712671111894L;
+public class State<T extends Comparable<T>> {
 	
 	// Id
 	private String id;
@@ -44,6 +41,8 @@ public class State<T extends Comparable<T>> implements Serializable {
 	// holds the semiring
 	private Semiring<T> semiring;
 	
+	
+	public State() {}
 	/**
 	 * 
 	 */
@@ -70,6 +69,7 @@ public class State<T extends Comparable<T>> implements Serializable {
 		return fnlWeight;
 	}
 
+	
 	/**
 	 * @param fnlWeight the Final weight to set
 	 */
@@ -111,6 +111,13 @@ public class State<T extends Comparable<T>> implements Serializable {
 	 */
 	public int getNumArcs() {
 		return this.arcs.size();
+	}
+
+	/**
+	 * @return the arcs
+	 */
+	public Iterator<Arc<T>> arcIterator() {
+		return arcs.iterator();
 	}
 	
 	/**
@@ -203,5 +210,28 @@ public class State<T extends Comparable<T>> implements Serializable {
 			return false;
 		}
 		return !this.fnlWeight.equals(semiring.zero());
-	}	
+	}
+
+//	@Override
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//		out.writeObject(id);
+//		out.writeObject(fnlWeight);
+//		out.writeInt(arcs.size());
+//		for(Iterator<Arc<T>> it = arcs.iterator(); it.hasNext();) {
+//			out.writeObject(it.next());
+//		}
+//		
+//	}
+//
+//	@SuppressWarnings("unchecked")
+//	@Override
+//	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+//		id = (String) in.readObject();
+//		fnlWeight = (Weight<T>) in.readObject();
+//		int numArcs = in.readInt();
+//		for(int i=0; i<numArcs; i++) {
+//			arcs.add((Arc<T>) in.readObject());
+//		}
+//		
+//	}	
 }
