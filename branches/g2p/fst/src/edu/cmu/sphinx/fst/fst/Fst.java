@@ -13,16 +13,21 @@
 
 package edu.cmu.sphinx.fst.fst;
 
+import java.io.Externalizable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.utils.Mapper;
@@ -35,7 +40,7 @@ import edu.cmu.sphinx.fst.weight.Weight;
  *
  * @param <W>
  */
-public class Fst<T extends Comparable<T>> implements Serializable {
+public class Fst<T extends Comparable<T>> implements Externalizable {
 	
 	private static final long serialVersionUID = -7821842965064006073L;
 	
@@ -60,6 +65,8 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	/**
 	 *  Default constructor
 	 */
+	public Fst() {}
+
 	public Fst(Semiring<T> s) {
 		this.semiring = s;
 	}
@@ -77,6 +84,7 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	public State<T> getStart() {
 		return states.get(ssyms.getKey(start));
 	}
+	
 	
 	/**
 	 * @return the semiring
@@ -133,6 +141,14 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 		return this.states.size();
 	}
 
+	/**
+	 * @return the states
+	 */
+	public Iterator<State<T>> stateIterator() {
+		return states.iterator();
+	}
+
+	
 	/**
 	 * Adds a state to the fst
 	 * 
@@ -224,13 +240,12 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	 */
 	public void saveModel(String filename) throws IOException {
 		FileOutputStream fos = new FileOutputStream(filename);
-//		GZIPOutputStream gos = new GZIPOutputStream(fos);
-//		ObjectOutputStream oos = new ObjectOutputStream(gos);
-		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		GZIPOutputStream gos = new GZIPOutputStream(fos);
+		ObjectOutputStream oos = new ObjectOutputStream(gos);
 		oos.writeObject(this);
 		oos.flush();
         oos.close();
-//        gos.close();
+        gos.close();
         fos.close();
 	}
 	
@@ -243,18 +258,18 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	@SuppressWarnings("unchecked")
 	public static<T extends Comparable<T>> Fst<T> loadModel(String filename) {
 		Fst<T> obj = null;
-	    FileInputStream fis = null;
-	    //GZIPInputStream gis = null;
+        
+		FileInputStream fis = null;
+	    GZIPInputStream gis = null;
 	    ObjectInputStream ois = null;
 	    
 	    try {
-			fis = new FileInputStream(filename);
-//			gis = new GZIPInputStream(fis);
-//	        ois = new ObjectInputStream(gis);
-	        ois = new ObjectInputStream(fis);
+	    	fis = new FileInputStream(filename);
+			gis = new GZIPInputStream(fis);
+	        ois = new ObjectInputStream(gis);
 	        obj = (Fst<T>) ois.readObject();
 	        ois.close();
-//	        gis.close();
+	        gis.close();
 	        fis.close();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -346,11 +361,17 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Fst(start=" + start + ", isyms=" + isyms + ", osyms=" + osyms + ", ssyms=" + ssyms + ", semiring=" + semiring + ")\n");
-		for(int i=0; i<states.size(); i++) {
-			sb.append("  " +states.get(i)+"\n");
-			for(int j=0; j<states.get(i).getNumArcs(); j++) {
-				sb.append("    " +states.get(i).getArc(j)+"\n");
+		State<T> s;
+		Arc<T> a;
+		for(Iterator<State<T>> itS = states.iterator(); itS.hasNext();) {
+			s=itS.next();
+					
+			sb.append("  " +s+"\n");
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				a = itA.next();
+				sb.append("    " +a+"\n");
 			}
+
 		}
 
 		return sb.toString();
@@ -378,13 +399,13 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 		State<T> newState;
 		Arc<T> oldArc;
 		Arc<T> newArc;
-		for(int i=0; i<this.states.size(); i++) {
-			oldState = this.states.get(i);
+		for(Iterator<State<T>> itS = states.iterator(); itS.hasNext();) {
+			oldState = itS.next();
 			newState = new State<T>(oldState.getFinalWeight());
 			newState.setId(oldState.getId());
 			fst.addState(newState);
-			for(int j=0; j<oldState.getNumArcs(); j++) {
-				oldArc = oldState.getArc(j);
+			for(Iterator<Arc<T>> itA = oldState.arcIterator(); itA.hasNext();) {
+				oldArc = itA.next();
 				newArc = new Arc<T>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
 				newState.addArc(newArc);
 			}
@@ -431,6 +452,7 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 		for(Iterator<State<T>> itState = this.states.iterator(); itState.hasNext();) {
 			s = itState.next();
 			ArrayList<Integer> toDelete = new ArrayList<Integer>();
+//			for(int i=0; i< s.getNumArcs(); i++) {
 			for(int i=0; i< s.getNumArcs(); i++) {
 				arc = s.getArc(i);
 				if(arc.getNextStateId().equals(stateId)) {
@@ -443,6 +465,96 @@ public class Fst<T extends Comparable<T>> implements Serializable {
 			for(int i=0; i< toDelete.size(); i++) {
 				index = toDelete.get(i);
 				s.deleteArc(index);
+			}
+		}
+	}
+
+	private void writeMap(ObjectOutput out, Mapper<Integer, String> map) throws IOException {
+		Integer key;
+		String value;
+		out.writeInt(map.keySet().size());
+		for(Iterator<Integer> it = map.keySet().iterator(); it.hasNext();) {
+			key = it.next();
+			value = map.getValue(key);
+			out.writeInt(key);
+			out.writeObject(value);
+		}
+	}
+
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		out.writeObject(start);
+		writeMap(out, isyms);
+		writeMap(out, osyms);
+		out.writeObject(semiring);
+		out.writeInt(states.size());
+		State<T> s;
+		Arc<T> a;
+		for(Iterator<State<T>> it = states.iterator(); it.hasNext();) {
+			s = it.next();
+			
+			out.writeObject(s.getId());
+			out.writeObject(s.getFinalWeight().getValue());
+			out.writeInt(s.getNumArcs());
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				a = itA.next();
+				out.writeInt(a.getIlabel());
+				out.writeInt(a.getOlabel());
+				out.writeObject(a.getWeight().getValue());
+				out.writeObject(a.getNextStateId());
+			}
+		}
+	}
+
+	private Mapper<Integer, String> readMap(ObjectInput in) throws IOException, ClassNotFoundException {
+		Mapper<Integer, String> map = new Mapper<Integer, String>();
+		
+		int mapSize = in.readInt();
+		int key;
+		String value;
+		for(int i=0; i<mapSize; i++) {
+			key = in.readInt();
+			value = (String) in.readObject();
+			map.put(key, value);
+		}
+		
+		return map;
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		start = (String) in.readObject();
+		isyms = readMap(in);
+		osyms = readMap(in);
+		semiring = (Semiring<T>) in.readObject();
+		int numStates = in.readInt();
+
+		State<T> s;
+		Arc<T> a;
+		Weight<T> w;
+		int numArcs;
+		ssyms = new Mapper<Integer, String>();
+		for(int i=0; i<numStates; i++) {
+			s = new State<T>();
+			s.setId((String) in.readObject());
+			w = new Weight<T>();
+			w.setValue((T) in.readObject());
+			s.setFinalWeight(w);
+			s.setSemiring(semiring);
+			states.add(s);
+			ssyms.put(i, s.getId());
+			
+			numArcs = in.readInt();
+			for(int j=0; j<numArcs; j++) {
+				a = new Arc<T>();
+				a.setIlabel(in.readInt());
+				a.setOlabel(in.readInt());
+				w = new Weight<T>();
+				w.setValue((T) in.readObject());
+				a.setWeight(w);
+				a.setNextState((String) in.readObject());
+				s.addArc(a);
 			}
 		}
 	}

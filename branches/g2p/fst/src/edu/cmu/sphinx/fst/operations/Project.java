@@ -3,6 +3,8 @@
  */
 package edu.cmu.sphinx.fst.operations;
 
+import java.util.Iterator;
+
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.state.State;
@@ -23,10 +25,10 @@ public class Project {
 
 		State<T> s;
 		Arc<T> arc;
-		for(int i=0; i<fst.getNumStates(); i++) {
-			s = fst.getStateByIndex(i);
-			for(int j=0; j<s.getNumArcs(); j++) {
-				arc = s.getArc(j);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			s = itS.next();
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				arc = itA.next();
 				
 				if(pType == ProjectType.INPUT) {
 					arc.setOlabel(arc.getIlabel());

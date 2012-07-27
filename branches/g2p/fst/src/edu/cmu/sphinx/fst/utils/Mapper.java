@@ -13,7 +13,6 @@
 
 package edu.cmu.sphinx.fst.utils;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Set;
@@ -25,9 +24,7 @@ import java.util.Set;
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class Mapper<K, V> implements Serializable {
-
-	private static final long serialVersionUID = -6780807561998593228L;
+public class Mapper<K, V> {
 
 	private HashMap<K, V> map;
 	private HashMap<V, K> reverse;

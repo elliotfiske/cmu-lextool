@@ -75,10 +75,10 @@ public class Compose {
 			s1 = p.getLeft();
 			s2 = p.getRight();
 			s = stateMap.getValue(p);
-			for(int i=0; i<s1.getNumArcs();i++) {
-				a1 = s1.getArc(i);
-				for(int j=0; j<s2.getNumArcs(); j++) {
-					a2 = s2.getArc(j);
+			for(Iterator<Arc<T>> itA1 = s1.arcIterator(); itA1.hasNext();) {
+				a1 = itA1.next();
+				for(Iterator<Arc<T>> itA2 = s2.arcIterator(); itA2.hasNext();) {
+					a2 = itA2.next();
 					if(a1.getOlabel() == a2.getIlabel()) {
 						nextState1 = fst1.getStateById(a1.getNextStateId());
 						nextState2 = fst2.getStateById(a2.getNextStateId());
@@ -203,10 +203,10 @@ public class Compose {
 
 		State<T> s;
 		Arc<T> arc;
-		for(int i=0; i<res.getNumStates(); i++) {
-			s = res.getStateByIndex(i);
-			for(int j=0; j<s.getNumArcs();j++) {
-				arc = s.getArc(j);
+		for(Iterator<State<T>> itS = res.stateIterator(); itS.hasNext();) {
+			s = itS.next();
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				arc = itA.next();
 				if((label == 1) && (arc.getOlabel() == 0)) {
 					arc.setOlabel(osyms.getKey("<e2>"));
 				} else if((label == 0) && (arc.getIlabel() == 0)) {

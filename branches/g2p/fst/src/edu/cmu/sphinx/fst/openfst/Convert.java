@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
@@ -57,9 +58,8 @@ public class Convert {
 			out.println(s.getId() + "\t" + s.getFinalWeight().getValue());
 			
 			//print all states 
-			Mapper<Integer, String> ssyms = fst.getSsyms();
-			for(int i = 0; i < fst.getNumStates(); i++) {
-				s = fst.getStateById(ssyms.getValue(i));
+			for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+				s = itS.next();
 				if(!s.getId().equals(fst.getStartId())) {
 					out.println(s.getId() + "\t" + s.getFinalWeight().getValue());
 				}
@@ -67,10 +67,10 @@ public class Convert {
 			Arc<T> arc;
 			String isym;
 			String osym;
-			for(int i = 0; i < fst.getNumStates(); i++) {
-				s = fst.getStateById(ssyms.getValue(i));
-				for(int j=0; j<s.getNumArcs(); j++) {
-					arc = s.getArc(j);
+			for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+				s = itS.next();
+				for(Iterator<Arc<T>> itA = s.arcIterator();itA.hasNext();) {
+					arc = itA.next();
 					isym = (fst.getIsyms()!=null)?fst.getIsyms().getValue(arc.getIlabel()):Integer.toString(arc.getIlabel());
 					osym = (fst.getOsyms()!=null)?fst.getOsyms().getValue(arc.getOlabel()):Integer.toString(arc.getOlabel());
 					

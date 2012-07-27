@@ -13,6 +13,8 @@
 
 package edu.cmu.sphinx.fst.operations;
 
+import java.util.Iterator;
+
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.state.State;
@@ -41,8 +43,8 @@ public class Reverse {
 		
 		State<T> is;
 		State<T> s;
-		for(int i=0; i < fst.getNumStates(); i++) {
-			is = fst.getStateByIndex(i);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			is = itS.next();
 			s = new State<>(semiring.zero());
 			s.setId(is.getId());
 			res.addState(s);
@@ -58,11 +60,11 @@ public class Reverse {
 		Arc<T> olda;
 		Arc<T> newa;
 		State<T> next;
-		for(int i=0; i < res.getNumStates(); i++) {
-			news = res.getStateByIndex(i);
+		for(Iterator<State<T>> itS = res.stateIterator(); itS.hasNext();) {
+			news = itS.next();
 			olds = fst.getStateById(news.getId());
-			for(int j=0; j<olds.getNumArcs(); j++) {
-				olda = olds.getArc(j);
+			for(Iterator<Arc<T>> itA = olds.arcIterator(); itA.hasNext();) {
+				olda = itA.next();
 				next = res.getStateById(olda.getNextStateId());
 				newa = new Arc<T>(olda.getIlabel(), olda.getOlabel(), semiring.reverse(olda.getWeight()),news.getId());
 				next.addArc(newa);

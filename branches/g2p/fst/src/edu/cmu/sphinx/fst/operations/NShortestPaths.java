@@ -15,6 +15,7 @@ package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
@@ -59,8 +60,8 @@ public class NShortestPaths {
 			queue.remove(0);
 			Weight<T> rnew = r[ssyms.getKey(q.getId())];
 			r[ssyms.getKey(q.getId())] = semiring.zero();
-			for(int i=0; i < q.getNumArcs(); i++) {
-				Arc<T> a = q.getArc(i);
+			for(Iterator<Arc<T>> itA = q.arcIterator(); itA.hasNext();) {
+				Arc<T> a = itA.next();
 				State<T> nextState = reversed.getStateById(a.getNextStateId());
 				Weight<T> dnext = d[ssyms.getKey(a.getNextStateId())];
 				Weight<T> dnextnew = semiring.plus(dnext, semiring.times(rnew, a.getWeight())); 
@@ -138,8 +139,8 @@ public class NShortestPaths {
 				// add the incoming arc from previous to current
 				previouState = stateMap.get(previous.get(pair));
 				previousOldState = previous.get(pair).getLeft();
-				for(int i=0; i < previousOldState.getNumArcs(); i++) {
-					arc = previousOldState.getArc(i);
+				for(Iterator<Arc<T>> itA = previousOldState.arcIterator(); itA.hasNext();) {
+					arc = itA.next();
 					if(arc.getNextStateId().equals(p.getId())) {
 						res.addArc(previouState.getId(), new Arc<T>(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), s.getId()));
 					}
@@ -154,8 +155,10 @@ public class NShortestPaths {
 			}
 			
 			if(r[stateIndex] <= n) {
-				for(int i=0; i<p.getNumArcs(); i++) {
-					arc = p.getArc(i);
+//				for(int i=0; i<p.getNumArcs(); i++) {
+//					arc = p.getArc(i);
+				for(Iterator<Arc<T>> itA = p.arcIterator(); itA.hasNext();) {
+					arc = itA.next();
 					cnew = semiring.times(c, arc.getWeight());
 					next = new Pair<State<T>, Weight<T>>(fstdet.getStateById(arc.getNextStateId()), cnew); 
 					previous.put(next, pair);

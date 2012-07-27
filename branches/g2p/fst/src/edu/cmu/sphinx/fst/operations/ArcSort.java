@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.Comparator;
+import java.util.Iterator;
 
 
 import edu.cmu.sphinx.fst.arc.Arc;
@@ -29,8 +30,8 @@ public class ArcSort {
 	
 	public static <T extends Comparable<T>> void apply(Fst<T> fst, Comparator<Arc<T>> cmp) {
 		State<T> s;
-		for(int i=0;i<fst.getNumStates(); i++) {
-			s = fst.getStateByIndex(i);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			s = itS.next();
 			s.arcSort(cmp);
 		}
 	}

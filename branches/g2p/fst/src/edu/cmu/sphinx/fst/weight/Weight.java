@@ -13,35 +13,24 @@
 
 package edu.cmu.sphinx.fst.weight;
 
-import java.io.Serializable;
-
 /**
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  * @param <T>
  */
-public class Weight<T extends Comparable<T>> implements Serializable, Comparable<Weight<T>> {
-	private static final long serialVersionUID = 6897737261832081990L;
-	private Class<T> type;
+public class Weight<T extends Comparable<T>> implements Comparable<Weight<T>> {
+
 	private T value;
 	
+	public Weight() {}
+
 	/**
 	 * 
 	 * @param value
 	 */
-	@SuppressWarnings("unchecked")
 	public Weight(T value) {
 		this.value = value;
-		this.type = (Class<T>) value.getClass();
-	}
-
-	/**
-	 * 
-	 * @return
-	 */
-	public Class<T> getType() {
-		return type;
 	}
 
 	/**
@@ -95,7 +84,17 @@ public class Weight<T extends Comparable<T>> implements Serializable, Comparable
 	public int compareTo(Weight<T> o) {
 		return this.value.compareTo(o.value);
 	}
-	
-	
 
+//	@Override
+//	public void writeExternal(ObjectOutput out) throws IOException {
+//		out.writeObject(value);
+//		
+//	}
+//
+//	@SuppressWarnings("unchecked")
+//	@Override
+//	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+//		value = (T) in.readObject();
+//		
+//	}
 }

@@ -43,6 +43,7 @@ public class Import {
 		System.out.println("Saving as binary java fst model...");
         try {
         	fst.saveModel(args[1]);
+        	
         } catch (IOException e) {
 			System.err.println("Cannot write to file " + args[1]);
 			System.exit(1); 

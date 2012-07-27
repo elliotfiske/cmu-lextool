@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
@@ -33,8 +34,8 @@ public class ExtendFinal {
 		ArrayList<State<T>> fStates = new ArrayList<State<T>>();
 		
 		State<T> s;
-		for(int i=0; i<fst.getNumStates();i++) {
-			s = fst.getStateByIndex(i);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			s = itS.next();
 			if (!s.getFinalWeight().equals(semiring.zero())) {
 				fStates.add(s);
 			}
@@ -63,10 +64,10 @@ public class ExtendFinal {
 		
 		State<T> s;
 		Arc<T> a;
-		for(int i=0; i<fst.getNumStates(); i++) {
-			s = fst.getStateByIndex(i);
-			for(int j=0; j<s.getNumArcs(); j++) {
-				a = s.getArc(j);
+		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			s = itS.next();
+			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+				a = itA.next();
 				if(a.getIlabel()==0 && a.getOlabel() == 0 && a.getNextStateId().equals(f.getId())) {
 					s.setFinalWeight(a.getWeight());
 				}
