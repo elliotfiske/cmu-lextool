@@ -32,9 +32,7 @@ public class Phoneticize {
     	String model = args[0];
 		String words = args[1];
 		int best = Integer.parseInt(args[2]);
-//		String model = "../data/20120720/models/6gram.fst.ser";
-//		String words = "../data/20120720/test";
-//		int best = 1;
+
 		Decoder d = new Decoder(model, true);
 		Mapper<Integer, String> syms = d.getIsyms();
 		
@@ -61,8 +59,6 @@ public class Phoneticize {
 					String ch = Character.toString(in.charAt(i));
 					if(syms.getKey(ch)!=null) {
 						entry.add(ch);
-//					} else {
-//						System.out.println("Symbol " + ch + " not found in input symbol table. Mapping to null...");
 					}
 				}
 		
@@ -76,10 +72,9 @@ public class Phoneticize {
 						System.out.print(p.getPath().get(j));
 						if(j<p.getPath().size() - 1) {
 							System.out.print(" ");
-						} else {
-							System.out.println();
 						}
 					}
+					System.out.println();
 				}
 			}
 		} catch (IOException e) {

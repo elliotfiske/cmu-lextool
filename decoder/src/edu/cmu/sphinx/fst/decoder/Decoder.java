@@ -126,10 +126,10 @@ public class Decoder {
     	usedSyms.add(0);
     	State<Double> s;
     	Arc<Double> a;
-    	for(int i=0; i< ref.getNumStates(); i++) {
-    		s = ref.getStateByIndex(i);
-    		for(int j=0;j<s.getNumArcs();j++) {
-    			a = s.getArc(j);
+		for(Iterator<State<Double>> itS = ref.stateIterator(); itS.hasNext();) {
+			s = itS.next();
+			for(Iterator<Arc<Double>> itA = s.arcIterator(); itA.hasNext();) {
+				a = itA.next();
     			usedSyms.add(a.getIlabel());
     		}
     	}
@@ -157,8 +157,8 @@ public class Decoder {
         		addedStates.add(newState.getId());
         	}
 			
-    		for(int j=0; j<oldState.getNumArcs(); j++) {
-				oldArc = oldState.getArc(j);
+			for(Iterator<Arc<Double>> itA = oldState.arcIterator(); itA.hasNext();) {
+				oldArc = itA.next();
 				if(usedSyms.contains(oldArc.getIlabel())) {
 					newArc = new Arc<Double>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
 					newState.addArc(newArc);
@@ -179,9 +179,6 @@ public class Decoder {
      * @return
      */
     public ArrayList<Path<Double>> phoneticize(Vector<String> entry, int nbest) {
-    	//if(persistModel) {
-    	//	g2pmodel = g2pmodel_copy.copy();
-    	//}
     	Fst<Double> efst = entryToFSA(entry);
     	
     	// test
@@ -279,8 +276,8 @@ public class Decoder {
     		}
     		
     		Arc<Double> a;
-    		for(int i=0; i<s.getNumArcs(); i++) {
-        		a = s.getArc(i);
+			for(Iterator<Arc<Double>> itA = s.arcIterator(); itA.hasNext();) {
+				a = itA.next();
 
         		p = new Path<Double>(fst.getSemiring());
         		Path<Double> cur = paths.get(s);
