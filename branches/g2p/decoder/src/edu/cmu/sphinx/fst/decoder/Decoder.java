@@ -27,12 +27,11 @@ import edu.cmu.sphinx.fst.operations.NShortestPaths;
 import edu.cmu.sphinx.fst.operations.Project;
 import edu.cmu.sphinx.fst.operations.ProjectType;
 import edu.cmu.sphinx.fst.operations.RmEpsilon;
+import edu.cmu.sphinx.fst.semiring.Semiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.utils.Mapper;
 import edu.cmu.sphinx.fst.utils.Utils;
-import edu.cmu.sphinx.fst.weight.Semiring;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
-import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -45,36 +44,32 @@ public class Decoder {
     String skip = "_";
     String tie;
 
-    Vector<Double> thetas = new Vector<Double>();
     HashSet<String> skipSeqs = new HashSet<String>();
     Mapper<Vector<String>, Integer> clusters = new Mapper<Vector<String>, Integer>();
-    //FST stuff
-    Fst<Double> g2pmodel;
-    Fst<Double> g2pmodel_copy;
-    Mapper<Integer, String> isyms;
-    Mapper<Integer, String> osyms;
-    boolean persistModel = false;
 
-	public Decoder(String g2pmodel_file, boolean persistModel) {
+    Fst g2pmodel;
+    Fst epsilonFilter;
+    Mapper<Integer, String> isyms;
+
+	public Decoder(String g2pmodel_file) {
         skipSeqs.add(eps);
         skipSeqs.add(sb);
         skipSeqs.add(se);
         skipSeqs.add(skip);
         skipSeqs.add("-");
-        this.persistModel = persistModel;
         
         g2pmodel = Fst.loadModel(g2pmodel_file);
         
+        // keep an augmented copy (for compose) 
+        Compose.augment(0, g2pmodel, g2pmodel.getSemiring());
+
         isyms = g2pmodel.getIsyms();
-        osyms = g2pmodel.getOsyms();
         tie  = isyms.getValue(1); // The separator symbol is reserved for index 1
         
         loadClusters();
-
-        if (this.persistModel) {
-        	// keep a copy 
-        	g2pmodel_copy = g2pmodel.copy();
-        }
+        
+        // get epsilon filter for composition
+        epsilonFilter = Compose.getFilter(isyms, g2pmodel.getSemiring());
     }
     
 	
@@ -90,12 +85,13 @@ public class Decoder {
 	 * 
 	 */
     private void loadClusters() {
-		for(int i = 2; i<isyms.size(); i++) {
-			String sym = isyms.getValue(i);
+    	String sym;
+    	for(int i = 2; i<isyms.size(); i++) {
+			sym = isyms.getValue(i);
 			if(sym.contains(tie)) {
 				Vector<String> tmp = Utils.split_string(sym, tie);
 				Vector<String> cluster = new Vector<String>();
-				for (int j=0;j<tmp.size();j++) {
+				for(int j=0;j<tmp.size();j++) {
 					if(!tmp.get(j).equals(tie)) {
 						cluster.add(tmp.get(j));
 					}
@@ -105,97 +101,25 @@ public class Decoder {
 		}
 		
 	}
-    
-	private static Mapper<Integer, String> copySyms(Mapper<Integer, String> syms) {
-		Mapper<Integer, String> newsyms = new Mapper<Integer, String>();
-		
-		Integer key;
-		for(Iterator<Integer> it = syms.keySet().iterator(); it.hasNext();) {
-			key = it.next(); 
-			newsyms.put(key, syms.getValue(key));
-		}
-		return newsyms; 
-	}
-	 
 
-    private Fst<Double> partialCopy(Fst<Double> fst, Fst<Double> ref) {
-    	Fst<Double> res = new Fst<Double>(fst.getSemiring());
-    	
-    	HashSet<Integer> usedSyms = new HashSet<Integer>();
-    	HashSet<String> addedStates = new HashSet<String>();
-    	usedSyms.add(0);
-    	State<Double> s;
-    	Arc<Double> a;
-		for(Iterator<State<Double>> itS = ref.stateIterator(); itS.hasNext();) {
-			s = itS.next();
-			for(Iterator<Arc<Double>> itA = s.arcIterator(); itA.hasNext();) {
-				a = itA.next();
-    			usedSyms.add(a.getIlabel());
-    		}
-    	}
-    	
-    	res.setIsyms(copySyms(fst.getIsyms()));
-    	res.setOsyms(copySyms(fst.getOsyms()));
-    	ArrayList<String> queue = new ArrayList<String>();
-    	
-    	Arc<Double> oldArc;
-    	Arc<Double> newArc;
-    	
-    	State<Double> oldState = fst.getStart();
-    	State<Double> newState;
-		
-    	queue.add(oldState.getId());
-    	
-    	while(queue.size() > 0) {
-    		String stateId = queue.remove(0);
-    		oldState = fst.getStateById(stateId);
-    		newState = res.getStateById(stateId);
-        	if(newState == null) {
-        		newState= new State<Double>(oldState.getFinalWeight());
-        		newState.setId(oldState.getId());
-        		res.addState(newState);
-        		addedStates.add(newState.getId());
-        	}
-			
-			for(Iterator<Arc<Double>> itA = oldState.arcIterator(); itA.hasNext();) {
-				oldArc = itA.next();
-				if(usedSyms.contains(oldArc.getIlabel())) {
-					newArc = new Arc<Double>(oldArc.getIlabel(), oldArc.getOlabel(), oldArc.getWeight(), oldArc.getNextStateId());
-					newState.addArc(newArc);
-					if(res.getStateById(oldArc.getNextStateId()) == null) {
-						queue.add(oldArc.getNextStateId());
-					}
-				}
-			}
-    	}
-		res.setStart(fst.getStartId());
-		
-    	return res;
-    }
-    /**
+	/**
      * 
      * @param entry
      * @param nbest
      * @return
      */
-    public ArrayList<Path<Double>> phoneticize(Vector<String> entry, int nbest) {
-    	Fst<Double> efst = entryToFSA(entry);
-    	
-    	// test
-    	if(persistModel) {
-    		g2pmodel = partialCopy(g2pmodel_copy, efst);
-    	}
-        
-    	Fst<Double> result = Compose.get(efst, g2pmodel, new TropicalSemiring());
-        
+    public ArrayList<Path> phoneticize(Vector<String> entry, int nbest) {
+      	Fst efst = entryToFSA(entry);
+      	Semiring s = efst.getSemiring();
+        Compose.augment(1, efst, s);
+    	Fst result = Compose.compose(efst, epsilonFilter, s);
+    	result = Compose.compose(result, g2pmodel, s);
         Project.apply(result, ProjectType.OUTPUT);
+        result = NShortestPaths.get(result, nbest, false);
+        result = RmEpsilon.get(result);
+    	ArrayList<Path> paths = Decoder.findAllPaths(result, skipSeqs, tie);
+    	result = null;
     	
-    	Fst<Double> shortest = NShortestPaths.get(result, nbest, false);
-
-    	shortest = RmEpsilon.get(shortest);
-
-    	ArrayList<Path<Double>> paths = Decoder.findAllPaths(shortest, skipSeqs, tie);
-        
 		return paths;
     }
     
@@ -206,43 +130,45 @@ public class Decoder {
      * @param entry the input vector
      * @return the created fst
      */
-    private Fst<Double> entryToFSA(Vector<String> entry ){
+    private Fst entryToFSA(Vector<String> entry ){
     	TropicalSemiring ts = new TropicalSemiring();
-    	Fst<Double> efst = new Fst<Double>(ts);
+    	Fst efst = new Fst(ts);
     	
-    	State<Double> s = new State<Double>(ts.zero());
+    	State s = new State(ts.zero());
     	efst.addState(s);
-    	efst.addArc(s.getId(), new Arc<Double>(isyms.getKey(sb), isyms.getKey(sb), 0., "1"));
+    	efst.addArc(s.getId(), new Arc(isyms.getKey(sb), isyms.getKey(sb), 0., "1"));
     	efst.setStart(s.getId());
     	
         //Build the basic FSA
     	int i;
     	for (i=0; i< entry.size(); i++) {
 			String str = entry.get(i);
-			s = new State<Double>(ts.zero());
+			s = new State(ts.zero());
 	    	efst.addState(s);
-	    	efst.addArc(s.getId(), new Arc<Double>(isyms.getKey(str), isyms.getKey(str), 0., Integer.toString(i+2)));
+	    	efst.addArc(s.getId(), new Arc(isyms.getKey(str), isyms.getKey(str), 0., Integer.toString(i+2)));
 		}
     	
     	//Add any cluster arcs
     	Vector<String> cluster;
+    	int start;
+		int k;
     	for(Iterator<Vector<String>> it = clusters.keySet().iterator(); it.hasNext();) {
-    		int start = 0;
-    		int k = 0;
     		cluster = it.next();
+    		start = 0;
+    		k = 0;
     		while(k != -1) {
     			k = Utils.search(entry, cluster, start);
     			if (k != -1) {
-    				efst.addArc(Integer.toString(start+k+1), new Arc<Double>(clusters.getValue(cluster),clusters.getValue(cluster), 0., Integer.toString(start+k+cluster.size()+1)));
+    				efst.addArc(Integer.toString(start+k+1), new Arc(clusters.getValue(cluster),clusters.getValue(cluster), 0., Integer.toString(start+k+cluster.size()+1)));
     				start = start + k + cluster.size();
     			}
     		}
     	}
     	
-        efst.addState(new State<Double>(ts.zero()));
-        efst.addState(new State<Double>(ts.zero()));
-        efst.addArc(Integer.toString(i+1), new Arc<Double>(isyms.getKey(se), isyms.getKey(se), 0., Integer.toString(i+2)));
-        efst.setFinal(Integer.toString(i+2), new Weight<Double>(0.));
+        efst.addState(new State(ts.zero()));
+        efst.addState(new State(ts.zero()));
+        efst.addArc(Integer.toString(i+1), new Arc(isyms.getKey(se), isyms.getKey(se), 0., Integer.toString(i+2)));
+        efst.setFinal(Integer.toString(i+2), 0.);
         efst.setIsyms(isyms);
         efst.setOsyms(isyms);
 
@@ -256,41 +182,41 @@ public class Decoder {
      * @return
      */
     @SuppressWarnings("unchecked")
-	public static ArrayList<Path<Double>> findAllPaths(Fst<Double> fst, HashSet<String> skipSeqs, String tie) {
-    	Semiring<Double> semiring =fst.getSemiring();
+	public static ArrayList<Path> findAllPaths(Fst fst, HashSet<String> skipSeqs, String tie) {
+    	Semiring semiring =fst.getSemiring();
     	    	
-    	ArrayList<Path<Double>> finalPaths = new ArrayList<Path<Double>>();
-    	HashMap<State<Double>, Path<Double>> paths = new HashMap<State<Double>, Path<Double>>();
-    	ArrayList<State<Double>> queue = new ArrayList<State<Double>>();
-    	Path<Double> p = new Path<Double>(fst.getSemiring());
+    	ArrayList<Path> finalPaths = new ArrayList<Path>();
+    	HashMap<State, Path> paths = new HashMap<State, Path>();
+    	ArrayList<State> queue = new ArrayList<State>();
+    	Path p = new Path(fst.getSemiring());
 		p.setCost(semiring.one());
 		paths.put(fst.getStart(), p);
 
     	queue.add(fst.getStart());
     	
     	while(queue.size()>0) {
-    		State<Double> s = queue.get(0);
+    		State s = queue.get(0);
     		queue.remove(0);
-    		if(!s.getFinalWeight().equals(semiring.zero())) {
+    		if(s.getFinalWeight() != semiring.zero()) {
     			finalPaths.add(paths.get(s));
     		}
     		
-    		Arc<Double> a;
-			for(Iterator<Arc<Double>> itA = s.arcIterator(); itA.hasNext();) {
+    		Arc a;
+    		String sym;
+			for(Iterator<Arc> itA = s.arcIterator(); itA.hasNext();) {
 				a = itA.next();
-
-        		p = new Path<Double>(fst.getSemiring());
-        		Path<Double> cur = paths.get(s);
+        		p = new Path(fst.getSemiring());
+        		Path cur = paths.get(s);
         		p.setCost(cur.getCost());
         		p.setPath((ArrayList<String>) cur.getPath().clone());
 
-        		String sym = fst.getOsyms().getValue(a.getOlabel());
+        		sym = fst.getOsyms().getValue(a.getOlabel());
         		sym = sym.replace(tie, " ");
         		if(!skipSeqs.contains(sym)) {
         			p.getPath().add(sym);
         		}
         		p.setCost(semiring.times(p.getCost(), a.getWeight()));
-        		State<Double> nextState = fst.getStateById(a.getNextStateId());
+        		State nextState = fst.getStateById(a.getNextStateId());
         		paths.put(nextState, p);
         		if(!queue.contains(nextState)) {
         			queue.add(nextState);
@@ -298,7 +224,7 @@ public class Decoder {
     		}
     	}
     	
-    	Collections.sort(finalPaths, new PathComparator<Double>());
+    	Collections.sort(finalPaths, new PathComparator());
     	
     	return finalPaths;
     }

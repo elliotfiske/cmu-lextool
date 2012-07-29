@@ -14,31 +14,31 @@
 package edu.cmu.sphinx.fst.decoder;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
-import edu.cmu.sphinx.fst.weight.Semiring;
-import edu.cmu.sphinx.fst.weight.Weight;
+import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class Path<T extends Comparable<T>> {
+public class Path {
 	private ArrayList<String> path;
-	private Weight<T> cost;
-	private Semiring<T> semiring;
+	private double cost;
+	private Semiring semiring;
 	
 	/**
 	 * 
 	 * @param path
 	 * @param semiring
 	 */
-	public Path(ArrayList<String> path, Semiring<T> semiring) {
+	public Path(ArrayList<String> path, Semiring semiring) {
 		this.path = path;
 		this.semiring = semiring;
 		cost = this.semiring.zero();
 	}
 
-	public Path(Semiring<T> semiring) {
+	public Path(Semiring semiring) {
 		this(new ArrayList<String>(), semiring);
 	}
 
@@ -52,14 +52,14 @@ public class Path<T extends Comparable<T>> {
 	/**
 	 * @return the cost
 	 */
-	public Weight<T> getCost() {
+	public double getCost() {
 		return cost;
 	}
 
 	/**
 	 * @param cost the cost to set
 	 */
-	public void setCost(Weight<T> cost) {
+	public void setCost(double cost) {
 		this.cost = cost;
 	}
 
@@ -77,14 +77,15 @@ public class Path<T extends Comparable<T>> {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(cost + "\t");
-		for(int i=0; i<path.size();i++) {
-			sb.append(path.get(i));
-			if(i<path.size() - 1) {
+		String s;
+		for(Iterator<String> it = path.iterator(); it.hasNext();) {
+			s = it.next();
+			sb.append(s);
+			
+			if(it.hasNext()) {
 				sb.append(" ");
 			}
 		}
 		return sb.toString();
 	}
-	
-	
 }

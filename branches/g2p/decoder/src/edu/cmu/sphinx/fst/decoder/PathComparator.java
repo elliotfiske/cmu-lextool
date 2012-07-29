@@ -19,11 +19,16 @@ import java.util.Comparator;
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class PathComparator<T extends Comparable<T>> implements Comparator<Path<T>> {
+public class PathComparator implements Comparator<Path> {
 
 	@Override
-	public int compare(Path<T> o1, Path<T> o2) {
-		return o1.getCost().compareTo(o2.getCost());
+	public int compare(Path o1, Path o2) {
+		if(o1.getCost() < o2.getCost()) 
+			return -1;
+		else if(o1.getCost() > o2.getCost())
+			return 1;
+		
+		return 0;
 	}
 
 }
