@@ -16,20 +16,19 @@ import edu.cmu.sphinx.fst.state.State;
 public class Project {
 	private Project() {}
 
-	public static <T extends Comparable<T>> void apply(Fst<T> fst, ProjectType pType) {
+	public static void apply(Fst fst, ProjectType pType) {
 		if(pType == ProjectType.INPUT) {
 			fst.setOsyms(fst.getIsyms());
 		} else if (pType == ProjectType.OUTPUT) {
 			fst.setIsyms(fst.getOsyms());
 		}
 
-		State<T> s;
-		Arc<T> arc;
-		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+		State s;
+		Arc arc;
+		for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 			s = itS.next();
-			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+			for(Iterator<Arc> itA = s.arcIterator(); itA.hasNext();) {
 				arc = itA.next();
-				
 				if(pType == ProjectType.INPUT) {
 					arc.setOlabel(arc.getIlabel());
 				} else if (pType == ProjectType.OUTPUT) {

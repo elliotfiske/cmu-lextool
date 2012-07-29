@@ -19,18 +19,18 @@ import edu.cmu.sphinx.fst.arc.Arc;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * @param <T>
- * @param <T>
+ * @param 
+ * @param 
  *
  */
-public class ILabelCompare<T extends Comparable<T>> implements Comparator<Arc<T>> {
+public class ILabelCompare implements Comparator<Arc> {
 
 	/*
 	 * (non-Javadoc)
 	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
 	 */
 	@Override
-	public int compare(Arc<T> o1, Arc<T> o2) {
+	public int compare(Arc o1, Arc o2) {
 		return (o1.getIlabel() < o2.getIlabel()) ? -1 : ((o1.getIlabel() == o2.getIlabel()) ? 0 : 1);
 	}
 

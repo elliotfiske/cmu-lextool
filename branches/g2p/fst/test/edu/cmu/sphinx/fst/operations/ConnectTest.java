@@ -20,7 +20,7 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -30,12 +30,9 @@ public class ConnectTest {
 	@Test
 	public void testConnect() {
 		System.out.println("Testing Connect...");
-		Fst<Double> fst = Convert.importDouble("data/tests/algorithms/connect/A", new TropicalSemiring());
-		Fst<Double> connectSaved = Convert.importDouble("data/tests/algorithms/connect/fstconnect", new TropicalSemiring());
-		//Fst<Double> connect = 
+		Fst fst = Convert.importDouble("data/tests/algorithms/connect/A", new TropicalSemiring());
+		Fst connectSaved = Convert.importDouble("data/tests/algorithms/connect/fstconnect", new TropicalSemiring());
 		Connect.apply(fst);
-		
-		//Convert.export(fst, fst.getSemiring(), "data/tests/algorithms/connect/javaconnect");
 		
 		assertTrue(connectSaved.equals(fst));
 		

@@ -28,9 +28,9 @@ import edu.cmu.sphinx.fst.state.State;
 public class ArcSort {
 	private ArcSort() {}
 	
-	public static <T extends Comparable<T>> void apply(Fst<T> fst, Comparator<Arc<T>> cmp) {
-		State<T> s;
-		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+	public static void apply(Fst fst, Comparator<Arc> cmp) {
+		State s;
+		for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 			s = itS.next();
 			s.arcSort(cmp);
 		}

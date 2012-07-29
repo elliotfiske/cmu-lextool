@@ -14,27 +14,25 @@
 
 package edu.cmu.sphinx.fst.arc;
 
-import edu.cmu.sphinx.fst.weight.Weight;
-
 /**
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  * @param <W>
  */
-public class Arc<T extends Comparable<T>> {
+public class Arc {
 	
 	// Arc's weight
-	protected Weight<T> weight;
+	private double weight;
 
 	// input label
-	protected int iLabel;
+	private int iLabel;
 	
 	// output label 
-	protected int oLabel;
+	private int oLabel;
 	
 	// next state's id
-	protected String nextStateId;
+	private String nextStateId;
 
 
 	public Arc() {}
@@ -46,31 +44,20 @@ public class Arc<T extends Comparable<T>> {
 	 * @param weight  the arc's weight
 	 * @param nextStateId the next state's id
 	 */
-	public Arc(int iLabel, int oLabel, Weight<T> weight, String nextStateId) {
+	public Arc(int iLabel, int oLabel, double weight, String nextStateId) {
 		this.weight = weight;
 		this.iLabel = iLabel;
 		this.oLabel = oLabel;
 		this.nextStateId = nextStateId;
 	}
 
-	/**
-	 * Creates a new arc
-	 * 
-	 * @param iLabel the input label's id
-	 * @param oLabel the output label's id
-	 * @param weightValue the arc's weight value
-	 * @param nextStateId the next state's id
-	 */
-	public Arc(int iLabel, int oLabel, T weightValue, String nextStateId) {
-		this(iLabel, oLabel, new Weight<T>(weightValue), nextStateId);
-	}
 	
 	/**
 	 * Get the arc's weight
 	 * 
 	 * @return the weight
 	 */
-	public Weight<T> getWeight() {
+	public double getWeight() {
 		return weight;
 	}
 
@@ -80,7 +67,7 @@ public class Arc<T extends Comparable<T>> {
 	 * 
 	 * @param weight the weight to set
 	 */
-	public void setWeight(Weight<T> weight) {
+	public void setWeight(double weight) {
 		this.weight = weight;
 	}
 
@@ -149,18 +136,14 @@ public class Arc<T extends Comparable<T>> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		@SuppressWarnings("unchecked")
-		Arc<T> other = (Arc<T>) obj;
+		Arc other = (Arc) obj;
 		if (iLabel != other.iLabel)
 			return false;
 		if (!nextStateId.equals(other.nextStateId))
 			return false;
 		if (oLabel != other.oLabel)
 			return false;
-		if (weight == null) {
-			if (other.weight != null)
-				return false;
-		} else if (!weight.equals(other.weight))
+		if (weight != other.weight)
 			return false;
 		return true;
 	}
@@ -172,21 +155,4 @@ public class Arc<T extends Comparable<T>> {
 	public String toString() {
 		return "(" + iLabel + ", " + oLabel + ", " + weight + ", " + nextStateId + ")";
 	}
-
-//	@Override
-//	public void writeExternal(ObjectOutput out) throws IOException {
-//		out.writeInt(iLabel);
-//		out.writeInt(oLabel);
-//		out.writeObject(weight);
-//		out.writeObject(nextStateId);
-//	}
-//
-//	@SuppressWarnings("unchecked")
-//	@Override
-//	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-//		iLabel = in.readInt();
-//		oLabel = in.readInt();
-//		weight = (Weight<T>) in.readObject();
-//		nextStateId = (String) in.readObject();
-//	}
 }

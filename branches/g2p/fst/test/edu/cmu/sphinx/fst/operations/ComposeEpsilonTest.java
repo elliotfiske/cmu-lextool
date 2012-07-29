@@ -20,7 +20,7 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -32,11 +32,11 @@ public class ComposeEpsilonTest {
 		System.out.println("Testing Composition with Epsilons...");
 		// Input label sort test
 	
-		Fst<Double> fstA = Convert.importDouble("data/tests/algorithms/composeeps/A", new TropicalSemiring());
-		Fst<Double> fstB = Convert.importDouble("data/tests/algorithms/composeeps/B", new TropicalSemiring());
-		Fst<Double> fstC = Convert.importDouble("data/tests/algorithms/composeeps/fstcomposeeps", new TropicalSemiring());
+		Fst fstA = Convert.importDouble("data/tests/algorithms/composeeps/A", new TropicalSemiring());
+		Fst fstB = Convert.importDouble("data/tests/algorithms/composeeps/B", new TropicalSemiring());
+		Fst fstC = Convert.importDouble("data/tests/algorithms/composeeps/fstcomposeeps", new TropicalSemiring());
 		
-		Fst<Double> fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
+		Fst fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
 
 		assertTrue(fstC.equals(fstComposed));
 

@@ -27,10 +27,9 @@ import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.utils.Mapper;
-import edu.cmu.sphinx.fst.weight.Semiring;
-import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -40,53 +39,52 @@ public class Convert {
 	
 	private Convert() {}
 	
-	public static <T extends Comparable<T>> void export(Fst<T> fst, Semiring<T> semiring, String basename) {
+	public static void export(Fst fst, Semiring semiring, String basename) {
 		exportSymbols(fst.getIsyms(), basename+".input.syms");
 		exportSymbols(fst.getOsyms(), basename+".output.syms");
 		exportSymbols(fst.getSsyms(), basename+".states.syms");
 		exportFst(fst, semiring, basename+".fst.txt");
 	}
 
-	private static <T extends Comparable<T>> void exportFst(Fst<T> fst, Semiring<T> semiring, String filename) {
+	private static void exportFst(Fst fst, Semiring semiring, String filename) {
 		FileWriter file;
 		try {
 			file = new FileWriter(filename);
 			PrintWriter out = new PrintWriter(file);
 			
 			//print start first 
-			State<T> s = fst.getStart();
-			out.println(s.getId() + "\t" + s.getFinalWeight().getValue());
+			State s = fst.getStart();
+			out.println(s.getId() + "\t" + s.getFinalWeight());
 			
 			//print all states 
-			for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 				s = itS.next();
 				if(!s.getId().equals(fst.getStartId())) {
-					out.println(s.getId() + "\t" + s.getFinalWeight().getValue());
+					out.println(s.getId() + "\t" + s.getFinalWeight());
 				}
 			}
-			Arc<T> arc;
+			Arc arc;
 			String isym;
 			String osym;
-			for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+			for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 				s = itS.next();
-				for(Iterator<Arc<T>> itA = s.arcIterator();itA.hasNext();) {
+				for(Iterator<Arc> itA = s.arcIterator();itA.hasNext();) {
 					arc = itA.next();
 					isym = (fst.getIsyms()!=null)?fst.getIsyms().getValue(arc.getIlabel()):Integer.toString(arc.getIlabel());
 					osym = (fst.getOsyms()!=null)?fst.getOsyms().getValue(arc.getOlabel()):Integer.toString(arc.getOlabel());
 					
-					out.println(s.getId() + "\t" + arc.getNextStateId() + "\t" + isym + "\t" + osym + "\t" + arc.getWeight().getValue());
+					out.println(s.getId() + "\t" + arc.getNextStateId() + "\t" + isym + "\t" + osym + "\t" + arc.getWeight());
 				}
 			}
 					
 			out.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	
 	}
 	
-	private static <T extends Comparable<T>> void exportSymbols(Mapper<Integer, String> syms, String filename) {
+	private static void exportSymbols(Mapper<Integer, String> syms, String filename) {
 		if(syms == null)
 			return;
 		
@@ -102,7 +100,6 @@ public class Convert {
 
 			out.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -131,9 +128,9 @@ public class Convert {
 		return syms;
 	}
 	
-	public static Fst<Double> importDouble(String basename, Semiring<Double> semiring) {
+	public static Fst importDouble(String basename, Semiring semiring) {
 		//TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<Double>(semiring);
+		Fst fst = new Fst(semiring);
 		
 		Mapper<Integer, String> isyms = importSymbols(basename+".input.syms");
 		if(isyms == null) {
@@ -153,11 +150,14 @@ public class Convert {
 		if(ssyms != null) {
 			ArrayList<Integer> keys = new ArrayList<Integer>(ssyms.keySet());
 			Collections.sort(keys);
+			Integer key;
+			String stateId;
+			State s;
 			// create states according to the ssyms order
-			for(int i=0; i<keys.size();i++) {
-				Integer key = keys.get(i);
-				String stateId = ssyms.getValue(key);
-				State<Double> s = new State<Double>(semiring.zero());
+			for(Iterator<Integer> it = keys.iterator(); it.hasNext();) {
+				key = it.next();
+				stateId = ssyms.getValue(key);
+				s = new State(semiring.zero());
 				s.setId(stateId);
 				fst.addState(s);
 				if(key == 0) {
@@ -184,9 +184,9 @@ public class Convert {
 			while ((strLine = br.readLine()) != null) {
 				String[] tokens = strLine.split("\\t");
 				String inputStateId = tokens[0]; 
-				State<Double> inputState = fst.getStateById(inputStateId);
+				State inputState = fst.getStateById(inputStateId);
 				if(inputState == null) {
-					inputState = new State<Double>(semiring.zero());
+					inputState = new State(semiring.zero());
 					inputState.setId(inputStateId);
 					inputStateId = fst.addState(inputState);
 				}
@@ -200,9 +200,9 @@ public class Convert {
 					String nextStateId = tokens[1]; 
 					
 
-					State<Double> nextState = fst.getStateById(nextStateId);
+					State nextState = fst.getStateById(nextStateId);
 					if(nextState == null) {
-						nextState = new State<Double>(semiring.zero());
+						nextState = new State(semiring.zero());
 						nextState.setId(nextStateId);
 						nextStateId = fst.addState(nextState);
 					}
@@ -216,12 +216,12 @@ public class Convert {
 						osyms.put(osyms.size(), tokens[3]);
 					}
 					int oLabel = osyms.getKey(tokens[3]);
-					Weight<Double> arcWeight = new Weight<Double>(Double.parseDouble(tokens[4]));
-					Arc<Double> arc = new Arc<Double>(iLabel, oLabel, arcWeight, nextStateId);
+					double arcWeight = Double.parseDouble(tokens[4]);
+					Arc arc = new Arc(iLabel, oLabel, arcWeight, nextStateId);
 					fst.addArc(inputStateId, arc);
 				} else {
 					// This is a final weight
-					Weight<Double> finalWeight = new Weight<Double>(Double.parseDouble(tokens[1]));
+					double finalWeight = Double.parseDouble(tokens[1]);
 					fst.setFinal(inputStateId, finalWeight);
 				}
 			}

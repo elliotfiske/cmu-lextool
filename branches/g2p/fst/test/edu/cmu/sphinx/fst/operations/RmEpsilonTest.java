@@ -19,7 +19,7 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
-import edu.cmu.sphinx.fst.weight.ProbabilitySemiring;
+import edu.cmu.sphinx.fst.semiring.ProbabilitySemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -31,9 +31,9 @@ public class RmEpsilonTest {
 	public void testRmEpsilon() {
 		System.out.println("Testing RmEpsilon...");
 		
-		Fst<Double> fst = Convert.importDouble("data/tests/algorithms/rmepsilon/A", new ProbabilitySemiring());
-		Fst<Double> fstRmEps = Convert.importDouble("data/tests/algorithms/rmepsilon/fstrmepsilon", new ProbabilitySemiring());
-		Fst<Double> rmEpsilon = RmEpsilon.get(fst);
+		Fst fst = Convert.importDouble("data/tests/algorithms/rmepsilon/A", new ProbabilitySemiring());
+		Fst fstRmEps = Convert.importDouble("data/tests/algorithms/rmepsilon/fstrmepsilon", new ProbabilitySemiring());
+		Fst rmEpsilon = RmEpsilon.get(fst);
 					
 		assertTrue(fstRmEps.equals(rmEpsilon));
 

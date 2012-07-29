@@ -19,9 +19,8 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.semiring.ProbabilitySemiring;
 import edu.cmu.sphinx.fst.state.State;
-import edu.cmu.sphinx.fst.weight.ProbabilitySemiring;
-import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
  * 
@@ -44,17 +43,17 @@ public class FstTest {
 	@Test
 	public void testArcMerge() {
 		System.out.println("Testing Arc Merging...");
-		Fst<Double> fst = new Fst<Double>(new ProbabilitySemiring());
+		Fst fst = new Fst(new ProbabilitySemiring());
 		
 		// State 0
-		State<Double> s = new State<Double>(0.); 
+		State s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 1, 0.5, "1"));
-		s.addArc(new Arc<Double>(2, 2, 0.5, "1"));
-		s.addArc(new Arc<Double>(2, 2, 1., "1")); 
+		s.addArc(new Arc(1, 1, 0.5, "1"));
+		s.addArc(new Arc(2, 2, 0.5, "1"));
+		s.addArc(new Arc(2, 2, 1., "1")); 
 
 		assertTrue(s.getNumArcs()==2);
-		assertTrue(s.getArc(1).getWeight().getValue().equals(1.5));
+		assertTrue(s.getArc(1).getWeight() == 1.5);
 
 		System.out.println("Testing Arc Merging Completed!\n");
 	}
@@ -62,52 +61,52 @@ public class FstTest {
 	@Test
 	public void testStateDeletions() {
 		System.out.println("Testing State Deletions...");
-		Fst<Double> fst1 = new Fst<Double>(null);
-		Fst<Double> fst2 = new Fst<Double>(null);
+		Fst fst1 = new Fst(null);
+		Fst fst2 = new Fst(null);
 		
 		// State 0
-		State<Double> s = new State<Double>(0.); 
+		State s = new State(0.); 
 		fst1.addState(s);
-		s.addArc(new Arc<Double>(0, 0, 0., "1"));
-		s.addArc(new Arc<Double>(0, 0, 0., "2"));
-		s.addArc(new Arc<Double>(0, 0, 0., "3"));
+		s.addArc(new Arc(0, 0, 0., "1"));
+		s.addArc(new Arc(0, 0, 0., "2"));
+		s.addArc(new Arc(0, 0, 0., "3"));
 		fst1.setStart(s.getId());
 		
 		// State 1
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		fst1.addState(s);
-		s.addArc(new Arc<Double>(0, 0, 0., "2"));
+		s.addArc(new Arc(0, 0, 0., "2"));
 		
 		// State 2
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		fst1.addState(s);
-		s.addArc(new Arc<Double>(0, 0, 0., "3"));
+		s.addArc(new Arc(0, 0, 0., "3"));
 
 		// State 3
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		fst1.addState(s);
-		fst1.setFinal(s.getId(), new Weight<Double>(1.));
+		fst1.setFinal(s.getId(), 1.);
 
 		
 		// State 0
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		s.setId("0");
 		fst2.addState(s);
-		s.addArc(new Arc<Double>(0, 0, 0., "2"));
-		s.addArc(new Arc<Double>(0, 0, 0., "3"));
+		s.addArc(new Arc(0, 0, 0., "2"));
+		s.addArc(new Arc(0, 0, 0., "3"));
 		fst2.setStart(s.getId());
 		
 		// State 2
-		s = new State<Double>(0.);
+		s = new State(0.);
 		s.setId("2");
 		fst2.addState(s);
-		s.addArc(new Arc<Double>(0, 0, 0., "3"));
+		s.addArc(new Arc(0, 0, 0., "3"));
 		
 		// State 3
-		s = new State<Double>(0.);
+		s = new State(0.);
 		s.setId("3");
 		fst2.addState(s);
-		fst2.setFinal(s.getId(), new Weight<Double>(1.));
+		fst2.setFinal(s.getId(), 1.);
 
 		fst1.deleteState("1");
 		

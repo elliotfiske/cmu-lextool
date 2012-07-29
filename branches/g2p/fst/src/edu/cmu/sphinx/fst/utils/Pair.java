@@ -60,14 +60,14 @@ public class Pair<L, R> {
 		return left.hashCode() ^ right.hashCode();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public boolean equals(Object o) {
 		if (o == null)
 			return false;
 		if (!(o instanceof Pair))
 			return false;
-		@SuppressWarnings("rawtypes")
-		Pair pairo = (Pair) o;
+		Pair<L, R> pairo = (Pair<L, R>) o;
 		return this.left.equals(pairo.getLeft())
 				&& this.right.equals(pairo.getRight());
 	}
