@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Vector;
 
 import edu.cmu.sphinx.fst.decoder.Decoder;
@@ -32,8 +33,11 @@ public class Phoneticize {
     	String model = args[0];
 		String words = args[1];
 		int best = Integer.parseInt(args[2]);
+//    	String model = "../data/20120728/models/6gram.fst.ser";
+//		String words = "../data/20120728/test";
+//		int best = 1;
 
-		Decoder d = new Decoder(model, true);
+		Decoder d = new Decoder(model);
 		Mapper<Integer, String> syms = d.getIsyms();
 		
 		// Parse input
@@ -47,30 +51,36 @@ public class Phoneticize {
 		
 		DataInputStream dis = new DataInputStream(fis);			
 		BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-		String strLine;		
+		String strLine;
+		String[] tokens;
+		String in;
+		Vector<String> entry;
+		String ch;
+		ArrayList<Path> res;
+		Path p;
 		try {
 			while ((strLine = br.readLine()) != null) {
-				String[] tokens = strLine.split("  ");
-				String in = tokens[0]; 
+				tokens = strLine.split("  ");
+				in = tokens[0]; 
 
 				//convert it to Vector<String> 
-				Vector<String> entry = new Vector<String>();
+				entry = new Vector<String>();
 				for(int i=0; i< in.length(); i++) {
-					String ch = Character.toString(in.charAt(i));
+					ch = in.substring(i, i+1);
 					if(syms.getKey(ch)!=null) {
 						entry.add(ch);
 					}
 				}
 		
-				ArrayList<Path<Double>> res = d.phoneticize(entry, best);
+				res = d.phoneticize(entry, best);
 				System.out.print(in +"\t");
-				for(int i=0;i<res.size();i++) {
-					Path<Double> p = res.get(i);
-
-					System.out.print(Utils.round(p.getCost().getValue(), 4) + "\t");
-					for(int j=0; j<p.getPath().size();j++) {
-						System.out.print(p.getPath().get(j));
-						if(j<p.getPath().size() - 1) {
+				for(Iterator<Path> it = res.iterator(); it.hasNext();) {
+					p = it.next();
+					System.out.print(Utils.round(p.getCost(), 4) + "\t");
+					for(Iterator<String> itS = p.getPath().iterator(); itS.hasNext();) {
+						ch = itS.next();
+						System.out.print(ch);
+						if(itS.hasNext()) {
 							System.out.print(" ");
 						}
 					}
