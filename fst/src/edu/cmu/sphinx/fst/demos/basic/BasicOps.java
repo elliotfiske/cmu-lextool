@@ -14,8 +14,7 @@
 
 package edu.cmu.sphinx.fst.demos.basic;
 
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
-import edu.cmu.sphinx.fst.weight.Weight;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 
 /**
@@ -30,10 +29,10 @@ public class BasicOps {
 	 */
 	public static void main(String[] args) {
 		TropicalSemiring s = new TropicalSemiring();
-		Weight<Double> w1 = new Weight<Double>(0.1);
-		Weight<Double> w2 = new Weight<Double>(0.5);
-		Weight<Double> one = s.one();
-		Weight<Double> zero = s.zero();
+		double w1 = 0.1;
+		double w2 = 0.5;
+		double one = s.one();
+		double zero = s.zero();
 		
 		
 		System.out.println("w1: " + w1);

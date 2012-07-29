@@ -21,8 +21,7 @@ import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.utils.Mapper;
 import edu.cmu.sphinx.fst.utils.Pair;
-import edu.cmu.sphinx.fst.weight.Semiring;
-import edu.cmu.sphinx.fst.weight.Weight;
+import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.state.State;
 
 /**
@@ -32,44 +31,47 @@ import edu.cmu.sphinx.fst.state.State;
 public class NShortestPaths {
 	private NShortestPaths() {}
 	
-	public static<T extends Comparable<T>> Weight<T>[] shortestDistance(Fst<T> fst) {
+	public static double[] shortestDistance(Fst fst) {
 		
-		Fst<T> reversed = Reverse.get(fst);
+		Fst reversed = Reverse.get(fst);
 		
-		@SuppressWarnings("unchecked")
-		Weight<T>[] d = new Weight[reversed.getNumStates()];
-		@SuppressWarnings("unchecked")
-		Weight<T>[] r = new Weight[reversed.getNumStates()];
+		double[] d = new double[reversed.getNumStates()];
+		double[] r = new double[reversed.getNumStates()];
 		
-		Semiring <T> semiring = reversed.getSemiring();
+		Semiring  semiring = reversed.getSemiring();
 
 		for(int i=0;i<d.length; i++) {
-			d[i] = new Weight<T>(semiring.zero().getValue());
-			r[i] = new Weight<T>(semiring.zero().getValue());
+			d[i] = semiring.zero();
+			r[i] = semiring.zero();
 		}
 		
-		ArrayList<State<T>> queue = new ArrayList<State<T>>();  
+		ArrayList<String> queue = new ArrayList<String>();  
 		
-		queue.add(reversed.getStart());
+		queue.add(reversed.getStartId());
 		Mapper<Integer, String> ssyms = reversed.getSsyms();
 		d[ssyms.getKey(reversed.getStartId())] = semiring.one();
 		r[ssyms.getKey(reversed.getStartId())] = semiring.one();
 		
+		State q;
+		double rnew;
+		Arc a;
+		State nextState;
+		double dnext;
+		double dnextnew;
 		while (queue.size() > 0) {
-			State<T> q = queue.get(0);
-			queue.remove(0);
-			Weight<T> rnew = r[ssyms.getKey(q.getId())];
+			q = reversed.getStateById(queue.remove(0));
+			rnew = r[ssyms.getKey(q.getId())];
 			r[ssyms.getKey(q.getId())] = semiring.zero();
-			for(Iterator<Arc<T>> itA = q.arcIterator(); itA.hasNext();) {
-				Arc<T> a = itA.next();
-				State<T> nextState = reversed.getStateById(a.getNextStateId());
-				Weight<T> dnext = d[ssyms.getKey(a.getNextStateId())];
-				Weight<T> dnextnew = semiring.plus(dnext, semiring.times(rnew, a.getWeight())); 
-				if(!dnext.equals(dnextnew)) {
+			for(Iterator<Arc> itA = q.arcIterator(); itA.hasNext();) {
+				a = itA.next();
+				nextState = reversed.getStateById(a.getNextStateId());
+				dnext = d[ssyms.getKey(a.getNextStateId())];
+				dnextnew = semiring.plus(dnext, semiring.times(rnew, a.getWeight())); 
+				if(dnext != dnextnew) {
 					d[ssyms.getKey(a.getNextStateId())] = dnextnew;
 					r[ssyms.getKey(a.getNextStateId())] = semiring.plus(r[ssyms.getKey(a.getNextStateId())], semiring.times(rnew, a.getWeight()));
-					if(!queue.contains(nextState)) {
-						queue.add(nextState);
+					if(!queue.contains(nextState.getId())) {
+						queue.add(nextState.getId());
 					}
 				}
 			}
@@ -79,7 +81,7 @@ public class NShortestPaths {
 	}
 	
 	
-	public static <T extends Comparable<T>> Fst<T> get(Fst<T> fst, int n, boolean determinize) {
+	public static  Fst get(Fst fst, int n, boolean determinize) {
 		if( fst == null) {
 			return null;
 		}
@@ -87,18 +89,18 @@ public class NShortestPaths {
 		if( fst.getSemiring() == null) {
 			return null;
 		}
-		Fst<T> fstdet = fst;
+		Fst fstdet = fst;
 		if(determinize) {
 			fstdet = Determinize.get(fst);
 		}
-		Semiring<T> semiring = fstdet.getSemiring();
-		Fst<T> res = new Fst<T>(semiring);
+		Semiring semiring = fstdet.getSemiring();
+		Fst res = new Fst(semiring);
 		res.setIsyms(fstdet.getIsyms());
 		res.setOsyms(fstdet.getOsyms());
 		
 		Mapper<Integer, String> ssyms = fstdet.getSsyms();
 
-		Weight<T>[] d = shortestDistance(fstdet);		
+		double[] d = shortestDistance(fstdet);		
 		
 		ExtendFinal.apply(fstdet);
 
@@ -106,30 +108,30 @@ public class NShortestPaths {
 		for(int i=0;i<r.length; i++) {
 			r[i] = 0;
 		}
-		ArrayList<Pair<State<T>, Weight<T>>> queue = new ArrayList<Pair<State<T>, Weight<T>>>();
-		HashMap<Pair<State<T>, Weight<T>>, Pair<State<T>, Weight<T>>> previous = new HashMap<Pair<State<T>, Weight<T>>, Pair<State<T>, Weight<T>>>();
-		HashMap<Pair<State<T>, Weight<T>>, State<T>> stateMap = new HashMap<Pair<State<T>, Weight<T>>, State<T>>();  
+		ArrayList<Pair<State, Double>> queue = new ArrayList<Pair<State, Double>>();
+		HashMap<Pair<State, Double>, Pair<State, Double>> previous = new HashMap<Pair<State, Double>, Pair<State, Double>>();
+		HashMap<Pair<State, Double>, State> stateMap = new HashMap<Pair<State, Double>, State>();  
 		
-		State<T> start = fstdet.getStart();
-		queue.add(new Pair<State<T>, Weight<T>>(start, semiring.one()));
+		State start = fstdet.getStart();
+		queue.add(new Pair<State, Double>(start, semiring.one()));
 		previous.put(queue.get(0), null);
 		
-		Pair<State<T>, Weight<T>> pair;
-		State<T> p;
-		Weight<T> c;
-		State<T> s;
-		State<T> previouState;
-		State<T> previousOldState;
-		Arc<T> arc;
-		Weight<T> cnew;
-		Pair<State<T>, Weight<T>> next;
+		Pair<State, Double> pair;
+		State p;
+		double c;
+		State s;
+		State previouState;
+		State previousOldState;
+		Arc arc;
+		double cnew;
+		Pair<State, Double> next;
 
 		while(queue.size() > 0) {
 			pair = getLess(queue, d, semiring, ssyms);
 			p = pair.getLeft();
 			c = pair.getRight();
 			
-			s = new State<T>(p.getFinalWeight());
+			s = new State(p.getFinalWeight());
 			res.addState(s);
 			stateMap.put(pair, s);
 			if(previous.get(pair) == null) {
@@ -139,10 +141,10 @@ public class NShortestPaths {
 				// add the incoming arc from previous to current
 				previouState = stateMap.get(previous.get(pair));
 				previousOldState = previous.get(pair).getLeft();
-				for(Iterator<Arc<T>> itA = previousOldState.arcIterator(); itA.hasNext();) {
+				for(Iterator<Arc> itA = previousOldState.arcIterator(); itA.hasNext();) {
 					arc = itA.next();
 					if(arc.getNextStateId().equals(p.getId())) {
-						res.addArc(previouState.getId(), new Arc<T>(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), s.getId()));
+						res.addArc(previouState.getId(), new Arc(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), s.getId()));
 					}
 				}
 			}
@@ -155,45 +157,39 @@ public class NShortestPaths {
 			}
 			
 			if(r[stateIndex] <= n) {
-//				for(int i=0; i<p.getNumArcs(); i++) {
-//					arc = p.getArc(i);
-				for(Iterator<Arc<T>> itA = p.arcIterator(); itA.hasNext();) {
+				for(Iterator<Arc> itA = p.arcIterator(); itA.hasNext();) {
 					arc = itA.next();
 					cnew = semiring.times(c, arc.getWeight());
-					next = new Pair<State<T>, Weight<T>>(fstdet.getStateById(arc.getNextStateId()), cnew); 
+					next = new Pair<State, Double>(fstdet.getStateById(arc.getNextStateId()), cnew); 
 					previous.put(next, pair);
 					queue.add(next);
 				}
 			}
 		}
-		
-//		Connect.apply(res);
 
 		return res;
-	
 	}
 	
-	private static<T extends Comparable<T>> Pair<State<T>, Weight<T>> getLess(ArrayList<Pair<State<T>, Weight<T>>> queue, Weight<T>[] d, Semiring<T> semiring, Mapper<Integer, String> ssyms){
-		Pair<State<T>, Weight<T>> res = queue.get(0);
-		int pos = 0;
+	private static Pair<State, Double> getLess(ArrayList<Pair<State, Double>> queue, double[] d, Semiring semiring, Mapper<Integer, String> ssyms){
+		Pair<State, Double> res = queue.get(0);
 		
-		State<T> previousState;
-		State<T> nextState;
-		Weight<T> previous;
-		Weight<T> next;
-		for(int i = 1; i< queue.size(); i++) {
+		Pair<State, Double> p;
+		State previousState;
+		State nextState;
+		double previous;
+		double next;
+		for(Iterator<Pair<State, Double>> it = queue.iterator(); it.hasNext();) {
+			p = it.next();
 			previousState = res.getLeft();
-			nextState = queue.get(i).getLeft();
+			nextState = p.getLeft();
 			previous = res.getRight();
-			next = queue.get(i).getRight();
+			next = p.getRight();
 			if (semiring.naturalLess(semiring.times(next, d[ssyms.getKey(nextState.getId())]), 
 					semiring.times(previous, d[ssyms.getKey(previousState.getId())]))) {
-				pos = i;
-				res = queue.get(pos);
+				res = p;
 			}
 		}
-		
-		queue.remove(pos);
+		queue.remove(res);
 		
 		return res;
 	}

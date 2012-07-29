@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -21,10 +21,10 @@ public class NShortestPathsTest {
 	public void testNShortestPaths() {
 		System.out.println("Testing NShortestPaths...");
 		
-		Fst<Double> fst = Convert.importDouble("data/tests/algorithms/shortestpath/A", new TropicalSemiring());
-		Fst<Double> nsp = Convert.importDouble("data/tests/algorithms/shortestpath/nsp", new TropicalSemiring());
+		Fst fst = Convert.importDouble("data/tests/algorithms/shortestpath/A", new TropicalSemiring());
+		Fst nsp = Convert.importDouble("data/tests/algorithms/shortestpath/nsp", new TropicalSemiring());
 		
-		Fst<Double> fstNsp = NShortestPaths.get(fst, 6, true);
+		Fst fstNsp = NShortestPaths.get(fst, 6, true);
 		
 		assertTrue(nsp.equals(fstNsp));
 		

@@ -18,9 +18,8 @@ import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.state.State;
-import edu.cmu.sphinx.fst.weight.Semiring;
-import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -30,17 +29,17 @@ public class RmEpsilon {
 	private RmEpsilon() {}
 	
 
-	private static <T extends Comparable<T>>  void put(String fromState, String toState, Weight<T> weight, HashMap<String, HashMap<String, Weight<T>>> cl) {
-		HashMap<String, Weight<T>> tmp = cl.get(fromState);
+	private static  void put(String fromState, String toState, double weight, HashMap<String, HashMap<String, Double>> cl) {
+		HashMap<String, Double> tmp = cl.get(fromState);
 		if(tmp == null) {
-			tmp = new  HashMap<String, Weight<T>>();
+			tmp = new  HashMap<String, Double>();
 			cl.put(fromState, tmp);
 		}
 		tmp.put(toState, weight);
 	}
 	
-	private static <T extends Comparable<T>>  void add(String fromState, String toState, Weight<T> weight, HashMap<String, HashMap<String, Weight<T>>> cl, Semiring <T> semiring) {
-		Weight<T> old = getPathWeight(fromState, toState, cl);
+	private static  void add(String fromState, String toState, double weight, HashMap<String, HashMap<String, Double>> cl, Semiring  semiring) {
+		Double old = getPathWeight(fromState, toState, cl);
 		if(old == null) {
 			put(fromState, toState, weight, cl);
 		} else {
@@ -49,13 +48,13 @@ public class RmEpsilon {
 
 	}
 	
-	private static <T extends Comparable<T>> void calcClosure(Fst<T> fst, String stateid, HashMap<String, HashMap<String, Weight<T>>> cl, Semiring<T> semiring) {
-		State<T> s = fst.getStateById(stateid);
+	private static void calcClosure(Fst fst, String stateid, HashMap<String, HashMap<String, Double>> cl, Semiring semiring) {
+		State s = fst.getStateById(stateid);
 
-		Arc<T> arc;
+		Arc arc;
 		String pathFinalState;
-		Weight<T> pathWeight;
-		for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+		double pathWeight;
+		for(Iterator<Arc> itA = s.arcIterator(); itA.hasNext();) {
 			arc = itA.next();
 			if((arc.getIlabel() == 0) && (arc.getOlabel() == 0)) {
 				if (cl.get(arc.getNextStateId()) == null) {
@@ -77,7 +76,7 @@ public class RmEpsilon {
   		}
 	}
 		
-	private static <T extends Comparable<T>> Weight<T> getPathWeight(String in, String out, HashMap<String, HashMap<String, Weight<T>>> cl) {
+	private static Double getPathWeight(String in, String out, HashMap<String, HashMap<String, Double>> cl) {
 		if (cl.get(in) != null) {
 			return cl.get(in).get(out);
 		}
@@ -85,7 +84,7 @@ public class RmEpsilon {
 		return null;
 	}
 
-	public static <T extends Comparable<T>> Fst<T> get(Fst<T> fst) {
+	public static Fst get(Fst fst) {
 		if (fst == null) {
 			return null;
 		}
@@ -94,26 +93,25 @@ public class RmEpsilon {
 			return null;
 		}
 		
-		HashMap<String, HashMap<String, Weight<T>>> cl;
-		Semiring<T> semiring = fst.getSemiring();
+		HashMap<String, HashMap<String, Double>> cl;
+		Semiring semiring = fst.getSemiring();
 		
-		Fst<T> res = new Fst<T>(semiring);
+		Fst res = new Fst(semiring);
 		
-		cl = new HashMap<String, HashMap<String, Weight<T>>>();
-		State<T> s;
-		State<T> newState;
-		Arc<T> arc;
-		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+		cl = new HashMap<String, HashMap<String, Double>>();
+		State s;
+		State newState;
+		Arc arc;
+		for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 			s = itS.next();
-
 			// Add non-epsilon arcs
-			newState = new State<T>(s.getFinalWeight());
+			newState = new State(s.getFinalWeight());
 			newState.setId(s.getId());
 			res.addState(newState);
-			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+			for(Iterator<Arc> itA = s.arcIterator(); itA.hasNext();) {
 				arc = itA.next();
 				if((arc.getIlabel() != 0) || (arc.getOlabel() != 0)) {
-					newState.addArc(new Arc<T>(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), arc.getNextStateId()));
+					newState.addArc(new Arc(arc.getIlabel(), arc.getOlabel(), arc.getWeight(), arc.getNextStateId()));
 				}
 			}
 			
@@ -125,23 +123,22 @@ public class RmEpsilon {
 
 		// augment fst with arcs generated from epsilon moves.
 		String pathFinalState;
-		State<T> s1;
-		Arc<T> newArc;
-		for(Iterator<State<T>> itS = res.stateIterator(); itS.hasNext();) {
+		State s1;
+		Arc newArc;
+		for(Iterator<State> itS = res.stateIterator(); itS.hasNext();) {
 			s = itS.next();
 			if(cl.get(s.getId()) != null) {
 				for (Iterator<String> it = cl.get(s.getId()).keySet().iterator(); it.hasNext();) {
 					pathFinalState = it.next();
 					s1 = fst.getStateById(pathFinalState);
 
-					if(!s1.getFinalWeight().equals(semiring.zero())) {
+					if(s1.getFinalWeight() != semiring.zero()) {
 						s.setFinalWeight(semiring.plus(s.getFinalWeight(), semiring.times(getPathWeight(s.getId(), pathFinalState, cl), s1.getFinalWeight())));
 					}
-					
-					for(Iterator<Arc<T>> itA = s1.arcIterator(); itA.hasNext();) {
+					for(Iterator<Arc> itA = s1.arcIterator(); itA.hasNext();) {
 						arc = itA.next();
 						if((arc.getIlabel() != 0) || (arc.getOlabel() != 0)) {
-							newArc = new Arc<T>(
+							newArc = new Arc(
 									arc.getIlabel(), 
 									arc.getOlabel(), 
 									semiring.times(arc.getWeight(), getPathWeight(s.getId(), pathFinalState, cl)), 

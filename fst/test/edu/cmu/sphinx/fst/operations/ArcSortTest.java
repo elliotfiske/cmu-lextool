@@ -19,9 +19,8 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 import edu.cmu.sphinx.fst.state.State;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
-import edu.cmu.sphinx.fst.weight.Weight;
 
 public class ArcSortTest {
 
@@ -32,26 +31,26 @@ public class ArcSortTest {
 	 * 
 	 * @return the created fst
 	 */
-	private Fst<Double> createOsorted() {
-		Fst<Double> fst = new Fst<Double>(new TropicalSemiring());
+	private Fst createOsorted() {
+		Fst fst = new Fst(new TropicalSemiring());
 		// State 0
-		State<Double> s = new State<Double>(0.); 
+		State s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(4, 1, 0., "2"));
-		s.addArc(new Arc<Double>(5, 2, 0., "2"));
-		s.addArc(new Arc<Double>(2, 3, 0., "1"));
-		s.addArc(new Arc<Double>(1, 4, 0., "1"));
-		s.addArc(new Arc<Double>(3, 5, 0., "1"));
+		s.addArc(new Arc(4, 1, 0., "2"));
+		s.addArc(new Arc(5, 2, 0., "2"));
+		s.addArc(new Arc(2, 3, 0., "1"));
+		s.addArc(new Arc(1, 4, 0., "1"));
+		s.addArc(new Arc(3, 5, 0., "1"));
 
 		// State 1
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(3, 1, 0., "2"));
-		s.addArc(new Arc<Double>(1, 2, 0., "2"));
-		s.addArc(new Arc<Double>(2, 3, 0., "1"));
+		s.addArc(new Arc(3, 1, 0., "2"));
+		s.addArc(new Arc(1, 2, 0., "2"));
+		s.addArc(new Arc(2, 3, 0., "1"));
 
 		// State 2 (final)
-		s = new State<Double>(new Weight<Double>(0.));
+		s = new State(0.);
 		fst.addState(s);
 		
 		return fst;
@@ -63,26 +62,26 @@ public class ArcSortTest {
 	 * 
 	 * @return the created fst
 	 */
-	private Fst<Double> createIsorted() {
-		Fst<Double> fst = new Fst<Double>(new TropicalSemiring());
+	private Fst createIsorted() {
+		Fst fst = new Fst(new TropicalSemiring());
 		// State 0
-		State<Double> s = new State<Double>(0.); 
+		State s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 4, 0., "1"));
-		s.addArc(new Arc<Double>(2, 3, 0., "1"));
-		s.addArc(new Arc<Double>(3, 5, 0., "1"));
-		s.addArc(new Arc<Double>(4, 1, 0., "2"));
-		s.addArc(new Arc<Double>(5, 2, 0., "2"));
+		s.addArc(new Arc(1, 4, 0., "1"));
+		s.addArc(new Arc(2, 3, 0., "1"));
+		s.addArc(new Arc(3, 5, 0., "1"));
+		s.addArc(new Arc(4, 1, 0., "2"));
+		s.addArc(new Arc(5, 2, 0., "2"));
 
 		// State 1
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 2, 0., "2"));
-		s.addArc(new Arc<Double>(2, 3, 0., "1"));
-		s.addArc(new Arc<Double>(3, 1, 0., "2"));
+		s.addArc(new Arc(1, 2, 0., "2"));
+		s.addArc(new Arc(2, 3, 0., "1"));
+		s.addArc(new Arc(3, 1, 0., "2"));
 
 		// State 2 (final)
-		s = new State<Double>(new Weight<Double>(0.));
+		s = new State(0.);
 		fst.addState(s);
 		
 		return fst;
@@ -94,26 +93,26 @@ public class ArcSortTest {
 	 * 
 	 * @return the created fst
 	 */
-	private Fst<Double> createUnsorted() {
-		Fst<Double> fst = new Fst<Double>(new TropicalSemiring());
+	private Fst createUnsorted() {
+		Fst fst = new Fst(new TropicalSemiring());
 		// State 0
-		State<Double> s = new State<Double>(0.); 
+		State s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 4, 0., "1"));
-		s.addArc(new Arc<Double>(3, 5, 0., "1"));
-		s.addArc(new Arc<Double>(2, 3, 0., "1"));
-		s.addArc(new Arc<Double>(5, 2, 0., "2"));
-		s.addArc(new Arc<Double>(4, 1, 0., "2"));
+		s.addArc(new Arc(1, 4, 0., "1"));
+		s.addArc(new Arc(3, 5, 0., "1"));
+		s.addArc(new Arc(2, 3, 0., "1"));
+		s.addArc(new Arc(5, 2, 0., "2"));
+		s.addArc(new Arc(4, 1, 0., "2"));
 
 		// State 1
-		s = new State<Double>(0.); 
+		s = new State(0.); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(2, 3, 0., "1"));
-		s.addArc(new Arc<Double>(3, 1, 0., "2"));
-		s.addArc(new Arc<Double>(1, 2, 0., "2"));
+		s.addArc(new Arc(2, 3, 0., "1"));
+		s.addArc(new Arc(3, 1, 0., "2"));
+		s.addArc(new Arc(1, 2, 0., "2"));
 
 		// State 2 (final)
-		s = new State<Double>(new Weight<Double>(0.));
+		s = new State(0.);
 		fst.addState(s);
 
 		return fst;
@@ -123,17 +122,17 @@ public class ArcSortTest {
 	public void testArcSort() {
 		System.out.println("Testing Arc Sort...");
 		// Input label sort test
-		Fst<Double> fst1 = createUnsorted();
-		Fst<Double> fst2 = createIsorted();
+		Fst fst1 = createUnsorted();
+		Fst fst2 = createIsorted();
 		assertTrue(!fst1.equals(fst2));
-		ArcSort.apply(fst1, new ILabelCompare<Double>());
+		ArcSort.apply(fst1, new ILabelCompare());
 		assertTrue(fst1.equals(fst2));
 		
 		// Output label sort test
 		fst1 = createUnsorted();
 		fst2 = createOsorted();
 		assertTrue(!fst1.equals(fst2));
-		ArcSort.apply(fst1, new OLabelCompare<Double>());
+		ArcSort.apply(fst1, new OLabelCompare());
 		assertTrue(fst1.equals(fst2));
 
 		System.out.println("Testing Arc Sort Completed!\n");

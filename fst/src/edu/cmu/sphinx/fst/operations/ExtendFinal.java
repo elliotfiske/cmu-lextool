@@ -18,8 +18,8 @@ import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.state.State;
-import edu.cmu.sphinx.fst.weight.Semiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -29,44 +29,44 @@ public class ExtendFinal {
 	
 	private ExtendFinal() {}
 	
-	public static <T extends Comparable<T>> void apply(Fst<T> fst) {
-		Semiring<T> semiring = fst.getSemiring();
-		ArrayList<State<T>> fStates = new ArrayList<State<T>>();
+	public static void apply(Fst fst) {
+		Semiring semiring = fst.getSemiring();
+		ArrayList<State> fStates = new ArrayList<State>();
 		
-		State<T> s;
-		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+		State s;
+		for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 			s = itS.next();
-			if (!s.getFinalWeight().equals(semiring.zero())) {
+			if (s.getFinalWeight() != semiring.zero()) {
 				fStates.add(s);
 			}
 		}
 		
 		// Add a new single final
-		State<T> newFinal = new State<T>(semiring.one());
+		State newFinal = new State(semiring.one());
 		fst.addState(newFinal);
-		for(int i=0; i<fStates.size(); i++) {
-			s = fStates.get(i);
+		for(Iterator<State> it = fStates.iterator(); it.hasNext();) {
+			s = it.next();
 			// add epsilon transition from the old final to the new one 
-			s.addArc(new Arc<T>(0, 0, s.getFinalWeight(), newFinal.getId()));
+			s.addArc(new Arc(0, 0, s.getFinalWeight(), newFinal.getId()));
 			// set old state's weight to zero
 			s.setFinalWeight(semiring.zero());
 		}
 	}
 	
-	public static <T extends Comparable<T>> void undo(Fst<T> fst) {
+	public static void undo(Fst fst) {
 		// Hopefully, the final state is the last one. We just added it before
-		State<T> f = fst.getStateByIndex(fst.getNumStates()-1);
+		State f = fst.getStateByIndex(fst.getNumStates()-1);
 		// confirm that this is the final
-		if(f.getFinalWeight().equals(fst.getSemiring().zero())) {
+		if(f.getFinalWeight() == fst.getSemiring().zero()) {
 			// not a final. 
 			// TODO: Find it!
 		}
 		
-		State<T> s;
-		Arc<T> a;
-		for(Iterator<State<T>> itS = fst.stateIterator(); itS.hasNext();) {
+		State s;
+		Arc a;
+		for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
 			s = itS.next();
-			for(Iterator<Arc<T>> itA = s.arcIterator(); itA.hasNext();) {
+			for(Iterator<Arc> itA = s.arcIterator(); itA.hasNext();) {
 				a = itA.next();
 				if(a.getIlabel()==0 && a.getOlabel() == 0 && a.getNextStateId().equals(f.getId())) {
 					s.setFinalWeight(a.getWeight());

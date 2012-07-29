@@ -20,37 +20,33 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.arc.Arc;
-import edu.cmu.sphinx.fst.weight.Semiring;
-import edu.cmu.sphinx.fst.weight.Weight;
+import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
  *
  */
-public class State<T extends Comparable<T>> {
+public class State {
 	
 	// Id
 	private String id;
 
 	// Final weight
-	private Weight<T> fnlWeight;
+	private double fnlWeight;
 
 	// Outgoing arcs collection 
-	private ArrayList<Arc<T>> arcs = new ArrayList<Arc<T>>();
+	private ArrayList<Arc> arcs = new ArrayList<Arc>();
 
 	// holds the semiring
-	private Semiring<T> semiring;
+	private Semiring semiring;
 	
 	
 	public State() {}
 	/**
 	 * 
 	 */
-	public State(T weight) {
-		fnlWeight = new Weight<T>(weight);
-	}
 	
-	public void arcSort(Comparator<Arc<T>> cmp) {
+	public void arcSort(Comparator<Arc> cmp) {
 		Collections.sort(arcs, cmp);
 	}
 
@@ -58,23 +54,34 @@ public class State<T extends Comparable<T>> {
 	 * 
 	 * @param fnlWeight
 	 */
-	public State(Weight<T> fnlWeight) {
+	public State(double fnlWeight) {
 		this.fnlWeight = fnlWeight;
 	}
 	
 	/**
 	 * @return the Final weight
 	 */
-	public Weight<T> getFinalWeight() {
+	public double getFinalWeight() {
 		return fnlWeight;
 	}
 
-	
 	/**
-	 * @param fnlWeight the Final weight to set
+	 * @return the arcs
 	 */
-	public void setFinalWeight(Weight<T> fnlWeight) {
-		this.fnlWeight = fnlWeight;
+	public ArrayList<Arc> getArcs() {
+		return arcs;
+	}
+	/**
+	 * @param arcs the arcs to set
+	 */
+	public void setArcs(ArrayList<Arc> arcs) {
+		this.arcs = arcs;
+	}
+	/**
+	 * @param fnldouble the Final weight to set
+	 */
+	public void setFinalWeight(double fnldouble) {
+		this.fnlWeight = fnldouble;
 	}
 
 	/**
@@ -94,14 +101,14 @@ public class State<T extends Comparable<T>> {
 	/**
 	 * @return the semiring
 	 */
-	public Semiring<T> getSemiring() {
+	public Semiring getSemiring() {
 		return semiring;
 	}
 
 	/**
 	 * @param semiring the semiring to set
 	 */
-	public void setSemiring(Semiring<T> semiring) {
+	public void setSemiring(Semiring semiring) {
 		this.semiring = semiring;
 	}
 
@@ -116,7 +123,7 @@ public class State<T extends Comparable<T>> {
 	/**
 	 * @return the arcs
 	 */
-	public Iterator<Arc<T>> arcIterator() {
+	public Iterator<Arc> arcIterator() {
 		return arcs.iterator();
 	}
 	
@@ -126,22 +133,21 @@ public class State<T extends Comparable<T>> {
 	 * @param arc the arc to add
 	 * @return the arc's index
 	 */
-	public void addArc(Arc<T> arc) {
+	public void addArc(Arc arc) {
 		if(this.semiring != null) {
 			// Check if there is already an arc with same input/output labels and nextstate
-			Arc<T> oldArc;
-			for (Iterator<Arc<T>> it = arcs.iterator(); it.hasNext();) {
+			Arc oldArc;
+			for (Iterator<Arc> it = arcs.iterator(); it.hasNext();) {
 				oldArc = it.next();
 				if((oldArc.getIlabel() == arc.getIlabel()) &&
 						(oldArc.getOlabel() == arc.getOlabel()) &&
 						(oldArc.getNextStateId().equals(arc.getNextStateId()))) {
-					//newArc = oldArc.copy();
 					oldArc.setWeight(semiring.plus(oldArc.getWeight(), arc.getWeight()));
 					return;
 				}
 			}
 		} else {
-			System.out.println(("Semiring is null. Merging of arcs will not happen"));
+			System.err.println(("Semiring is null. Merging of arcs will not happen"));
 		}
 
 		this.arcs.add(arc);
@@ -153,7 +159,7 @@ public class State<T extends Comparable<T>> {
 	 * @param aIndex the arc's index
 	 * @return the arc
 	 */
-	public Arc<T> getArc(int index) {
+	public Arc getArc(int index) {
 			return this.arcs.get(index);
 	}
 
@@ -168,22 +174,18 @@ public class State<T extends Comparable<T>> {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		@SuppressWarnings("unchecked")
-		State<T> other = (State<T>) obj;
+		State other = (State) obj;
 		if (id == null) {
 			if (other.id != null)
 				return false;
 		} else if (!id.equals(other.id))
 			return false;
-//		if (arcs == null) {
-//			if (other.arcs != null)
-//				return false;
-//		} else if (!arcs.equals(other.arcs))
-//			return false;
-		if (fnlWeight == null) {
-			if (other.fnlWeight != null)
+		if (arcs == null) {
+			if (other.arcs != null)
 				return false;
-		} else if (!fnlWeight.equals(other.fnlWeight))
+		} else if (!arcs.equals(other.arcs))
+			return false;
+		if (fnlWeight != other.fnlWeight)
 			return false;
 		return true;
 	}
@@ -196,42 +198,19 @@ public class State<T extends Comparable<T>> {
 		StringBuilder sb = new StringBuilder();
 		sb.append("("+id+ ", "+ fnlWeight+")");
 		return sb.toString();
-//		return id;
 	}
 
 	// delete an arc
-	public Arc<T> deleteArc(int index) {
+	public Arc deleteArc(int index) {
 		return this.arcs.remove(index);
 	}
 
 	public boolean isFinal() {
 		if(semiring == null) {
-			System.out.println(("Semiring is null. Cannot determine if state is final."));
+			System.err.println(("Semiring is null. Cannot determine if state is final."));
 			return false;
 		}
-		return !this.fnlWeight.equals(semiring.zero());
+		return this.fnlWeight != semiring.zero();
 	}
 
-//	@Override
-//	public void writeExternal(ObjectOutput out) throws IOException {
-//		out.writeObject(id);
-//		out.writeObject(fnlWeight);
-//		out.writeInt(arcs.size());
-//		for(Iterator<Arc<T>> it = arcs.iterator(); it.hasNext();) {
-//			out.writeObject(it.next());
-//		}
-//		
-//	}
-//
-//	@SuppressWarnings("unchecked")
-//	@Override
-//	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-//		id = (String) in.readObject();
-//		fnlWeight = (Weight<T>) in.readObject();
-//		int numArcs = in.readInt();
-//		for(int i=0; i<numArcs; i++) {
-//			arcs.add((Arc<T>) in.readObject());
-//		}
-//		
-//	}	
 }

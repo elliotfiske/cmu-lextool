@@ -19,10 +19,9 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.arc.Arc;
 import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.utils.Mapper;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
-import edu.cmu.sphinx.fst.weight.Weight;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -35,9 +34,9 @@ public class ProjectTest {
 	 * 
 	 * @return the created fst
 	 */
-	private Fst<Double> createFst() {
+	private Fst createFst() {
 		TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<Double>(ts);
+		Fst fst = new Fst(ts);
 		
 		Mapper<Integer, String> isyms = new Mapper<Integer, String>();
 		isyms.put(0, "<eps>");
@@ -56,25 +55,25 @@ public class ProjectTest {
 		osyms.put(5, "y");
 
 		// State 0
-		State<Double> s = new State<Double>(ts.zero()); 
+		State s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 5, 1., "1"));
-		s.addArc(new Arc<Double>(2, 4, 3., "1"));
+		s.addArc(new Arc(1, 5, 1., "1"));
+		s.addArc(new Arc(2, 4, 3., "1"));
 		fst.setStart(s.getId());
 		
 		// State 1
-		s = new State<Double>(ts.zero()); 
+		s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(3, 3, 7., "1"));
-		s.addArc(new Arc<Double>(4, 2, 5., "2"));
+		s.addArc(new Arc(3, 3, 7., "1"));
+		s.addArc(new Arc(4, 2, 5., "2"));
 
 		// State 2
-		s = new State<Double>(ts.zero()); 
+		s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(5, 1, 9., "3"));
+		s.addArc(new Arc(5, 1, 9., "3"));
 
 		// State 3
-		s = new State<Double>(new Weight<Double>(2.)); 
+		s = new State(2.); 
 		fst.addState(s);
 
 		fst.setIsyms(isyms);
@@ -89,9 +88,9 @@ public class ProjectTest {
 	 * 
 	 * @return the created fst
 	 */
-	private Fst<Double> createPi() {
+	private Fst createPi() {
 		TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<Double>(ts);
+		Fst fst = new Fst(ts);
 		
 		Mapper<Integer, String> syms = new Mapper<Integer, String>();
 		syms.put(0, "<eps>");
@@ -102,25 +101,25 @@ public class ProjectTest {
 		syms.put(5, "f");
 		
 		// State 0
-		State<Double> s = new State<Double>(ts.zero()); 
+		State s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 1, 1., "1"));
-		s.addArc(new Arc<Double>(2, 2, 3., "1"));
+		s.addArc(new Arc(1, 1, 1., "1"));
+		s.addArc(new Arc(2, 2, 3., "1"));
 		fst.setStart(s.getId());
 		
 		// State 1
-		s = new State<Double>(ts.zero()); 
+		s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(3, 3, 7., "1"));
-		s.addArc(new Arc<Double>(4, 4, 5., "2"));
+		s.addArc(new Arc(3, 3, 7., "1"));
+		s.addArc(new Arc(4, 4, 5., "2"));
 
 		// State 2
-		s = new State<Double>(ts.zero()); 
+		s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(5, 5, 9., "3"));
+		s.addArc(new Arc(5, 5, 9., "3"));
 
 		// State 3
-		s = new State<Double>(new Weight<Double>(2.)); 
+		s = new State(2.); 
 		fst.addState(s);
 
 		fst.setIsyms(syms);
@@ -135,9 +134,9 @@ public class ProjectTest {
 	 * 
 	 * @return the created fst
 	 */
-	private Fst<Double> createPo() {
+	private Fst createPo() {
 		TropicalSemiring ts = new TropicalSemiring();
-		Fst<Double> fst = new Fst<Double>(ts);
+		Fst fst = new Fst(ts);
 		
 		Mapper<Integer, String> syms = new Mapper<Integer, String>();
 		syms.put(0, "<eps>");
@@ -148,25 +147,25 @@ public class ProjectTest {
 		syms.put(5, "y");
 
 		// State 0
-		State<Double> s = new State<Double>(ts.zero()); 
+		State s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(5, 5, 1., "1"));
-		s.addArc(new Arc<Double>(4, 4, 3., "1"));
+		s.addArc(new Arc(5, 5, 1., "1"));
+		s.addArc(new Arc(4, 4, 3., "1"));
 		fst.setStart(s.getId());
 		
 		// State 1
-		s = new State<Double>(ts.zero()); 
+		s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(3, 3, 7., "1"));
-		s.addArc(new Arc<Double>(2, 2, 5., "2"));
+		s.addArc(new Arc(3, 3, 7., "1"));
+		s.addArc(new Arc(2, 2, 5., "2"));
 
 		// State 2
-		s = new State<Double>(ts.zero()); 
+		s = new State(ts.zero()); 
 		fst.addState(s);
-		s.addArc(new Arc<Double>(1, 1, 9., "3"));
+		s.addArc(new Arc(1, 1, 9., "3"));
 
 		// State 3
-		s = new State<Double>(new Weight<Double>(2.)); 
+		s = new State(2.); 
 		fst.addState(s);
 
 		fst.setIsyms(syms);
@@ -178,8 +177,8 @@ public class ProjectTest {
 	public void testProject() {
 		System.out.println("Testing Project...");
 		// Project on Input label 
-		Fst<Double> fst = createFst();
-		Fst<Double> p = createPi();
+		Fst fst = createFst();
+		Fst p = createPi();
 		Project.apply(fst, ProjectType.INPUT);
 		assertTrue(fst.equals(p));
 		

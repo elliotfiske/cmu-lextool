@@ -23,14 +23,14 @@ import edu.cmu.sphinx.fst.arc.Arc;
  * @param <T>
  *
  */
-public class OLabelCompare<T extends Comparable<T>> implements Comparator<Arc<T>> {
+public class OLabelCompare implements Comparator<Arc> {
 
 	/*
 	 * (non-Javadoc)
 	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
 	 */
 	@Override
-	public int compare(Arc<T> o1, Arc<T> o2) {
+	public int compare(Arc o1, Arc o2) {
 		return (o1.getOlabel() < o2.getOlabel()) ? -1 : ((o1.getOlabel() == o2.getOlabel()) ? 0 : 1);
 	}
 

@@ -10,6 +10,7 @@
  * WARRANTIES.
  *
  */
+
 package edu.cmu.sphinx.fst.operations;
 
 import static org.junit.Assert.assertTrue;
@@ -18,7 +19,7 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * Compose Testing for 
@@ -35,11 +36,11 @@ public class ComposeTest {
 	@Test
 	public void testCompose() {
 		System.out.println("Testing Composition...");
-		Fst<Double> fstA = Convert.importDouble("data/tests/algorithms/compose/A", new TropicalSemiring());
-		Fst<Double> fstB = Convert.importDouble("data/tests/algorithms/compose/B", new TropicalSemiring());
-		Fst<Double> composed = Convert.importDouble("data/tests/algorithms/compose/fstcompose", new TropicalSemiring());
+		Fst fstA = Convert.importDouble("data/tests/algorithms/compose/A", new TropicalSemiring());
+		Fst fstB = Convert.importDouble("data/tests/algorithms/compose/B", new TropicalSemiring());
+		Fst composed = Convert.importDouble("data/tests/algorithms/compose/fstcompose", new TropicalSemiring());
 		
-		Fst<Double> fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
+		Fst fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
 		
 		assertTrue(composed.equals(fstComposed));
 		

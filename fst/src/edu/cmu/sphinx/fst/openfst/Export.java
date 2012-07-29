@@ -14,7 +14,7 @@
 package edu.cmu.sphinx.fst.openfst;
 
 import edu.cmu.sphinx.fst.fst.Fst;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -34,7 +34,7 @@ public class Export {
 			System.exit(1);
 		}
 		
-		Fst<Double> fst = Fst.loadModel(args[0]);
+		Fst fst = Fst.loadModel(args[0]);
 		
 		// Serialize the java fst model to disk
 		System.out.println("Saving as openfst text model...");

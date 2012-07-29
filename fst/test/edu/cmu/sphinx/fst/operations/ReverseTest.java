@@ -9,7 +9,7 @@ import org.junit.Test;
 
 import edu.cmu.sphinx.fst.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
-import edu.cmu.sphinx.fst.weight.TropicalSemiring;
+import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -21,10 +21,10 @@ public class ReverseTest {
 		System.out.println("Testing Reverse...");
 		// Input label sort test
 	
-		Fst<Double> fst = Convert.importDouble("data/tests/algorithms/reverse/A", new TropicalSemiring());
-		Fst<Double> fstB = Convert.importDouble("data/tests/algorithms/reverse/fstreverse", new TropicalSemiring());
+		Fst fst = Convert.importDouble("data/tests/algorithms/reverse/A", new TropicalSemiring());
+		Fst fstB = Convert.importDouble("data/tests/algorithms/reverse/fstreverse", new TropicalSemiring());
 		
-		Fst<Double> fstReversed = Reverse.get(fst);
+		Fst fstReversed = Reverse.get(fst);
 
 		assertTrue(fstB.equals(fstReversed));
 
