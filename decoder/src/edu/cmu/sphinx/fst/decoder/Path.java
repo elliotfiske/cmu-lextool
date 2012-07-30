@@ -14,78 +14,77 @@
 package edu.cmu.sphinx.fst.decoder;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class Path {
-	private ArrayList<String> path;
-	private double cost;
-	private Semiring semiring;
-	
-	/**
-	 * 
-	 * @param path
-	 * @param semiring
-	 */
-	public Path(ArrayList<String> path, Semiring semiring) {
-		this.path = path;
-		this.semiring = semiring;
-		cost = this.semiring.zero();
-	}
+    private ArrayList<String> path;
+    private float cost;
+    private Semiring semiring;
 
-	public Path(Semiring semiring) {
-		this(new ArrayList<String>(), semiring);
-	}
+    /**
+     * 
+     * @param path
+     * @param semiring
+     */
+    public Path(ArrayList<String> path, Semiring semiring) {
+        this.path = path;
+        this.semiring = semiring;
+        cost = this.semiring.zero();
+    }
 
-	/**
-	 * @return the path
-	 */
-	public ArrayList<String> getPath() {
-		return path;
-	}
+    public Path(Semiring semiring) {
+        this(new ArrayList<String>(), semiring);
+    }
 
-	/**
-	 * @return the cost
-	 */
-	public double getCost() {
-		return cost;
-	}
+    /**
+     * @return the path
+     */
+    public ArrayList<String> getPath() {
+        return path;
+    }
 
-	/**
-	 * @param cost the cost to set
-	 */
-	public void setCost(double cost) {
-		this.cost = cost;
-	}
+    /**
+     * @return the cost
+     */
+    public float getCost() {
+        return cost;
+    }
 
-	/**
-	 * @param path the path to set
-	 */
-	public void setPath(ArrayList<String> path) {
-		this.path = path;
-	}
+    /**
+     * @param cost the cost to set
+     */
+    public void setCost(float cost) {
+        this.cost = cost;
+    }
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(cost + "\t");
-		String s;
-		for(Iterator<String> it = path.iterator(); it.hasNext();) {
-			s = it.next();
-			sb.append(s);
-			
-			if(it.hasNext()) {
-				sb.append(" ");
-			}
-		}
-		return sb.toString();
-	}
+    /**
+     * @param path the path to set
+     */
+    public void setPath(ArrayList<String> path) {
+        this.path = path;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(cost + "\t");
+        for (String s : path) {
+            sb.append(s);
+
+            if (!s.equals(path.get(path.size() - 1))) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
+    }
 }
