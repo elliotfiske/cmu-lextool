@@ -21,86 +21,93 @@ import edu.cmu.sphinx.fst.utils.Utils;
  */
 public class ProbabilitySemiring extends Semiring {
 
-	private static final long serialVersionUID = 5592668313009971909L;
-	private static double zero = 0.;
-	private static double one = 1.; 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#Plus(edu.cmu.sphinx.fst.weight.double,
-	 * edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public double plus(double w1, double w2) {
-		if (!isMember(w1) || !isMember(w2)) {
-			return Double.NEGATIVE_INFINITY;
-		}
+    private static final long serialVersionUID = 5592668313009971909L;
+    private static float zero = 0.f;
+    private static float one = 1.f;
 
-		return Utils.round(w1 + w2, accuracy);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.AbstractSemiring#Plus(edu.cmu.sphinx.fst.weight
+     * .float, edu.cmu.sphinx.fst.weight.float)
+     */
+    @Override
+    public float plus(float w1, float w2) {
+        if (!isMember(w1) || !isMember(w2)) {
+            return Float.NEGATIVE_INFINITY;
+        }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#Times(edu.cmu.sphinx.fst.weight.double,
-	 * edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public double times(double w1, double w2) {
-		if (!isMember(w1) || !isMember(w2)) {
-			return Double.NEGATIVE_INFINITY;
-		}
+        return Utils.round(w1 + w2, accuracy);
+    }
 
-		return Utils.round(w1 * w2, accuracy);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.AbstractSemiring#Times(edu.cmu.sphinx.fst.weight
+     * .float, edu.cmu.sphinx.fst.weight.float)
+     */
+    @Override
+    public float times(float w1, float w2) {
+        if (!isMember(w1) || !isMember(w2)) {
+            return Float.NEGATIVE_INFINITY;
+        }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#Divide(edu.cmu.sphinx.fst.weight.double,
-	 * edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public double divide(double w1, double w2) {
-		// TODO Auto-generated method stub
-		return Double.NEGATIVE_INFINITY;
-	}
+        return Utils.round(w1 * w2, accuracy);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#zero()
-	 */
-	@Override
-	public double zero() {
-		return zero;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.AbstractSemiring#Divide(edu.cmu.sphinx.fst.
+     * weight.float, edu.cmu.sphinx.fst.weight.float)
+     */
+    @Override
+    public float divide(float w1, float w2) {
+        // TODO Auto-generated method stub
+        return Float.NEGATIVE_INFINITY;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#one()
-	 */
-	@Override
-	public double one() {
-		return one;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#zero()
+     */
+    @Override
+    public float zero() {
+        return zero;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#isMember(edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public boolean isMember(double w) {
-		return !Double.isNaN(w)                    // not a NaN,
-				&& (w >= 0);                     			// and positive
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see edu.cmu.sphinx.fst.weight.AbstractSemiring#one()
+     */
+    @Override
+    public float one() {
+        return one;
+    }
 
-	@Override
-	public double reverse(double w1) {
-		// TODO: ???
-		System.out.println("Not Implemented");
-		return Double.NEGATIVE_INFINITY;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.Semiring#isMember(edu.cmu.sphinx.fst.weight
+     * .float)
+     */
+    @Override
+    public boolean isMember(float w) {
+        return !Float.isNaN(w) // not a NaN,
+                && (w >= 0); // and positive
+    }
+
+    @Override
+    public float reverse(float w1) {
+        // TODO: ???
+        System.out.println("Not Implemented");
+        return Float.NEGATIVE_INFINITY;
+    }
 
 }

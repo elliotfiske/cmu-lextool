@@ -17,26 +17,29 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
 import edu.cmu.sphinx.fst.semiring.ProbabilitySemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class RmEpsilonTest {
 
-	@Test
-	public void testRmEpsilon() {
-		System.out.println("Testing RmEpsilon...");
-		
-		Fst fst = Convert.importDouble("data/tests/algorithms/rmepsilon/A", new ProbabilitySemiring());
-		Fst fstRmEps = Convert.importDouble("data/tests/algorithms/rmepsilon/fstrmepsilon", new ProbabilitySemiring());
-		Fst rmEpsilon = RmEpsilon.get(fst);
-					
-		assertTrue(fstRmEps.equals(rmEpsilon));
+    @Test
+    public void testRmEpsilon() {
+        System.out.println("Testing RmEpsilon...");
 
-		System.out.println("Testing RmEpsilon Completed!\n");
-	}
+        Fst fst = Convert.importFloat("data/tests/algorithms/rmepsilon/A",
+                new ProbabilitySemiring());
+        Fst fstRmEps = Convert.importFloat(
+                "data/tests/algorithms/rmepsilon/fstrmepsilon",
+                new ProbabilitySemiring());
+        Fst rmEpsilon = RmEpsilon.get(fst);
+
+        assertTrue(fstRmEps.equals(rmEpsilon));
+
+        System.out.println("Testing RmEpsilon Completed!\n");
+    }
 }

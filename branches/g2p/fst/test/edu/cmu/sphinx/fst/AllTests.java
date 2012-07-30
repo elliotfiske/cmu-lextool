@@ -19,38 +19,28 @@ import edu.cmu.sphinx.fst.operations.ProjectTest;
 import edu.cmu.sphinx.fst.operations.ReverseTest;
 import edu.cmu.sphinx.fst.operations.RmEpsilonTest;
 
-
 /**
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
  */
 @RunWith(Suite.class)
-@SuiteClasses({FstTest.class, 
-	ImportTest.class,
-	ArcSortTest.class, 
-	ComposeEpsilonTest.class,
-	ComposeTest.class, 
-	ConnectTest.class, 
-	DeterminizeTest.class,
-	NShortestPathsTest.class,
-	ProjectTest.class,
-	ReverseTest.class,
-	RmEpsilonTest.class
-	})
+@SuiteClasses({ FstTest.class, ImportTest.class, ArcSortTest.class,
+        ComposeEpsilonTest.class, ComposeTest.class, ConnectTest.class,
+        DeterminizeTest.class, NShortestPathsTest.class, ProjectTest.class,
+        ReverseTest.class, RmEpsilonTest.class })
 public class AllTests {
 
-	/**
-	 * for running the tests from commandline
-	 * 
-	 * @param args        the commandline arguments - ignored
-	 */
-	public static void main(String []args) {
-		Result result = JUnitCore.runClasses(AllTests.class);
-		for (Failure failure : result.getFailures()) {
-			System.out.println(failure.toString());
-		}
-	}
+    /**
+     * for running the tests from commandline
+     * 
+     * @param args the commandline arguments - ignored
+     */
+    public static void main(String[] args) {
+        Result result = JUnitCore.runClasses(AllTests.class);
+        for (Failure failure : result.getFailures()) {
+            System.out.println(failure.toString());
+        }
+    }
 
 }
-

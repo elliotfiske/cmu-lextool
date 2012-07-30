@@ -7,27 +7,29 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class NShortestPathsTest {
 
-	@Test
-	public void testNShortestPaths() {
-		System.out.println("Testing NShortestPaths...");
-		
-		Fst fst = Convert.importDouble("data/tests/algorithms/shortestpath/A", new TropicalSemiring());
-		Fst nsp = Convert.importDouble("data/tests/algorithms/shortestpath/nsp", new TropicalSemiring());
-		
-		Fst fstNsp = NShortestPaths.get(fst, 6, true);
-		
-		assertTrue(nsp.equals(fstNsp));
-		
-		System.out.println("Testing NShortestPaths Completed!\n");
-	}
+    @Test
+    public void testNShortestPaths() {
+        System.out.println("Testing NShortestPaths...");
+
+        Fst fst = Convert.importFloat("data/tests/algorithms/shortestpath/A",
+                new TropicalSemiring());
+        Fst nsp = Convert.importFloat("data/tests/algorithms/shortestpath/nsp",
+                new TropicalSemiring());
+
+        Fst fstNsp = NShortestPaths.get(fst, 6, true);
+
+        assertTrue(nsp.equals(fstNsp));
+
+        System.out.println("Testing NShortestPaths Completed!\n");
+    }
 }

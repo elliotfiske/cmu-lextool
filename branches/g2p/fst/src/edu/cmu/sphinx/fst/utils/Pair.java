@@ -22,64 +22,61 @@ package edu.cmu.sphinx.fst.utils;
  */
 public class Pair<L, R> {
 
-	private L left;
-	private R right;
-	
-	public Pair(L left, R right) {
-		this.left = left;
-		this.right = right;
-	}
+    private L left;
+    private R right;
 
-	
-	/**
-	 * @param left the left to set
-	 */
-	public void setLeft(L left) {
-		this.left = left;
-	}
+    public Pair(L left, R right) {
+        this.left = left;
+        this.right = right;
+    }
 
+    /**
+     * @param left the left to set
+     */
+    public void setLeft(L left) {
+        this.left = left;
+    }
 
-	/**
-	 * @param right the right to set
-	 */
-	public void setRight(R right) {
-		this.right = right;
-	}
+    /**
+     * @param right the right to set
+     */
+    public void setRight(R right) {
+        this.right = right;
+    }
 
+    public L getLeft() {
+        return left;
+    }
 
-	public L getLeft() {
-		return left;
-	}
+    public R getRight() {
+        return right;
+    }
 
-	public R getRight() {
-		return right;
-	}
+    @Override
+    public int hashCode() {
+        return left.hashCode() ^ right.hashCode();
+    }
 
-	@Override
-	public int hashCode() {
-		return left.hashCode() ^ right.hashCode();
-	}
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean equals(Object o) {
+        if (o == null)
+            return false;
+        if (!(o instanceof Pair))
+            return false;
+        Pair<L, R> pairo = (Pair<L, R>) o;
+        return this.left.equals(pairo.getLeft())
+                && this.right.equals(pairo.getRight());
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public boolean equals(Object o) {
-		if (o == null)
-			return false;
-		if (!(o instanceof Pair))
-			return false;
-		Pair<L, R> pairo = (Pair<L, R>) o;
-		return this.left.equals(pairo.getLeft())
-				&& this.right.equals(pairo.getRight());
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return "(" + left + ", " + right + ")";
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "(" + left + ", " + right + ")";
+    }
 
 }
