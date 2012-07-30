@@ -11,104 +11,117 @@
  *
  */
 
-
 package edu.cmu.sphinx.fst.semiring;
 
 import edu.cmu.sphinx.fst.utils.Utils;
 
-
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class LogSemiring extends Semiring {
 
-	private static final long serialVersionUID = 5212106775584311083L;
-	private static double zero = Double.POSITIVE_INFINITY;
-	private static double one = 0.;
+    private static final long serialVersionUID = 5212106775584311083L;
+    private static float zero = Float.POSITIVE_INFINITY;
+    private static float one = 0.f;
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#plus(edu.cmu.sphinx.fst.weight.double, edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public double plus(double w1, double w2) {
-		if (!isMember(w1) || !isMember(w2)) {
-			return Double.NEGATIVE_INFINITY;
-		}
-		if(w1 == Double.POSITIVE_INFINITY) {
-			return w2;
-		} else if(w2 == Double.POSITIVE_INFINITY) {
-			return w1;
-		} 
-		return Utils.round(-Math.log(Math.exp(-w1) + Math.exp(-w2)), accuracy);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.Semiring#plus(edu.cmu.sphinx.fst.weight.float,
+     * edu.cmu.sphinx.fst.weight.float)
+     */
+    @Override
+    public float plus(float w1, float w2) {
+        if (!isMember(w1) || !isMember(w2)) {
+            return Float.NEGATIVE_INFINITY;
+        }
+        if (w1 == Float.POSITIVE_INFINITY) {
+            return w2;
+        } else if (w2 == Float.POSITIVE_INFINITY) {
+            return w1;
+        }
+        return Utils.round((float) -Math.log(Math.exp(-w1) + Math.exp(-w2)),
+                accuracy);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#times(edu.cmu.sphinx.fst.weight.double, edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public double times(double w1, double w2) {
-		if (!isMember(w1) || !isMember(w2)) {
-			return Double.NEGATIVE_INFINITY;
-		}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.Semiring#times(edu.cmu.sphinx.fst.weight.float,
+     * edu.cmu.sphinx.fst.weight.float)
+     */
+    @Override
+    public float times(float w1, float w2) {
+        if (!isMember(w1) || !isMember(w2)) {
+            return Float.NEGATIVE_INFINITY;
+        }
 
-		return Utils.round(w1 + w2, accuracy);
-	}
+        return Utils.round(w1 + w2, accuracy);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#divide(edu.cmu.sphinx.fst.weight.double, edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public double divide(double w1, double w2) {
-		if (!isMember(w1) || !isMember(w2)) {
-			return Double.NEGATIVE_INFINITY;
-		}
-		
-		if(w2 == zero) {
-			return Double.NEGATIVE_INFINITY;
-		} else if (w1 == zero) {
-			return zero;
-		}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.Semiring#divide(edu.cmu.sphinx.fst.weight.float
+     * , edu.cmu.sphinx.fst.weight.float)
+     */
+    @Override
+    public float divide(float w1, float w2) {
+        if (!isMember(w1) || !isMember(w2)) {
+            return Float.NEGATIVE_INFINITY;
+        }
 
-		return w1 - w2;
-	}
+        if (w2 == zero) {
+            return Float.NEGATIVE_INFINITY;
+        } else if (w1 == zero) {
+            return zero;
+        }
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#zero()
-	 */
-	@Override
-	public double zero() {
-		return zero;
-	}
+        return w1 - w2;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#one()
-	 */
-	@Override
-	public double one() {
-		return one;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see edu.cmu.sphinx.fst.weight.Semiring#zero()
+     */
+    @Override
+    public float zero() {
+        return zero;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * @see edu.cmu.sphinx.fst.weight.Semiring#isMember(edu.cmu.sphinx.fst.weight.double)
-	 */
-	@Override
-	public boolean isMember(double w) {
-		return (!Double.isNaN(w))                     // not a NaN
-				&& (w != Double.NEGATIVE_INFINITY); // and different from -inf
-	}
-	
-	@Override
-	public double reverse(double w1) {
-		// TODO: ???
-		System.out.println("Not Implemented");
-		return Double.NEGATIVE_INFINITY;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see edu.cmu.sphinx.fst.weight.Semiring#one()
+     */
+    @Override
+    public float one() {
+        return one;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * edu.cmu.sphinx.fst.weight.Semiring#isMember(edu.cmu.sphinx.fst.weight
+     * .float)
+     */
+    @Override
+    public boolean isMember(float w) {
+        return (!Float.isNaN(w)) // not a NaN
+                && (w != Float.NEGATIVE_INFINITY); // and different from -inf
+    }
+
+    @Override
+    public float reverse(float w1) {
+        // TODO: ???
+        System.out.println("Not Implemented");
+        return Float.NEGATIVE_INFINITY;
+    }
 
 }

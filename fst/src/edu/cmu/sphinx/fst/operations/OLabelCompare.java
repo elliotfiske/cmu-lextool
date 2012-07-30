@@ -15,23 +15,22 @@ package edu.cmu.sphinx.fst.operations;
 
 import java.util.Comparator;
 
-import edu.cmu.sphinx.fst.arc.Arc;
+import edu.cmu.sphinx.fst.Arc;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * @param <T>
- * @param <T>
- *
  */
 public class OLabelCompare implements Comparator<Arc> {
 
-	/*
-	 * (non-Javadoc)
-	 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-	 */
-	@Override
-	public int compare(Arc o1, Arc o2) {
-		return (o1.getOlabel() < o2.getOlabel()) ? -1 : ((o1.getOlabel() == o2.getOlabel()) ? 0 : 1);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+     */
+    @Override
+    public int compare(Arc o1, Arc o2) {
+        return (o1.getOlabel() < o2.getOlabel()) ? -1 : ((o1.getOlabel() == o2
+                .getOlabel()) ? 0 : 1);
+    }
 
 }

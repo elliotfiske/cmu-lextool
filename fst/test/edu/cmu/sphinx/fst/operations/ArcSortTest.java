@@ -17,126 +17,125 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import edu.cmu.sphinx.fst.arc.Arc;
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Arc;
+import edu.cmu.sphinx.fst.Fst;
+import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
-import edu.cmu.sphinx.fst.state.State;
 
 public class ArcSortTest {
 
+    /**
+     * Create an output label sorted fst as per the example at
+     * http://www.openfst.org/twiki/bin/view/FST/ArcSortDoc
+     * 
+     * @return the created fst
+     */
+    private Fst createOsorted() {
+        Fst fst = new Fst(new TropicalSemiring());
+        // State 0
+        State s = new State(0.f);
+        fst.addState(s);
+        s.addArc(new Arc(4, 1, 0.f, "2"));
+        s.addArc(new Arc(5, 2, 0.f, "2"));
+        s.addArc(new Arc(2, 3, 0.f, "1"));
+        s.addArc(new Arc(1, 4, 0.f, "1"));
+        s.addArc(new Arc(3, 5, 0.f, "1"));
 
-	/**
-	 * Create an output label sorted fst
-	 * as per the example at http://www.openfst.org/twiki/bin/view/FST/ArcSortDoc
-	 * 
-	 * @return the created fst
-	 */
-	private Fst createOsorted() {
-		Fst fst = new Fst(new TropicalSemiring());
-		// State 0
-		State s = new State(0.); 
-		fst.addState(s);
-		s.addArc(new Arc(4, 1, 0., "2"));
-		s.addArc(new Arc(5, 2, 0., "2"));
-		s.addArc(new Arc(2, 3, 0., "1"));
-		s.addArc(new Arc(1, 4, 0., "1"));
-		s.addArc(new Arc(3, 5, 0., "1"));
+        // State 1
+        s = new State(0.f);
+        fst.addState(s);
+        s.addArc(new Arc(3, 1, 0.f, "2"));
+        s.addArc(new Arc(1, 2, 0.f, "2"));
+        s.addArc(new Arc(2, 3, 0.f, "1"));
 
-		// State 1
-		s = new State(0.); 
-		fst.addState(s);
-		s.addArc(new Arc(3, 1, 0., "2"));
-		s.addArc(new Arc(1, 2, 0., "2"));
-		s.addArc(new Arc(2, 3, 0., "1"));
+        // State 2 (final)
+        s = new State(0.f);
+        fst.addState(s);
 
-		// State 2 (final)
-		s = new State(0.);
-		fst.addState(s);
-		
-		return fst;
-	}
-	
-	/**
-	 * Create an input label sorted fst
-	 * as per the example at http://www.openfst.org/twiki/bin/view/FST/ArcSortDoc
-	 * 
-	 * @return the created fst
-	 */
-	private Fst createIsorted() {
-		Fst fst = new Fst(new TropicalSemiring());
-		// State 0
-		State s = new State(0.); 
-		fst.addState(s);
-		s.addArc(new Arc(1, 4, 0., "1"));
-		s.addArc(new Arc(2, 3, 0., "1"));
-		s.addArc(new Arc(3, 5, 0., "1"));
-		s.addArc(new Arc(4, 1, 0., "2"));
-		s.addArc(new Arc(5, 2, 0., "2"));
+        return fst;
+    }
 
-		// State 1
-		s = new State(0.); 
-		fst.addState(s);
-		s.addArc(new Arc(1, 2, 0., "2"));
-		s.addArc(new Arc(2, 3, 0., "1"));
-		s.addArc(new Arc(3, 1, 0., "2"));
+    /**
+     * Create an input label sorted fst as per the example at
+     * http://www.openfst.org/twiki/bin/view/FST/ArcSortDoc
+     * 
+     * @return the created fst
+     */
+    private Fst createIsorted() {
+        Fst fst = new Fst(new TropicalSemiring());
+        // State 0
+        State s = new State(0.f);
+        fst.addState(s);
+        s.addArc(new Arc(1, 4, 0.f, "1"));
+        s.addArc(new Arc(2, 3, 0.f, "1"));
+        s.addArc(new Arc(3, 5, 0.f, "1"));
+        s.addArc(new Arc(4, 1, 0.f, "2"));
+        s.addArc(new Arc(5, 2, 0.f, "2"));
 
-		// State 2 (final)
-		s = new State(0.);
-		fst.addState(s);
-		
-		return fst;
-	}
+        // State 1
+        s = new State(0.f);
+        fst.addState(s);
+        s.addArc(new Arc(1, 2, 0.f, "2"));
+        s.addArc(new Arc(2, 3, 0.f, "1"));
+        s.addArc(new Arc(3, 1, 0.f, "2"));
 
-	/**
-	 * Create an unsorted fst
-	 * as per the example at http://www.openfst.org/twiki/bin/view/FST/ArcSortDoc
-	 * 
-	 * @return the created fst
-	 */
-	private Fst createUnsorted() {
-		Fst fst = new Fst(new TropicalSemiring());
-		// State 0
-		State s = new State(0.); 
-		fst.addState(s);
-		s.addArc(new Arc(1, 4, 0., "1"));
-		s.addArc(new Arc(3, 5, 0., "1"));
-		s.addArc(new Arc(2, 3, 0., "1"));
-		s.addArc(new Arc(5, 2, 0., "2"));
-		s.addArc(new Arc(4, 1, 0., "2"));
+        // State 2 (final)
+        s = new State(0.f);
+        fst.addState(s);
 
-		// State 1
-		s = new State(0.); 
-		fst.addState(s);
-		s.addArc(new Arc(2, 3, 0., "1"));
-		s.addArc(new Arc(3, 1, 0., "2"));
-		s.addArc(new Arc(1, 2, 0., "2"));
+        return fst;
+    }
 
-		// State 2 (final)
-		s = new State(0.);
-		fst.addState(s);
+    /**
+     * Create an unsorted fst as per the example at
+     * http://www.openfst.org/twiki/bin/view/FST/ArcSortDoc
+     * 
+     * @return the created fst
+     */
+    private Fst createUnsorted() {
+        Fst fst = new Fst(new TropicalSemiring());
+        // State 0
+        State s = new State(0.f);
+        fst.addState(s);
+        s.addArc(new Arc(1, 4, 0.f, "1"));
+        s.addArc(new Arc(3, 5, 0.f, "1"));
+        s.addArc(new Arc(2, 3, 0.f, "1"));
+        s.addArc(new Arc(5, 2, 0.f, "2"));
+        s.addArc(new Arc(4, 1, 0.f, "2"));
 
-		return fst;
-	}
+        // State 1
+        s = new State(0.f);
+        fst.addState(s);
+        s.addArc(new Arc(2, 3, 0.f, "1"));
+        s.addArc(new Arc(3, 1, 0.f, "2"));
+        s.addArc(new Arc(1, 2, 0.f, "2"));
 
-	@Test
-	public void testArcSort() {
-		System.out.println("Testing Arc Sort...");
-		// Input label sort test
-		Fst fst1 = createUnsorted();
-		Fst fst2 = createIsorted();
-		assertTrue(!fst1.equals(fst2));
-		ArcSort.apply(fst1, new ILabelCompare());
-		assertTrue(fst1.equals(fst2));
-		
-		// Output label sort test
-		fst1 = createUnsorted();
-		fst2 = createOsorted();
-		assertTrue(!fst1.equals(fst2));
-		ArcSort.apply(fst1, new OLabelCompare());
-		assertTrue(fst1.equals(fst2));
+        // State 2 (final)
+        s = new State(0.f);
+        fst.addState(s);
 
-		System.out.println("Testing Arc Sort Completed!\n");
+        return fst;
+    }
 
-	}
+    @Test
+    public void testArcSort() {
+        System.out.println("Testing Arc Sort...");
+        // Input label sort test
+        Fst fst1 = createUnsorted();
+        Fst fst2 = createIsorted();
+        assertTrue(!fst1.equals(fst2));
+        ArcSort.apply(fst1, new ILabelCompare());
+        assertTrue(fst1.equals(fst2));
+
+        // Output label sort test
+        fst1 = createUnsorted();
+        fst2 = createOsorted();
+        assertTrue(!fst1.equals(fst2));
+        ArcSort.apply(fst1, new OLabelCompare());
+        assertTrue(fst1.equals(fst2));
+
+        System.out.println("Testing Arc Sort Completed!\n");
+
+    }
 
 }

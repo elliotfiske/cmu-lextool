@@ -15,33 +15,35 @@ package edu.cmu.sphinx.fst.operations;
 
 import static org.junit.Assert.*;
 
-
 import org.junit.Test;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class ConnectTest {
-	@Test
-	public void testConnect() {
-		System.out.println("Testing Connect...");
-		Fst fst = Convert.importDouble("data/tests/algorithms/connect/A", new TropicalSemiring());
-		Fst connectSaved = Convert.importDouble("data/tests/algorithms/connect/fstconnect", new TropicalSemiring());
-		Connect.apply(fst);
-		
-		assertTrue(connectSaved.equals(fst));
-		
-		System.out.println("Testing Connect Completed!\n");
-	}
-	
-	public static void main(String[] args) {
-		ConnectTest test = new ConnectTest();
-		test.testConnect();
-	}
-	
+    @Test
+    public void testConnect() {
+        System.out.println("Testing Connect...");
+        Fst fst = Convert.importFloat("data/tests/algorithms/connect/A",
+                new TropicalSemiring());
+        Fst connectSaved = Convert.importFloat(
+                "data/tests/algorithms/connect/fstconnect",
+                new TropicalSemiring());
+        Connect.apply(fst);
+
+        assertTrue(connectSaved.equals(fst));
+
+        System.out.println("Testing Connect Completed!\n");
+    }
+
+    public static void main(String[] args) {
+        ConnectTest test = new ConnectTest();
+        test.testConnect();
+    }
+
 }

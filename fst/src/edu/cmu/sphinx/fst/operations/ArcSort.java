@@ -14,28 +14,23 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.Comparator;
-import java.util.Iterator;
 
-
-import edu.cmu.sphinx.fst.arc.Arc;
-import edu.cmu.sphinx.fst.fst.Fst;
-import edu.cmu.sphinx.fst.state.State;
+import edu.cmu.sphinx.fst.Arc;
+import edu.cmu.sphinx.fst.Fst;
+import edu.cmu.sphinx.fst.State;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class ArcSort {
-	private ArcSort() {}
-	
-	public static void apply(Fst fst, Comparator<Arc> cmp) {
-		State s;
-		for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
-			s = itS.next();
-			s.arcSort(cmp);
-		}
-	}
+    private ArcSort() {
+    }
 
-
+    public static void apply(Fst fst, Comparator<Arc> cmp) {
+        for (State s : fst.getStates()) {
+            s.arcSort(cmp);
+        }
+    }
 
 }

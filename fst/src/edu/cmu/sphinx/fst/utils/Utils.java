@@ -17,82 +17,82 @@ import java.util.Vector;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class Utils {
 
-	public static Vector<String> split_string(String input, String delim) {
-		Vector<String> res = new Vector<String>();
-		
-		int start = 0;
-		int len = 0;
-		int pos = 0;
+    public static Vector<String> split_string(String input, String delim) {
+        Vector<String> res = new Vector<String>();
 
-		while (start < input.length()) {
-			if (delim.isEmpty()) {
-				len = 1;
-			} else {
-				pos = input.indexOf(delim, start);
-				if (pos != -1) {
-					len = pos - start;
-				} else {
-					len = input.length();
-				}
-			}
-			res.add(input.substring(start, len));
-			if (delim.isEmpty()) {
-				start = start + len;
-			} else {
-				start = start + len + delim.length();
-			}
-		}
-		
-		
-		return res;
-	}
+        int start = 0;
+        int len = 0;
+        int pos = 0;
 
-	public static int search(Vector<String> src, Vector<String> pattern, int start) {
-		int index = -1;
-		int pos = -1;
-		int startpos =0;
-		if(start > src.size() - pattern.size()) {
-			return -1;
-		}
-		
-		do {
-			pos = src.subList(startpos + start, src.size()-pattern.size()+1).indexOf(pattern.get(0));
-			if (pos == -1){
-				return pos;
-			}
-				
-			boolean flag = true;
-			for(int i = 1; i< pattern.size(); i++) {
-				if(!src.get(startpos + start+pos+i).equals(pattern.get(i))) {
-					index = -1;
-					flag = false;
-					break;
-				}
-			}
-			
-			if(flag) {
-				index = startpos + pos;
-				break;
-			} else {
-				startpos += pos + 1;
-			}
-		} while (startpos + start < src.size());
-		
-		return index;
-	}
+        while (start < input.length()) {
+            if (delim.isEmpty()) {
+                len = 1;
+            } else {
+                pos = input.indexOf(delim, start);
+                if (pos != -1) {
+                    len = pos - start;
+                } else {
+                    len = input.length();
+                }
+            }
+            res.add(input.substring(start, len));
+            if (delim.isEmpty()) {
+                start = start + len;
+            } else {
+                start = start + len + delim.length();
+            }
+        }
 
-	
-	public static Double round(Double value, int digits) {
-		if(Double.isInfinite(value) || Double.isNaN(value)) {
-			return value;
-		}
-		Double res = new Double((double) Math.round(value * Math.pow(10, digits)) / Math.pow(10, digits));
-		return res;
-	}
+        return res;
+    }
 
+    public static int search(Vector<String> src, Vector<String> pattern,
+            int start) {
+        int index = -1;
+        int pos = -1;
+        int startpos = 0;
+        if (start > src.size() - pattern.size()) {
+            return -1;
+        }
+
+        do {
+            pos = src
+                    .subList(startpos + start, src.size() - pattern.size() + 1)
+                    .indexOf(pattern.get(0));
+            if (pos == -1) {
+                return pos;
+            }
+
+            boolean flag = true;
+            for (int i = 1; i < pattern.size(); i++) {
+                if (!src.get(startpos + start + pos + i).equals(pattern.get(i))) {
+                    index = -1;
+                    flag = false;
+                    break;
+                }
+            }
+
+            if (flag) {
+                index = startpos + pos;
+                break;
+            } else {
+                startpos += pos + 1;
+            }
+        } while (startpos + start < src.size());
+
+        return index;
+    }
+
+    public static float round(float value, int digits) {
+        if (Float.isInfinite(value) || Float.isNaN(value)) {
+            return value;
+        }
+        return (float) (Math.round(value * Math.pow(10, digits)) / Math.pow(10,
+                digits));
+    }
 
 }

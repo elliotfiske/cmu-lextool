@@ -17,33 +17,37 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.openfst.Convert;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
- * Compose Testing for 
+ * Compose Testing for
  * 
- * Examples provided by 
- * M. Mohri, "Weighted Automata Algorithms", Handbook of Weighted Automata, Springer-Verlag, 2009, pp. 213–254.
+ * Examples provided by M. Mohri, "Weighted Automata Algorithms", Handbook of
+ * Weighted Automata, Springer-Verlag, 2009, pp. 213–254.
  * 
  * 
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class ComposeTest {
-	@Test
-	public void testCompose() {
-		System.out.println("Testing Composition...");
-		Fst fstA = Convert.importDouble("data/tests/algorithms/compose/A", new TropicalSemiring());
-		Fst fstB = Convert.importDouble("data/tests/algorithms/compose/B", new TropicalSemiring());
-		Fst composed = Convert.importDouble("data/tests/algorithms/compose/fstcompose", new TropicalSemiring());
-		
-		Fst fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
-		
-		assertTrue(composed.equals(fstComposed));
-		
-		System.out.println("Testing Composition Completed!\n");
-	}
+    @Test
+    public void testCompose() {
+        System.out.println("Testing Composition...");
+        Fst fstA = Convert.importFloat("data/tests/algorithms/compose/A",
+                new TropicalSemiring());
+        Fst fstB = Convert.importFloat("data/tests/algorithms/compose/B",
+                new TropicalSemiring());
+        Fst composed = Convert.importFloat(
+                "data/tests/algorithms/compose/fstcompose",
+                new TropicalSemiring());
+
+        Fst fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
+
+        assertTrue(composed.equals(fstComposed));
+
+        System.out.println("Testing Composition Completed!\n");
+    }
 }

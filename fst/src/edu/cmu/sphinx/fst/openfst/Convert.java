@@ -23,12 +23,11 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 
-import edu.cmu.sphinx.fst.arc.Arc;
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Arc;
+import edu.cmu.sphinx.fst.Fst;
+import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.Semiring;
-import edu.cmu.sphinx.fst.state.State;
 import edu.cmu.sphinx.fst.utils.Mapper;
 
 /**
@@ -53,25 +52,20 @@ public class Convert {
 			PrintWriter out = new PrintWriter(file);
 			
 			//print start first 
-			State s = fst.getStart();
-			out.println(s.getId() + "\t" + s.getFinalWeight());
+			State start = fst.getStart();
+			out.println(start.getId() + "\t" + start.getFinalWeight());
 			
 			//print all states 
-			for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
-				s = itS.next();
+			for(State s : fst.getStates()) {
 				if(!s.getId().equals(fst.getStartId())) {
 					out.println(s.getId() + "\t" + s.getFinalWeight());
 				}
 			}
-			Arc arc;
-			String isym;
-			String osym;
-			for(Iterator<State> itS = fst.stateIterator(); itS.hasNext();) {
-				s = itS.next();
-				for(Iterator<Arc> itA = s.arcIterator();itA.hasNext();) {
-					arc = itA.next();
-					isym = (fst.getIsyms()!=null)?fst.getIsyms().getValue(arc.getIlabel()):Integer.toString(arc.getIlabel());
-					osym = (fst.getOsyms()!=null)?fst.getOsyms().getValue(arc.getOlabel()):Integer.toString(arc.getOlabel());
+
+			for(State s : fst.getStates()) {
+				for(Arc arc: s.getArcs()) {
+					String isym = (fst.getIsyms()!=null)?fst.getIsyms().getValue(arc.getIlabel()):Integer.toString(arc.getIlabel());
+					String osym = (fst.getOsyms()!=null)?fst.getOsyms().getValue(arc.getOlabel()):Integer.toString(arc.getOlabel());
 					
 					out.println(s.getId() + "\t" + arc.getNextStateId() + "\t" + isym + "\t" + osym + "\t" + arc.getWeight());
 				}
@@ -88,9 +82,8 @@ public class Convert {
 		if(syms == null)
 			return;
 		
-		FileWriter file;
 		try {
-			file = new FileWriter(filename);
+			FileWriter file = new FileWriter(filename);
 			PrintWriter out = new PrintWriter(file);
 
 			for(int i=0; i<syms.size(); i++) {
@@ -107,13 +100,12 @@ public class Convert {
 	private static Mapper<Integer, String> importSymbols(String filename) {
 		Mapper<Integer, String> syms = null;
 		
-		FileInputStream fis = null;
 		try {
-			fis = new FileInputStream(filename);
+			FileInputStream fis = new FileInputStream(filename);
 			DataInputStream dis = new DataInputStream(fis);			
 			BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-			String strLine;		
 			syms = new Mapper<Integer, String>();
+			String strLine;		
 			while ((strLine = br.readLine()) != null) {
 				String[] tokens = strLine.split("\\t");
 				String sym = tokens[0];
@@ -128,7 +120,7 @@ public class Convert {
 		return syms;
 	}
 	
-	public static Fst importDouble(String basename, Semiring semiring) {
+	public static Fst importFloat(String basename, Semiring semiring) {
 		//TropicalSemiring ts = new TropicalSemiring();
 		Fst fst = new Fst(semiring);
 		
@@ -150,14 +142,11 @@ public class Convert {
 		if(ssyms != null) {
 			ArrayList<Integer> keys = new ArrayList<Integer>(ssyms.keySet());
 			Collections.sort(keys);
-			Integer key;
-			String stateId;
-			State s;
+
 			// create states according to the ssyms order
-			for(Iterator<Integer> it = keys.iterator(); it.hasNext();) {
-				key = it.next();
-				stateId = ssyms.getValue(key);
-				s = new State(semiring.zero());
+			for(Integer key: keys) {
+				String stateId = ssyms.getValue(key);
+				State s = new State(semiring.zero());
 				s.setId(stateId);
 				fst.addState(s);
 				if(key == 0) {
@@ -178,8 +167,8 @@ public class Convert {
 		
 		DataInputStream dis = new DataInputStream(fis);			
 		BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-		String strLine;		
 		boolean firstLine = true;
+		String strLine;		
 		try {
 			while ((strLine = br.readLine()) != null) {
 				String[] tokens = strLine.split("\\t");
@@ -216,12 +205,12 @@ public class Convert {
 						osyms.put(osyms.size(), tokens[3]);
 					}
 					int oLabel = osyms.getKey(tokens[3]);
-					double arcWeight = Double.parseDouble(tokens[4]);
+					float arcWeight = Float.parseFloat(tokens[4]);
 					Arc arc = new Arc(iLabel, oLabel, arcWeight, nextStateId);
 					fst.addArc(inputStateId, arc);
 				} else {
 					// This is a final weight
-					double finalWeight = Double.parseDouble(tokens[1]);
+					float finalWeight = Float.parseFloat(tokens[1]);
 					fst.setFinal(inputStateId, finalWeight);
 				}
 			}

@@ -15,38 +15,41 @@ package edu.cmu.sphinx.fst.openfst;
 
 import java.io.IOException;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class Import {
-	
-	private Import() {}
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		if(args.length < 2) {
-			System.err.println("Input and output files not provided");
-			System.err.println("You need to provide both the input binary openfst model");
-			System.err.println("and the output serialized java fst model.");
-			System.exit(1);
-		}
-		
-		Fst fst = Convert.importDouble(args[0], new TropicalSemiring());
-		
-		// Serialize the java fst model to disk
-		System.out.println("Saving as binary java fst model...");
+
+    private Import() {
+    }
+
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        if (args.length < 2) {
+            System.err.println("Input and output files not provided");
+            System.err
+                    .println("You need to provide both the input binary openfst model");
+            System.err.println("and the output serialized java fst model.");
+            System.exit(1);
+        }
+
+        Fst fst = Convert.importFloat(args[0], new TropicalSemiring());
+
+        // Serialize the java fst model to disk
+        System.out.println("Saving as binary java fst model...");
         try {
-        	fst.saveModel(args[1]);
-        	
+            fst.saveModel(args[1]);
+
         } catch (IOException e) {
-			System.err.println("Cannot write to file " + args[1]);
-			System.exit(1); 
-		}
-	}
+            System.err.println("Cannot write to file " + args[1]);
+            System.exit(1);
+        }
+    }
 }

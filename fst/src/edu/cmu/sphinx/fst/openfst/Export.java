@@ -13,32 +13,34 @@
 
 package edu.cmu.sphinx.fst.openfst;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- *
+ * 
  */
 public class Export {
-	private Export() {}
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		if(args.length < 2) {
-			System.err.println("Input and output files not provided");
-			System.err.println("You need to provide both the input serialized java fst model");
-			System.err.println("and the output binary openfst model.");
-			System.exit(1);
-		}
-		
-		Fst fst = Fst.loadModel(args[0]);
-		
-		// Serialize the java fst model to disk
-		System.out.println("Saving as openfst text model...");
+    private Export() {
+    }
+
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        if (args.length < 2) {
+            System.err.println("Input and output files not provided");
+            System.err
+                    .println("You need to provide both the input serialized java fst model");
+            System.err.println("and the output binary openfst model.");
+            System.exit(1);
+        }
+
+        Fst fst = Fst.loadModel(args[0]);
+
+        // Serialize the java fst model to disk
+        System.out.println("Saving as openfst text model...");
         Convert.export(fst, new TropicalSemiring(), args[1]);
-	}
+    }
 
 }

@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import edu.cmu.sphinx.fst.fst.Fst;
+import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
@@ -26,18 +26,19 @@ import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
  * 
  */
 public class ImportTest {
-	
-	@Test
-	public void testConvert() {
-		System.out.println("Testing Import...");
-		
-		Fst fst1 = Convert.importDouble("data/openfst/basic", new TropicalSemiring());
 
-		Fst fst2 = Fst.loadModel("data/openfst/basic.fst.ser");
-		
-		assertTrue(fst1.equals(fst2));
+    @Test
+    public void testConvert() {
+        System.out.println("Testing Import...");
 
-		System.out.println("Testing Import Completed!\n");
-	}
+        Fst fst1 = Convert.importFloat("data/openfst/basic",
+                new TropicalSemiring());
+
+        Fst fst2 = Fst.loadModel("data/openfst/basic.fst.ser");
+
+        assertTrue(fst1.equals(fst2));
+
+        System.out.println("Testing Import Completed!\n");
+    }
 
 }
