@@ -1,0 +1,15 @@
+The files were created with th following options:
+text-a.giglm.gz: build-lm.sh -i text-a -o text-a.giglm -k 3 -p -b
+text-a.dict: dict -i=text-a -o=text-a.dict -pf=2
+text-a.lm: -tr=text-a -o=text-a.lm -n=3 -lm=msb -bo=yes
+
+Perplexity of test file on gigantic LM is %% Nw=49984 PP=1051.87 PPwp=653.21 Nbo=42450 Noov=3009 OOV=6.02%
+Perplexity of test file on normal LM is %% Nw=49984 PP=783.20 PPwp=486.37 Nbo=42450 Noov=3009 OOV=6.02%
+
+Sentence perplexities for sentence-test for the gigantic LM:
+%% sent_Nw=1 sent_PP=23.50 sent_PPwp=0.00 sent_Nbo=0 sent_Noov=0 sent_OOV=0.00%
+%% sent_Nw=30 sent_PP=2965.17 sent_PPwp=2619.40 sent_Nbo=26 sent_Noov=4 sent_OOV=13.33%
+%% sent_Nw=36 sent_PP=5475.84 sent_PPwp=4891.99 sent_Nbo=59 sent_Noov=5 sent_OOV=13.89%
+%% sent_Nw=22 sent_PP=769.24 sent_PPwp=591.51 sent_Nbo=76 sent_Noov=2 sent_OOV=9.09%
+
+
