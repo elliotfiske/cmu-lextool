@@ -51,18 +51,22 @@ public class ExtendFinal {
     }
 
     public static void undo(Fst fst) {
-        // Hopefully, the final state is the last one. We just added it before
-        State f = fst.getStateByIndex(fst.getNumStates() - 1);
-        // confirm that this is the final
-        if (f.getFinalWeight() == fst.getSemiring().zero()) {
-            // not a final.
-            // TODO: Find it!
+        State f = null;
+        for (State s : fst.getStates()) {
+            if (s.getFinalWeight() != fst.getSemiring().zero()) {
+                f = s;
+                break;
+            }
         }
 
+        if(f == null) {
+            System.err.println("Final state not found.");
+            return;
+        }
         for (State s : fst.getStates()) {
             for (Arc a : s.getArcs()) {
                 if (a.getIlabel() == 0 && a.getOlabel() == 0
-                        && a.getNextStateId().equals(f.getId())) {
+                        && a.getNextStateId() == f.getId()) {
                     s.setFinalWeight(a.getWeight());
                 }
             }

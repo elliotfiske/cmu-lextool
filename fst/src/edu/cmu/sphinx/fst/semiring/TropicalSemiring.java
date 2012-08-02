@@ -13,8 +13,6 @@
 
 package edu.cmu.sphinx.fst.semiring;
 
-import edu.cmu.sphinx.fst.utils.Utils;
-
 /**
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
@@ -56,7 +54,7 @@ public class TropicalSemiring extends Semiring {
             return Float.NEGATIVE_INFINITY;
         }
 
-        return Utils.round(w1 + w2, accuracy);
+        return w1 + w2;
     }
 
     /*
@@ -78,7 +76,7 @@ public class TropicalSemiring extends Semiring {
             return zero;
         }
 
-        return Utils.round(w1 - w2, accuracy);
+        return w1 - w2;
     }
 
     /*

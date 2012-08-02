@@ -10,11 +10,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Vector;
 
 import edu.cmu.sphinx.fst.decoder.Decoder;
 import edu.cmu.sphinx.fst.decoder.Path;
-import edu.cmu.sphinx.fst.utils.Mapper;
 import edu.cmu.sphinx.fst.utils.Utils;
 
 /**
@@ -29,15 +30,14 @@ public class Phoneticize {
      * @param args[2] number of best paths to return
      */
     public static void main(String[] args) {
+        long start = GregorianCalendar.getInstance().getTimeInMillis();
+
         String model = args[0];
         String words = args[1];
         int best = Integer.parseInt(args[2]);
-        // String model = "../data/20120728/models/6gram.fst.ser";
-        // String words = "../data/20120728/test";
-        // int best = 1;
 
         Decoder d = new Decoder(model);
-        Mapper<Integer, String> syms = d.getIsyms();
+        HashMap<String, Integer> syms = d.getModelIsyms();
 
         // Parse input
         FileInputStream fis = null;
@@ -51,6 +51,7 @@ public class Phoneticize {
         DataInputStream dis = new DataInputStream(fis);
         BufferedReader br = new BufferedReader(new InputStreamReader(dis));
         String strLine;
+        int wordCount = 0;
         try {
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("  ");
@@ -60,21 +61,28 @@ public class Phoneticize {
                 Vector<String> entry = new Vector<String>();
                 for (int i = 0; i < in.length(); i++) {
                     String ch = in.substring(i, i + 1);
-                    if (syms.getKey(ch) != null) {
+                    if (syms.get(ch) != null) {
                         entry.add(ch);
                     }
                 }
 
                 ArrayList<Path> res = d.phoneticize(entry, best);
+                wordCount++;
                 System.out.print(in + "\t");
                 for (Path p : res) {
                     System.out.print(Utils.round(p.getCost(), 4) + "\t");
+                    int count = 0;
                     for (String str : p.getPath()) {
+                        count++;
                         System.out.print(str);
-                        if (!str.equals(p.getPath().get(p.getPath().size() - 1))) {
+                        if (count != p.getPath().size()) {
                             System.out.print(" ");
                         }
                     }
+                    System.out.println();
+                }
+                if (res.size() == 0) {
+                    // just print a new line
                     System.out.println();
                 }
             }
@@ -82,5 +90,9 @@ public class Phoneticize {
             e.printStackTrace();
             System.exit(1);
         }
+        long total = +(GregorianCalendar.getInstance().getTimeInMillis() - start);
+        System.err.println("Total Time (s): " + total / 1000.);
+        System.err.println("Time per Word (ms): "
+                + Utils.round((float) 1. * total / wordCount, 1));
     }
 }

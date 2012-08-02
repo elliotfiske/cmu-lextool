@@ -35,18 +35,18 @@ public class ArcSortTest {
         // State 0
         State s = new State(0.f);
         fst.addState(s);
-        s.addArc(new Arc(4, 1, 0.f, "2"));
-        s.addArc(new Arc(5, 2, 0.f, "2"));
-        s.addArc(new Arc(2, 3, 0.f, "1"));
-        s.addArc(new Arc(1, 4, 0.f, "1"));
-        s.addArc(new Arc(3, 5, 0.f, "1"));
+        s.addArc(new Arc(4, 1, 0.f, 2));
+        s.addArc(new Arc(5, 2, 0.f, 2));
+        s.addArc(new Arc(2, 3, 0.f, 1));
+        s.addArc(new Arc(1, 4, 0.f, 1));
+        s.addArc(new Arc(3, 5, 0.f, 1));
 
         // State 1
         s = new State(0.f);
         fst.addState(s);
-        s.addArc(new Arc(3, 1, 0.f, "2"));
-        s.addArc(new Arc(1, 2, 0.f, "2"));
-        s.addArc(new Arc(2, 3, 0.f, "1"));
+        s.addArc(new Arc(3, 1, 0.f, 2));
+        s.addArc(new Arc(1, 2, 0.f, 2));
+        s.addArc(new Arc(2, 3, 0.f, 1));
 
         // State 2 (final)
         s = new State(0.f);
@@ -66,18 +66,18 @@ public class ArcSortTest {
         // State 0
         State s = new State(0.f);
         fst.addState(s);
-        s.addArc(new Arc(1, 4, 0.f, "1"));
-        s.addArc(new Arc(2, 3, 0.f, "1"));
-        s.addArc(new Arc(3, 5, 0.f, "1"));
-        s.addArc(new Arc(4, 1, 0.f, "2"));
-        s.addArc(new Arc(5, 2, 0.f, "2"));
+        s.addArc(new Arc(1, 4, 0.f, 1));
+        s.addArc(new Arc(2, 3, 0.f, 1));
+        s.addArc(new Arc(3, 5, 0.f, 1));
+        s.addArc(new Arc(4, 1, 0.f, 2));
+        s.addArc(new Arc(5, 2, 0.f, 2));
 
         // State 1
         s = new State(0.f);
         fst.addState(s);
-        s.addArc(new Arc(1, 2, 0.f, "2"));
-        s.addArc(new Arc(2, 3, 0.f, "1"));
-        s.addArc(new Arc(3, 1, 0.f, "2"));
+        s.addArc(new Arc(1, 2, 0.f, 2));
+        s.addArc(new Arc(2, 3, 0.f, 1));
+        s.addArc(new Arc(3, 1, 0.f, 2));
 
         // State 2 (final)
         s = new State(0.f);
@@ -97,18 +97,18 @@ public class ArcSortTest {
         // State 0
         State s = new State(0.f);
         fst.addState(s);
-        s.addArc(new Arc(1, 4, 0.f, "1"));
-        s.addArc(new Arc(3, 5, 0.f, "1"));
-        s.addArc(new Arc(2, 3, 0.f, "1"));
-        s.addArc(new Arc(5, 2, 0.f, "2"));
-        s.addArc(new Arc(4, 1, 0.f, "2"));
+        s.addArc(new Arc(1, 4, 0.f, 1));
+        s.addArc(new Arc(3, 5, 0.f, 1));
+        s.addArc(new Arc(2, 3, 0.f, 1));
+        s.addArc(new Arc(5, 2, 0.f, 2));
+        s.addArc(new Arc(4, 1, 0.f, 2));
 
         // State 1
         s = new State(0.f);
         fst.addState(s);
-        s.addArc(new Arc(2, 3, 0.f, "1"));
-        s.addArc(new Arc(3, 1, 0.f, "2"));
-        s.addArc(new Arc(1, 2, 0.f, "2"));
+        s.addArc(new Arc(2, 3, 0.f, 1));
+        s.addArc(new Arc(3, 1, 0.f, 2));
+        s.addArc(new Arc(1, 2, 0.f, 2));
 
         // State 2 (final)
         s = new State(0.f);

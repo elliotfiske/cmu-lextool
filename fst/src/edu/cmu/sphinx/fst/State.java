@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
-import edu.cmu.sphinx.fst.semiring.Semiring;
-
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
@@ -26,16 +24,13 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 public class State {
 
     // Id
-    private String id;
+    private int id = -1;
 
     // Final weight
     private float fnlWeight;
 
     // Outgoing arcs collection
     private ArrayList<Arc> arcs = new ArrayList<Arc>();
-
-    // holds the semiring
-    private Semiring semiring;
 
     public State() {
     }
@@ -87,29 +82,19 @@ public class State {
     /**
      * @return the id
      */
-    public String getId() {
+    public int getId() {
         return id;
     }
 
     /**
      * @param id the id to set
      */
-    public void setId(String id) {
+    public void setId(int id) {
+        if (id < 0) {
+            throw new IllegalArgumentException(
+                    "State ids should be positive integers");
+        }
         this.id = id;
-    }
-
-    /**
-     * @return the semiring
-     */
-    public Semiring getSemiring() {
-        return semiring;
-    }
-
-    /**
-     * @param semiring the semiring to set
-     */
-    public void setSemiring(Semiring semiring) {
-        this.semiring = semiring;
     }
 
     /**
@@ -127,24 +112,6 @@ public class State {
      * @return the arc's index
      */
     public void addArc(Arc arc) {
-        if (this.semiring != null) {
-            // Check if there is already an arc with same input/output labels
-            // and nextstate
-            for (Arc oldArc : arcs) {
-                if ((oldArc.getIlabel() == arc.getIlabel())
-                        && (oldArc.getOlabel() == arc.getOlabel())
-                        && (oldArc.getNextStateId()
-                                .equals(arc.getNextStateId()))) {
-                    oldArc.setWeight(semiring.plus(oldArc.getWeight(),
-                            arc.getWeight()));
-                    return;
-                }
-            }
-        } else {
-            System.err
-                    .println(("Semiring is null. Merging of arcs will not happen"));
-        }
-
         this.arcs.add(arc);
     }
 
@@ -171,17 +138,17 @@ public class State {
         if (getClass() != obj.getClass())
             return false;
         State other = (State) obj;
-        if (id == null) {
-            if (other.id != null)
-                return false;
-        } else if (!id.equals(other.id))
-            return false;
         if (arcs == null) {
             if (other.arcs != null)
                 return false;
         } else if (!arcs.equals(other.arcs))
             return false;
-        if (fnlWeight != other.fnlWeight)
+        if (!(fnlWeight == other.fnlWeight)) {
+            if (Float.floatToIntBits(fnlWeight) != Float
+                    .floatToIntBits(other.fnlWeight))
+                return false;
+        }
+        if (id != other.id)
             return false;
         return true;
     }
@@ -202,14 +169,4 @@ public class State {
     public Arc deleteArc(int index) {
         return this.arcs.remove(index);
     }
-
-    public boolean isFinal() {
-        if (semiring == null) {
-            System.err
-                    .println(("Semiring is null. Cannot determine if state is final."));
-            return false;
-        }
-        return this.fnlWeight != semiring.zero();
-    }
-
 }

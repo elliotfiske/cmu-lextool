@@ -28,18 +28,18 @@ public class RmEpsilon {
     private RmEpsilon() {
     }
 
-    private static void put(String fromState, String toState, float weight,
-            HashMap<String, HashMap<String, Float>> cl) {
-        HashMap<String, Float> tmp = cl.get(fromState);
+    private static void put(Integer fromState, Integer toState, float weight,
+            HashMap<Integer, HashMap<Integer, Float>> cl) {
+        HashMap<Integer, Float> tmp = cl.get(fromState);
         if (tmp == null) {
-            tmp = new HashMap<String, Float>();
+            tmp = new HashMap<Integer, Float>();
             cl.put(fromState, tmp);
         }
         tmp.put(toState, weight);
     }
 
-    private static void add(String fromState, String toState, float weight,
-            HashMap<String, HashMap<String, Float>> cl, Semiring semiring) {
+    private static void add(Integer fromState, Integer toState, float weight,
+            HashMap<Integer, HashMap<Integer, Float>> cl, Semiring semiring) {
         Float old = getPathWeight(fromState, toState, cl);
         if (old == null) {
             put(fromState, toState, weight, cl);
@@ -49,8 +49,8 @@ public class RmEpsilon {
 
     }
 
-    private static void calcClosure(Fst fst, String stateid,
-            HashMap<String, HashMap<String, Float>> cl, Semiring semiring) {
+    private static void calcClosure(Fst fst, Integer stateid,
+            HashMap<Integer, HashMap<Integer, Float>> cl, Semiring semiring) {
         State s = fst.getStateById(stateid);
 
         float pathWeight;
@@ -60,7 +60,7 @@ public class RmEpsilon {
                     calcClosure(fst, a.getNextStateId(), cl, semiring);
                 }
                 if (cl.get(a.getNextStateId()) != null) {
-                    for (String pathFinalState : cl.get(a.getNextStateId())
+                    for (Integer pathFinalState : cl.get(a.getNextStateId())
                             .keySet()) {
                         pathWeight = semiring.times(
                                 getPathWeight(a.getNextStateId(),
@@ -77,8 +77,8 @@ public class RmEpsilon {
         }
     }
 
-    private static Float getPathWeight(String in, String out,
-            HashMap<String, HashMap<String, Float>> cl) {
+    private static Float getPathWeight(Integer in, Integer out,
+            HashMap<Integer, HashMap<Integer, Float>> cl) {
         if (cl.get(in) != null) {
             return cl.get(in).get(out);
         }
@@ -95,12 +95,11 @@ public class RmEpsilon {
             return null;
         }
 
-        HashMap<String, HashMap<String, Float>> cl;
         Semiring semiring = fst.getSemiring();
 
         Fst res = new Fst(semiring);
 
-        cl = new HashMap<String, HashMap<String, Float>>();
+        HashMap<Integer, HashMap<Integer, Float>> cl = new HashMap<Integer, HashMap<Integer, Float>>();
 
         for (State s : fst.getStates()) {
             // Add non-epsilon arcs
@@ -123,7 +122,7 @@ public class RmEpsilon {
         // augment fst with arcs generated from epsilon moves.
         for (State s : res.getStates()) {
             if (cl.get(s.getId()) != null) {
-                for (String pathFinalState : cl.get(s.getId()).keySet()) {
+                for (Integer pathFinalState : cl.get(s.getId()).keySet()) {
                     State s1 = fst.getStateById(pathFinalState);
 
                     if (s1.getFinalWeight() != semiring.zero()) {

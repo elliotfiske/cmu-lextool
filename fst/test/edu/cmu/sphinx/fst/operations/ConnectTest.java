@@ -31,9 +31,8 @@ public class ConnectTest {
         System.out.println("Testing Connect...");
         Fst fst = Convert.importFloat("data/tests/algorithms/connect/A",
                 new TropicalSemiring());
-        Fst connectSaved = Convert.importFloat(
-                "data/tests/algorithms/connect/fstconnect",
-                new TropicalSemiring());
+        Fst connectSaved = Fst
+                .loadModel("data/tests/algorithms/connect/fstconnect.fst.ser");
         Connect.apply(fst);
 
         assertTrue(connectSaved.equals(fst));

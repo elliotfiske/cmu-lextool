@@ -31,7 +31,7 @@ public class Arc {
     private int oLabel;
 
     // next state's id
-    private String nextStateId;
+    private int nextStateId;
 
     public Arc() {
     }
@@ -44,7 +44,7 @@ public class Arc {
      * @param weight the arc's weight
      * @param nextStateId the next state's id
      */
-    public Arc(int iLabel, int oLabel, float weight, String nextStateId) {
+    public Arc(int iLabel, int oLabel, float weight, int nextStateId) {
         this.weight = weight;
         this.iLabel = iLabel;
         this.oLabel = oLabel;
@@ -110,7 +110,7 @@ public class Arc {
      * 
      * @return the next state's id
      */
-    public String getNextStateId() {
+    public int getNextStateId() {
         return nextStateId;
     }
 
@@ -119,7 +119,7 @@ public class Arc {
      * 
      * @param nextStateId the next state's id to set
      */
-    public void setNextState(String nextStateId) {
+    public void setNextState(int nextStateId) {
         this.nextStateId = nextStateId;
     }
 
@@ -139,12 +139,15 @@ public class Arc {
         Arc other = (Arc) obj;
         if (iLabel != other.iLabel)
             return false;
-        if (!nextStateId.equals(other.nextStateId))
+        if (nextStateId != other.nextStateId)
             return false;
         if (oLabel != other.oLabel)
             return false;
-        if (weight != other.weight)
-            return false;
+        if (!(weight == other.weight)) {
+            if (Float.floatToIntBits(weight) != Float
+                    .floatToIntBits(other.weight))
+                return false;
+        }
         return true;
     }
 

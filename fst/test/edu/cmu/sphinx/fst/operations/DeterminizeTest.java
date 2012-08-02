@@ -21,9 +21,8 @@ public class DeterminizeTest {
         System.out.println("Testing Determinization...");
         Fst fstA = Convert.importFloat("data/tests/algorithms/determinize/A",
                 new TropicalSemiring());
-        Fst determinized = Convert.importFloat(
-                "data/tests/algorithms/determinize/fstdeterminize",
-                new TropicalSemiring());
+        Fst determinized = Fst
+                .loadModel("data/tests/algorithms/determinize/fstdeterminize.fst.ser");
 
         Fst fstDeterminized = Determinize.get(fstA);
         assertTrue(determinized.equals(fstDeterminized));
