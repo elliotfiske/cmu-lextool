@@ -20,7 +20,6 @@ import org.junit.Test;
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.State;
-import edu.cmu.sphinx.fst.semiring.ProbabilitySemiring;
 
 /**
  * 
@@ -37,27 +36,6 @@ import edu.cmu.sphinx.fst.semiring.ProbabilitySemiring;
  */
 public class FstTest {
 
-    /**
-     * @param args
-     */
-    @Test
-    public void testArcMerge() {
-        System.out.println("Testing Arc Merging...");
-        Fst fst = new Fst(new ProbabilitySemiring());
-
-        // State 0
-        State s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(1, 1, 0.5f, "1"));
-        s.addArc(new Arc(2, 2, 0.5f, "1"));
-        s.addArc(new Arc(2, 2, 1.f, "1"));
-
-        assertTrue(s.getNumArcs() == 2);
-        assertTrue(s.getArc(1).getWeight() == 1.5);
-
-        System.out.println("Testing Arc Merging Completed!\n");
-    }
-
     @Test
     public void testStateDeletions() {
         System.out.println("Testing State Deletions...");
@@ -67,20 +45,20 @@ public class FstTest {
         // State 0
         State s = new State(0.f);
         fst1.addState(s);
-        s.addArc(new Arc(0, 0, 0.f, "1"));
-        s.addArc(new Arc(0, 0, 0.f, "2"));
-        s.addArc(new Arc(0, 0, 0.f, "3"));
+        s.addArc(new Arc(0, 0, 0.f, 1));
+        s.addArc(new Arc(0, 0, 0.f, 2));
+        s.addArc(new Arc(0, 0, 0.f, 3));
         fst1.setStart(s.getId());
 
         // State 1
         s = new State(0.f);
         fst1.addState(s);
-        s.addArc(new Arc(0, 0, 0.f, "2"));
+        s.addArc(new Arc(0, 0, 0.f, 2));
 
         // State 2
         s = new State(0.f);
         fst1.addState(s);
-        s.addArc(new Arc(0, 0, 0.f, "3"));
+        s.addArc(new Arc(0, 0, 0.f, 3));
 
         // State 3
         s = new State(0.f);
@@ -89,25 +67,25 @@ public class FstTest {
 
         // State 0
         s = new State(0.f);
-        s.setId("0");
+        s.setId(0);
         fst2.addState(s);
-        s.addArc(new Arc(0, 0, 0.f, "2"));
-        s.addArc(new Arc(0, 0, 0.f, "3"));
+        s.addArc(new Arc(0, 0, 0.f, 2));
+        s.addArc(new Arc(0, 0, 0.f, 3));
         fst2.setStart(s.getId());
 
         // State 2
         s = new State(0.f);
-        s.setId("2");
+        s.setId(2);
         fst2.addState(s);
-        s.addArc(new Arc(0, 0, 0.f, "3"));
+        s.addArc(new Arc(0, 0, 0.f, 3));
 
         // State 3
         s = new State(0.f);
-        s.setId("3");
+        s.setId(3);
         fst2.addState(s);
         fst2.setFinal(s.getId(), 1.f);
 
-        fst1.deleteState("1");
+        fst1.deleteState(1);
 
         assertTrue(fst1.equals(fst2));
 

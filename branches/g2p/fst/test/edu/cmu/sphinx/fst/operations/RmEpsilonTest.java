@@ -33,9 +33,8 @@ public class RmEpsilonTest {
 
         Fst fst = Convert.importFloat("data/tests/algorithms/rmepsilon/A",
                 new ProbabilitySemiring());
-        Fst fstRmEps = Convert.importFloat(
-                "data/tests/algorithms/rmepsilon/fstrmepsilon",
-                new ProbabilitySemiring());
+        Fst fstRmEps = Fst
+                .loadModel("data/tests/algorithms/rmepsilon/fstrmepsilon.fst.ser");
         Fst rmEpsilon = RmEpsilon.get(fst);
 
         assertTrue(fstRmEps.equals(rmEpsilon));

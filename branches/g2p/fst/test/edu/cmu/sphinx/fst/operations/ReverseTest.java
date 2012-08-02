@@ -23,9 +23,8 @@ public class ReverseTest {
 
         Fst fst = Convert.importFloat("data/tests/algorithms/reverse/A",
                 new TropicalSemiring());
-        Fst fstB = Convert.importFloat(
-                "data/tests/algorithms/reverse/fstreverse",
-                new TropicalSemiring());
+        Fst fstB = Fst
+                .loadModel("data/tests/algorithms/reverse/fstreverse.fst.ser");
 
         Fst fstReversed = Reverse.get(fst);
 

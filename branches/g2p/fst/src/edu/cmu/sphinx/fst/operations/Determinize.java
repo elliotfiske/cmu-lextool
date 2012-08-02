@@ -4,6 +4,7 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
@@ -21,7 +22,7 @@ public class Determinize {
             ArrayList<Pair<State, Float>> queue, State state, Float zero) {
         Pair<State, Float> res = null;
         for (Pair<State, Float> tmp : queue) {
-            if (state.getId().equals(tmp.getLeft().getId())) {
+            if (state.getId() == tmp.getLeft().getId()) {
                 res = tmp;
                 break;
             }
@@ -51,7 +52,8 @@ public class Determinize {
         return res;
     }
 
-    private static String getStateLabel(ArrayList<Pair<State, Float>> pa) {
+    private static Integer getStateLabel(ArrayList<Pair<State, Float>> pa,
+            HashMap<String, Integer> stateMapper) {
         StringBuilder sb = new StringBuilder();
 
         for (Pair<State, Float> p : pa) {
@@ -60,13 +62,10 @@ public class Determinize {
             }
             sb.append("(" + p.getLeft().getId() + "," + p.getRight() + ")");
         }
-        return sb.toString();
+        return stateMapper.get(sb.toString());
     }
 
     public static Fst get(Fst fst) {
-        if (fst == null) {
-            return null;
-        }
 
         if (fst.getSemiring() == null) {
             // semiring not provided
@@ -82,17 +81,21 @@ public class Determinize {
         // stores the queue (item in index 0 is next)
         ArrayList<ArrayList<Pair<State, Float>>> queue = new ArrayList<ArrayList<Pair<State, Float>>>();
 
+        HashMap<String, Integer> stateMapper = new HashMap<String, Integer>();
+
         State s = new State(semiring.zero());
-        s.setId("(" + fst.getStart().getId() + "," + semiring.one() + ")");
+        String stateString = "(" + fst.getStart().getId() + ","
+                + semiring.one() + ")";
         queue.add(new ArrayList<Pair<State, Float>>());
         queue.get(0)
                 .add(new Pair<State, Float>(fst.getStart(), semiring.one()));
         res.addState(s);
+        stateMapper.put(stateString, s.getId());
         res.setStart(s.getId());
 
         while (queue.size() > 0) {
             ArrayList<Pair<State, Float>> p = queue.get(0);
-            State pnew = res.getStateById(getStateLabel(p));
+            State pnew = res.getStateById(getStateLabel(p, stateMapper));
             queue.remove(0);
             ArrayList<Integer> labels = getUniqueLabels(fst, p);
             for (int label : labels) {
@@ -141,11 +144,10 @@ public class Determinize {
                     qnewid = qnewid + "(" + old.getId() + "," + unew + ")";
                 }
 
-                pnew.addArc(new Arc(label, label, wnew, qnewid));
-                if (res.getStateById(qnewid) == null) {
+                if (stateMapper.get(qnewid) == null || res.getStateById(stateMapper.get(qnewid)) == null) {
                     State qnew = new State(semiring.zero());
-                    qnew.setId(qnewid);
                     res.addState(qnew);
+                    stateMapper.put(qnewid, qnew.getId());
                     // update new state's weight
                     Float fw = qnew.getFinalWeight();
                     for (Pair<State, Float> ps : forQueue) {
@@ -156,6 +158,8 @@ public class Determinize {
 
                     queue.add(forQueue);
                 }
+                pnew.addArc(new Arc(label, label, wnew, stateMapper
+                        .get(qnewid)));
             }
         }
 

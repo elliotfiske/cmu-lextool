@@ -40,9 +40,8 @@ public class ComposeTest {
                 new TropicalSemiring());
         Fst fstB = Convert.importFloat("data/tests/algorithms/compose/B",
                 new TropicalSemiring());
-        Fst composed = Convert.importFloat(
-                "data/tests/algorithms/compose/fstcompose",
-                new TropicalSemiring());
+        Fst composed = Fst
+                .loadModel("data/tests/algorithms/compose/fstcompose.fst.ser");
 
         Fst fstComposed = Compose.get(fstA, fstB, new TropicalSemiring());
 

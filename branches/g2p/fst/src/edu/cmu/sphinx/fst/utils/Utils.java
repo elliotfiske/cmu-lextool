@@ -13,6 +13,7 @@
 
 package edu.cmu.sphinx.fst.utils;
 
+import java.util.HashMap;
 import java.util.Vector;
 
 /**
@@ -95,4 +96,17 @@ public class Utils {
                 digits));
     }
 
+    public static <K, V> HashMap<V, K> reverseHashMap(HashMap<K, V> map) {
+        if (map == null) {
+            return null;
+        }
+
+        HashMap<V, K> res = new HashMap<V, K>();
+        for (K key : map.keySet()) {
+            V value = map.get(key);
+            res.put(value, key);
+        }
+
+        return res;
+    }
 }

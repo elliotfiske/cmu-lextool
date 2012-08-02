@@ -21,14 +21,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.Semiring;
-import edu.cmu.sphinx.fst.utils.Mapper;
+import edu.cmu.sphinx.fst.utils.Utils;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -42,7 +41,6 @@ public class Convert {
     public static void export(Fst fst, Semiring semiring, String basename) {
         exportSymbols(fst.getIsyms(), basename + ".input.syms");
         exportSymbols(fst.getOsyms(), basename + ".output.syms");
-        exportSymbols(fst.getSsyms(), basename + ".states.syms");
         exportFst(fst, semiring, basename + ".fst.txt");
     }
 
@@ -58,18 +56,23 @@ public class Convert {
 
             // print all states
             for (State s : fst.getStates()) {
-                if (!s.getId().equals(fst.getStartId())) {
+                if (s.getId() == fst.getStartId()) {
                     out.println(s.getId() + "\t" + s.getFinalWeight());
                 }
             }
 
+            HashMap<Integer, String> reversedIsyms = Utils.reverseHashMap(fst
+                    .getIsyms());
+            HashMap<Integer, String> reversedOsyms = Utils.reverseHashMap(fst
+                    .getOsyms());
+
             for (State s : fst.getStates()) {
                 for (Arc arc : s.getArcs()) {
-                    String isym = (fst.getIsyms() != null) ? fst.getIsyms()
-                            .getValue(arc.getIlabel()) : Integer.toString(arc
+                    String isym = (reversedIsyms != null) ? reversedIsyms
+                            .get(arc.getIlabel()) : Integer.toString(arc
                             .getIlabel());
-                    String osym = (fst.getOsyms() != null) ? fst.getOsyms()
-                            .getValue(arc.getOlabel()) : Integer.toString(arc
+                    String osym = (reversedOsyms != null) ? reversedOsyms
+                            .get(arc.getOlabel()) : Integer.toString(arc
                             .getOlabel());
 
                     out.println(s.getId() + "\t" + arc.getNextStateId() + "\t"
@@ -84,7 +87,7 @@ public class Convert {
 
     }
 
-    private static void exportSymbols(Mapper<Integer, String> syms,
+    private static void exportSymbols(HashMap<String, Integer> syms,
             String filename) {
         if (syms == null)
             return;
@@ -93,9 +96,9 @@ public class Convert {
             FileWriter file = new FileWriter(filename);
             PrintWriter out = new PrintWriter(file);
 
-            for (int i = 0; i < syms.size(); i++) {
-                String sym = syms.getValue(i);
-                out.println(sym + "\t" + i);
+            for (String key : syms.keySet()) {
+                Integer value = syms.get(key);
+                out.println(key + "\t" + value.intValue());
             }
 
             out.close();
@@ -104,20 +107,20 @@ public class Convert {
         }
     }
 
-    private static Mapper<Integer, String> importSymbols(String filename) {
-        Mapper<Integer, String> syms = null;
+    private static HashMap<String, Integer> importSymbols(String filename) {
+        HashMap<String, Integer> syms = null;
 
         try {
             FileInputStream fis = new FileInputStream(filename);
             DataInputStream dis = new DataInputStream(fis);
             BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-            syms = new Mapper<Integer, String>();
+            syms = new HashMap<String, Integer>();
             String strLine;
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("\\t");
                 String sym = tokens[0];
                 Integer index = Integer.parseInt(tokens[1]);
-                syms.put(index, sym);
+                syms.put(sym, index);
             }
 
         } catch (IOException e1) {
@@ -131,36 +134,23 @@ public class Convert {
         // TropicalSemiring ts = new TropicalSemiring();
         Fst fst = new Fst(semiring);
 
-        Mapper<Integer, String> isyms = importSymbols(basename + ".input.syms");
+        HashMap<String, Integer> isyms = importSymbols(basename + ".input.syms");
         if (isyms == null) {
-            isyms = new Mapper<Integer, String>();
-            isyms.put(0, "<eps>");
+            isyms = new HashMap<String, Integer>();
+            isyms.put("<eps>", 0);
         }
         fst.setIsyms(isyms);
 
-        Mapper<Integer, String> osyms = importSymbols(basename + ".output.syms");
+        HashMap<String, Integer> osyms = importSymbols(basename
+                + ".output.syms");
         if (osyms == null) {
-            osyms = new Mapper<Integer, String>();
-            osyms.put(0, "<eps>");
+            osyms = new HashMap<String, Integer>();
+            osyms.put("<eps>", 0);
         }
         fst.setOsyms(osyms);
 
-        Mapper<Integer, String> ssyms = importSymbols(basename + ".states.syms");
-        if (ssyms != null) {
-            ArrayList<Integer> keys = new ArrayList<Integer>(ssyms.keySet());
-            Collections.sort(keys);
-
-            // create states according to the ssyms order
-            for (Integer key : keys) {
-                String stateId = ssyms.getValue(key);
-                State s = new State(semiring.zero());
-                s.setId(stateId);
-                fst.addState(s);
-                if (key == 0) {
-                    fst.setStart(stateId);
-                }
-            }
-        }
+        HashMap<String, Integer> ssyms = importSymbols(basename
+                + ".states.syms");
 
         // Parse input
         FileInputStream fis = null;
@@ -168,7 +158,7 @@ public class Convert {
             fis = new FileInputStream(basename + ".fst.txt");
         } catch (FileNotFoundException e1) {
             e1.printStackTrace();
-            System.exit(1);
+            return null;
         }
 
         DataInputStream dis = new DataInputStream(fis);
@@ -178,7 +168,12 @@ public class Convert {
         try {
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("\\t");
-                String inputStateId = tokens[0];
+                Integer inputStateId;
+                if(ssyms == null) {
+                    inputStateId = Integer.parseInt(tokens[0]);
+                } else {
+                    inputStateId = ssyms.get(tokens[0]);
+                }
                 State inputState = fst.getStateById(inputStateId);
                 if (inputState == null) {
                     inputState = new State(semiring.zero());
@@ -192,7 +187,12 @@ public class Convert {
                 }
 
                 if (tokens.length > 2) {
-                    String nextStateId = tokens[1];
+                    Integer nextStateId;
+                    if(ssyms == null) {
+                        nextStateId = Integer.parseInt(tokens[1]);
+                    } else {
+                        nextStateId = ssyms.get(tokens[1]);
+                    }
 
                     State nextState = fst.getStateById(nextStateId);
                     if (nextState == null) {
@@ -201,15 +201,15 @@ public class Convert {
                         nextStateId = fst.addState(nextState);
                     }
                     // Adding arc
-                    if (isyms.getKey(tokens[2]) == null) {
-                        isyms.put(isyms.size(), tokens[2]);
+                    if (isyms.get(tokens[2]) == null) {
+                        isyms.put(tokens[2], isyms.size());
                     }
-                    int iLabel = isyms.getKey(tokens[2]);
+                    int iLabel = isyms.get(tokens[2]);
 
-                    if (osyms.getKey(tokens[3]) == null) {
-                        osyms.put(osyms.size(), tokens[3]);
+                    if (osyms.get(tokens[3]) == null) {
+                        osyms.put(tokens[3], osyms.size());
                     }
-                    int oLabel = osyms.getKey(tokens[3]);
+                    int oLabel = osyms.get(tokens[3]);
                     float arcWeight = Float.parseFloat(tokens[4]);
                     Arc arc = new Arc(iLabel, oLabel, arcWeight, nextStateId);
                     fst.addArc(inputStateId, arc);
@@ -222,10 +222,12 @@ public class Convert {
             dis.close();
         } catch (IOException e) {
             e.printStackTrace();
-            System.exit(1);
+            return null;
         }
+
         fst.setIsyms(isyms);
         fst.setOsyms(osyms);
+
         return fst;
     }
 }
