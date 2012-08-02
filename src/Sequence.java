@@ -10,10 +10,16 @@ public class Sequence implements Comparable<Sequence>{
 	private int size;
 	private Sequence previous;
 	
-	public Sequence(WordSequence words, float probability, int sequenceNumber) {
+	public Sequence(WordSequence words, float probability, int sequenceNumber, Sequence previous) {
 		this.words = words;
-		this.probability = probability;
 		this.size = sequenceNumber;
+		if (previous != null)  {
+			this.probability = (previous.getProbability() * (words.size()-2) + probability)/(words.size() - 1);
+			//this.probability = previous.getProbability() + probability;
+		}
+		else {
+			this.probability = 0;
+		}
 	}
 	
 	public int getSize() {
