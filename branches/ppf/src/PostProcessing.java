@@ -54,7 +54,7 @@ public class PostProcessing {
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		
 		String text = null, lm_path = null, input_file = null;
-		int stackSize = 10000;
+		int stackSize = 1000;
 		int count = 0;
 		
 		for (int i = 0; i < args.length; i++) {
@@ -202,7 +202,7 @@ public class PostProcessing {
 		String newOutput = "";
 		
 		for (Word w : output.getWords()) {
-			if (!w.toString().equals("<s>") && !w.toString().equals("</s>"))
+			//if (!w.toString().equals("<s>") && !w.toString().equals("</s>"))
 				newOutput += w.toString() + " ";			
 		}
 		
@@ -253,6 +253,6 @@ public class PostProcessing {
 
 		WordSequence trimmedWS = new WordSequence(words);
 		
-		return lm.getProbability(ws.getSubSequence(ws.size()-1, ws.size()));
+		return lm.getProbability(trimmedWS);
 	}
 }
