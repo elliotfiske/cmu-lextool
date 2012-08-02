@@ -23,6 +23,10 @@
 #include <ngram/ngram-katz.h>
 #include <ngram/ngram-wittenbell.h>
 #include <ngram/ngram-unsmoothed.h>
+#include <ngram/ngram-shrink.h>
+#include <ngram/ngram-relentropy.h>
+#include <ngram/ngram-seymoreshrink.h>
+#include <ngram/ngram-countprune.h>
 #include <fst/symbol-table.h>
 #include <fst/extensions/far/farscript.h>
 #include <fst/script/fst-class.h>
@@ -56,6 +60,9 @@
 #define acceptor false
 #define show_weight_one true
 #define epsilon_as_backoff false
+#define total_unigram_count -1.0
+#define shrink_opt  2
+
 
 namespace fst {
 
@@ -84,13 +91,17 @@ struct ToLog64Mapper {
 using namespace std;
 using namespace ngram;
 using namespace fst;
+//{ "prune",		required_argument,	NULL,		'o' },
+//{ "theta",		required_argument,	NULL,		'p' },
+//{ "pattern",	required_argument,	NULL,		'q' },
 
 void print_help(char* appname) {
 	cout << "Usage: " << appname << " [--seq1_del] [--seq2_del] [--seq1_max SEQ1_MAX] [--seq2_max SEQ2_MAX]" << endl;
 	cout << "               [--seq_sep SEQ_SEP] [--s1s2_sep S1S2_SEP] [--eps EPS] " << endl;
 	cout << "               [--skip SKIP] [--seq1in_sep SEQ1IN_SEP] [--seq2in_sep SEQ2IN_SEP]" << endl;
 	cout << "               [--s1s2_delim S1S2_DELIM] [--iter ITER] [--order ORDER] [--smooth SMOOTH] " << endl;
-	cout << "               [--noalign] --ifile IFILE --ofile OFILE" << endl;
+	cout << "               [--prune PRUNE] [--theta THETA] [--pattern PATTERN] [--noalign] " << endl;
+	cout << "               --ifile IFILE --ofile OFILE" << endl;
 	cout << endl;
 	cout << "  --seq1_del,              Allow deletions in sequence 1. Defaults to false." << endl;
 	cout << "  --seq2_del,              Allow deletions in sequence 2. Defaults to false." << endl;
@@ -106,8 +117,12 @@ void print_help(char* appname) {
 	cout << "  --iter ITER,             Maximum number of iterations for EM. Defaults to 10." << endl;
 	cout << "  --order ORDER,           N-gram order. Defaults to 9." << endl;
 	cout << "  --smooth SMOOTH,         Smoothing method. Available options are: " << endl;
-	cout << "                           \"presmoothed\", \"unsmoothed\", \"kneser_ney\", \"absolute\", " << endl;
+	cout << "                           \"no\", \"presmoothed\", \"unsmoothed\", \"kneser_ney\", \"absolute\", " << endl;
 	cout << "                           \"katz\", \"witten_bell\". Defaults to \"kneser_ney\"." << endl;
+	cout << "  --prune PRUNE,           Prunning method. Available options are: " << endl;
+	cout << "                           \"no\", \"count_prune\", \"relative_entropy\", \"seymore\" . Defaults to \"no\"." << endl;
+	cout << "  --theta THETA,           Theta value for \"relative_entropy\" and \"seymore\" prunning. Defaults to 0 (ie no pruning). " << endl;
+	cout << "  --pattern PATTERN,       Count cuttoffs for the various n-gram orders for \"count_prune\" prunning. Defaults to \"\". " << endl;
 	cout << "  --noalign,               Do not align. Assume that the aligned corpus already exists." << endl;
 	cout << "                           Defaults to false." << endl;
 	cout << "  --ifile IFILE,           File containing sequences to be aligned. " << endl;
@@ -148,10 +163,6 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string out_name, string eps
 
 	ArcSort(fst, StdILabelCompare());
 	const SymbolTable *oldsyms = fst->InputSymbols();
-
-	// Uncomment the next line in order to save the original model
-	// as created by ngram
-	// fst->Write("org.fst");
 
 	// generate new input, output and states SymbolTables
 	SymbolTable *ssyms = new SymbolTable("ssyms");
@@ -212,8 +223,6 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string out_name, string eps
 
 	out->SetInputSymbols(isyms);
 	out->SetOutputSymbols(osyms);
-//	ArcSort(out, StdOLabelCompare());
-//	ArcSort(out, StdILabelCompare());
 
 	cout << "Writing text model to disk..." << endl;
 	int index = out_name.find(".");
@@ -236,7 +245,7 @@ void relabel(StdMutableFst *fst, StdMutableFst *out, string out_name, string eps
 	delete ostrm;
 }
 
-void train_model(string eps, string s1s2_sep, string skip, int order, string smooth, string out_name, string seq_sep) {
+void train_model(string eps, string s1s2_sep, string skip, int order, string smooth, string out_name, string seq_sep, string prune, double theta, string count_pattern) {
 	namespace s = fst::script;
 	using fst::script::FstClass;
 	using fst::script::MutableFstClass;
@@ -315,68 +324,92 @@ void train_model(string eps, string s1s2_sep, string skip, int order, string smo
 		LOG(ERROR) << "None of the input FSTs had a symbol table";
 		exit(1);
 	}
-
 	VectorFst<StdArc> vfst;
 	ngram_counter.GetFst(&vfst);
 	ArcSort(&vfst, StdILabelCompare());
 	vfst.SetInputSymbols(lfst->InputSymbols());
 	vfst.SetOutputSymbols(lfst->InputSymbols());
 	vfst.Write("corpus.cnts");
+	StdMutableFst *fst = StdMutableFst::Read("corpus.cnts", true);
 
-	cout << "Smoothing model..." << endl;
+	if(smooth != "no") {
+		cout << "Smoothing model..." << endl;
 
-	// convert to WFST model
-	bool prefix_norm = 0;
-	StdMutableFst* fst;
-	if (smooth == "presmoothed") {  // only for use with randgen counts
-		prefix_norm = 1;
-		smooth = "unsmoothed";  // normalizes only based on prefix count
-	}
-	StdMutableFst *mfst = StdMutableFst::Read("corpus.cnts", true);
-	if (smooth == "kneser_ney") {
-		NGramKneserNey ngram(mfst, backoff, backoff_label,
-				 norm_eps, check_consistency,
-				 discount_D, bins);
-		ngram.MakeNGramModel();
-		fst = ngram.GetMutableFst();
-	} else if (smooth == "absolute") {
-		NGramAbsolute ngram(mfst, backoff, backoff_label,
-				norm_eps, check_consistency,
-				discount_D, bins);
-		ngram.MakeNGramModel();
-		fst = ngram.GetMutableFst();
-	} else if (smooth == "katz") {
-		NGramKatz ngram(mfst, backoff, backoff_label,
-				norm_eps, check_consistency,
-				bins);
-		ngram.MakeNGramModel();
-		fst = ngram.GetMutableFst();
-	} else if (smooth == "witten_bell") {
-		NGramWittenBell ngram(mfst, backoff, backoff_label,
-				  norm_eps, check_consistency,
-					  witten_bell_k);
+		bool prefix_norm = 0;
+		if (smooth == "presmoothed") {  // only for use with randgen counts
+			prefix_norm = 1;
+			smooth = "unsmoothed";  // normalizes only based on prefix count
+		}
+		if (smooth == "kneser_ney") {
+			NGramKneserNey ngram(fst, backoff, backoff_label,
+					 norm_eps, check_consistency,
+					 discount_D, bins);
 			ngram.MakeNGramModel();
 			fst = ngram.GetMutableFst();
-	} else if (smooth == "unsmoothed") {
-		NGramUnsmoothed ngram(mfst, 1, prefix_norm, backoff_label,
-				  norm_eps, check_consistency);
-		ngram.MakeNGramModel();
-		fst = ngram.GetMutableFst();
-	} else {
-		LOG(ERROR) << "Bad smoothing method: " << smooth;
-		exit(1);
+		} else if (smooth == "absolute") {
+			NGramAbsolute ngram(fst, backoff, backoff_label,
+					norm_eps, check_consistency,
+					discount_D, bins);
+			ngram.MakeNGramModel();
+			fst = ngram.GetMutableFst();
+		} else if (smooth == "katz") {
+			NGramKatz ngram(fst, backoff, backoff_label,
+					norm_eps, check_consistency,
+					bins);
+			ngram.MakeNGramModel();
+			fst = ngram.GetMutableFst();
+		} else if (smooth == "witten_bell") {
+			NGramWittenBell ngram(fst, backoff, backoff_label,
+					  norm_eps, check_consistency,
+						  witten_bell_k);
+				ngram.MakeNGramModel();
+				fst = ngram.GetMutableFst();
+		} else if (smooth == "unsmoothed") {
+			NGramUnsmoothed ngram(fst, 1, prefix_norm, backoff_label,
+					  norm_eps, check_consistency);
+			ngram.MakeNGramModel();
+			fst = ngram.GetMutableFst();
+		} else {
+			LOG(ERROR) << "Bad smoothing method: " << smooth;
+			exit(1);
+		}
 	}
 
-	// Minimize
-	cout << "Minimizing model..." << endl;
-	MutableFstClass *fst1 = new s::MutableFstClass(fst);
-	Minimize(fst1, 0, fst::kDelta);
+	if(prune != "no") {
+		cout << "Pruning model..." << endl;
 
-	StdMutableFst *fst2 = fst1->GetMutableFst<StdArc>();
+		if (prune == "count_prune") {
+			NGramCountPrune ngramsh(fst, count_pattern,
+					shrink_opt, total_unigram_count,
+					backoff_label, norm_eps,
+					check_consistency);
+			ngramsh.ShrinkNGramModel();
+		} else if (prune == "relative_entropy") {
+			NGramRelEntropy ngramsh(fst, theta, shrink_opt,
+					total_unigram_count, backoff_label,
+					norm_eps, check_consistency);
+			ngramsh.ShrinkNGramModel();
+		} else if (prune == "seymore") {
+			NGramSeymoreShrink ngramsh(fst, theta, shrink_opt,
+					total_unigram_count, backoff_label,
+					norm_eps, check_consistency);
+			ngramsh.ShrinkNGramModel();
+		} else {
+			LOG(ERROR) << "Bad shrink method: " << prune;
+		    exit(1);
+		}
+	}
+
+	cout << "Minimizing model..." << endl;
+	MutableFstClass *minimized = new s::MutableFstClass(fst);
+	Minimize(minimized, 0, fst::kDelta);
+
+	fst = minimized->GetMutableFst<StdArc>();
 
 	cout << "Correcting final model..." << endl;
+
 	StdMutableFst* out = new StdVectorFst();
-	relabel(fst2, out, out_name, eps, skip, s1s2_sep, seq_sep);
+	relabel(fst, out, out_name, eps, skip, s1s2_sep, seq_sep);
 
 	cout << "Writing binary model to disk..." << endl;
 	out->Write(out_name);
@@ -465,6 +498,9 @@ int main(int argc, char* argv[]) {
 	string smooth = "kneser_ney";
 	string input_file = "";
 	string output_file = "";
+	string prune = "no";
+	double theta = 0.0;
+	string count_pattern = "";
 
 	static struct option long_options[] = {
 			{ "seq1_del",	no_argument,		&seq1_del,	1 },
@@ -484,12 +520,15 @@ int main(int argc, char* argv[]) {
 			{ "smooth",		required_argument,	NULL,		'l' },
 			{ "ifile",		required_argument,	NULL,		'm' },
 			{ "ofile",		required_argument,	NULL,		'n' },
+			{ "prune",		required_argument,	NULL,		'o' },
+			{ "theta",		required_argument,	NULL,		'p' },
+			{ "pattern",	required_argument,	NULL,		'q' },
 			{ NULL, 		0, 					NULL, 		0 }
 	};
 	int option_index = 0;
 	int c;
 
-	while ((c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:", long_options, &option_index))
+	while ((c = getopt_long(argc, argv, "a:b:c:d:e:f:g:h:i:j:k:l:m:n:o:p:q", long_options, &option_index))
 			!= -1) {
 		switch (c) {
 		case 0:
@@ -497,6 +536,7 @@ int main(int argc, char* argv[]) {
 			if (long_options[option_index].flag != 0) {
 				break;
 			}
+			break;
 		case 'a':
 			seq1_max = (atoi(optarg) == 0) ? 2 : atoi(optarg);
 			break;
@@ -539,6 +579,15 @@ int main(int argc, char* argv[]) {
 		case 'n':
 			output_file = std::string(optarg);
 			break;
+		case 'o':
+			prune = std::string(optarg);
+			break;
+		case 'p':
+			theta = atof(optarg);
+			break;
+		case 'q':
+			count_pattern = std::string(optarg);
+			break;
 		case '?':
 			cout << "Cannot parse command line arguments." << endl;
 			print_help(argv[0]);
@@ -567,7 +616,7 @@ int main(int argc, char* argv[]) {
 				s1s2_delim, iter);
 	}
 
-	train_model(eps, s1s2_sep, skip, order, smooth, output_file, seq_sep);
+	train_model(eps, s1s2_sep, skip, order, smooth, output_file, seq_sep, prune, theta, count_pattern);
 
 	return 0;
 }
