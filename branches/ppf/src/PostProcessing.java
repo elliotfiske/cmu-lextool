@@ -55,6 +55,7 @@ public class PostProcessing {
 		
 		String text = null, lm_path = null, input_file = null;
 		int stackSize = 10000;
+		int count = 0;
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-input_file")) input_file = args[i+1];
@@ -100,6 +101,7 @@ public class PostProcessing {
 		
 		lm.allocate();
 		
+		
 		while ((text = input.readLine()) != null) {
 			float max = Integer.MIN_VALUE;
 			Sequence finalSequence = null;
@@ -109,7 +111,7 @@ public class PostProcessing {
 			
 			// consider <s> the first symbol
 			Word[] temp = {new Word("<s>", null, false)};
-			Sequence firstSymbol = new Sequence(new WordSequence(temp), 0f, -1);
+			Sequence firstSymbol = new Sequence(new WordSequence(temp), 0f, -1, null);
 			
 			SequenceStack stack = new SequenceStack(stackSize);
 			stack.addSequence(firstSymbol);
@@ -128,7 +130,9 @@ public class PostProcessing {
 				if (currentSize == inputWords.size()) {
 
 					WordSequence fullSentence = currentWordSequence.addWord(new Word("</s>", null, false), maxSequenceSize);
-					Sequence fullSentenceSequence = new Sequence(fullSentence, (currentSequence.getProbability() * (fullSentence.size() - 1) + getWSProb(fullSentence, lm))/fullSentence.size(), currentSize);
+					Sequence fullSentenceSequence = new Sequence(fullSentence, getWSProb(fullSentence, lm), currentSize, currentSequence);
+					
+				//	System.out.println(fullSentenceSequence.toString() + " " + fullSentenceSequence.getProbability());
 				
 					if (fullSentenceSequence.getProbability() > max) {
 						finalSequence = fullSentenceSequence;
@@ -152,9 +156,9 @@ public class PostProcessing {
 					WordSequence newSequence = previousWords.addWord(currentWord, maxSequenceSize);			
 					
 	
-					Sequence unpunctuated = new Sequence(newSequence, (currentSequence.getProbability() * (newSequence.size() - 1) + getWSProb(newSequence, lm)) / newSequence.size(), currentSize);
+					Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
 					stack.addSequence(unpunctuated);
-					
+					count++;
 					continue;
 				}
 				
@@ -164,26 +168,31 @@ public class PostProcessing {
 					if (lm.hasUnigram(wordForm)) {
 						WordSequence previousWords = new WordSequence(currentSequence.getWords());
 						WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);			
-						
+						count++;
 	
-						Sequence unpunctuated = new Sequence(newSequence, (currentSequence.getProbability() * (newSequence.size() - 1) + getWSProb(newSequence, lm)) / newSequence.size(), currentSize);
+						Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
 						stack.addSequence(unpunctuated);
 						
 						for (Word punctuation : punctuationMarks) {
 							WordSequence punctSequence = newSequence.addWord(punctuation, maxSequenceSize);
 							
-							Sequence newSequenceHistory = new Sequence(punctSequence, (unpunctuated.getProbability() * (punctSequence.size() - 1) + getWSProb(punctSequence, lm)) / punctSequence.size(), currentSize);
+							Sequence newSequenceHistory = new Sequence(punctSequence, getWSProb(punctSequence, lm), currentSize, unpunctuated);
 							stack.addSequence(newSequenceHistory);
+							count++;
 						}
 					}
 				}
 			}
 			
-			outputFile.write(formatOutput(finalSequence.getWordSequence()) + '\n');
+			output.write(formatOutput(finalSequence.getWordSequence()) + '\n');
 			
-			System.out.println(formatOutput(finalSequence.getWordSequence()) + '\n');
-	
+			System.out.println(finalSequence.getWordSequence().toString());
+			
+			System.out.println(formatOutput(finalSequence.getWordSequence()) + " " + finalSequence.getProbability() + '\n' );
+			System.out.println(count);
 		}
+		
+		
 		outputFile.close();
 		inputFile.close();
 	} 
@@ -220,8 +229,10 @@ public class PostProcessing {
 
 		for (int i = 1; i <= sentence.size(); i++) {
 			prob += getWSProb(sentence.getSubSequence(0, i), lm);
+			System.out.println(formatOutput(sentence.getSubSequence(0, i)) + " " + getWSProb(sentence.getSubSequence(0, i), lm));
 		}
-		return (prob + 99)/sentence.size();
+		
+		return prob;
 	}
 	
 	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
@@ -242,6 +253,6 @@ public class PostProcessing {
 
 		WordSequence trimmedWS = new WordSequence(words);
 		
-		return lm.getProbability(trimmedWS);
+		return lm.getProbability(ws.getSubSequence(ws.size()-1, ws.size()));
 	}
 }
