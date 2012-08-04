@@ -13,6 +13,8 @@
 
 package edu.cmu.sphinx.fst.operations;
 
+import java.util.HashMap;
+
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.State;
@@ -40,23 +42,25 @@ public class Reverse {
         res.setIsyms(fst.getOsyms());
         res.setOsyms(fst.getIsyms());
 
+        HashMap<Integer, State> stateMap = new HashMap<Integer, State>();
         for (State is : fst.getStates()) {
             State s = new State(semiring.zero());
             s.setId(is.getId());
             res.addState(s);
+            stateMap.put(is.getId(), s);
             if (is.getFinalWeight() != semiring.zero()) {
-                res.setStart(is.getId());
+                res.setStart(s);
             }
         }
 
-        res.getStateById(fst.getStartId()).setFinalWeight(semiring.one());
+        stateMap.get(fst.getStart().getId()).setFinalWeight(semiring.one());
 
-        for (State news : res.getStates()) {
-            State olds = fst.getStateById(news.getId());
+        for (State olds : fst.getStates()) {
+            State news = stateMap.get(olds.getId());
             for (Arc olda : olds.getArcs()) {
-                State next = res.getStateById(olda.getNextStateId());
+                State next = stateMap.get(olda.getNextState().getId());
                 Arc newa = new Arc(olda.getIlabel(), olda.getOlabel(),
-                        semiring.reverse(olda.getWeight()), news.getId());
+                        semiring.reverse(olda.getWeight()), news);
                 next.addArc(newa);
             }
         }

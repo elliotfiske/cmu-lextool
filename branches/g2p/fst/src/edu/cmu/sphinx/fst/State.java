@@ -90,10 +90,6 @@ public class State {
      * @param id the id to set
      */
     public void setId(int id) {
-        if (id < 0) {
-            throw new IllegalArgumentException(
-                    "State ids should be positive integers");
-        }
         this.id = id;
     }
 
@@ -138,17 +134,17 @@ public class State {
         if (getClass() != obj.getClass())
             return false;
         State other = (State) obj;
-        if (arcs == null) {
-            if (other.arcs != null)
-                return false;
-        } else if (!arcs.equals(other.arcs))
+        if (id != other.id)
             return false;
         if (!(fnlWeight == other.fnlWeight)) {
             if (Float.floatToIntBits(fnlWeight) != Float
                     .floatToIntBits(other.fnlWeight))
                 return false;
         }
-        if (id != other.id)
+        if (arcs == null) {
+            if (other.arcs != null)
+                return false;
+        } else if (!arcs.equals(other.arcs))
             return false;
         return true;
     }
@@ -169,4 +165,20 @@ public class State {
     public Arc deleteArc(int index) {
         return this.arcs.remove(index);
     }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + id;
+        // result = prime * result + Float.floatToIntBits(fnlWeight);
+        // result = prime * result + ((arcs == null) ? 0 : arcs.hashCode());
+        return result;
+    }
+
 }

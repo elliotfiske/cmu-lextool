@@ -55,27 +55,28 @@ public class ProjectTest {
         osyms.put("x", 4);
         osyms.put("y", 5);
 
+        State s1 = new State(ts.zero());
+        State s2 = new State(ts.zero());
+        State s3 = new State(ts.zero());
+        State s4 = new State(2.f);
+
         // State 0
-        State s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(1, 5, 1.f, 1));
-        s.addArc(new Arc(2, 4, 3.f, 1));
-        fst.setStart(s.getId());
+        fst.addState(s1);
+        s1.addArc(new Arc(1, 5, 1.f, s2));
+        s1.addArc(new Arc(2, 4, 3.f, s2));
+        fst.setStart(s1);
 
         // State 1
-        s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(3, 3, 7.f, 1));
-        s.addArc(new Arc(4, 2, 5.f, 2));
+        fst.addState(s2);
+        s2.addArc(new Arc(3, 3, 7.f, s2));
+        s2.addArc(new Arc(4, 2, 5.f, s3));
 
         // State 2
-        s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(5, 1, 9.f, 3));
+        fst.addState(s3);
+        s3.addArc(new Arc(5, 1, 9.f, s4));
 
         // State 3
-        s = new State(2.f);
-        fst.addState(s);
+        fst.addState(s4);
 
         fst.setIsyms(isyms);
         fst.setOsyms(osyms);
@@ -101,27 +102,28 @@ public class ProjectTest {
         syms.put("c", 4);
         syms.put("f", 5);
 
+        State s1 = new State(ts.zero());
+        State s2 = new State(ts.zero());
+        State s3 = new State(ts.zero());
+        State s4 = new State(2.f);
+
         // State 0
-        State s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(1, 1, 1.f, 1));
-        s.addArc(new Arc(2, 2, 3.f, 1));
-        fst.setStart(s.getId());
+        fst.addState(s1);
+        s1.addArc(new Arc(1, 1, 1.f, s2));
+        s1.addArc(new Arc(2, 2, 3.f, s2));
+        fst.setStart(s1);
 
         // State 1
-        s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(3, 3, 7.f, 1));
-        s.addArc(new Arc(4, 4, 5.f, 2));
+        fst.addState(s2);
+        s2.addArc(new Arc(3, 3, 7.f, s2));
+        s2.addArc(new Arc(4, 4, 5.f, s3));
 
         // State 2
-        s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(5, 5, 9.f, 3));
+        fst.addState(s3);
+        s3.addArc(new Arc(5, 5, 9.f, s4));
 
         // State 3
-        s = new State(2.f);
-        fst.addState(s);
+        fst.addState(s4);
 
         fst.setIsyms(syms);
         fst.setOsyms(syms);
@@ -147,27 +149,28 @@ public class ProjectTest {
         syms.put("x", 4);
         syms.put("y", 5);
 
+        State s1 = new State(ts.zero());
+        State s2 = new State(ts.zero());
+        State s3 = new State(ts.zero());
+        State s4 = new State(2.f);
+
         // State 0
-        State s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(5, 5, 1.f, 1));
-        s.addArc(new Arc(4, 4, 3.f, 1));
-        fst.setStart(s.getId());
+        fst.addState(s1);
+        s1.addArc(new Arc(5, 5, 1.f, s2));
+        s1.addArc(new Arc(4, 4, 3.f, s2));
+        fst.setStart(s1);
 
         // State 1
-        s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(3, 3, 7.f, 1));
-        s.addArc(new Arc(2, 2, 5.f, 2));
+        fst.addState(s2);
+        s2.addArc(new Arc(3, 3, 7.f, s2));
+        s2.addArc(new Arc(2, 2, 5.f, s3));
 
         // State 2
-        s = new State(ts.zero());
-        fst.addState(s);
-        s.addArc(new Arc(1, 1, 9.f, 3));
+        fst.addState(s3);
+        s3.addArc(new Arc(1, 1, 9.f, s4));
 
         // State 3
-        s = new State(2.f);
-        fst.addState(s);
+        fst.addState(s4);
 
         fst.setIsyms(syms);
         fst.setOsyms(syms);
