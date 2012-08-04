@@ -15,8 +15,6 @@ package edu.cmu.sphinx.fst.operations;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.HashMap;
-
 import org.junit.Test;
 
 import edu.cmu.sphinx.fst.Arc;
@@ -38,22 +36,6 @@ public class ProjectTest {
     private Fst createFst() {
         TropicalSemiring ts = new TropicalSemiring();
         Fst fst = new Fst(ts);
-
-        HashMap<String, Integer> isyms = new HashMap<String, Integer>();
-        isyms.put("<eps>", 0);
-        isyms.put("a", 1);
-        isyms.put("b", 2);
-        isyms.put("d", 3);
-        isyms.put("c", 4);
-        isyms.put("f", 5);
-
-        HashMap<String, Integer> osyms = new HashMap<String, Integer>();
-        osyms.put("<eps>", 0);
-        osyms.put("u", 1);
-        osyms.put("w", 2);
-        osyms.put("v", 3);
-        osyms.put("x", 4);
-        osyms.put("y", 5);
 
         State s1 = new State(ts.zero());
         State s2 = new State(ts.zero());
@@ -78,9 +60,6 @@ public class ProjectTest {
         // State 3
         fst.addState(s4);
 
-        fst.setIsyms(isyms);
-        fst.setOsyms(osyms);
-
         return fst;
     }
 
@@ -93,15 +72,6 @@ public class ProjectTest {
     private Fst createPi() {
         TropicalSemiring ts = new TropicalSemiring();
         Fst fst = new Fst(ts);
-
-        HashMap<String, Integer> syms = new HashMap<String, Integer>();
-        syms.put("<eps>", 0);
-        syms.put("a", 1);
-        syms.put("b", 2);
-        syms.put("d", 3);
-        syms.put("c", 4);
-        syms.put("f", 5);
-
         State s1 = new State(ts.zero());
         State s2 = new State(ts.zero());
         State s3 = new State(ts.zero());
@@ -125,9 +95,6 @@ public class ProjectTest {
         // State 3
         fst.addState(s4);
 
-        fst.setIsyms(syms);
-        fst.setOsyms(syms);
-
         return fst;
     }
 
@@ -140,14 +107,6 @@ public class ProjectTest {
     private Fst createPo() {
         TropicalSemiring ts = new TropicalSemiring();
         Fst fst = new Fst(ts);
-
-        HashMap<String, Integer> syms = new HashMap<String, Integer>();
-        syms.put("<eps>", 0);
-        syms.put("u", 1);
-        syms.put("w", 2);
-        syms.put("v", 3);
-        syms.put("x", 4);
-        syms.put("y", 5);
 
         State s1 = new State(ts.zero());
         State s2 = new State(ts.zero());
@@ -172,8 +131,6 @@ public class ProjectTest {
         // State 3
         fst.addState(s4);
 
-        fst.setIsyms(syms);
-        fst.setOsyms(syms);
         return fst;
     }
 
