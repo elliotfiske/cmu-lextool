@@ -44,7 +44,7 @@ public class ExtendFinal {
         fst.addState(newFinal);
         for (State s : fStates) {
             // add epsilon transition from the old final to the new one
-            s.addArc(new Arc(0, 0, s.getFinalWeight(), newFinal.getId()));
+            s.addArc(new Arc(0, 0, s.getFinalWeight(), newFinal));
             // set old state's weight to zero
             s.setFinalWeight(semiring.zero());
         }
@@ -59,19 +59,19 @@ public class ExtendFinal {
             }
         }
 
-        if(f == null) {
+        if (f == null) {
             System.err.println("Final state not found.");
             return;
         }
         for (State s : fst.getStates()) {
             for (Arc a : s.getArcs()) {
                 if (a.getIlabel() == 0 && a.getOlabel() == 0
-                        && a.getNextStateId() == f.getId()) {
+                        && a.getNextState().getId() == f.getId()) {
                     s.setFinalWeight(a.getWeight());
                 }
             }
         }
-        fst.deleteState(f.getId());
+        fst.deleteState(f);
     }
 
 }

@@ -40,19 +40,13 @@ public class Fst {
     private ArrayList<State> states = new ArrayList<State>();
 
     // the initial state's id
-    private int start;
+    private State start;
 
     // input symbols map
     private HashMap<String, Integer> isyms;
 
     // output symbols map
     private HashMap<String, Integer> osyms;
-
-    // state symbols map (maps the states' ids to the index in the array)
-    // HashMap<key, value>
-    // key = state id
-    // value = array's index
-    private HashMap<Integer, Integer> ssyms = new HashMap<Integer, Integer>();
 
     // holds the semiring
     private Semiring semiring;
@@ -70,15 +64,8 @@ public class Fst {
     /**
      * @return the initial state
      */
-    public int getStartId() {
-        return start;
-    }
-
-    /**
-     * @return the initial state
-     */
     public State getStart() {
-        return getStateById(start);
+        return start;
     }
 
     /**
@@ -87,13 +74,6 @@ public class Fst {
     public Semiring getSemiring() {
         return semiring;
     }
-
-    /**
-     * @return the ssyms
-     */
-    // public Mapper<Integer, Integer> getSsyms() {
-    // return ssyms;
-    // }
 
     /**
      * @param semiring the semiring to set
@@ -105,29 +85,8 @@ public class Fst {
     /**
      * @param stateId the initial state to set
      */
-    public void setStart(int stateId) {
-        State s = getStateById(stateId);
-        if (s == null) {
-            System.err.println("Cannot find state.");
-            return;
-        }
-        this.start = stateId;
-    }
-
-    /**
-     * Sets the weight of a final state
-     * 
-     * @param sIndex the state
-     * @param w the state's weight
-     */
-    public void setFinal(int stateId, float w) {
-        State s = getStateById(stateId);
-        if (s == null) {
-            System.err.println("Cannot find state.");
-            return;
-        }
-
-        s.setFinalWeight(w);
+    public void setStart(State start) {
+        this.start = start;
     }
 
     /**
@@ -151,33 +110,12 @@ public class Fst {
      * @param s the state to be added
      * @return the state's index
      */
-    public int addState(State state) {
-        if (ssyms.get(state.getId()) != null) {
-            System.err.println("State is already in the fst;");
-            return state.getId();
-        }
-        if (state.getId() < 0) {
-            state.setId(states.size());
-        }
-
-        this.ssyms.put(state.getId(), states.size());
+    public void addState(State state) {
         this.states.add(state);
-
-        return state.getId();
-    }
-
-    /**
-     * 
-     * @param sIndex the state's index
-     * @return the state
-     */
-    public State getStateById(int stateId) {
-        Integer index = ssyms.get(stateId);
-        if (index == null) {
-            return null;
+        if (state.getId() < 0) {
+            state.setId(states.size() - 1);
         }
-
-        return states.get(index);
+        // return states.size() - 1;
     }
 
     /**
@@ -208,22 +146,6 @@ public class Fst {
         this.osyms = osyms;
     }
 
-    /**
-     * adds a new outgoing arc from a state
-     * 
-     * @param stateId the state's id
-     * @param arc the arc
-     */
-    public void addArc(int stateId, Arc arc) {
-        State s = getStateById(stateId);
-        if (s == null) {
-            System.err.println("Cannot find state.");
-            return;
-        }
-
-        s.addArc(arc);
-    }
-
     private void writeStringMap(ObjectOutputStream out,
             HashMap<String, Integer> map) throws IOException {
         out.writeInt(map.values().size());
@@ -237,14 +159,18 @@ public class Fst {
     public void writeFst(ObjectOutputStream out) throws IOException {
         writeStringMap(out, isyms);
         writeStringMap(out, osyms);
-        out.writeInt(start);
+        out.writeInt(states.indexOf(start));
 
         out.writeObject(semiring);
         out.writeInt(states.size());
 
+        HashMap<State, Integer> stateMap = new HashMap<State, Integer>();
+        int stateCount = 0;
         for (State s : states) {
             out.writeFloat(s.getFinalWeight());
             out.writeInt(s.getId());
+            stateMap.put(s, stateCount);
+            stateCount++;
         }
 
         for (State s : states) {
@@ -253,7 +179,7 @@ public class Fst {
                 out.writeInt(a.getIlabel());
                 out.writeInt(a.getOlabel());
                 out.writeFloat(a.getWeight());
-                out.writeInt(a.getNextStateId());
+                out.writeInt(stateMap.get(a.getNextState()));
             }
         }
     }
@@ -294,7 +220,7 @@ public class Fst {
         Fst res = new Fst();
         res.isyms = readStringMap(in);
         res.osyms = readStringMap(in);
-        res.start = in.readInt();
+        int startid = in.readInt();
         res.semiring = (Semiring) in.readObject();
         int numStates = in.readInt();
 
@@ -309,6 +235,7 @@ public class Fst {
             s.setId(in.readInt());
             res.addState(s);
         }
+        res.setStart(res.states.get(startid));
 
         for (State s1 : res.getStates()) {
             int numArcs = in.readInt();
@@ -317,7 +244,7 @@ public class Fst {
                 a.setIlabel(in.readInt());
                 a.setOlabel(in.readInt());
                 a.setWeight(in.readFloat());
-                a.setNextState(in.readInt());
+                a.setNextState(res.states.get(in.readInt()));
                 s1.addArc(a);
             }
         }
@@ -389,7 +316,10 @@ public class Fst {
                 return false;
         } else if (!osyms.equals(other.osyms))
             return false;
-        if (start != other.start)
+        if (start == null) {
+            if (other.start != null)
+                return false;
+        } else if (!start.equals(other.start))
             return false;
         if (states == null) {
             if (other.states != null)
@@ -425,38 +355,17 @@ public class Fst {
     }
 
     /**
-     * Remaps the states
-     */
-    private void remapStates() {
-        // reset symbols table
-        ssyms = new HashMap<Integer, Integer>();
-
-        // remap states
-        for (int i = 0; i < states.size(); i++) {
-            State s = states.get(i);
-            ssyms.put(s.getId(), i);
-        }
-    }
-
-    /**
      * Delete a state
      * 
      * @param i the index of the state
      */
-    public void deleteState(int stateId) {
-        if (stateId == this.start) {
+    public void deleteState(State state) {
+        if (state.getId() == this.start.getId()) {
             System.err.println("Cannot delete start state.");
             return;
         }
 
-        State s = getStateById(stateId);
-        if (s == null) {
-            System.err.println("Cannot find state.");
-            return;
-        }
-
-        this.states.remove(s);
-        remapStates();
+        this.states.remove(state);
 
         // delete arc's with nextstate equal to stateid
         ArrayList<Integer> toDelete;
@@ -464,7 +373,7 @@ public class Fst {
             toDelete = new ArrayList<Integer>();
             for (int j = 0; j < s1.getNumArcs(); j++) {
                 Arc a = s1.getArc(j);
-                if (a.getNextStateId() == stateId) {
+                if (a.getNextState().equals(state)) {
                     toDelete.add(j);
                 }
             }

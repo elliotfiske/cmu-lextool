@@ -52,12 +52,14 @@ public class Convert {
 
             // print start first
             State start = fst.getStart();
-            out.println(start.getId() + "\t" + start.getFinalWeight());
+            out.println(fst.getStates().indexOf(start) + "\t"
+                    + start.getFinalWeight());
 
             // print all states
             for (State s : fst.getStates()) {
-                if (s.getId() == fst.getStartId()) {
-                    out.println(s.getId() + "\t" + s.getFinalWeight());
+                if (s.getId() != fst.getStart().getId()) {
+                    out.println(fst.getStates().indexOf(s) + "\t"
+                            + s.getFinalWeight());
                 }
             }
 
@@ -75,8 +77,10 @@ public class Convert {
                             .get(arc.getOlabel()) : Integer.toString(arc
                             .getOlabel());
 
-                    out.println(s.getId() + "\t" + arc.getNextStateId() + "\t"
-                            + isym + "\t" + osym + "\t" + arc.getWeight());
+                    out.println(fst.getStates().indexOf(s) + "\t"
+                            + fst.getStates().indexOf(arc.getNextState())
+                            + "\t" + isym + "\t" + osym + "\t"
+                            + arc.getWeight());
                 }
             }
 
@@ -165,40 +169,44 @@ public class Convert {
         BufferedReader br = new BufferedReader(new InputStreamReader(dis));
         boolean firstLine = true;
         String strLine;
+        HashMap<Integer, State> stateMap = new HashMap<Integer, State>();
+
         try {
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("\\t");
                 Integer inputStateId;
-                if(ssyms == null) {
+                if (ssyms == null) {
                     inputStateId = Integer.parseInt(tokens[0]);
                 } else {
                     inputStateId = ssyms.get(tokens[0]);
                 }
-                State inputState = fst.getStateById(inputStateId);
+                State inputState = stateMap.get(inputStateId);
                 if (inputState == null) {
                     inputState = new State(semiring.zero());
-                    inputState.setId(inputStateId);
-                    inputStateId = fst.addState(inputState);
+                    inputState.setId(inputStateId.intValue());
+                    fst.addState(inputState);
+                    stateMap.put(inputStateId, inputState);
                 }
 
                 if (firstLine) {
                     firstLine = false;
-                    fst.setStart(inputStateId);
+                    fst.setStart(inputState);
                 }
 
                 if (tokens.length > 2) {
                     Integer nextStateId;
-                    if(ssyms == null) {
+                    if (ssyms == null) {
                         nextStateId = Integer.parseInt(tokens[1]);
                     } else {
                         nextStateId = ssyms.get(tokens[1]);
                     }
 
-                    State nextState = fst.getStateById(nextStateId);
+                    State nextState = stateMap.get(nextStateId);
                     if (nextState == null) {
                         nextState = new State(semiring.zero());
-                        nextState.setId(nextStateId);
-                        nextStateId = fst.addState(nextState);
+                        nextState.setId(nextStateId.intValue());
+                        fst.addState(nextState);
+                        stateMap.put(nextStateId, nextState);
                     }
                     // Adding arc
                     if (isyms.get(tokens[2]) == null) {
@@ -211,12 +219,12 @@ public class Convert {
                     }
                     int oLabel = osyms.get(tokens[3]);
                     float arcWeight = Float.parseFloat(tokens[4]);
-                    Arc arc = new Arc(iLabel, oLabel, arcWeight, nextStateId);
-                    fst.addArc(inputStateId, arc);
+                    Arc arc = new Arc(iLabel, oLabel, arcWeight, nextState);
+                    inputState.addArc(arc);
                 } else {
                     // This is a final weight
                     float finalWeight = Float.parseFloat(tokens[1]);
-                    fst.setFinal(inputStateId, finalWeight);
+                    inputState.setFinalWeight(finalWeight);
                 }
             }
             dis.close();

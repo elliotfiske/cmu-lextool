@@ -32,25 +32,27 @@ public class ArcSortTest {
      */
     private Fst createOsorted() {
         Fst fst = new Fst(new TropicalSemiring());
+
+        State s1 = new State(0.f);
+        State s2 = new State(0.f);
+        State s3 = new State(0.f);
+
         // State 0
-        State s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(4, 1, 0.f, 2));
-        s.addArc(new Arc(5, 2, 0.f, 2));
-        s.addArc(new Arc(2, 3, 0.f, 1));
-        s.addArc(new Arc(1, 4, 0.f, 1));
-        s.addArc(new Arc(3, 5, 0.f, 1));
+        fst.addState(s1);
+        s1.addArc(new Arc(4, 1, 0.f, s3));
+        s1.addArc(new Arc(5, 2, 0.f, s3));
+        s1.addArc(new Arc(2, 3, 0.f, s2));
+        s1.addArc(new Arc(1, 4, 0.f, s2));
+        s1.addArc(new Arc(3, 5, 0.f, s2));
 
         // State 1
-        s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(3, 1, 0.f, 2));
-        s.addArc(new Arc(1, 2, 0.f, 2));
-        s.addArc(new Arc(2, 3, 0.f, 1));
+        fst.addState(s2);
+        s2.addArc(new Arc(3, 1, 0.f, s3));
+        s2.addArc(new Arc(1, 2, 0.f, s3));
+        s2.addArc(new Arc(2, 3, 0.f, s2));
 
         // State 2 (final)
-        s = new State(0.f);
-        fst.addState(s);
+        fst.addState(s3);
 
         return fst;
     }
@@ -63,25 +65,27 @@ public class ArcSortTest {
      */
     private Fst createIsorted() {
         Fst fst = new Fst(new TropicalSemiring());
+
+        State s1 = new State(0.f);
+        State s2 = new State(0.f);
+        State s3 = new State(0.f);
+
         // State 0
-        State s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(1, 4, 0.f, 1));
-        s.addArc(new Arc(2, 3, 0.f, 1));
-        s.addArc(new Arc(3, 5, 0.f, 1));
-        s.addArc(new Arc(4, 1, 0.f, 2));
-        s.addArc(new Arc(5, 2, 0.f, 2));
+        fst.addState(s1);
+        s1.addArc(new Arc(1, 4, 0.f, s2));
+        s1.addArc(new Arc(2, 3, 0.f, s2));
+        s1.addArc(new Arc(3, 5, 0.f, s2));
+        s1.addArc(new Arc(4, 1, 0.f, s3));
+        s1.addArc(new Arc(5, 2, 0.f, s3));
 
         // State 1
-        s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(1, 2, 0.f, 2));
-        s.addArc(new Arc(2, 3, 0.f, 1));
-        s.addArc(new Arc(3, 1, 0.f, 2));
+        fst.addState(s2);
+        s2.addArc(new Arc(1, 2, 0.f, s3));
+        s2.addArc(new Arc(2, 3, 0.f, s2));
+        s2.addArc(new Arc(3, 1, 0.f, s3));
 
         // State 2 (final)
-        s = new State(0.f);
-        fst.addState(s);
+        fst.addState(s3);
 
         return fst;
     }
@@ -94,25 +98,27 @@ public class ArcSortTest {
      */
     private Fst createUnsorted() {
         Fst fst = new Fst(new TropicalSemiring());
+
+        State s1 = new State(0.f);
+        State s2 = new State(0.f);
+        State s3 = new State(0.f);
+
         // State 0
-        State s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(1, 4, 0.f, 1));
-        s.addArc(new Arc(3, 5, 0.f, 1));
-        s.addArc(new Arc(2, 3, 0.f, 1));
-        s.addArc(new Arc(5, 2, 0.f, 2));
-        s.addArc(new Arc(4, 1, 0.f, 2));
+        fst.addState(s1);
+        s1.addArc(new Arc(1, 4, 0.f, s2));
+        s1.addArc(new Arc(3, 5, 0.f, s2));
+        s1.addArc(new Arc(2, 3, 0.f, s2));
+        s1.addArc(new Arc(5, 2, 0.f, s3));
+        s1.addArc(new Arc(4, 1, 0.f, s3));
 
         // State 1
-        s = new State(0.f);
-        fst.addState(s);
-        s.addArc(new Arc(2, 3, 0.f, 1));
-        s.addArc(new Arc(3, 1, 0.f, 2));
-        s.addArc(new Arc(1, 2, 0.f, 2));
+        fst.addState(s2);
+        s2.addArc(new Arc(2, 3, 0.f, s2));
+        s2.addArc(new Arc(3, 1, 0.f, s3));
+        s2.addArc(new Arc(1, 2, 0.f, s3));
 
         // State 2 (final)
-        s = new State(0.f);
-        fst.addState(s);
+        fst.addState(s3);
 
         return fst;
     }

@@ -23,6 +23,9 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.utils.Pair;
 
 /**
+ * 
+ * New
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */
@@ -43,9 +46,6 @@ public class Compose {
         HashMap<Pair<State, State>, State> stateMap = new HashMap<Pair<State, State>, State>();
         ArrayList<Pair<State, State>> queue = new ArrayList<Pair<State, State>>();
 
-        res.setIsyms(fst1.getIsyms());
-        res.setOsyms(fst2.getOsyms());
-
         State s1 = fst1.getStart();
         State s2 = fst2.getStart();
 
@@ -59,7 +59,7 @@ public class Compose {
                 s2.getFinalWeight()));
 
         res.addState(s);
-        res.setStart(s.getId());
+        res.setStart(s);
         stateMap.put(p, s);
         queue.add(p);
 
@@ -73,10 +73,8 @@ public class Compose {
                     if (sorted && a1.getOlabel() < a2.getIlabel())
                         break;
                     if (a1.getOlabel() == a2.getIlabel()) {
-                        State nextState1 = fst1.getStateById(a1
-                                .getNextStateId());
-                        State nextState2 = fst2.getStateById(a2
-                                .getNextStateId());
+                        State nextState1 = a1.getNextState();
+                        State nextState2 = a2.getNextState();
                         Pair<State, State> nextPair = new Pair<State, State>(
                                 nextState1, nextState2);
                         State nextState = stateMap.get(nextPair);
@@ -90,12 +88,15 @@ public class Compose {
                         }
                         Arc a = new Arc(a1.getIlabel(), a2.getOlabel(),
                                 semiring.times(a1.getWeight(), a2.getWeight()),
-                                nextState.getId());
+                                nextState);
                         s.addArc(a);
                     }
                 }
             }
         }
+
+        res.setIsyms(fst1.getIsyms());
+        res.setOsyms(fst2.getOsyms());
 
         return res;
     }
@@ -126,12 +127,12 @@ public class Compose {
     public static Fst getFilter(HashMap<String, Integer> syms, Semiring semiring) {
         Fst filter = new Fst(semiring);
 
-        Integer e1index = syms.get("<e1>");  
+        Integer e1index = syms.get("<e1>");
         if (e1index == null) {
             e1index = syms.size();
             syms.put("<e1>", syms.size());
         }
-        Integer e2index = syms.get("<e2>");  
+        Integer e2index = syms.get("<e2>");
         if (e2index == null) {
             e2index = syms.size();
             syms.put("<e2>", syms.size());
@@ -141,35 +142,30 @@ public class Compose {
         filter.setOsyms(syms);
 
         // State 0
-        State s = new State(semiring.one());
-        Integer start = filter.addState(s);
-        s.addArc(new Arc(e2index, e1index, semiring
-                .one(), 0));
-        s.addArc(new Arc(e1index, e1index, semiring
-                .one(), 1));
-        s.addArc(new Arc(e2index, syms.get("<e2>"), semiring
-                .one(), 2));
+        State s0 = new State(semiring.one());
+        State s1 = new State(semiring.one());
+        State s2 = new State(semiring.one());
+        filter.addState(s0);
+        s0.addArc(new Arc(e2index, e1index, semiring.one(), s0));
+        s0.addArc(new Arc(e1index, e1index, semiring.one(), s1));
+        s0.addArc(new Arc(e2index, syms.get("<e2>"), semiring.one(), s2));
         for (int i = 1; i < syms.size() - 2; i++) {
-            s.addArc(new Arc(i, i, semiring.one(), 0));
+            s0.addArc(new Arc(i, i, semiring.one(), s0));
         }
-        filter.setStart(start);
+        filter.setStart(s0);
 
         // State 1
-        s = new State(semiring.one());
-        filter.addState(s);
-        s.addArc(new Arc(e1index, e1index, semiring
-                .one(), 1));
+        filter.addState(s1);
+        s1.addArc(new Arc(e1index, e1index, semiring.one(), s1));
         for (int i = 1; i < syms.size() - 2; i++) {
-            s.addArc(new Arc(i, i, semiring.one(), 0));
+            s1.addArc(new Arc(i, i, semiring.one(), s0));
         }
 
         // State 2
-        s = new State(semiring.one());
-        filter.addState(s);
-        s.addArc(new Arc(e2index, e2index, semiring
-                .one(), 2));
+        filter.addState(s2);
+        s2.addArc(new Arc(e2index, e2index, semiring.one(), s2));
         for (int i = 1; i < syms.size() - 2; i++) {
-            s.addArc(new Arc(i, i, semiring.one(), 0));
+            s2.addArc(new Arc(i, i, semiring.one(), s0));
         }
 
         return filter;
@@ -182,30 +178,27 @@ public class Compose {
         HashMap<String, Integer> isyms = fst.getIsyms();
         HashMap<String, Integer> osyms = fst.getOsyms();
 
-
-        Integer e1inputIndex = isyms.get("<e1>");  
+        Integer e1inputIndex = isyms.get("<e1>");
         if (e1inputIndex == null) {
             e1inputIndex = isyms.size();
             isyms.put("<e1>", isyms.size());
         }
-        Integer e2inputIndex = isyms.get("<e2>");  
+        Integer e2inputIndex = isyms.get("<e2>");
         if (e2inputIndex == null) {
             e2inputIndex = isyms.size();
             isyms.put("<e2>", isyms.size());
         }
-        
 
-        Integer e1outputIndex = osyms.get("<e1>");  
+        Integer e1outputIndex = osyms.get("<e1>");
         if (e1outputIndex == null) {
             e1outputIndex = osyms.size();
             osyms.put("<e1>", osyms.size());
         }
-        Integer e2outputIndex = osyms.get("<e2>");  
+        Integer e2outputIndex = osyms.get("<e2>");
         if (e2outputIndex == null) {
             e2outputIndex = osyms.size();
             osyms.put("<e2>", osyms.size());
         }
-        
 
         for (State s : fst.getStates()) {
             for (Arc a : s.getArcs()) {
@@ -216,11 +209,9 @@ public class Compose {
                 }
             }
             if (label == 0) {
-                s.addArc(new Arc(e2inputIndex, 0, semiring.one(), s
-                        .getId()));
+                s.addArc(new Arc(e2inputIndex, 0, semiring.one(), s));
             } else if (label == 1) {
-                s.addArc(new Arc(0, e1outputIndex, semiring.one(), s
-                        .getId()));
+                s.addArc(new Arc(0, e1outputIndex, semiring.one(), s));
             }
         }
     }
