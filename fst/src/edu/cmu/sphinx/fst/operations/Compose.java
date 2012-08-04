@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
@@ -36,7 +37,7 @@ public class Compose {
 
     public static Fst compose(Fst fst1, Fst fst2, Semiring semiring,
             boolean sorted) {
-        if (!fst1.getOsyms().equals(fst2.getIsyms())) {
+        if (!Arrays.equals(fst1.getOsyms(), fst2.getIsyms())) {
             // symboltables do not match
             return null;
         }
@@ -106,7 +107,7 @@ public class Compose {
             return null;
         }
 
-        if (!fst1.getOsyms().equals(fst2.getIsyms())) {
+        if (!Arrays.equals(fst1.getOsyms(), fst2.getIsyms())) {
             // symboltables do not match
             return null;
         }
@@ -124,19 +125,11 @@ public class Compose {
         return res;
     }
 
-    public static Fst getFilter(HashMap<String, Integer> syms, Semiring semiring) {
+    public static Fst getFilter(String[] syms, Semiring semiring) {
         Fst filter = new Fst(semiring);
 
-        Integer e1index = syms.get("<e1>");
-        if (e1index == null) {
-            e1index = syms.size();
-            syms.put("<e1>", syms.size());
-        }
-        Integer e2index = syms.get("<e2>");
-        if (e2index == null) {
-            e2index = syms.size();
-            syms.put("<e2>", syms.size());
-        }
+        int e1index = syms.length;
+        int e2index = syms.length+1;
 
         filter.setIsyms(syms);
         filter.setOsyms(syms);
@@ -148,8 +141,8 @@ public class Compose {
         filter.addState(s0);
         s0.addArc(new Arc(e2index, e1index, semiring.one(), s0));
         s0.addArc(new Arc(e1index, e1index, semiring.one(), s1));
-        s0.addArc(new Arc(e2index, syms.get("<e2>"), semiring.one(), s2));
-        for (int i = 1; i < syms.size() - 2; i++) {
+        s0.addArc(new Arc(e2index, e2index, semiring.one(), s2));
+        for (int i = 1; i < syms.length; i++) {
             s0.addArc(new Arc(i, i, semiring.one(), s0));
         }
         filter.setStart(s0);
@@ -157,14 +150,14 @@ public class Compose {
         // State 1
         filter.addState(s1);
         s1.addArc(new Arc(e1index, e1index, semiring.one(), s1));
-        for (int i = 1; i < syms.size() - 2; i++) {
+        for (int i = 1; i < syms.length; i++) {
             s1.addArc(new Arc(i, i, semiring.one(), s0));
         }
 
         // State 2
         filter.addState(s2);
         s2.addArc(new Arc(e2index, e2index, semiring.one(), s2));
-        for (int i = 1; i < syms.size() - 2; i++) {
+        for (int i = 1; i < syms.length; i++) {
             s2.addArc(new Arc(i, i, semiring.one(), s0));
         }
 
@@ -175,30 +168,14 @@ public class Compose {
         // label: 0->augment on ilabel
         // 1->augment on olabel
 
-        HashMap<String, Integer> isyms = fst.getIsyms();
-        HashMap<String, Integer> osyms = fst.getOsyms();
+        String[] isyms = fst.getIsyms();
+        String[] osyms = fst.getOsyms();
 
-        Integer e1inputIndex = isyms.get("<e1>");
-        if (e1inputIndex == null) {
-            e1inputIndex = isyms.size();
-            isyms.put("<e1>", isyms.size());
-        }
-        Integer e2inputIndex = isyms.get("<e2>");
-        if (e2inputIndex == null) {
-            e2inputIndex = isyms.size();
-            isyms.put("<e2>", isyms.size());
-        }
+        int e1inputIndex = isyms.length;
+        int e2inputIndex = isyms.length+1;
 
-        Integer e1outputIndex = osyms.get("<e1>");
-        if (e1outputIndex == null) {
-            e1outputIndex = osyms.size();
-            osyms.put("<e1>", osyms.size());
-        }
-        Integer e2outputIndex = osyms.get("<e2>");
-        if (e2outputIndex == null) {
-            e2outputIndex = osyms.size();
-            osyms.put("<e2>", osyms.size());
-        }
+        int e1outputIndex = osyms.length;
+        int e2outputIndex = osyms.length+1;
 
         for (State s : fst.getStates()) {
             for (Arc a : s.getArcs()) {

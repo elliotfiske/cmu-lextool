@@ -21,6 +21,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
@@ -63,18 +64,18 @@ public class Convert {
                 }
             }
 
-            HashMap<Integer, String> reversedIsyms = Utils.reverseHashMap(fst
-                    .getIsyms());
-            HashMap<Integer, String> reversedOsyms = Utils.reverseHashMap(fst
-                    .getOsyms());
+            String[] isyms = fst.getIsyms();
+            String[] osyms = fst.getOsyms();
+//            HashMap<Integer, String> reversedIsyms = Utils.reverseHashMap(fst
+//                    .getIsyms());
+//            HashMap<Integer, String> reversedOsyms = Utils.reverseHashMap(fst
+//                    .getOsyms());
 
             for (State s : fst.getStates()) {
                 for (Arc arc : s.getArcs()) {
-                    String isym = (reversedIsyms != null) ? reversedIsyms
-                            .get(arc.getIlabel()) : Integer.toString(arc
+                    String isym = (isyms != null) ? isyms[arc.getIlabel()] : Integer.toString(arc
                             .getIlabel());
-                    String osym = (reversedOsyms != null) ? reversedOsyms
-                            .get(arc.getOlabel()) : Integer.toString(arc
+                    String osym = (osyms != null) ? osyms[arc.getOlabel()] : Integer.toString(arc
                             .getOlabel());
 
                     out.println(fst.getStates().indexOf(s) + "\t"
@@ -91,7 +92,7 @@ public class Convert {
 
     }
 
-    private static void exportSymbols(HashMap<String, Integer> syms,
+    private static void exportSymbols(String[] syms,
             String filename) {
         if (syms == null)
             return;
@@ -100,9 +101,9 @@ public class Convert {
             FileWriter file = new FileWriter(filename);
             PrintWriter out = new PrintWriter(file);
 
-            for (String key : syms.keySet()) {
-                Integer value = syms.get(key);
-                out.println(key + "\t" + value.intValue());
+            for (int i=0; i<syms.length; i++) {
+                String key = syms[i];
+                out.println(key + "\t" + i);
             }
 
             out.close();
@@ -111,20 +112,21 @@ public class Convert {
         }
     }
 
-    private static HashMap<String, Integer> importSymbols(String filename) {
-        HashMap<String, Integer> syms = null;
+    private static ArrayList<String> importSymbols(String filename) {
+        ArrayList<String>  syms = null;
 
         try {
             FileInputStream fis = new FileInputStream(filename);
             DataInputStream dis = new DataInputStream(fis);
             BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-            syms = new HashMap<String, Integer>();
+            syms = new ArrayList<String> ();
             String strLine;
+
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("\\t");
                 String sym = tokens[0];
-                Integer index = Integer.parseInt(tokens[1]);
-                syms.put(sym, index);
+                //Integer index = Integer.parseInt(tokens[1]);
+                syms.add(sym);
             }
 
         } catch (IOException e1) {
@@ -138,22 +140,22 @@ public class Convert {
         // TropicalSemiring ts = new TropicalSemiring();
         Fst fst = new Fst(semiring);
 
-        HashMap<String, Integer> isyms = importSymbols(basename + ".input.syms");
+        ArrayList<String> isyms = importSymbols(basename + ".input.syms");
         if (isyms == null) {
-            isyms = new HashMap<String, Integer>();
-            isyms.put("<eps>", 0);
+            isyms = new ArrayList<String>();
+            isyms.add("<eps>");
         }
-        fst.setIsyms(isyms);
+        //fst.setIsyms((String[]) isyms.toArray());
 
-        HashMap<String, Integer> osyms = importSymbols(basename
+        ArrayList<String>  osyms = importSymbols(basename
                 + ".output.syms");
         if (osyms == null) {
-            osyms = new HashMap<String, Integer>();
-            osyms.put("<eps>", 0);
+            osyms = new ArrayList<String>();
+            osyms.add("<eps>");
         }
-        fst.setOsyms(osyms);
+        //fst.setOsyms((String[]) osyms.toArray());
 
-        HashMap<String, Integer> ssyms = importSymbols(basename
+        ArrayList<String> ssyms = importSymbols(basename
                 + ".states.syms");
 
         // Parse input
@@ -178,7 +180,7 @@ public class Convert {
                 if (ssyms == null) {
                     inputStateId = Integer.parseInt(tokens[0]);
                 } else {
-                    inputStateId = ssyms.get(tokens[0]);
+                    inputStateId = ssyms.indexOf(tokens[0]);
                 }
                 State inputState = stateMap.get(inputStateId);
                 if (inputState == null) {
@@ -198,7 +200,7 @@ public class Convert {
                     if (ssyms == null) {
                         nextStateId = Integer.parseInt(tokens[1]);
                     } else {
-                        nextStateId = ssyms.get(tokens[1]);
+                        nextStateId = ssyms.indexOf(tokens[1]);
                     }
 
                     State nextState = stateMap.get(nextStateId);
@@ -209,15 +211,17 @@ public class Convert {
                         stateMap.put(nextStateId, nextState);
                     }
                     // Adding arc
-                    if (isyms.get(tokens[2]) == null) {
-                        isyms.put(tokens[2], isyms.size());
+                    int iLabel = isyms.indexOf(tokens[2]);
+                    if (iLabel < 0) {
+                        isyms.add(tokens[2]);
+                        iLabel = isyms.size() - 1; 
                     }
-                    int iLabel = isyms.get(tokens[2]);
 
-                    if (osyms.get(tokens[3]) == null) {
-                        osyms.put(tokens[3], osyms.size());
+                    int oLabel = osyms.indexOf(tokens[3]);
+                    if (oLabel < 0) {
+                        osyms.add(tokens[3]);
+                        oLabel = osyms.size() - 1;
                     }
-                    int oLabel = osyms.get(tokens[3]);
                     float arcWeight = Float.parseFloat(tokens[4]);
                     Arc arc = new Arc(iLabel, oLabel, arcWeight, nextState);
                     inputState.addArc(arc);
@@ -233,8 +237,8 @@ public class Convert {
             return null;
         }
 
-        fst.setIsyms(isyms);
-        fst.setOsyms(osyms);
+        fst.setIsyms(Utils.toStringArray(isyms));
+        fst.setOsyms(Utils.toStringArray(osyms));
 
         return fst;
     }

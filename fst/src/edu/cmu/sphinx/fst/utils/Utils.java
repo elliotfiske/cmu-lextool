@@ -13,7 +13,7 @@
 
 package edu.cmu.sphinx.fst.utils;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Vector;
 
 /**
@@ -95,18 +95,22 @@ public class Utils {
         return (float) (Math.round(value * Math.pow(10, digits)) / Math.pow(10,
                 digits));
     }
-
-    public static <K, V> HashMap<V, K> reverseHashMap(HashMap<K, V> map) {
-        if (map == null) {
-            return null;
+    
+    public static int getIndex(String[] isyms, String string) {
+        for(int i=0; i<isyms.length; i++) {
+            if(string.equals(isyms[i])) {
+                return i;
+            }
         }
+        return -1;
+    }
 
-        HashMap<V, K> res = new HashMap<V, K>();
-        for (K key : map.keySet()) {
-            V value = map.get(key);
-            res.put(value, key);
+    public static String[] toStringArray(ArrayList<String> syms) {
+        String[] res = new String[syms.size()];
+        for(int i=0; i< syms.size(); i++) {
+            res[i] = syms.get(i);
         }
-
         return res;
     }
+
 }

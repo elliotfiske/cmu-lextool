@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -43,10 +44,10 @@ public class Fst {
     private State start;
 
     // input symbols map
-    private HashMap<String, Integer> isyms;
+    private String[] isyms;
 
     // output symbols map
-    private HashMap<String, Integer> osyms;
+    private String[] osyms;
 
     // holds the semiring
     private Semiring semiring;
@@ -121,38 +122,36 @@ public class Fst {
     /**
      * @return the isyms
      */
-    public HashMap<String, Integer> getIsyms() {
+    public String[] getIsyms() {
         return isyms;
     }
 
     /**
      * @param isyms the isyms to set
      */
-    public void setIsyms(HashMap<String, Integer> isyms) {
+    public void setIsyms(String[] isyms) {
         this.isyms = isyms;
     }
 
     /**
      * @return the osyms
      */
-    public HashMap<String, Integer> getOsyms() {
+    public String[] getOsyms() {
         return osyms;
     }
 
     /**
      * @param osyms the osyms to set
      */
-    public void setOsyms(HashMap<String, Integer> osyms) {
+    public void setOsyms(String[] osyms) {
         this.osyms = osyms;
     }
 
-    private void writeStringMap(ObjectOutputStream out,
-            HashMap<String, Integer> map) throws IOException {
-        out.writeInt(map.values().size());
-        for (String key : map.keySet()) {
-            Integer value = map.get(key);
-            out.writeObject(key);
-            out.writeInt(value);
+    private void writeStringMap(ObjectOutputStream out, String[] map)
+            throws IOException {
+        out.writeInt(map.length);
+        for (int i = 0; i < map.length; i++) {
+            out.writeObject(map[i]);
         }
     }
 
@@ -201,15 +200,14 @@ public class Fst {
         fos.close();
     }
 
-    private static HashMap<String, Integer> readStringMap(ObjectInputStream in)
+    private static String[] readStringMap(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-        HashMap<String, Integer> map = new HashMap<String, Integer>();
 
         int mapSize = in.readInt();
+        String[] map = new String[mapSize];
         for (int i = 0; i < mapSize; i++) {
-            String key = (String) in.readObject();
-            Integer value = in.readInt();
-            map.put(key, value);
+            String sym = (String) in.readObject();
+            map[i] = sym;
         }
 
         return map;
@@ -306,15 +304,9 @@ public class Fst {
         if (getClass() != obj.getClass())
             return false;
         Fst other = (Fst) obj;
-        if (isyms == null) {
-            if (other.isyms != null)
-                return false;
-        } else if (!isyms.equals(other.isyms))
+        if (!Arrays.equals(isyms, other.isyms))
             return false;
-        if (osyms == null) {
-            if (other.osyms != null)
-                return false;
-        } else if (!osyms.equals(other.osyms))
+        if (!Arrays.equals(osyms, other.osyms))
             return false;
         if (start == null) {
             if (other.start != null)

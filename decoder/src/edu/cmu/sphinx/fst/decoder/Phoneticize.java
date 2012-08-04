@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Vector;
 
 import edu.cmu.sphinx.fst.decoder.Decoder;
@@ -37,7 +36,7 @@ public class Phoneticize {
         int best = Integer.parseInt(args[2]);
 
         Decoder d = new Decoder(model);
-        HashMap<String, Integer> syms = d.getModelIsyms();
+        String[] syms = d.getModelIsyms();
 
         // Parse input
         FileInputStream fis = null;
@@ -61,7 +60,7 @@ public class Phoneticize {
                 Vector<String> entry = new Vector<String>();
                 for (int i = 0; i < in.length(); i++) {
                     String ch = in.substring(i, i + 1);
-                    if (syms.get(ch) != null) {
+                    if (Utils.getIndex(syms, ch) >= 0) {
                         entry.add(ch);
                     }
                 }

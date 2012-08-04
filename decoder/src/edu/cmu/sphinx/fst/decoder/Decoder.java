@@ -64,12 +64,11 @@ public class Decoder {
         Compose.augment(0, g2pmodel, g2pmodel.getSemiring());
         ArcSort.apply(g2pmodel, new ILabelCompare());
 
-        HashMap<Integer, String> reversedIsyms = Utils.reverseHashMap(g2pmodel
-                .getIsyms());
-        tie = reversedIsyms.get(1); // The separator symbol is reserved for
+        String[] isyms = g2pmodel.getIsyms();
+        tie = isyms[1]; // The separator symbol is reserved for
                                     // index 1
 
-        loadClusters(reversedIsyms);
+        loadClusters(isyms);
 
         // get epsilon filter for composition
         epsilonFilter = Compose.getFilter(g2pmodel.getIsyms(),
@@ -78,18 +77,11 @@ public class Decoder {
     }
 
     /**
-     * @return the isyms
-     */
-    public HashMap<String, Integer> getModelIsyms() {
-        return g2pmodel.getIsyms();
-    }
-
-    /**
 	 * 
 	 */
-    private void loadClusters(HashMap<Integer, String> reversedIsyms) {
-        for (int i = 2; i < reversedIsyms.size(); i++) {
-            String sym = reversedIsyms.get(i);
+    private void loadClusters(String[] syms) {
+        for (int i = 2; i < syms.length; i++) {
+            String sym = syms[i];
             if (sym.contains(tie)) {
                 Vector<String> tmp = Utils.split_string(sym, tie);
                 Vector<String> cluster = new Vector<String>();
@@ -147,22 +139,23 @@ public class Decoder {
             s = new State(ts.zero());
             efst.addState(s);
             if (i >= 1) {
+                int symIndex= Utils.getIndex(g2pmodel.getIsyms(), entry.get(i - 1)); 
                 efst.getStates()
                         .get(i)
-                        .addArc(new Arc(g2pmodel.getIsyms().get(
-                                entry.get(i - 1)), g2pmodel.getIsyms().get(
-                                entry.get(i - 1)), 0.f, s));
+                        .addArc(new Arc(symIndex, symIndex, 0.f, s));
             } else if (i == 0) {
+                int symIndex= Utils.getIndex(g2pmodel.getIsyms(), 
+                        sb);
                 efst.getStart().addArc(
-                        new Arc(g2pmodel.getIsyms().get(sb), g2pmodel
-                                .getIsyms().get(sb), 0.f, s));
+                        new Arc(symIndex, symIndex, 0.f, s));
             }
 
             if (i == entry.size()) {
                 State s1 = new State(ts.zero());
                 efst.addState(s1);
-                s.addArc(new Arc(g2pmodel.getIsyms().get(se), g2pmodel
-                        .getIsyms().get(se), 0.f, s1));
+                int symIndex= Utils.getIndex(g2pmodel.getIsyms(), 
+                        se);
+                s.addArc(new Arc(symIndex, symIndex, 0.f, s1));
                 s1.setFinalWeight(0.f);
             }
         }
@@ -208,8 +201,7 @@ public class Decoder {
 
         queue.add(fst.getStart());
 
-        HashMap<Integer, String> reversedOsyms = Utils.reverseHashMap(fst
-                .getOsyms());
+        String[] osyms = fst.getOsyms();
         while (queue.size() > 0) {
             State s = queue.get(0);
             queue.remove(0);
@@ -223,7 +215,7 @@ public class Decoder {
                 p.setCost(cur.getCost());
                 p.setPath((ArrayList<String>) cur.getPath().clone());
 
-                String sym = reversedOsyms.get(a.getOlabel());
+                String sym = osyms[a.getOlabel()];
                 sym = sym.replace(tie, " ");
                 if (!skipSeqs.contains(sym)) {
                     p.getPath().add(sym);
@@ -240,5 +232,9 @@ public class Decoder {
         Collections.sort(finalPaths, new PathComparator());
 
         return finalPaths;
+    }
+
+    public String[] getModelIsyms() {
+        return g2pmodel.getIsyms();
     }
 }
