@@ -14,8 +14,7 @@ public class Sequence implements Comparable<Sequence>{
 		this.words = words;
 		this.size = sequenceNumber;
 		if (previous != null)  {
-			this.probability = (previous.getProbability() * (words.size()-2) + probability)/(words.size() - 1);
-			//this.probability = previous.getProbability() + probability;
+			this.probability = previous.getProbability() + probability;
 		}
 		else {
 			this.probability = 0;
