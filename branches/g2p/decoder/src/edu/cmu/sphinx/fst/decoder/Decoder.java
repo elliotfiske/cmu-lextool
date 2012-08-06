@@ -22,6 +22,7 @@ import java.util.Vector;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
+import edu.cmu.sphinx.fst.ImmutableFst;
 import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.operations.ArcSort;
 import edu.cmu.sphinx.fst.operations.Compose;
@@ -47,9 +48,9 @@ public class Decoder {
     String tie;
 
     HashSet<String> skipSeqs = new HashSet<String>();
-    HashMap<Vector<String>, Integer> clusters = new HashMap<Vector<String>, Integer>();
+    Vector<String>[] clusters = null;
 
-    Fst g2pmodel;
+    ImmutableFst g2pmodel;
     Fst epsilonFilter;
 
     public Decoder(String g2pmodel_file) {
@@ -59,14 +60,14 @@ public class Decoder {
         skipSeqs.add(skip);
         skipSeqs.add("-");
 
-        g2pmodel = Fst.loadModel(g2pmodel_file);
+        g2pmodel = ImmutableFst.loadModel(g2pmodel_file);
         // keep an augmented copy (for compose)
         Compose.augment(0, g2pmodel, g2pmodel.getSemiring());
         ArcSort.apply(g2pmodel, new ILabelCompare());
 
         String[] isyms = g2pmodel.getIsyms();
         tie = isyms[1]; // The separator symbol is reserved for
-                                    // index 1
+                        // index 1
 
         loadClusters(isyms);
 
@@ -77,9 +78,14 @@ public class Decoder {
     }
 
     /**
-	 * 
-	 */
+     * 
+     */
+    @SuppressWarnings("unchecked")
     private void loadClusters(String[] syms) {
+        clusters = new Vector[syms.length];
+        for (int i = 0; i < syms.length; i++) {
+            clusters[i] = null;
+        }
         for (int i = 2; i < syms.length; i++) {
             String sym = syms[i];
             if (sym.contains(tie)) {
@@ -90,7 +96,7 @@ public class Decoder {
                         cluster.add(tmp.get(j));
                     }
                 }
-                clusters.put(cluster, i);
+                clusters[i] = cluster;
             }
         }
     }
@@ -134,44 +140,41 @@ public class Decoder {
         efst.setStart(s);
 
         // Build the basic FSA
-        int i;
-        for (i = 0; i < entry.size() + 1; i++) {
+        for (int i = 0; i < entry.size() + 1; i++) {
             s = new State(ts.zero());
             efst.addState(s);
             if (i >= 1) {
-                int symIndex= Utils.getIndex(g2pmodel.getIsyms(), entry.get(i - 1)); 
-                efst.getStates()
-                        .get(i)
-                        .addArc(new Arc(symIndex, symIndex, 0.f, s));
+                int symIndex = Utils.getIndex(g2pmodel.getIsyms(),
+                        entry.get(i - 1));
+                efst.getState(i).addArc(new Arc(symIndex, symIndex, 0.f, s));
             } else if (i == 0) {
-                int symIndex= Utils.getIndex(g2pmodel.getIsyms(), 
-                        sb);
-                efst.getStart().addArc(
-                        new Arc(symIndex, symIndex, 0.f, s));
+                int symIndex = Utils.getIndex(g2pmodel.getIsyms(), sb);
+                efst.getStart().addArc(new Arc(symIndex, symIndex, 0.f, s));
             }
 
             if (i == entry.size()) {
                 State s1 = new State(ts.zero());
                 efst.addState(s1);
-                int symIndex= Utils.getIndex(g2pmodel.getIsyms(), 
-                        se);
+                int symIndex = Utils.getIndex(g2pmodel.getIsyms(), se);
                 s.addArc(new Arc(symIndex, symIndex, 0.f, s1));
                 s1.setFinalWeight(0.f);
             }
         }
 
         // Add any cluster arcs
-        for (Vector<String> cluster : clusters.keySet()) {
-            Integer value = clusters.get(cluster);
-            int start = 0;
-            int k = 0;
-            while (k != -1) {
-                k = Utils.search(entry, cluster, start);
-                if (k != -1) {
-                    State from = efst.getStates().get(start + k + 1);
-                    from.addArc(new Arc(value, value, 0.f, efst.getStates()
-                            .get(start + k + cluster.size() + 1)));
-                    start = start + k + cluster.size();
+        for (int value = 0; value < clusters.length; value++) {
+            Vector<String> cluster = clusters[value];
+            if (cluster != null) {
+                int start = 0;
+                int k = 0;
+                while (k != -1) {
+                    k = Utils.search(entry, cluster, start);
+                    if (k != -1) {
+                        State from = efst.getState(start + k + 1);
+                        from.addArc(new Arc(value, value, 0.f, efst
+                                .getState(start + k + cluster.size() + 1)));
+                        start = start + k + cluster.size();
+                    }
                 }
             }
         }
@@ -209,7 +212,9 @@ public class Decoder {
                 finalPaths.add(paths.get(s));
             }
 
-            for (Arc a : s.getArcs()) {
+            int numArcs = s.getNumArcs();
+            for (int j = 0; j < numArcs; j++) {
+                Arc a = s.getArc(j);
                 p = new Path(fst.getSemiring());
                 Path cur = paths.get(s);
                 p.setCost(cur.getCost());

@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst;
 
 import java.io.BufferedInputStream;
+
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -23,7 +24,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 
@@ -38,27 +38,35 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 public class Fst {
 
     // holds the fst states
-    private ArrayList<State> states = new ArrayList<State>();
+    private ArrayList<State> states = null;
 
     // the initial state's id
-    private State start;
+    protected State start;
 
     // input symbols map
-    private String[] isyms;
+    protected String[] isyms;
 
     // output symbols map
-    private String[] osyms;
+    protected String[] osyms;
 
     // holds the semiring
-    private Semiring semiring;
+    protected Semiring semiring;
 
     /**
      * Default constructor
      */
     public Fst() {
+        states = new ArrayList<State>();
+    }
+
+    public Fst(int numStates) {
+        if (numStates > 0) {
+            states = new ArrayList<State>(numStates);
+        }
     }
 
     public Fst(Semiring s) {
+        this();
         this.semiring = s;
     }
 
@@ -98,11 +106,8 @@ public class Fst {
         return this.states.size();
     }
 
-    /**
-     * @return the states
-     */
-    public ArrayList<State> getStates() {
-        return states;
+    public State getState(int index) {
+        return states.get(index);
     }
 
     /**
@@ -113,10 +118,7 @@ public class Fst {
      */
     public void addState(State state) {
         this.states.add(state);
-        if (state.getId() < 0) {
-            state.setId(states.size() - 1);
-        }
-        // return states.size() - 1;
+        state.id = states.size() - 1;
     }
 
     /**
@@ -163,18 +165,22 @@ public class Fst {
         out.writeObject(semiring);
         out.writeInt(states.size());
 
-        HashMap<State, Integer> stateMap = new HashMap<State, Integer>();
-        int stateCount = 0;
-        for (State s : states) {
+        HashMap<State, Integer> stateMap = new HashMap<State, Integer>(
+                states.size(), 1.f);
+        for (int i = 0; i < states.size(); i++) {
+            State s = states.get(i);
+            out.writeInt(s.getNumArcs());
             out.writeFloat(s.getFinalWeight());
             out.writeInt(s.getId());
-            stateMap.put(s, stateCount);
-            stateCount++;
+            stateMap.put(s, i);
         }
 
-        for (State s : states) {
-            out.writeInt(s.getNumArcs());
-            for (Arc a : s.getArcs()) {
+        int numStates = states.size();
+        for (int i = 0; i < numStates; i++) {
+            State s = states.get(i);
+            int numArcs = s.getNumArcs();
+            for (int j = 0; j < numArcs; j++) {
+                Arc a = s.getArc(j);
                 out.writeInt(a.getIlabel());
                 out.writeInt(a.getOlabel());
                 out.writeFloat(a.getWeight());
@@ -200,7 +206,7 @@ public class Fst {
         fos.close();
     }
 
-    private static String[] readStringMap(ObjectInputStream in)
+    protected static String[] readStringMap(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
 
         int mapSize = in.readInt();
@@ -213,31 +219,36 @@ public class Fst {
         return map;
     }
 
-    private static Fst readFst(ObjectInputStream in) throws IOException,
+    protected static Fst readFst(ObjectInputStream in) throws IOException,
             ClassNotFoundException {
-        Fst res = new Fst();
-        res.isyms = readStringMap(in);
-        res.osyms = readStringMap(in);
+        String[] is = readStringMap(in);
+        String[] os = readStringMap(in);
         int startid = in.readInt();
-        res.semiring = (Semiring) in.readObject();
+        Semiring semiring = (Semiring) in.readObject();
         int numStates = in.readInt();
-
+        Fst res = new Fst(numStates);
+        res.isyms = is;
+        res.osyms = os;
+        res.semiring = semiring;
         for (int i = 0; i < numStates; i++) {
+            int numArcs = in.readInt();
+            State s = new State(numArcs + 1);
             float f = in.readFloat();
             if (f == res.semiring.zero()) {
                 f = res.semiring.zero();
             } else if (f == res.semiring.one()) {
                 f = res.semiring.one();
             }
-            State s = new State(f);
-            s.setId(in.readInt());
-            res.addState(s);
+            s.setFinalWeight(f);
+            s.id = in.readInt();
+            res.states.add(s);
         }
         res.setStart(res.states.get(startid));
 
-        for (State s1 : res.getStates()) {
-            int numArcs = in.readInt();
-            for (int j = 0; j < numArcs; j++) {
+        numStates = res.getNumStates();
+        for (int i = 0; i < numStates; i++) {
+            State s1 = res.getState(i);
+            for (int j = 0; j < s1.initialNumArcs - 1; j++) {
                 Arc a = new Arc();
                 a.setIlabel(in.readInt());
                 a.setOlabel(in.readInt());
@@ -248,6 +259,15 @@ public class Fst {
         }
 
         return res;
+    }
+
+    public int getNumArcs() {
+        int numArcs = 0;
+        for (int i = 0; i < states.size(); i++) {
+            numArcs += states.get(i).getNumArcs();
+        }
+
+        return numArcs;
     }
 
     /**
@@ -336,9 +356,14 @@ public class Fst {
         StringBuilder sb = new StringBuilder();
         sb.append("Fst(start=" + start + ", isyms=" + isyms + ", osyms="
                 + osyms + ", semiring=" + semiring + ")\n");
-        for (State s : states) {
+        // for (State s : states) {
+        int numStates = states.size();
+        for (int i = 0; i < numStates; i++) {
+            State s = states.get(i);
             sb.append("  " + s + "\n");
-            for (Arc a : s.getArcs()) {
+            int numArcs = s.getNumArcs();
+            for (int j = 0; j < numArcs; j++) {
+                Arc a = s.getArc(j);
                 sb.append("    " + a + "\n");
             }
         }
@@ -361,18 +386,25 @@ public class Fst {
 
         // delete arc's with nextstate equal to stateid
         ArrayList<Integer> toDelete;
-        for (State s1 : states) {
+        // for (State s1 : states) {
+        int numStates = states.size();
+        for (int i = 0; i < numStates; i++) {
+            State s1 = states.get(i);
+
             toDelete = new ArrayList<Integer>();
-            for (int j = 0; j < s1.getNumArcs(); j++) {
+            int numArcs = s1.getNumArcs();
+            for (int j = 0; j < numArcs; j++) {
                 Arc a = s1.getArc(j);
                 if (a.getNextState().equals(state)) {
                     toDelete.add(j);
                 }
             }
             // indices not change when deleting in reverse ordering
-            Collections.sort(toDelete, Collections.reverseOrder());
-            for (Integer i : toDelete) {
-                s1.deleteArc(i.intValue());
+            Object[] toDeleteArray = toDelete.toArray();
+            Arrays.sort(toDeleteArray);
+            for (int j = toDelete.size() - 1; j >= 0; j--) {
+                Integer index = (Integer) toDeleteArray[j];
+                s1.deleteArc(index.intValue());
             }
         }
     }

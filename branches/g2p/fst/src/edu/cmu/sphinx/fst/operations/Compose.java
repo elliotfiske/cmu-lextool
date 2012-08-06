@@ -19,6 +19,8 @@ import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
+import edu.cmu.sphinx.fst.ImmutableFst;
+import edu.cmu.sphinx.fst.ImmutableState;
 import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.utils.Pair;
@@ -69,8 +71,12 @@ public class Compose {
             s1 = p.getLeft();
             s2 = p.getRight();
             s = stateMap.get(p);
-            for (Arc a1 : s1.getArcs()) {
-                for (Arc a2 : s2.getArcs()) {
+            int numArcs1 = s1.getNumArcs();
+            int numArcs2 = s2.getNumArcs();
+            for (int i = 0; i < numArcs1; i++) {
+                Arc a1 = s1.getArc(i);
+                for (int j = 0; j < numArcs2; j++) {
+                    Arc a2 = s2.getArc(j);
                     if (sorted && a1.getOlabel() < a2.getIlabel())
                         break;
                     if (a1.getOlabel() == a2.getIlabel()) {
@@ -129,15 +135,18 @@ public class Compose {
         Fst filter = new Fst(semiring);
 
         int e1index = syms.length;
-        int e2index = syms.length+1;
+        int e2index = syms.length + 1;
 
         filter.setIsyms(syms);
         filter.setOsyms(syms);
 
         // State 0
-        State s0 = new State(semiring.one());
-        State s1 = new State(semiring.one());
-        State s2 = new State(semiring.one());
+        State s0 = new State(syms.length + 3);
+        s0.setFinalWeight(semiring.one());
+        State s1 = new State(syms.length);
+        s1.setFinalWeight(semiring.one());
+        State s2 = new State(syms.length);
+        s2.setFinalWeight(semiring.one());
         filter.addState(s0);
         s0.addArc(new Arc(e2index, e1index, semiring.one(), s0));
         s0.addArc(new Arc(e1index, e1index, semiring.one(), s1));
@@ -172,13 +181,17 @@ public class Compose {
         String[] osyms = fst.getOsyms();
 
         int e1inputIndex = isyms.length;
-        int e2inputIndex = isyms.length+1;
+        int e2inputIndex = isyms.length + 1;
 
         int e1outputIndex = osyms.length;
-        int e2outputIndex = osyms.length+1;
+        int e2outputIndex = osyms.length + 1;
 
-        for (State s : fst.getStates()) {
-            for (Arc a : s.getArcs()) {
+        int numStates = fst.getNumStates();
+        for (int i = 0; i < numStates; i++) {
+            State s = fst.getState(i);
+            int numArcs = s.getNumArcs();
+            for (int j = 0; j < numArcs; j++) {
+                Arc a = s.getArc(j);
                 if ((label == 1) && (a.getOlabel() == 0)) {
                     a.setOlabel(e2outputIndex);
                 } else if ((label == 0) && (a.getIlabel() == 0)) {
@@ -192,4 +205,40 @@ public class Compose {
             }
         }
     }
+
+    public static void augment(int label, ImmutableFst fst, Semiring semiring) {
+        // label: 0->augment on ilabel
+        // 1->augment on olabel
+
+        String[] isyms = fst.getIsyms();
+        String[] osyms = fst.getOsyms();
+
+        int e1inputIndex = isyms.length;
+        int e2inputIndex = isyms.length + 1;
+
+        int e1outputIndex = osyms.length;
+        int e2outputIndex = osyms.length + 1;
+
+        int numStates = fst.getNumStates();
+        for (int i = 0; i < numStates; i++) {
+            ImmutableState s = fst.getState(i);
+            int numArcs = s.getNumArcs();
+            for (int j = 0; j < numArcs - 1; j++) {
+                Arc a = s.getArc(j);
+                if ((label == 1) && (a.getOlabel() == 0)) {
+                    a.setOlabel(e2outputIndex);
+                } else if ((label == 0) && (a.getIlabel() == 0)) {
+                    a.setIlabel(e1inputIndex);
+                }
+            }
+            if (label == 0) {
+                s.setArc(s.getNumArcs() - 1,
+                        new Arc(e2inputIndex, 0, semiring.one(), s));
+            } else if (label == 1) {
+                s.setArc(s.getNumArcs() - 1,
+                        new Arc(0, e1outputIndex, semiring.one(), s));
+            }
+        }
+    }
+
 }

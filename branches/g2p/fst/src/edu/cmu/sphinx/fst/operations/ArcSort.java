@@ -17,6 +17,7 @@ import java.util.Comparator;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
+import edu.cmu.sphinx.fst.ImmutableFst;
 import edu.cmu.sphinx.fst.State;
 
 /**
@@ -28,9 +29,19 @@ public class ArcSort {
     }
 
     public static void apply(Fst fst, Comparator<Arc> cmp) {
-        for (State s : fst.getStates()) {
+      int numStates = fst.getNumStates();
+      for (int i=0; i<numStates; i++) {
+          State s = fst.getState(i);
             s.arcSort(cmp);
         }
     }
+
+    public static void apply(ImmutableFst fst, Comparator<Arc> cmp) {
+      int numStates = fst.getNumStates();
+      for (int i=0; i<numStates; i++) {
+          State s = fst.getState(i);
+          s.arcSort(cmp);
+      }
+  }
 
 }

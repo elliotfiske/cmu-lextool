@@ -22,9 +22,12 @@ public class Project {
             fst.setIsyms(fst.getOsyms());
         }
 
-        for (State s : fst.getStates()) {
-            for (Arc a : s.getArcs()) {
-                if (pType == ProjectType.INPUT) {
+        int numStates = fst.getNumStates();
+        for (int i=0; i<numStates; i++) {
+            State s = fst.getState(i);
+            for (int j=0; j<s.getNumArcs(); j++) {
+                Arc a = s.getArc(j);
+                  if (pType == ProjectType.INPUT) {
                     a.setOlabel(a.getIlabel());
                 } else if (pType == ProjectType.OUTPUT) {
                     a.setIlabel(a.getOlabel());
