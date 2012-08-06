@@ -16,12 +16,12 @@ public class SequenceStack {
 		
 		if (stack.size() == maxSize) {
 			Collections.sort(stack);
-			removeHalf();
+			discardElements();
 		}
 	}
 	
-	private void removeHalf() {
-		while (stack.size() > maxSize/2) {
+	private void discardElements() {
+		while (stack.size() > maxSize/5) {
 			stack.pollLast();
 		}
 	}
@@ -37,5 +37,9 @@ public class SequenceStack {
 	
 	public int getSize() {
 		return this.stack.size();
+	}
+	
+	public String toString() {
+		return stack.toString();
 	}
 }
