@@ -33,7 +33,9 @@ public class ExtendFinal {
         Semiring semiring = fst.getSemiring();
         ArrayList<State> fStates = new ArrayList<State>();
 
-        for (State s : fst.getStates()) {
+        int numStates = fst.getNumStates();
+        for (int i=0; i<numStates; i++) {
+            State s = fst.getState(i);
             if (s.getFinalWeight() != semiring.zero()) {
                 fStates.add(s);
             }
@@ -52,7 +54,9 @@ public class ExtendFinal {
 
     public static void undo(Fst fst) {
         State f = null;
-        for (State s : fst.getStates()) {
+        int numStates = fst.getNumStates();
+        for (int i=0; i<numStates; i++) {
+            State s = fst.getState(i);
             if (s.getFinalWeight() != fst.getSemiring().zero()) {
                 f = s;
                 break;
@@ -63,8 +67,10 @@ public class ExtendFinal {
             System.err.println("Final state not found.");
             return;
         }
-        for (State s : fst.getStates()) {
-            for (Arc a : s.getArcs()) {
+        for (int i=0; i<numStates; i++) {
+            State s = fst.getState(i);
+            for (int j=0; j<s.getNumArcs(); j++) {
+                Arc a = s.getArc(j);
                 if (a.getIlabel() == 0 && a.getOlabel() == 0
                         && a.getNextState().getId() == f.getId()) {
                     s.setFinalWeight(a.getWeight());

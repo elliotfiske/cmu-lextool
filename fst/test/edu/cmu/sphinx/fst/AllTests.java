@@ -7,7 +7,6 @@ import org.junit.runner.notification.Failure;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import edu.cmu.sphinx.fst.fst.FstTest;
 import edu.cmu.sphinx.fst.openfst.ImportTest;
 import edu.cmu.sphinx.fst.operations.ArcSortTest;
 import edu.cmu.sphinx.fst.operations.ComposeTest;
@@ -25,7 +24,7 @@ import edu.cmu.sphinx.fst.operations.RmEpsilonTest;
  * 
  */
 @RunWith(Suite.class)
-@SuiteClasses({ FstTest.class, ImportTest.class, ArcSortTest.class,
+@SuiteClasses({ ImportTest.class, ArcSortTest.class,
         ComposeEpsilonTest.class, ComposeTest.class, ConnectTest.class,
         DeterminizeTest.class, NShortestPathsTest.class, ProjectTest.class,
         ReverseTest.class, RmEpsilonTest.class })

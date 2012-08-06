@@ -14,7 +14,6 @@
 package edu.cmu.sphinx.fst.operations;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
@@ -66,16 +65,17 @@ public class Connect {
     }
 
     private static State dfs(Fst fst, State start,
-            ArrayList<ArrayList<State>> paths,
-            HashMap<State, ArrayList<Arc>> exploredArcs,
+            ArrayList<ArrayList<State>> paths, ArrayList<Arc>[] exploredArcs,
             ArrayList<State> accessible) {
         int lastPathIndex = paths.size() - 1;
 
-        ArrayList<Arc> currentExploredArcs = exploredArcs.get(start);
+        ArrayList<Arc> currentExploredArcs = exploredArcs[start.getId()];
         paths.get(lastPathIndex).add(start);
         if (start.getNumArcs() != 0) {
             int arcCount = 0;
-            for (Arc arc : start.getArcs()) {
+            int numArcs = start.getNumArcs();
+            for (int j = 0; j < numArcs; j++) {
+                Arc arc = start.getArc(j);
                 if ((currentExploredArcs == null)
                         || !currentExploredArcs.contains(arc)) {
                     lastPathIndex = paths.size() - 1;
@@ -86,7 +86,7 @@ public class Connect {
                         paths.get(lastPathIndex).add(start);
                     }
                     State next = arc.getNextState();
-                    addExploredArc(start, arc, exploredArcs, accessible);
+                    addExploredArc(start.getId(), arc, exploredArcs, accessible);
                     // detect self loops
                     if (next.getId() != start.getId()) {
                         dfs(fst, next, paths, exploredArcs, accessible);
@@ -100,19 +100,17 @@ public class Connect {
         return start;
     }
 
-    private static void addExploredArc(State state, Arc arc,
-            HashMap<State, ArrayList<Arc>> exploredArcs,
-            ArrayList<State> accessible) {
-        if (exploredArcs.get(state) == null) {
-            exploredArcs.put(state, new ArrayList<Arc>());
+    private static void addExploredArc(int stateId, Arc arc,
+            ArrayList<Arc>[] exploredArcs, ArrayList<State> accessible) {
+        if (exploredArcs[stateId] == null) {
+            exploredArcs[stateId] = new ArrayList<Arc>();
         }
-        exploredArcs.get(state).add(arc);
+        exploredArcs[stateId].add(arc);
 
     }
 
     private static void depthFirstSearch(Fst fst, ArrayList<State> accessible,
-            ArrayList<ArrayList<State>> paths,
-            HashMap<State, ArrayList<Arc>> exploredArcs,
+            ArrayList<ArrayList<State>> paths, ArrayList<Arc>[] exploredArcs,
             ArrayList<State> coaccessible) {
         State currentState = fst.getStart();
         State nextState = currentState;
@@ -122,7 +120,9 @@ public class Connect {
                         accessible);
             }
         } while (currentState.getId() != nextState.getId());
-        for (State s : fst.getStates()) {
+        int numStates = fst.getNumStates();
+        for (int i = 0; i < numStates; i++) {
+            State s = fst.getState(i);
             if (s.getFinalWeight() != fst.getSemiring().zero()) {
                 calcCoAccessible(fst, s, paths, coaccessible);
             }
@@ -138,7 +138,11 @@ public class Connect {
 
         ArrayList<State> accessible = new ArrayList<State>();
         ArrayList<State> coaccessible = new ArrayList<State>();
-        HashMap<State, ArrayList<Arc>> exploredArcs = new HashMap<State, ArrayList<Arc>>();
+        @SuppressWarnings("unchecked")
+        ArrayList<Arc>[] exploredArcs = new ArrayList[fst.getNumStates()];
+        for (int i = 0; i < fst.getNumStates(); i++) {
+            exploredArcs[i] = null;
+        }
         ArrayList<ArrayList<State>> paths = new ArrayList<ArrayList<State>>();
         paths.add(new ArrayList<State>());
 
@@ -146,7 +150,9 @@ public class Connect {
 
         ArrayList<State> toDelete = new ArrayList<State>();
 
-        for (State s : fst.getStates()) {
+        int numStates = fst.getNumStates();
+        for (int i = 0; i < numStates; i++) {
+            State s = fst.getState(i);
             if (!(accessible.contains(s) || coaccessible.contains(s))) {
                 toDelete.add(s);
             }

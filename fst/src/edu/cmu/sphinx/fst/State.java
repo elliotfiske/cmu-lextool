@@ -24,31 +24,45 @@ import java.util.Comparator;
 public class State {
 
     // Id
-    private int id = -1;
+    protected int id = -1;
 
     // Final weight
     private float fnlWeight;
 
     // Outgoing arcs collection
-    private ArrayList<Arc> arcs = new ArrayList<Arc>();
-
+    private ArrayList<Arc> arcs = null;
+    
+    protected int initialNumArcs = -1;
+    
     public State() {
+      arcs = new ArrayList<Arc>();
+    }
+    
+    /**
+     * 
+     * @param fnlWeight
+     */
+    public State(float fnlWeight) {
+        this();
+        this.fnlWeight = fnlWeight;
     }
 
+
+
+    public State(int initialNumArcs) {
+        this.initialNumArcs = initialNumArcs;
+        if(initialNumArcs > 0) {
+            arcs = new ArrayList<Arc>(initialNumArcs);
+        }
+    }
+    
+    
     /**
      * 
      * @param cmp
      */
     public void arcSort(Comparator<Arc> cmp) {
         Collections.sort(arcs, cmp);
-    }
-
-    /**
-     * 
-     * @param fnlWeight
-     */
-    public State(float fnlWeight) {
-        this.fnlWeight = fnlWeight;
     }
 
     /**
@@ -61,9 +75,9 @@ public class State {
     /**
      * @return the arcs
      */
-    public ArrayList<Arc> getArcs() {
-        return arcs;
-    }
+//    public ArrayList<Arc> getArcs() {
+//        return arcs;
+//    }
 
     /**
      * @param arcs the arcs to set
@@ -89,13 +103,9 @@ public class State {
     /**
      * @param id the id to set
      */
-    public void setId(int id) {
-        this.id = id;
-    }
-
     /**
      * 
-     * @return the {@link #addArc(Arc)}of outgoing arcs
+     * @return the number of outgoing arcs
      */
     public int getNumArcs() {
         return this.arcs.size();

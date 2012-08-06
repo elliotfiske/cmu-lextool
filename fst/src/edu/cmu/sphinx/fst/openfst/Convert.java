@@ -53,33 +53,34 @@ public class Convert {
 
             // print start first
             State start = fst.getStart();
-            out.println(fst.getStates().indexOf(start) + "\t"
+            out.println(start.getId() + "\t"
                     + start.getFinalWeight());
 
             // print all states
-            for (State s : fst.getStates()) {
+            int numStates = fst.getNumStates();
+            for (int i=0; i<numStates; i++) {
+                State s = fst.getState(i);
                 if (s.getId() != fst.getStart().getId()) {
-                    out.println(fst.getStates().indexOf(s) + "\t"
+                    out.println(s.getId() + "\t"
                             + s.getFinalWeight());
                 }
             }
 
             String[] isyms = fst.getIsyms();
             String[] osyms = fst.getOsyms();
-//            HashMap<Integer, String> reversedIsyms = Utils.reverseHashMap(fst
-//                    .getIsyms());
-//            HashMap<Integer, String> reversedOsyms = Utils.reverseHashMap(fst
-//                    .getOsyms());
-
-            for (State s : fst.getStates()) {
-                for (Arc arc : s.getArcs()) {
+            numStates = fst.getNumStates();
+            for (int i=0; i<numStates; i++) {
+                State s = fst.getState(i);
+                int numArcs = s.getNumArcs();
+                for (int j=0; i<numArcs; j++) {
+                    Arc arc = s.getArc(j);
                     String isym = (isyms != null) ? isyms[arc.getIlabel()] : Integer.toString(arc
                             .getIlabel());
                     String osym = (osyms != null) ? osyms[arc.getOlabel()] : Integer.toString(arc
                             .getOlabel());
 
-                    out.println(fst.getStates().indexOf(s) + "\t"
-                            + fst.getStates().indexOf(arc.getNextState())
+                    out.println(s.getId() + "\t"
+                            + arc.getNextState().getId()
                             + "\t" + isym + "\t" + osym + "\t"
                             + arc.getWeight());
                 }
@@ -125,7 +126,6 @@ public class Convert {
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("\\t");
                 String sym = tokens[0];
-                //Integer index = Integer.parseInt(tokens[1]);
                 syms.add(sym);
             }
 
@@ -137,7 +137,6 @@ public class Convert {
     }
 
     public static Fst importFloat(String basename, Semiring semiring) {
-        // TropicalSemiring ts = new TropicalSemiring();
         Fst fst = new Fst(semiring);
 
         ArrayList<String> isyms = importSymbols(basename + ".input.syms");
@@ -145,7 +144,6 @@ public class Convert {
             isyms = new ArrayList<String>();
             isyms.add("<eps>");
         }
-        //fst.setIsyms((String[]) isyms.toArray());
 
         ArrayList<String>  osyms = importSymbols(basename
                 + ".output.syms");
@@ -153,7 +151,6 @@ public class Convert {
             osyms = new ArrayList<String>();
             osyms.add("<eps>");
         }
-        //fst.setOsyms((String[]) osyms.toArray());
 
         ArrayList<String> ssyms = importSymbols(basename
                 + ".states.syms");
@@ -185,7 +182,6 @@ public class Convert {
                 State inputState = stateMap.get(inputStateId);
                 if (inputState == null) {
                     inputState = new State(semiring.zero());
-                    inputState.setId(inputStateId.intValue());
                     fst.addState(inputState);
                     stateMap.put(inputStateId, inputState);
                 }
@@ -206,7 +202,6 @@ public class Convert {
                     State nextState = stateMap.get(nextStateId);
                     if (nextState == null) {
                         nextState = new State(semiring.zero());
-                        nextState.setId(nextStateId.intValue());
                         fst.addState(nextState);
                         stateMap.put(nextStateId, nextState);
                     }
