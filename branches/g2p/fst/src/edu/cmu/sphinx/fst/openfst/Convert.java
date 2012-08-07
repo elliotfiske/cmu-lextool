@@ -21,7 +21,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import edu.cmu.sphinx.fst.Arc;
@@ -113,30 +112,7 @@ public class Convert {
         }
     }
 
-    private static ArrayList<String> importSymbols(String filename) {
-        ArrayList<String>  syms = null;
-
-        try {
-            FileInputStream fis = new FileInputStream(filename);
-            DataInputStream dis = new DataInputStream(fis);
-            BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-            syms = new ArrayList<String> ();
-            String strLine;
-
-            while ((strLine = br.readLine()) != null) {
-                String[] tokens = strLine.split("\\t");
-                String sym = tokens[0];
-                syms.add(sym);
-            }
-
-        } catch (IOException e1) {
-            return null;
-        }
-
-        return syms;
-    }
-
-    private static HashMap<String, Integer> importStateSymbols(String filename) {
+    private static HashMap<String, Integer> importSymbols(String filename) {
         HashMap<String, Integer>  syms = null;
 
         try {
@@ -163,20 +139,20 @@ public class Convert {
     public static Fst importFloat(String basename, Semiring semiring) {
         Fst fst = new Fst(semiring);
 
-        ArrayList<String> isyms = importSymbols(basename + ".input.syms");
+        HashMap<String, Integer> isyms = importSymbols(basename + ".input.syms");
         if (isyms == null) {
-            isyms = new ArrayList<String>();
-            isyms.add("<eps>");
+            isyms = new HashMap<String, Integer>();
+            isyms.put("<eps>", 0);
         }
 
-        ArrayList<String>  osyms = importSymbols(basename
+        HashMap<String, Integer> osyms = importSymbols(basename
                 + ".output.syms");
         if (osyms == null) {
-            osyms = new ArrayList<String>();
-            osyms.add("<eps>");
+            osyms = new HashMap<String, Integer>();
+            osyms.put("<eps>", 0);
         }
 
-        HashMap<String, Integer> ssyms = importStateSymbols(basename
+        HashMap<String, Integer> ssyms = importSymbols(basename
                 + ".states.syms");
 
         // Parse input
@@ -230,17 +206,8 @@ public class Convert {
                         stateMap.put(nextStateId, nextState);
                     }
                     // Adding arc
-                    int iLabel = isyms.indexOf(tokens[2]);
-                    if (iLabel < 0) {
-                        isyms.add(tokens[2]);
-                        iLabel = isyms.size() - 1; 
-                    }
-
-                    int oLabel = osyms.indexOf(tokens[3]);
-                    if (oLabel < 0) {
-                        osyms.add(tokens[3]);
-                        oLabel = osyms.size() - 1;
-                    }
+                    int iLabel = isyms.get(tokens[2]);
+                    int oLabel = osyms.get(tokens[3]);
                     float arcWeight = Float.parseFloat(tokens[4]);
                     Arc arc = new Arc(iLabel, oLabel, arcWeight, nextState);
                     inputState.addArc(arc);

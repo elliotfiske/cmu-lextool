@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst.utils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -104,10 +105,10 @@ public class Utils {
         return -1;
     }
 
-    public static String[] toStringArray(ArrayList<String> syms) {
+    public static String[] toStringArray(HashMap<String, Integer> syms) {
         String[] res = new String[syms.size()];
-        for(int i=0; i< syms.size(); i++) {
-            res[i] = syms.get(i);
+        for(String sym: syms.keySet()) {
+            res[syms.get(sym)] = sym;
         }
         return res;
     }
