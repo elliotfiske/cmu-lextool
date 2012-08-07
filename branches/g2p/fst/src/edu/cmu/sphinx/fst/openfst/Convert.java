@@ -136,6 +136,30 @@ public class Convert {
         return syms;
     }
 
+    private static HashMap<String, Integer> importStateSymbols(String filename) {
+        HashMap<String, Integer>  syms = null;
+
+        try {
+            FileInputStream fis = new FileInputStream(filename);
+            DataInputStream dis = new DataInputStream(fis);
+            BufferedReader br = new BufferedReader(new InputStreamReader(dis));
+            syms = new HashMap<String, Integer> ();
+            String strLine;
+
+            while ((strLine = br.readLine()) != null) {
+                String[] tokens = strLine.split("\\t");
+                String sym = tokens[0];
+                Integer index = Integer.parseInt(tokens[1]);
+                syms.put(sym, index);
+                
+            }
+
+        } catch (IOException e1) {
+            return null;
+        }
+
+        return syms;
+    }
     public static Fst importFloat(String basename, Semiring semiring) {
         Fst fst = new Fst(semiring);
 
@@ -152,7 +176,7 @@ public class Convert {
             osyms.add("<eps>");
         }
 
-        ArrayList<String> ssyms = importSymbols(basename
+        HashMap<String, Integer> ssyms = importStateSymbols(basename
                 + ".states.syms");
 
         // Parse input
@@ -177,7 +201,7 @@ public class Convert {
                 if (ssyms == null) {
                     inputStateId = Integer.parseInt(tokens[0]);
                 } else {
-                    inputStateId = ssyms.indexOf(tokens[0]);
+                    inputStateId = ssyms.get(tokens[0]);
                 }
                 State inputState = stateMap.get(inputStateId);
                 if (inputState == null) {
@@ -196,7 +220,7 @@ public class Convert {
                     if (ssyms == null) {
                         nextStateId = Integer.parseInt(tokens[1]);
                     } else {
-                        nextStateId = ssyms.indexOf(tokens[1]);
+                        nextStateId = ssyms.get(tokens[1]);
                     }
 
                     State nextState = stateMap.get(nextStateId);
