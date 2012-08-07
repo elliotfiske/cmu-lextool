@@ -14,7 +14,6 @@
 package edu.cmu.sphinx.fst.utils;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
@@ -22,8 +21,8 @@ import java.util.Vector;
  */
 public class Utils {
 
-    public static Vector<String> split_string(String input, String delim) {
-        Vector<String> res = new Vector<String>();
+    public static ArrayList<String> split_string(String input, String delim) {
+        ArrayList<String> res = new ArrayList<String>(input.length());
 
         int start = 0;
         int len = 0;
@@ -51,7 +50,7 @@ public class Utils {
         return res;
     }
 
-    public static int search(Vector<String> src, Vector<String> pattern,
+    public static int search(ArrayList<String> src, ArrayList<String> pattern,
             int start) {
         int index = -1;
         int pos = -1;
