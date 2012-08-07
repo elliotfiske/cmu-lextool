@@ -10,7 +10,7 @@
  * WARRANTIES.
  *
  */
-
+package edu.cmu.sphinx.post.fst;
 import java.io.*;
 import java.net.URL;
 import java.util.HashMap;

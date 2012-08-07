@@ -1,3 +1,4 @@
+package edu.cmu.sphinx.post.fst;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 
 
