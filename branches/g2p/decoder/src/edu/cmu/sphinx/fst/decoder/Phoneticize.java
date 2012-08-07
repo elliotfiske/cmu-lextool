@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
-import java.util.Vector;
 
 import edu.cmu.sphinx.fst.decoder.Decoder;
 import edu.cmu.sphinx.fst.decoder.Path;
@@ -56,8 +55,8 @@ public class Phoneticize {
                 String[] tokens = strLine.split("  ");
                 String in = tokens[0];
 
-                // convert it to Vector<String>
-                Vector<String> entry = new Vector<String>();
+                // convert it to ArrayList<String>
+                ArrayList<String> entry = new ArrayList<String>(in.length());
                 for (int i = 0; i < in.length(); i++) {
                     String ch = in.substring(i, i + 1);
                     if (Utils.getIndex(syms, ch) >= 0) {

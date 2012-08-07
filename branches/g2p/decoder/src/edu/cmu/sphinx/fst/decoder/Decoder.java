@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Vector;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
@@ -48,7 +47,7 @@ public class Decoder {
     String tie;
 
     HashSet<String> skipSeqs = new HashSet<String>();
-    Vector<String>[] clusters = null;
+    ArrayList<String>[] clusters = null;
 
     ImmutableFst g2pmodel;
     Fst epsilonFilter;
@@ -82,15 +81,15 @@ public class Decoder {
      */
     @SuppressWarnings("unchecked")
     private void loadClusters(String[] syms) {
-        clusters = new Vector[syms.length];
+        clusters = new ArrayList[syms.length];
         for (int i = 0; i < syms.length; i++) {
             clusters[i] = null;
         }
         for (int i = 2; i < syms.length; i++) {
             String sym = syms[i];
             if (sym.contains(tie)) {
-                Vector<String> tmp = Utils.split_string(sym, tie);
-                Vector<String> cluster = new Vector<String>();
+                ArrayList<String> tmp = Utils.split_string(sym, tie);
+                ArrayList<String> cluster = new ArrayList<String>();
                 for (int j = 0; j < tmp.size(); j++) {
                     if (!tmp.get(j).equals(tie)) {
                         cluster.add(tmp.get(j));
@@ -107,7 +106,7 @@ public class Decoder {
      * @param nbest
      * @return
      */
-    public ArrayList<Path> phoneticize(Vector<String> entry, int nbest) {
+    public ArrayList<Path> phoneticize(ArrayList<String> entry, int nbest) {
         Fst efst = entryToFSA(entry);
         Semiring s = efst.getSemiring();
         Compose.augment(1, efst, s);
@@ -131,7 +130,7 @@ public class Decoder {
      * @param entry the input vector
      * @return the created fst
      */
-    private Fst entryToFSA(Vector<String> entry) {
+    private Fst entryToFSA(ArrayList<String> entry) {
         TropicalSemiring ts = new TropicalSemiring();
         Fst efst = new Fst(ts);
 
@@ -163,7 +162,7 @@ public class Decoder {
 
         // Add any cluster arcs
         for (int value = 0; value < clusters.length; value++) {
-            Vector<String> cluster = clusters[value];
+            ArrayList<String> cluster = clusters[value];
             if (cluster != null) {
                 int start = 0;
                 int k = 0;
