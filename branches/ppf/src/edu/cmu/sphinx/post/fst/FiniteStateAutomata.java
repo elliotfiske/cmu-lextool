@@ -1,4 +1,4 @@
-
+package edu.cmu.sphinx.post.fst;
 public interface FiniteStateAutomata {
 	
 	public void writeToFile(String path);

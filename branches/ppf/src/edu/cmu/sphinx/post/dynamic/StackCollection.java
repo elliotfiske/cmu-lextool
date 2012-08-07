@@ -1,5 +1,8 @@
+package edu.cmu.sphinx.post.dynamic;
 import java.util.Iterator;
 import java.util.LinkedList;
+
+import edu.cmu.sphinx.post.dynamic.SequenceStack;
 
 
 public class StackCollection {

@@ -1,3 +1,4 @@
+package edu.cmu.sphinx.post.dynamic;
 import java.util.LinkedList;
 
 import edu.cmu.sphinx.linguist.WordSequence;

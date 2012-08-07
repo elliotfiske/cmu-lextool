@@ -1,3 +1,4 @@
+package edu.cmu.sphinx.post.fst;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
