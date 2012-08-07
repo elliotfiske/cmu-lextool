@@ -55,7 +55,6 @@ public class PostProcessing {
 		
 		String text = null, lm_path = null, input_file = null;
 		int stackSize = 100;
-		int count = 0;
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-input_file")) input_file = args[i+1];
@@ -158,7 +157,6 @@ public class PostProcessing {
 	
 					Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
 					stacks.addSequence(unpunctuated);
-					count++;
 					continue;
 				}
 				
@@ -167,26 +165,23 @@ public class PostProcessing {
 					
 					if (lm.hasUnigram(wordForm)) {
 						WordSequence previousWords = new WordSequence(currentSequence.getWords());
-						WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);			
-						count++;
+						WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);	
 	
 						Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
 						stacks.addSequence(unpunctuated);
 						
-						for (Word punctuation : punctuationMarks) {
-							WordSequence punctSequence = newSequence.addWord(punctuation, maxSequenceSize);
+						WordSequence commaSequence = newSequence.addWord(punctuationMarks[0], maxSequenceSize);
+						WordSequence periodSequence = newSequence.addWord(punctuationMarks[1], maxSequenceSize);
 							
-							Sequence newSequenceHistory = new Sequence(punctSequence, getWSProb(punctSequence, lm), currentSize, unpunctuated);
-							stacks.addSequence(newSequenceHistory);
-							count++;
-						}
+						Sequence newSequenceHistory = new Sequence(commaSequence, getWSProb(commaSequence, lm), currentSize, unpunctuated);
+						stacks.addSequence(newSequenceHistory);
+						newSequenceHistory = new Sequence(periodSequence, getWSProb(periodSequence, lm), currentSize, unpunctuated);
+						stacks.addSequence(newSequenceHistory);
 					}
 				}
 			}
 			
 			output.write(formatOutput(finalSequence.getWordSequence()) + '\n');
-			
-			System.out.println(finalSequence.getWordSequence().toString());
 			
 			System.out.println(formatOutput(finalSequence.getWordSequence()) + " " + finalSequence.getProbability() + '\n' );
 		}
