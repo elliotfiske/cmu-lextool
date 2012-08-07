@@ -22,6 +22,10 @@ public class Sequence implements Comparable<Sequence>{
 	}
 	
 	public int getSize() {
+		return this.words.size();
+	}
+	
+	public int getSequenceNumber() {
 		return this.size;
 	}
 	
