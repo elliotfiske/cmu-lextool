@@ -54,7 +54,7 @@ public class PostProcessing {
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		
 		String text = null, lm_path = null, input_file = null;
-		int stackSize = 1000;
+		int stackSize = 100;
 		int count = 0;
 		
 		for (int i = 0; i < args.length; i++) {
@@ -105,6 +105,7 @@ public class PostProcessing {
 		while ((text = input.readLine()) != null) {
 			float max = Integer.MIN_VALUE;
 			Sequence finalSequence = null;
+			StackCollection stacks = new StackCollection(stackSize);
 		
 			// put the words in the text into a Word Sequence
 			WordSequence inputWords = breakIntoWords(text.replaceAll("\\s+", " "));			
@@ -113,16 +114,15 @@ public class PostProcessing {
 			Word[] temp = {new Word("<s>", null, false)};
 			Sequence firstSymbol = new Sequence(new WordSequence(temp), 0f, -1, null);
 			
-			SequenceStack stack = new SequenceStack(stackSize);
-			stack.addSequence(firstSymbol);
+			stacks.addSequence(firstSymbol);
 	
-			while (!stack.isEmpty()) {
+			while (!stacks.isEmpty()) {
 				// retrieve the first sequence in the stack
-				Sequence currentSequence = stack.getSequence();
+				Sequence currentSequence = stacks.getSequence();
 				
 				//System.out.println(currentSequence);
 				WordSequence currentWordSequence = currentSequence.getWordSequence();
-				int currentSize = currentSequence.getSize() + 1;
+				int currentSize = currentSequence.getSequenceNumber() + 1;
 				
 				// if the retrieved sequence is full-sized, add </s> and keep the sequence with the 
 				// biggest probability
@@ -132,7 +132,7 @@ public class PostProcessing {
 					WordSequence fullSentence = currentWordSequence.addWord(new Word("</s>", null, false), maxSequenceSize);
 					Sequence fullSentenceSequence = new Sequence(fullSentence, getWSProb(fullSentence, lm), currentSize, currentSequence);
 					
-				//	System.out.println(fullSentenceSequence.toString() + " " + fullSentenceSequence.getProbability());
+					//System.out.println(fullSentenceSequence.toString() + " " + fullSentenceSequence.getProbability());
 				
 					if (fullSentenceSequence.getProbability() > max) {
 						finalSequence = fullSentenceSequence;
@@ -157,7 +157,7 @@ public class PostProcessing {
 					
 	
 					Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
-					stack.addSequence(unpunctuated);
+					stacks.addSequence(unpunctuated);
 					count++;
 					continue;
 				}
@@ -171,13 +171,13 @@ public class PostProcessing {
 						count++;
 	
 						Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
-						stack.addSequence(unpunctuated);
+						stacks.addSequence(unpunctuated);
 						
 						for (Word punctuation : punctuationMarks) {
 							WordSequence punctSequence = newSequence.addWord(punctuation, maxSequenceSize);
 							
 							Sequence newSequenceHistory = new Sequence(punctSequence, getWSProb(punctSequence, lm), currentSize, unpunctuated);
-							stack.addSequence(newSequenceHistory);
+							stacks.addSequence(newSequenceHistory);
 							count++;
 						}
 					}
@@ -189,12 +189,11 @@ public class PostProcessing {
 			System.out.println(finalSequence.getWordSequence().toString());
 			
 			System.out.println(formatOutput(finalSequence.getWordSequence()) + " " + finalSequence.getProbability() + '\n' );
-			System.out.println(count);
 		}
 		
 		
-		outputFile.close();
-		inputFile.close();
+		output.close();
+		input.close();
 	} 
 	
 	static String formatOutput(WordSequence output) {
@@ -202,7 +201,7 @@ public class PostProcessing {
 		String newOutput = "";
 		
 		for (Word w : output.getWords()) {
-			//if (!w.toString().equals("<s>") && !w.toString().equals("</s>"))
+			if (!w.toString().equals("<s>") && !w.toString().equals("</s>"))
 				newOutput += w.toString() + " ";			
 		}
 		
@@ -236,8 +235,6 @@ public class PostProcessing {
 	}
 	
 	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
-		
-		//System.out.println(ws);
 		
 		if (ws.size() > 3) {
 			ws = ws.getSubSequence(ws.size() - 3, ws.size());
