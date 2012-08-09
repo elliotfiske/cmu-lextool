@@ -19,13 +19,13 @@ public class StackCollection {
 	}
 	
 	public void addSequence(Sequence s) {
-		if (size < s.getSize()) {
-			for (int i = size; i < s.getSize(); i++) {
+		if (size <= s.getSize()) {
+			for (int i = size; i <= s.getSize(); i++) {
 				stacks.add(new SequenceStack(stackSize));
 			}
 			size = s.getSize();
 		}
-		stacks.get(s.getSize() - 1).addSequence(s);
+		stacks.get(s.getSize()).addSequence(s);
 	}
 	
 	public boolean isEmpty() {

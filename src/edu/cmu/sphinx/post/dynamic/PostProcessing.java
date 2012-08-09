@@ -24,16 +24,10 @@ import org.apache.commons.lang.WordUtils;
 
 import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.acoustic.UnitManager;
-import edu.cmu.sphinx.linguist.dictionary.FastDictionary;
 import edu.cmu.sphinx.linguist.dictionary.FullDictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
-import edu.cmu.sphinx.linguist.language.ngram.SimpleNGramModel;
 import edu.cmu.sphinx.linguist.language.ngram.large.LargeNGramModel;
 import edu.cmu.sphinx.util.LogMath;
-import weka.classifiers.Classifier;
-import weka.classifiers.trees.J48;
-import weka.classifiers.trees.REPTree;
-import weka.core.Instances;
 
 
 
@@ -54,7 +48,7 @@ public class PostProcessing {
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
 		
 		String text = null, lm_path = null, input_file = null;
-		int stackSize = 100;
+		int stackSize = 10000;
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-input_file")) input_file = args[i+1];
@@ -95,7 +89,7 @@ public class PostProcessing {
 		
 		lm = new LargeNGramModel("", new URL("file:" + lm_path), 
 				"file:logfile", 0, false, 3, 
-				new LogMath(1.0001f, true),
+				new LogMath(10f, false),
 				dict, false, 0.0f, 0.0, 0.7f, false);
 		
 		lm.allocate();
@@ -111,7 +105,7 @@ public class PostProcessing {
 			
 			// consider <s> the first symbol
 			Word[] temp = {new Word("<s>", null, false)};
-			Sequence firstSymbol = new Sequence(new WordSequence(temp), 0f, -1, null);
+			Sequence firstSymbol = new Sequence(new WordSequence(temp), 0f, 0, null);
 			
 			stacks.addSequence(firstSymbol);
 	
@@ -126,12 +120,12 @@ public class PostProcessing {
 				// if the retrieved sequence is full-sized, add </s> and keep the sequence with the 
 				// biggest probability
 				
-				if (currentSize == inputWords.size()) {
+				if (currentSize == inputWords.size() + 1) {
 
 					WordSequence fullSentence = currentWordSequence.addWord(new Word("</s>", null, false), maxSequenceSize);
 					Sequence fullSentenceSequence = new Sequence(fullSentence, getWSProb(fullSentence, lm), currentSize, currentSequence);
 					
-					//System.out.println(fullSentenceSequence.toString() + " " + fullSentenceSequence.getProbability());
+					//output.write(formatOutput(fullSentenceSequence.getWordSequence()) + " " + fullSentenceSequence.getProbability() + "\n");
 				
 					if (fullSentenceSequence.getProbability() > max) {
 						finalSequence = fullSentenceSequence;
@@ -141,7 +135,7 @@ public class PostProcessing {
 				}
 				
 				// get the next word that needs to be added and compute it's written forms
-				Word currentWord = inputWords.getWord(currentSize);
+				Word currentWord = inputWords.getWord(currentSize - 1);
 				
 				Word[] currentWordForms = {currentWord, 
 						new Word(WordUtils.capitalize(currentWord.toString()), null, false)}; 
@@ -184,8 +178,12 @@ public class PostProcessing {
 			output.write(formatOutput(finalSequence.getWordSequence()) + '\n');
 			
 			System.out.println(formatOutput(finalSequence.getWordSequence()) + " " + finalSequence.getProbability() + '\n' );
+			
 		}
 		
+		//System.out.println(evaluateSentence("<s> I saw him <COMMA> putting a razor edge <COMMA> on his bayonet <PERIOD> Last night <COMMA> added Bart <PERIOD> Now <COMMA> he's anxious to see how it works <PERIOD> He'll have plenty of chances <COMMA> to find out <COMMA> said Frank <PERIOD> This is going to be a hot <COMMA> scrap <COMMA> or I miss my guess <PERIOD> </s>", lm));
+		//System.out.println(evaluateSentence("<s> I saw him putting a razor edge on his bayonet last night <COMMA> added Bart <PERIOD>  Now he's anxious to see how it works <PERIOD>  He'll have plenty of chances to find out <COMMA> said Frank <PERIOD>  This is going to be a hot scrap <COMMA> or I miss my guess <PERIOD> </s>", lm));
+
 		
 		output.close();
 		input.close();
@@ -226,7 +224,7 @@ public class PostProcessing {
 			System.out.println(formatOutput(sentence.getSubSequence(0, i)) + " " + getWSProb(sentence.getSubSequence(0, i), lm));
 		}
 		
-		return prob;
+		return prob + 99;
 	}
 	
 	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
@@ -234,6 +232,8 @@ public class PostProcessing {
 		if (ws.size() > 3) {
 			ws = ws.getSubSequence(ws.size() - 3, ws.size());
 		}
+		
+		float prob = 0;
 		
 		ArrayList<Word> words = new ArrayList<Word>();
 		
@@ -245,6 +245,18 @@ public class PostProcessing {
 
 		WordSequence trimmedWS = new WordSequence(words);
 		
-		return lm.getProbability(trimmedWS);
+		prob = lm.getProbability(trimmedWS);
+		
+		//System.out.println(trimmedWS);
+		//System.out.println(trimmedWS.getSubSequence(trimmedWS.size()-1, trimmedWS.size()).toString());
+		
+		/*if (trimmedWS.getSubSequence(trimmedWS.size()-1, trimmedWS.size()).toString().equals("[<COMMA>]")) {
+			prob *= 4;
+			//System.out.println(trimmedWS);
+		} else if (trimmedWS.getSubSequence(trimmedWS.size()-1, trimmedWS.size()).toString().equals("[<PERIOD>]")) {
+			prob *= 3;
+		}*/
+		
+		return prob;
 	}
 }

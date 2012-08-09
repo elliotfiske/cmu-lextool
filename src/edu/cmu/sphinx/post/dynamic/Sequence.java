@@ -1,5 +1,4 @@
 package edu.cmu.sphinx.post.dynamic;
-import java.util.LinkedList;
 
 import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.dictionary.Word;
@@ -23,7 +22,7 @@ public class Sequence implements Comparable<Sequence>{
 	}
 	
 	public int getSize() {
-		return this.words.size();
+		return this.size;
 	}
 	
 	public int getSequenceNumber() {
