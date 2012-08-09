@@ -98,7 +98,7 @@ public class Utils {
     
     public static int getIndex(String[] isyms, String string) {
         for(int i=0; i<isyms.length; i++) {
-            if(string.equals(isyms[i])) {
+            if(string.toLowerCase().equals(isyms[i].toLowerCase())) {
                 return i;
             }
         }

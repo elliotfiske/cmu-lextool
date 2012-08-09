@@ -86,7 +86,7 @@ public class Decoder {
             clusters[i] = null;
         }
         for (int i = 2; i < syms.length; i++) {
-            String sym = syms[i];
+            String sym = syms[i].toLowerCase();
             if (sym.contains(tie)) {
                 ArrayList<String> tmp = Utils.split_string(sym, tie);
                 ArrayList<String> cluster = new ArrayList<String>();
