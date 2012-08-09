@@ -22,7 +22,7 @@ public class SequenceStack {
 	}
 	
 	private void discardElements() {
-		while (stack.size() > maxSize/2) {
+		while (stack.size() > maxSize/5) {
 			stack.pollLast();
 		}
 	}
