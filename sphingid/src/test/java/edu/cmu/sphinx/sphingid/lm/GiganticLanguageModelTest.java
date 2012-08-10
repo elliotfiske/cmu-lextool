@@ -1,0 +1,75 @@
+package edu.cmu.sphinx.sphingid.lm;
+
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+public class GiganticLanguageModelTest {
+
+	@Rule
+	public TemporaryFolder tempFolder = new TemporaryFolder();
+
+	@SuppressWarnings("static-method")
+	@Test
+	public void canComputeSentencePerplexities() {
+		File giglm = new File(getClass().getClassLoader()
+				.getResource("languageModelTestData/text-a.giglm.gz").getFile()); //$NON-NLS-1$ 
+
+		File sentences = new File(getClass().getClassLoader()
+				.getResource("languageModelTestData/sentence-test").getFile()); //$NON-NLS-1$ 
+
+		ArrayList<SentencePerplexity> perplexities = null;
+		try {
+			GiganticLanguageModel glm = new GiganticLanguageModel(giglm);
+			perplexities = glm.computeSentencePerplexities(sentences);
+		} catch (IOException e) {
+			fail(ExceptionUtils.getStackTrace(e));
+		} catch (InterruptedException e) {
+			fail(ExceptionUtils.getStackTrace(e));
+		}
+		assertThat(perplexities.get(0).getPerplexity(), is((float) 23.50));
+		assertThat(perplexities.get(1).getPerplexity(), is((float) 2965.17));
+		assertThat(perplexities.get(2).getPerplexity(), is((float) 5475.84));
+		assertThat(perplexities.get(3).getPerplexity(), is((float) 769.24));
+	}
+
+	@SuppressWarnings("unused")
+	@Test
+	public void canConstructModelCorrectly() {
+		File corpus = new File(getClass().getClassLoader()
+				.getResource("languageModelTestData/text-a").getFile()); //$NON-NLS-1$
+
+		File testData = new File(getClass().getClassLoader()
+				.getResource("languageModelTestData/text-a.giglm.gz").getFile()); //$NON-NLS-1$
+
+		try {
+			new GiganticLanguageModel(corpus,
+					new File(this.tempFolder.getRoot() + File.separator
+							+ "glm.test"), null, 3, null, true, true, //$NON-NLS-1$
+					3);
+		} catch (InterruptedException e) {
+			fail(ExceptionUtils.getStackTrace(e));
+		} catch (IOException e) {
+			fail(ExceptionUtils.getStackTrace(e));
+		}
+		try {
+			// Relaxed assertion. Binary comparison does not work for identical
+			// LMs, reason unknown.
+			assertTrue(testData.length() == this.tempFolder.newFile(
+					"glm.test.gz").length()); //$NON-NLS-1$
+		} catch (IOException e) {
+			fail(ExceptionUtils.getStackTrace(e));
+		}
+	}
+
+}

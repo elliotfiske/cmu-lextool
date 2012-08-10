@@ -1,0 +1,11 @@
+# Regular expression test for robots parser
+
+User-agent: Sphingid
+Disallow: /url1/*.gif
+Disallow: /*.jpg
+Disallow: /*?str
+Allow: /url2/*.jpg
+Disallow: forbidden.*
+
+
+

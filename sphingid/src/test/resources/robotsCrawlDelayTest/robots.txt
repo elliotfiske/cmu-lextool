@@ -1,0 +1,13 @@
+# Crawl settings for * must be read
+
+Sitemap: http://www.test.com/map1
+
+User-agent: AnotherBot
+Disallow: /url1
+Disallow: /url2
+Disallow: /url3
+Disallow: /url4
+Crawl-delay: 2
+
+User-agent: *
+Crawl-delay: 500

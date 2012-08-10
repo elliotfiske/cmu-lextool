@@ -1,0 +1,22 @@
+# Duplicate rules must be eliminated
+# If there are multiple rules for the same path with different Allow/Disallow rules, Disallow rules must be kept
+
+User-agent: *
+Disallow: /
+Crawl-delay: 500
+
+#They love Sphingid
+User-agent: Sphingid
+Disallow: /url4
+Allow: /url4
+Crawl-delay: 1
+
+Sitemap: http://www.test.com/map1
+
+User-agent: AnotherBot
+Disallow: /url1
+Disallow: /url2
+Disallow: /url3
+Disallow: /url4
+Crawl-delay: 2
+
