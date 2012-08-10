@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<crawlerConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="crawler-configuration.xs">
+	<crawlerName>Sphingid-Test</crawlerName>
+	<timeSettings>
+		<defaultCrawlDelay>1.0</defaultCrawlDelay>
+		<maxCrawlDelay>20.0</maxCrawlDelay>
+		<defaultRecrawlInterval>86400.0</defaultRecrawlInterval>
+		<minimumRecrawlInterval>3600.0</minimumRecrawlInterval>
+		<recrawlMultiplier>3.0</recrawlMultiplier>
+		<connectionTimeout>15.0</connectionTimeout>
+		<readTimeout>45.0</readTimeout>
+		<displayStatisticsInterval>15.0</displayStatisticsInterval>
+		<crawlStateWriteInterval>60.0</crawlStateWriteInterval>
+	</timeSettings>
+	<urlFilters>
+		<disallow>\.(gif|GIF|jpg|JPG|png|PNG|ico|ICO|css|sit|eps|wmf|zip|ppt|mpg|xls|gz|rpm|tgz|mov|MOV|exe|jpeg|JPEG|bmp|BMP|pdf|PDF|doc|docx|DOC|DOCX|rtf|RTF|avi|AVI|txt|TXT|mp3|MP3|wav|WAV)$
+		</disallow>
+		<disallow>.*(/[^/]+)/[^/]+\1/[^/]+\1/</disallow>
+		<disallow>.*/video(/.*)?</disallow>
+	</urlFilters>
+	<seedUrls>
+		<seedUrl>
+			<url>http://www.test.com</url>
+			<customUrlFilters></customUrlFilters>
+		</seedUrl>
+		<seedUrl>
+			<url>http://www.test.com</url>
+			<customUrlFilters></customUrlFilters>
+		</seedUrl>
+	</seedUrls>
+	<paths>
+		<crawlDatabase>/crawldb2</crawlDatabase>
+		<extractedDocuments>/extracted2</extractedDocuments>
+	</paths>
+	<similarityThreshold>0.5</similarityThreshold>
+</crawlerConfiguration>

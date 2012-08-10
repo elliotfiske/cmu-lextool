@@ -1,0 +1,26 @@
+# Testing for semantics. All entries under both Sphingids should be disallowed and allowed. 
+# Allow takes precedence over disallow, except when they have the same amount of strictness. 
+# We accept the higher crawl delay for politeness.
+
+User-agent: Sphingid
+Disallow: /
+Allow: /url4/url5
+Disallow: /url4/url5/url6
+Crawl-delay: 15
+
+User-agent: *
+Disallow: /
+
+User-agent: AnotherBot
+Disallow: /url1
+Disallow: /url2
+Disallow: /url3
+Disallow: /url4
+Crawl-delay: 2
+
+User-agent: Sphingid
+Allow: / # Must still be disallowed
+Allow: /url7
+Crawl-delay: 5
+
+

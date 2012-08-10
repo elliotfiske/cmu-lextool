@@ -1,0 +1,24 @@
+# Crawl settings for * must be thrown away when we encounter settings for Sphingid
+
+User-agent: *
+Disallow: /
+Crawl-delay: 500
+
+#They love Sphingid
+User-agent: Sphingid
+Disallow: /url4
+Disallow: /url5
+Crawl-delay: 20
+
+Sitemap: http://www.test.com/map1
+
+User-agent: AnotherBot
+Disallow: /url1
+Disallow: /url2
+Disallow: /url3
+Disallow: /url4
+Crawl-delay: 2
+
+Sitemap: http://www.test.com/map2
+
+
