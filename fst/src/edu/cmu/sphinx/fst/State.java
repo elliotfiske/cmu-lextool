@@ -73,13 +73,6 @@ public class State {
     }
 
     /**
-     * @return the arcs
-     */
-//    public ArrayList<Arc> getArcs() {
-//        return arcs;
-//    }
-
-    /**
      * @param arcs the arcs to set
      */
     public void setArcs(ArrayList<Arc> arcs) {

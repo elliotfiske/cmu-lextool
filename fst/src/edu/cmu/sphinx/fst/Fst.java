@@ -408,4 +408,12 @@ public class Fst {
             }
         }
     }
+
+    public void remapStateIds() {
+        int numStates = states.size();
+        for(int i=0; i < numStates; i++) {
+            states.get(i).id = i;
+        }
+        
+    }
 }

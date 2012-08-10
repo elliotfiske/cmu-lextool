@@ -71,7 +71,7 @@ public class Convert {
             for (int i=0; i<numStates; i++) {
                 State s = fst.getState(i);
                 int numArcs = s.getNumArcs();
-                for (int j=0; i<numArcs; j++) {
+                for (int j=0; j<numArcs; j++) {
                     Arc arc = s.getArc(j);
                     String isym = (isyms != null) ? isyms[arc.getIlabel()] : Integer.toString(arc
                             .getIlabel());
@@ -206,7 +206,13 @@ public class Convert {
                         stateMap.put(nextStateId, nextState);
                     }
                     // Adding arc
+                    if(isyms.get(tokens[2]) == null) {
+                        isyms.put(tokens[2], isyms.size());
+                    }
                     int iLabel = isyms.get(tokens[2]);
+                    if(osyms.get(tokens[3]) == null) {
+                        osyms.put(tokens[3], osyms.size());
+                    }
                     int oLabel = osyms.get(tokens[3]);
                     float arcWeight = Float.parseFloat(tokens[4]);
                     Arc arc = new Arc(iLabel, oLabel, arcWeight, nextState);

@@ -115,9 +115,18 @@ public class Decoder {
         ArcSort.apply(result, new OLabelCompare());
         result = Compose.compose(result, g2pmodel, s, true);
         Project.apply(result, ProjectType.OUTPUT);
-        result = NShortestPaths.get(result, nbest, false);
+        if(nbest == 1) {
+            result = NShortestPaths.get(result, 1, false);
+        } else {
+            // Requesting 10 times more best paths than what was asking
+            // as there might be several paths resolving to same pronunciation
+            // due to epsilon transitions.
+            // I really hate cosmological constants :)
+            result = NShortestPaths.get(result, nbest * 10, false);
+        }
+//        result = NShortestPaths.get(result, nbest, false);
         result = RmEpsilon.get(result);
-        ArrayList<Path> paths = Decoder.findAllPaths(result, skipSeqs, tie);
+        ArrayList<Path> paths = Decoder.findAllPaths(result, nbest, skipSeqs, tie);
         result = null;
 
         return paths;
@@ -190,11 +199,12 @@ public class Decoder {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static ArrayList<Path> findAllPaths(Fst fst,
+    public static ArrayList<Path> findAllPaths(Fst fst, int nbest,
             HashSet<String> skipSeqs, String tie) {
         Semiring semiring = fst.getSemiring();
 
-        ArrayList<Path> finalPaths = new ArrayList<Path>();
+        //ArrayList<Path> finalPaths = new ArrayList<Path>();
+        HashMap<String, Path> finalPaths = new HashMap<String, Path>();
         HashMap<State, Path> paths = new HashMap<State, Path>();
         ArrayList<State> queue = new ArrayList<State>();
         Path p = new Path(fst.getSemiring());
@@ -205,10 +215,20 @@ public class Decoder {
 
         String[] osyms = fst.getOsyms();
         while (queue.size() > 0) {
-            State s = queue.get(0);
-            queue.remove(0);
+            State s = queue.remove(0);
+            Path currentPath = paths.get(s);
+            
             if (s.getFinalWeight() != semiring.zero()) {
-                finalPaths.add(paths.get(s));
+                String pathString = currentPath.getPath().toString();
+                if(finalPaths.containsKey(pathString)) {
+                    // path already exist. update its cost
+                    Path old = finalPaths.get(pathString);
+                    if(old.getCost()>currentPath.getCost()) {
+                        finalPaths.put(pathString, currentPath);
+                    }
+                } else {
+                    finalPaths.put(pathString, currentPath);
+                }
             }
 
             int numArcs = s.getNumArcs();
@@ -220,9 +240,14 @@ public class Decoder {
                 p.setPath((ArrayList<String>) cur.getPath().clone());
 
                 String sym = osyms[a.getOlabel()];
-                sym = sym.replace(tie, " ");
-                if (!skipSeqs.contains(sym)) {
-                    p.getPath().add(sym);
+
+                String[] symsArray = sym.split("\\" + tie);
+
+                for (int i = 0; i < symsArray.length; i++) {
+                    String phone = symsArray[i];
+                    if (!skipSeqs.contains(phone)) {
+                        p.getPath().add(phone);
+                    }
                 }
                 p.setCost(semiring.times(p.getCost(), a.getWeight()));
                 State nextState = a.getNextState();
@@ -232,10 +257,19 @@ public class Decoder {
                 }
             }
         }
-
-        Collections.sort(finalPaths, new PathComparator());
-
-        return finalPaths;
+        
+        ArrayList<Path> res = new ArrayList<Path>();
+        for(Path path : finalPaths.values()) {
+            res.add(path);
+        }
+        
+        Collections.sort(res, new PathComparator());
+        int numPaths = res.size();
+        for(int i=nbest; i<numPaths; i++) {
+            res.remove(res.size()-1);
+        }
+        
+        return res;
     }
 
     public String[] getModelIsyms() {
