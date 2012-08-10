@@ -84,13 +84,13 @@ public class RobotsParser {
 			br = new BufferedReader(new InputStreamReader(is,
 					Charset.forName("utf-8"))); //$NON-NLS-1$
 		} catch (FileNotFoundException e) {
-			logger.warn(Messages.getString("RobotsParser.2"), //$NON-NLS-1$
+			logger.warn("robots.txt could not be found at {}. Assuming everything is okay and using default crawl delay.", //$NON-NLS-1$
 					robotsUrl.toString());
 			return new RobotSettings(new ArrayList<RobotRule>(),
 					new ArrayList<String>(), this.defaultCrawlDelay);
 		}
 
-		logger.info(Messages.getString("RobotsParser.3"), robotsUrl.getHost()); //$NON-NLS-1$
+		logger.info("robots.txt parsed for {}.", robotsUrl.getHost()); //$NON-NLS-1$
 
 		/*
 		 * Begin parsing
@@ -178,7 +178,7 @@ public class RobotsParser {
 
 		if (crawlDelay > this.maxCrawlDelay) {
 			throw new CrawlDelayException(String.format(
-					Messages.getString("RobotsParser.17"), //$NON-NLS-1$
+					"Robot settings for %s is %f second(s), which is higher than the maximum setting %f second(s) in configuration file. Skipping this host.", //$NON-NLS-1$
 					robotsUrl.getHost(), crawlDelay / 1000.0F,
 					this.maxCrawlDelay / 1000.0F));
 		}

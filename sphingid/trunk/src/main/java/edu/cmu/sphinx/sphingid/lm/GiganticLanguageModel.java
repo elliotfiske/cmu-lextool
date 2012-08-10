@@ -66,10 +66,6 @@ public class GiganticLanguageModel extends AbstractLanguageModel {
 					Messages.getString("CannotAccessCorpus")); //$NON-NLS-1$
 		}
 		
-		if (!lmFile.canWrite()) {
-			throw new IOException(Messages.getString("CannotWriteToModelFile")); //$NON-NLS-1$
-		}
-
 		File giganticLMScript = new File("irstlm/bin/build-lm.sh"); //$NON-NLS-1$
 
 		if (!giganticLMScript.canRead() || !giganticLMScript.canExecute()) {
