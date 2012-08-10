@@ -14,6 +14,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import edu.cmu.sphinx.sphingid.lm.AbstractLanguageModel.Smoothing;
+
 public class GiganticLanguageModelTest {
 
 	@Rule
@@ -49,13 +51,14 @@ public class GiganticLanguageModelTest {
 		File corpus = new File(getClass().getClassLoader()
 				.getResource("languageModelTestData/text-a").getFile()); //$NON-NLS-1$
 
-		File testData = new File(getClass().getClassLoader()
+		File testLm = new File(getClass().getClassLoader()
 				.getResource("languageModelTestData/text-a.giglm.gz").getFile()); //$NON-NLS-1$
 
 		try {
-			new GiganticLanguageModel(corpus,
+			new GiganticLanguageModel(
+					corpus,
 					new File(this.tempFolder.getRoot() + File.separator
-							+ "glm.test"), null, 3, null, true, true, //$NON-NLS-1$
+							+ "glm.test"), null, 3, Smoothing.WITTEN_BELL, true, true, //$NON-NLS-1$
 					3);
 		} catch (InterruptedException e) {
 			fail(ExceptionUtils.getStackTrace(e));
@@ -65,8 +68,8 @@ public class GiganticLanguageModelTest {
 		try {
 			// Relaxed assertion. Binary comparison does not work for identical
 			// LMs, reason unknown.
-			assertTrue(testData.length() == this.tempFolder.newFile(
-					"glm.test.gz").length()); //$NON-NLS-1$
+			File resultLm = this.tempFolder.newFile("glm.test.gz"); //$NON-NLS-1$
+			assertTrue(testLm.length() == resultLm.length());
 		} catch (IOException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
