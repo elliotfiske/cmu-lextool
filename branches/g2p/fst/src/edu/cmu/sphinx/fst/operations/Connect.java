@@ -161,5 +161,7 @@ public class Connect {
         for (State sid : toDelete) {
             fst.deleteState(sid);
         }
+        
+        fst.remapStateIds();
     }
 }

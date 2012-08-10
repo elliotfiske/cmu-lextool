@@ -42,9 +42,6 @@ public class Reverse {
         res.setOsyms(fst.getIsyms());
 
         State[] stateMap = new State[fst.getNumStates()];
-        for (int i=0; i<fst.getNumStates(); i++) {
-            stateMap[i] = null;
-        }
         int numStates = fst.getNumStates();
         for (int i=0; i<numStates; i++) {
             State is = fst.getState(i);

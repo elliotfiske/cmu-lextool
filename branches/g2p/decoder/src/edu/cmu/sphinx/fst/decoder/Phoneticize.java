@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.GregorianCalendar;
 
 import edu.cmu.sphinx.fst.decoder.Decoder;
-import edu.cmu.sphinx.fst.decoder.Path;
 import edu.cmu.sphinx.fst.utils.Utils;
 
 /**
@@ -53,7 +52,7 @@ public class Phoneticize {
         try {
             while ((strLine = br.readLine()) != null) {
                 String[] tokens = strLine.split("  ");
-                String in = tokens[0];
+                String in = tokens[0].toLowerCase();
 
                 // convert it to ArrayList<String>
                 ArrayList<String> entry = new ArrayList<String>(in.length());
@@ -66,8 +65,8 @@ public class Phoneticize {
 
                 ArrayList<Path> res = d.phoneticize(entry, best);
                 wordCount++;
-                System.out.print(in + "\t");
                 for (Path p : res) {
+                    System.out.print(in.toUpperCase() + "\t");
                     System.out.print(Utils.round(p.getCost(), 4) + "\t");
                     int count = 0;
                     for (String str : p.getPath()) {
