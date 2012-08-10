@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<appender name="standardOutput" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-1level %logger{10} - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+	<logger name="edu.cmu.sphinx.sphingid" level="INFO" additivity="false">
+		<appender-ref ref="standardOutput" />
+	</logger>
+	<logger name="httpclient.wire" level="ERROR" />
+	<logger name="org.apache" level="ERROR" />
+	<root level="DEBUG">
+		<appender-ref ref="standardOutput"></appender-ref>
+	</root>
+</configuration>
