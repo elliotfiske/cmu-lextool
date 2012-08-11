@@ -30,6 +30,17 @@ public class NShortestPaths {
     private NShortestPaths() {
     }
 
+    /**
+     * Calculates the shortest distances from each state to the final.
+     * 
+     * See: M. Mohri,
+     * "Semiring Framework and Algorithms for Shortest-Distance Problems",
+     * Journal of Automata, Languages and Combinatorics, 7(3), pp. 321-350,
+     * 2002.
+     * 
+     * @param fst the fst to calculate the shortest distances
+     * @return the array containing the shortest distances
+     */
     public static float[] shortestDistance(Fst fst) {
 
         Fst reversed = Reverse.get(fst);
@@ -82,6 +93,20 @@ public class NShortestPaths {
         return d;
     }
 
+    /**
+     * Calculates the n-best shortest path from the initial to the final state.
+     * 
+     * See: M. Mohri, M. Riley,
+     * "An Efficient Algorithm for the n-best-strings problem", Proceedings of
+     * the International Conference on Spoken Language Processing 2002 (ICSLP
+     * ’02).
+     * 
+     * @param fst the fst to calculate the nbest shortest paths
+     * @param n number of best paths to return
+     * @param determinize if true the input fst will bwe determinized prior the
+     *            operation
+     * @return an fst containing the n-best shortest paths
+     */
     public static Fst get(Fst fst, int n, boolean determinize) {
         if (fst == null) {
             return null;
@@ -167,6 +192,9 @@ public class NShortestPaths {
         return res;
     }
 
+    /**
+     * Removes from the queue the pair with the lower path cost
+     */
     private static Pair<State, Float> getLess(
             ArrayList<Pair<State, Float>> queue, float[] d, Semiring semiring) {
         Pair<State, Float> res = queue.get(0);

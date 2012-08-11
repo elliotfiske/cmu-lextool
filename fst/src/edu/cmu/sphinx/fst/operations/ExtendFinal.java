@@ -22,19 +22,30 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * 
  */
 public class ExtendFinal {
 
+    /**
+     * Default Contructor
+     */
     private ExtendFinal() {
     }
 
+    /**
+     * Extends an Fst to a single final state.
+     * 
+     * It adds a new final state with a 0.0 (Semiring's 1) final wight and
+     * connects the current final states to it using epsilon transitions with
+     * weight equal to the original final state's weight.
+     * 
+     * @param fst the Fst to extend
+     */
     public static void apply(Fst fst) {
         Semiring semiring = fst.getSemiring();
         ArrayList<State> fStates = new ArrayList<State>();
 
         int numStates = fst.getNumStates();
-        for (int i=0; i<numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             State s = fst.getState(i);
             if (s.getFinalWeight() != semiring.zero()) {
                 fStates.add(s);
@@ -52,10 +63,13 @@ public class ExtendFinal {
         }
     }
 
+    /**
+     * Undo of the extend operation
+     */
     public static void undo(Fst fst) {
         State f = null;
         int numStates = fst.getNumStates();
-        for (int i=0; i<numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             State s = fst.getState(i);
             if (s.getFinalWeight() != fst.getSemiring().zero()) {
                 f = s;
@@ -67,9 +81,9 @@ public class ExtendFinal {
             System.err.println("Final state not found.");
             return;
         }
-        for (int i=0; i<numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             State s = fst.getState(i);
-            for (int j=0; j<s.getNumArcs(); j++) {
+            for (int j = 0; j < s.getNumArcs(); j++) {
                 Arc a = s.getArc(j);
                 if (a.getIlabel() == 0 && a.getOlabel() == 0
                         && a.getNextState().getId() == f.getId()) {

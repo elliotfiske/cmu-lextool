@@ -20,7 +20,10 @@ package edu.cmu.sphinx.fst.semiring;
 public class ProbabilitySemiring extends Semiring {
 
     private static final long serialVersionUID = 5592668313009971909L;
+    // zero value
     private static float zero = 0.f;
+
+    // one value
     private static float one = 1.f;
 
     /*
@@ -101,6 +104,10 @@ public class ProbabilitySemiring extends Semiring {
                 && (w >= 0); // and positive
     }
 
+    /*
+     * (non-Javadoc)
+     * @see edu.cmu.sphinx.fst.semiring.Semiring#reverse(float)
+     */
     @Override
     public float reverse(float w1) {
         // TODO: ???

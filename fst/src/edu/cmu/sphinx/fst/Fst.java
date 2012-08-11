@@ -30,17 +30,14 @@ import java.util.HashMap;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
- * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * 
- * @param <W>
  */
 public class Fst {
 
-    // holds the fst states
+    // fst states
     private ArrayList<State> states = null;
 
-    // the initial state's id
+    // initial state
     protected State start;
 
     // input symbols map
@@ -49,42 +46,55 @@ public class Fst {
     // output symbols map
     protected String[] osyms;
 
-    // holds the semiring
+    // semiring
     protected Semiring semiring;
 
     /**
-     * Default constructor
+     * Default Constructor
      */
     public Fst() {
         states = new ArrayList<State>();
     }
 
+    /**
+     * Constructor specifying the initial capacity of the states ArrayList
+     * (this is an optimization used in various operations) 
+     * 
+     * @param numStates the initial capacity
+     */
     public Fst(int numStates) {
         if (numStates > 0) {
             states = new ArrayList<State>(numStates);
         }
     }
 
+    /**
+     * Constructor specifying the fst's semiring 
+     *   
+     * @param s the fst's semiring
+     */
     public Fst(Semiring s) {
         this();
         this.semiring = s;
     }
 
     /**
-     * @return the initial state
+     * Get the initial states
      */
     public State getStart() {
         return start;
     }
 
     /**
-     * @return the semiring
+     * Get the semiring 
      */
     public Semiring getSemiring() {
         return semiring;
     }
 
     /**
+     * Set the Semiring 
+     * 
      * @param semiring the semiring to set
      */
     public void setSemiring(Semiring semiring) {
@@ -92,15 +102,16 @@ public class Fst {
     }
 
     /**
-     * @param stateId the initial state to set
+     * Set the initial state
+     * 
+     * @param start the initial state 
      */
     public void setStart(State start) {
         this.start = start;
     }
 
     /**
-     * 
-     * @return the number of states in the fst
+     * Get the number of states in the fst
      */
     public int getNumStates() {
         return this.states.size();
@@ -122,13 +133,15 @@ public class Fst {
     }
 
     /**
-     * @return the isyms
+     * Get the input symbols' array
      */
     public String[] getIsyms() {
         return isyms;
     }
 
     /**
+     * Set the input symbols
+     * 
      * @param isyms the isyms to set
      */
     public void setIsyms(String[] isyms) {
@@ -136,19 +149,28 @@ public class Fst {
     }
 
     /**
-     * @return the osyms
+     * Get the output symbols' array
      */
     public String[] getOsyms() {
         return osyms;
     }
 
     /**
+     * Set the output symbols
+     * 
      * @param osyms the osyms to set
      */
     public void setOsyms(String[] osyms) {
         this.osyms = osyms;
     }
 
+    /**
+     * Serializes a symbol map to an ObjectOutputStream
+     *  
+     * @param out the ObjectOutputStream. It should be already be initialized by the caller.
+     * @param map the symbol map to serialize
+     * @throws IOException
+     */
     private void writeStringMap(ObjectOutputStream out, String[] map)
             throws IOException {
         out.writeInt(map.length);
@@ -157,7 +179,13 @@ public class Fst {
         }
     }
 
-    public void writeFst(ObjectOutputStream out) throws IOException {
+    /**
+     * Serializes the current Fst instance to an ObjectOutputStream
+     *  
+     * @param out the ObjectOutputStream. It should be already be initialized by the caller.
+     * @throws IOException
+     */
+    private void writeFst(ObjectOutputStream out) throws IOException {
         writeStringMap(out, isyms);
         writeStringMap(out, osyms);
         out.writeInt(states.indexOf(start));
@@ -190,7 +218,7 @@ public class Fst {
     }
 
     /**
-     * saves binary model to disk
+     * Saves binary model to disk
      * 
      * @param filename the binary model filename
      * @throws IOException
@@ -206,6 +234,14 @@ public class Fst {
         fos.close();
     }
 
+    /**
+     * Deserializes a symbol map from an ObjectInputStream
+     * 
+     * @param in the ObjectInputStream. It should be already be initialized by the caller.
+     * @return the deserialized symbol map
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
     protected static String[] readStringMap(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
 
@@ -219,7 +255,15 @@ public class Fst {
         return map;
     }
 
-    protected static Fst readFst(ObjectInputStream in) throws IOException,
+    /**
+     * Deserializes an Fst from an ObjectInputStream
+     * 
+     * @param in the ObjectInputStream. It should be already be initialized by the caller.
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    private static Fst readFst(ObjectInputStream in) throws IOException,
             ClassNotFoundException {
         String[] is = readStringMap(in);
         String[] os = readStringMap(in);
@@ -261,21 +305,10 @@ public class Fst {
         return res;
     }
 
-    public int getNumArcs() {
-        int numArcs = 0;
-        for (int i = 0; i < states.size(); i++) {
-            numArcs += states.get(i).getNumArcs();
-        }
-
-        return numArcs;
-    }
-
     /**
-     * Loads a compressed binary model from disk
+     * Deserializes an Fst from disk
      * 
      * @param filename the binary model filename
-     * @throws IOException
-     * @throws ClassNotFoundException
      */
     public static Fst loadModel(String filename) {
         long starttime = GregorianCalendar.getInstance().getTimeInMillis();
@@ -356,7 +389,6 @@ public class Fst {
         StringBuilder sb = new StringBuilder();
         sb.append("Fst(start=" + start + ", isyms=" + isyms + ", osyms="
                 + osyms + ", semiring=" + semiring + ")\n");
-        // for (State s : states) {
         int numStates = states.size();
         for (int i = 0; i < numStates; i++) {
             State s = states.get(i);
@@ -372,9 +404,9 @@ public class Fst {
     }
 
     /**
-     * Delete a state
+     * Deletes a state
      * 
-     * @param i the index of the state
+     * @param state the state to delete
      */
     public void deleteState(State state) {
         if (state.getId() == this.start.getId()) {
@@ -409,6 +441,11 @@ public class Fst {
         }
     }
 
+    /**
+     * Remaps the states' ids.
+     * 
+     * States' ids are renumbered starting from 0 up to @see {@link edu.cmu.sphinx.fst.Fst#getNumStates()}
+     */
     public void remapStateIds() {
         int numStates = states.size();
         for(int i=0; i < numStates; i++) {

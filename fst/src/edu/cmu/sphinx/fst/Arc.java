@@ -14,10 +14,7 @@
 package edu.cmu.sphinx.fst;
 
 /**
- * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * 
- * @param <W>
  */
 public class Arc {
 
@@ -33,16 +30,19 @@ public class Arc {
     // next state's id
     private State nextState;
 
+    /**
+     * Default Constructor
+     */
     public Arc() {
     }
 
     /**
-     * Creates a new arc
+     * Arc Constructor
      * 
      * @param iLabel the input label's id
      * @param oLabel the output label's id
      * @param weight the arc's weight
-     * @param nextStateId the next state's id
+     * @param nextState the arc's next state
      */
     public Arc(int iLabel, int oLabel, float weight, State nextState) {
         this.weight = weight;
@@ -53,8 +53,6 @@ public class Arc {
 
     /**
      * Get the arc's weight
-     * 
-     * @return the weight
      */
     public float getWeight() {
         return weight;
@@ -62,8 +60,6 @@ public class Arc {
 
     /**
      * Set the arc's weight
-     * 
-     * @param weight the weight to set
      */
     public void setWeight(float weight) {
         this.weight = weight;
@@ -71,8 +67,6 @@ public class Arc {
 
     /**
      * Get the input label's id
-     * 
-     * @return the input label's id
      */
     public int getIlabel() {
         return iLabel;
@@ -81,7 +75,7 @@ public class Arc {
     /**
      * Set the input label's id
      * 
-     * @param iLabel the input label's to set
+     * @param iLabel the input label's id to set
      */
     public void setIlabel(int iLabel) {
         this.iLabel = iLabel;
@@ -89,8 +83,6 @@ public class Arc {
 
     /**
      * Get the output label's id
-     * 
-     * @return the output label's id
      */
     public int getOlabel() {
         return oLabel;
@@ -99,25 +91,23 @@ public class Arc {
     /**
      * Set the output label's id
      * 
-     * @param oLabel the output label's to set
+     * @param oLabel the output label's id to set
      */
     public void setOlabel(int oLabel) {
         this.oLabel = oLabel;
     }
 
     /**
-     * Get the next state's id
-     * 
-     * @return the next state's id
+     * Get the next state
      */
     public State getNextState() {
         return nextState;
     }
 
     /**
-     * Set the next state's id
+     * Set the next state
      * 
-     * @param nextStateId the next state's id to set
+     * @param nextState the next state to set
      */
     public void setNextState(State nextState) {
         this.nextState = nextState;

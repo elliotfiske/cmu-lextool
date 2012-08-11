@@ -18,6 +18,13 @@ import edu.cmu.sphinx.fst.utils.Pair;
  */
 public class Determinize {
 
+    /**
+     * Default constructor
+     */
+    private Determinize() {
+        
+    }
+    
     private static Pair<State, Float> getPair(
             ArrayList<Pair<State, Float>> queue, State state, Float zero) {
         Pair<State, Float> res = null;
@@ -67,6 +74,18 @@ public class Determinize {
         return stateMapper.get(sb.toString());
     }
 
+    /**
+     * Determinizes an fst. The result will be an equivalent fst that has the
+     * property that no state has two transitions with the same input label. For
+     * this algorithm, epsilon transitions are treated as regular symbols.
+     * 
+     * See: M. Mohri,
+     * "Finite-State Transducers in Language and Speech Processing",
+     * Computational Linguistics, 23:2, 1997.
+     * 
+     * @param fst the fst to determinize
+     * @return the determinized fst
+     */
     public static Fst get(Fst fst) {
 
         if (fst.getSemiring() == null) {

@@ -19,17 +19,26 @@ import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
+ * Provides a command line utility to convert an Fst in openfst's text format to
+ * java binary fst model
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * 
  */
 public class Import {
 
+    /**
+     * Default Constructor
+     */
     private Import() {
     }
 
     /**
-     * @param args
+     * Imports an openfst text format and serializes it as java binary model
+     * Several files are imported as follows: - basename.input.syms -
+     * basename.output.syms - basename.fst.txt
+     * 
+     * @param args[0] openfst's files basename
+     * @param args[1] the java binary model filename
      */
     public static void main(String[] args) {
         if (args.length < 2) {

@@ -30,21 +30,42 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.utils.Utils;
 
 /**
- * @author John Salatas <jsalatas@users.sourceforge.net>
+ * Provides the required functionality in order to convert from/to openfst's text
+ * format
  * 
+ * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class Convert {
 
+    /**
+     * Default private Constructor.
+     */
     private Convert() {
     }
 
-    public static void export(Fst fst, Semiring semiring, String basename) {
+    /**
+     * Exports an fst to the openfst text format Several files are created as
+     * follows: - basename.input.syms - basename.output.syms - basename.fst.txt
+     * See <a
+     * href="http://www.openfst.org/twiki/bin/view/FST/FstQuickTour">OpenFst
+     * Quick Tour</a>
+     * 
+     * @param fst the fst to export
+     * @param basename the files' base name
+     */
+    public static void export(Fst fst, String basename) {
         exportSymbols(fst.getIsyms(), basename + ".input.syms");
         exportSymbols(fst.getOsyms(), basename + ".output.syms");
-        exportFst(fst, semiring, basename + ".fst.txt");
+        exportFst(fst, basename + ".fst.txt");
     }
 
-    private static void exportFst(Fst fst, Semiring semiring, String filename) {
+    /**
+     * Exports an fst to the openfst text format
+     * 
+     * @param fst the fst to export
+     * @param filename the openfst's fst.txt filename
+     */
+    private static void exportFst(Fst fst, String filename) {
         FileWriter file;
         try {
             file = new FileWriter(filename);
@@ -52,34 +73,31 @@ public class Convert {
 
             // print start first
             State start = fst.getStart();
-            out.println(start.getId() + "\t"
-                    + start.getFinalWeight());
+            out.println(start.getId() + "\t" + start.getFinalWeight());
 
             // print all states
             int numStates = fst.getNumStates();
-            for (int i=0; i<numStates; i++) {
+            for (int i = 0; i < numStates; i++) {
                 State s = fst.getState(i);
                 if (s.getId() != fst.getStart().getId()) {
-                    out.println(s.getId() + "\t"
-                            + s.getFinalWeight());
+                    out.println(s.getId() + "\t" + s.getFinalWeight());
                 }
             }
 
             String[] isyms = fst.getIsyms();
             String[] osyms = fst.getOsyms();
             numStates = fst.getNumStates();
-            for (int i=0; i<numStates; i++) {
+            for (int i = 0; i < numStates; i++) {
                 State s = fst.getState(i);
                 int numArcs = s.getNumArcs();
-                for (int j=0; j<numArcs; j++) {
+                for (int j = 0; j < numArcs; j++) {
                     Arc arc = s.getArc(j);
-                    String isym = (isyms != null) ? isyms[arc.getIlabel()] : Integer.toString(arc
-                            .getIlabel());
-                    String osym = (osyms != null) ? osyms[arc.getOlabel()] : Integer.toString(arc
-                            .getOlabel());
+                    String isym = (isyms != null) ? isyms[arc.getIlabel()]
+                            : Integer.toString(arc.getIlabel());
+                    String osym = (osyms != null) ? osyms[arc.getOlabel()]
+                            : Integer.toString(arc.getOlabel());
 
-                    out.println(s.getId() + "\t"
-                            + arc.getNextState().getId()
+                    out.println(s.getId() + "\t" + arc.getNextState().getId()
                             + "\t" + isym + "\t" + osym + "\t"
                             + arc.getWeight());
                 }
@@ -92,8 +110,13 @@ public class Convert {
 
     }
 
-    private static void exportSymbols(String[] syms,
-            String filename) {
+    /**
+     * Exports a symbols' map to the openfst text format
+     * 
+     * @param syms the symbols' map
+     * @param filename the the openfst's symbols filename
+     */
+    private static void exportSymbols(String[] syms, String filename) {
         if (syms == null)
             return;
 
@@ -101,7 +124,7 @@ public class Convert {
             FileWriter file = new FileWriter(filename);
             PrintWriter out = new PrintWriter(file);
 
-            for (int i=0; i<syms.length; i++) {
+            for (int i = 0; i < syms.length; i++) {
                 String key = syms[i];
                 out.println(key + "\t" + i);
             }
@@ -112,14 +135,20 @@ public class Convert {
         }
     }
 
+    /**
+     * Imports an openfst's symbols file
+     * 
+     * @param filename the symbols' filename
+     * @return HashMap containing the impprted string-to-id mapping
+     */
     private static HashMap<String, Integer> importSymbols(String filename) {
-        HashMap<String, Integer>  syms = null;
+        HashMap<String, Integer> syms = null;
 
         try {
             FileInputStream fis = new FileInputStream(filename);
             DataInputStream dis = new DataInputStream(fis);
             BufferedReader br = new BufferedReader(new InputStreamReader(dis));
-            syms = new HashMap<String, Integer> ();
+            syms = new HashMap<String, Integer>();
             String strLine;
 
             while ((strLine = br.readLine()) != null) {
@@ -127,7 +156,7 @@ public class Convert {
                 String sym = tokens[0];
                 Integer index = Integer.parseInt(tokens[1]);
                 syms.put(sym, index);
-                
+
             }
 
         } catch (IOException e1) {
@@ -136,6 +165,14 @@ public class Convert {
 
         return syms;
     }
+
+    /**
+     * Imports an openfst text format Several files are imported as follows: -
+     * basename.input.syms - basename.output.syms - basename.fst.txt
+     * 
+     * @param basename the files' base name
+     * @param semiring the fst's semiring
+     */
     public static Fst importFloat(String basename, Semiring semiring) {
         Fst fst = new Fst(semiring);
 
@@ -206,11 +243,11 @@ public class Convert {
                         stateMap.put(nextStateId, nextState);
                     }
                     // Adding arc
-                    if(isyms.get(tokens[2]) == null) {
+                    if (isyms.get(tokens[2]) == null) {
                         isyms.put(tokens[2], isyms.size());
                     }
                     int iLabel = isyms.get(tokens[2]);
-                    if(osyms.get(tokens[3]) == null) {
+                    if (osyms.get(tokens[3]) == null) {
                         osyms.put(tokens[3], osyms.size());
                     }
                     int oLabel = osyms.get(tokens[3]);

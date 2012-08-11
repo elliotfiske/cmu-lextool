@@ -14,8 +14,12 @@
 package edu.cmu.sphinx.fst.operations;
 
 /**
- * @author John Salatas <jsalatas@users.sourceforge.net>
+ * Enum used in {@link edu.cmu.sphinx.fst.operations.Project} operation.
  * 
+ * It specifies whether the Project operation will take place on input or output
+ * labels
+ * 
+ * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public enum ProjectType {
     INPUT, OUTPUT

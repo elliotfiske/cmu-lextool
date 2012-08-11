@@ -19,26 +19,30 @@ import java.util.Comparator;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * 
  */
 public class State {
 
-    // Id
+    // State's Id
     protected int id = -1;
 
     // Final weight
     private float fnlWeight;
 
-    // Outgoing arcs collection
+    // Outgoing arcs 
     private ArrayList<Arc> arcs = null;
     
+    // initial number of arcs
     protected int initialNumArcs = -1;
     
-    public State() {
+    /**
+     * Default Constructor
+     */
+    protected State() {
       arcs = new ArrayList<Arc>();
     }
     
     /**
+     * Constructor specifying the state's final weight
      * 
      * @param fnlWeight
      */
@@ -48,7 +52,12 @@ public class State {
     }
 
 
-
+    /**
+     * Constructor specifying the initial capacity of the arc's ArrayList
+     * (this is an optimization used in various operations)
+     *  
+     * @param initialNumArcs
+     */
     public State(int initialNumArcs) {
         this.initialNumArcs = initialNumArcs;
         if(initialNumArcs > 0) {
@@ -58,65 +67,64 @@ public class State {
     
     
     /**
-     * 
-     * @param cmp
+     * Shorts the arc's ArrayList based on the provided Comparator
      */
     public void arcSort(Comparator<Arc> cmp) {
         Collections.sort(arcs, cmp);
     }
 
     /**
-     * @return the Final weight
+     * Get the state's final Weight
      */
     public float getFinalWeight() {
         return fnlWeight;
     }
 
     /**
-     * @param arcs the arcs to set
+     * Set the state's arcs ArrayList
+     * 
+     * @param arcs the arcs ArrayList to set 
      */
     public void setArcs(ArrayList<Arc> arcs) {
         this.arcs = arcs;
     }
 
     /**
-     * @param fnlfloat the Final weight to set
+     * Set the state's final weight
+     * 
+     * @param fnlfloat the final weight to set
      */
     public void setFinalWeight(float fnlfloat) {
         this.fnlWeight = fnlfloat;
     }
 
     /**
-     * @return the id
+     * Get the state's id
      */
     public int getId() {
         return id;
     }
 
     /**
-     * @param id the id to set
-     */
-    /**
-     * 
-     * @return the number of outgoing arcs
+     * Get the number of outgoing arcs
      */
     public int getNumArcs() {
         return this.arcs.size();
     }
 
     /**
-     * Adds an arc
+     * Add an outgoing arc to the state 
      * 
      * @param arc the arc to add
-     * @return the arc's index
      */
     public void addArc(Arc arc) {
         this.arcs.add(arc);
     }
 
     /**
+     * Get an arc based on it's index the arcs ArrayList
      * 
-     * @param aIndex the arc's index
+     * @param index the arc's index
      * @return the arc
      */
     public Arc getArc(int index) {
@@ -164,7 +172,12 @@ public class State {
         return sb.toString();
     }
 
-    // delete an arc
+    /**
+     * Delete an arc based on its index
+     * 
+     * @param index the arc's index
+     * @return the deleted arc
+     */
     public Arc deleteArc(int index) {
         return this.arcs.remove(index);
     }
@@ -183,5 +196,16 @@ public class State {
         // result = prime * result + ((arcs == null) ? 0 : arcs.hashCode());
         return result;
     }
+
+    /**
+     * Set an arc at the specified position in the arcs' ArrayList.
+     * 
+     * @param index the position to the arcs' array 
+     * @param arc the arc value to set
+     */
+    public void setArc(int index, Arc arc) {
+        arcs.set(index, arc);
+    }
+
 
 }
