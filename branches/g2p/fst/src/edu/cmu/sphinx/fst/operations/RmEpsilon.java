@@ -25,9 +25,15 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
  * 
  */
 public class RmEpsilon {
+    /**
+     * Default Constructor
+     */
     private RmEpsilon() {
     }
 
+    /**
+     * Put a new state in the epsilon closure 
+     */
     private static void put(State fromState, State toState, float weight,
             HashMap<State, Float>[] cl) {
         HashMap<State, Float> tmp = cl[fromState.getId()];
@@ -38,6 +44,9 @@ public class RmEpsilon {
         tmp.put(toState, weight);
     }
 
+    /**
+     * Add a state in the epsilon closure
+     */
     private static void add(State fromState, State toState, float weight,
             HashMap<State, Float>[] cl, Semiring semiring) {
         Float old = getPathWeight(fromState, toState, cl);
@@ -49,6 +58,9 @@ public class RmEpsilon {
 
     }
 
+    /**
+     * Calculate the epsilon closure
+     */
     private static void calcClosure(Fst fst, State state,
             HashMap<State, Float>[] cl, Semiring semiring) {
         State s = state;
@@ -75,6 +87,9 @@ public class RmEpsilon {
         }
     }
 
+    /**
+     * Get an epsilon path's cost in epsilon closure 
+     */
     private static Float getPathWeight(State in, State out,
             HashMap<State, Float>[] cl) {
         if (cl[in.getId()] != null) {
@@ -84,6 +99,14 @@ public class RmEpsilon {
         return null;
     }
 
+    /**
+     * Removes epsilon transitions from an fst.
+     * 
+     * It return a new epsilon-free fst and does not modify the original fst 
+     * 
+     * @param fst the fst to remove epsilon transitions from 
+     * @return the epsilon-free fst 
+     */
     public static Fst get(Fst fst) {
         if (fst == null) {
             return null;

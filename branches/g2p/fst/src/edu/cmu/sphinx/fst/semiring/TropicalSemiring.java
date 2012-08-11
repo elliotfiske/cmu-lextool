@@ -22,7 +22,10 @@ public class TropicalSemiring extends Semiring {
 
     private static final long serialVersionUID = 2711172386738607866L;
 
+    // zero value
     private static float zero = Float.POSITIVE_INFINITY;
+
+    // one value
     private static float one = 0.f;
 
     /*
@@ -112,6 +115,10 @@ public class TropicalSemiring extends Semiring {
                 && (w != Float.NEGATIVE_INFINITY); // and different from -inf
     }
 
+    /*
+     * (non-Javadoc)
+     * @see edu.cmu.sphinx.fst.semiring.Semiring#reverse(float)
+     */
     @Override
     public float reverse(float w1) {
         return w1;

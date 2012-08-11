@@ -25,6 +25,9 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
  * 
  */
 public class Connect {
+    /**
+     * Calculates the coaccessible states of an fst 
+     */
     private static void calcCoAccessible(Fst fst, State state,
             ArrayList<ArrayList<State>> paths, ArrayList<State> coaccessible) {
         // hold the coaccessible added in this loop
@@ -50,6 +53,9 @@ public class Connect {
         }
     }
 
+    /**
+     * Copies a path
+     */
     private static void duplicatePath(int lastPathIndex, State fromState,
             State toState, ArrayList<ArrayList<State>> paths) {
         ArrayList<State> lastPath = paths.get(lastPathIndex);
@@ -64,6 +70,9 @@ public class Connect {
         paths.add(newPath);
     }
 
+    /**
+     * The depth first search recursion
+     */
     private static State dfs(Fst fst, State start,
             ArrayList<ArrayList<State>> paths, ArrayList<Arc>[] exploredArcs,
             ArrayList<State> accessible) {
@@ -86,7 +95,7 @@ public class Connect {
                         paths.get(lastPathIndex).add(start);
                     }
                     State next = arc.getNextState();
-                    addExploredArc(start.getId(), arc, exploredArcs, accessible);
+                    addExploredArc(start.getId(), arc, exploredArcs);
                     // detect self loops
                     if (next.getId() != start.getId()) {
                         dfs(fst, next, paths, exploredArcs, accessible);
@@ -100,8 +109,11 @@ public class Connect {
         return start;
     }
 
+    /**
+     * Adds an arc top the explored arcs list
+     */
     private static void addExploredArc(int stateId, Arc arc,
-            ArrayList<Arc>[] exploredArcs, ArrayList<State> accessible) {
+            ArrayList<Arc>[] exploredArcs) {
         if (exploredArcs[stateId] == null) {
             exploredArcs[stateId] = new ArrayList<Arc>();
         }
@@ -109,6 +121,9 @@ public class Connect {
 
     }
 
+    /** 
+     * Initialization of a depth first search recursion
+     */
     private static void depthFirstSearch(Fst fst, ArrayList<State> accessible,
             ArrayList<ArrayList<State>> paths, ArrayList<Arc>[] exploredArcs,
             ArrayList<State> coaccessible) {
@@ -129,6 +144,11 @@ public class Connect {
         }
     }
 
+    /**
+     * Trims an Fst, removing states and arcs that are not on successful paths. 
+     * 
+     * @param fst the fst to trim
+     */
     public static void apply(Fst fst) {
         Semiring semiring = fst.getSemiring();
         if (semiring == null) {

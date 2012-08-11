@@ -18,6 +18,9 @@ import java.util.Comparator;
 import edu.cmu.sphinx.fst.Arc;
 
 /**
+ * Comparator used in {@link edu.cmu.sphinx.fst.operations.ArcSort} for sorting
+ * based on output labels
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class OLabelCompare implements Comparator<Arc> {
@@ -29,6 +32,12 @@ public class OLabelCompare implements Comparator<Arc> {
      */
     @Override
     public int compare(Arc o1, Arc o2) {
+        if(o1 == null) {
+            return 1;
+        }
+        if(o2 == null) {
+            return -1;
+        }
         return (o1.getOlabel() < o2.getOlabel()) ? -1 : ((o1.getOlabel() == o2
                 .getOlabel()) ? 0 : 1);
     }

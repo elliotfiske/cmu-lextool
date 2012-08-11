@@ -14,18 +14,29 @@
 package edu.cmu.sphinx.fst.openfst;
 
 import edu.cmu.sphinx.fst.Fst;
-import edu.cmu.sphinx.fst.semiring.TropicalSemiring;
 
 /**
- * @author John Salatas <jsalatas@users.sourceforge.net>
+ * Provides a command line utility to convert a java binary fst model to
+ * openfst's text format
  * 
+ * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class Export {
+    /**
+     * Default Constructor
+     */
     private Export() {
     }
 
     /**
-     * @param args
+     * Exports a java binary model to openfst text format  
+     * Several files are exported as follows:
+     * - basename.input.syms
+     * - basename.output.syms
+     * - basename.fst.txt
+     * 
+     * @param args[0] the java binary model filename 
+     * @param args[1] openfst's files basename
      */
     public static void main(String[] args) {
         if (args.length < 2) {
@@ -40,7 +51,7 @@ public class Export {
 
         // Serialize the java fst model to disk
         System.out.println("Saving as openfst text model...");
-        Convert.export(fst, new TropicalSemiring(), args[1]);
+        Convert.export(fst, args[1]);
     }
 
 }

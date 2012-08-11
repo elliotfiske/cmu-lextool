@@ -20,7 +20,11 @@ package edu.cmu.sphinx.fst.semiring;
 public class LogSemiring extends Semiring {
 
     private static final long serialVersionUID = 5212106775584311083L;
+    
+    // zero value
     private static float zero = Float.POSITIVE_INFINITY;
+
+    // one value
     private static float one = 0.f;
 
     /*
@@ -114,6 +118,10 @@ public class LogSemiring extends Semiring {
                 && (w != Float.NEGATIVE_INFINITY); // and different from -inf
     }
 
+    /*
+     * (non-Javadoc)
+     * @see edu.cmu.sphinx.fst.semiring.Semiring#reverse(float)
+     */
     @Override
     public float reverse(float w1) {
         // TODO: ???

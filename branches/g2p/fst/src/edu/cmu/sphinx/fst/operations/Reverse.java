@@ -23,9 +23,18 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
  * 
  */
 public class Reverse {
+    /**
+     * Default Constructor
+     */
     private Reverse() {
     }
 
+    /**
+     * Reverses an fst
+     * 
+     * @param fst the fst to reverse
+     * @return the reversed fst
+     */
     public static Fst get(Fst fst) {
         if (fst.getSemiring() == null) {
             return null;

@@ -17,31 +17,33 @@ import java.util.Comparator;
 
 import edu.cmu.sphinx.fst.Arc;
 import edu.cmu.sphinx.fst.Fst;
-import edu.cmu.sphinx.fst.ImmutableFst;
 import edu.cmu.sphinx.fst.State;
 
 /**
  * @author John Salatas <jsalatas@users.sourceforge.net>
- * 
  */
 public class ArcSort {
+    /**
+     * Default Constructor
+     */
     private ArcSort() {
     }
 
+    /**
+     * Applies the ArcSort on the provided fst. Sorting can be applied either on
+     * input or output label based on the provided comparator.
+     * 
+     * ArcSort can be applied top both {@link edu.cmu.sphinx.fst.Fst} and
+     * {@link edu.cmu.sphinx.fst.ImmutableFst}
+     * 
+     * @param fst the fst to sort it's arcs
+     * @param cmp the provided Comparator
+     */
     public static void apply(Fst fst, Comparator<Arc> cmp) {
-      int numStates = fst.getNumStates();
-      for (int i=0; i<numStates; i++) {
-          State s = fst.getState(i);
+        int numStates = fst.getNumStates();
+        for (int i = 0; i < numStates; i++) {
+            State s = fst.getState(i);
             s.arcSort(cmp);
         }
     }
-
-    public static void apply(ImmutableFst fst, Comparator<Arc> cmp) {
-      int numStates = fst.getNumStates();
-      for (int i=0; i<numStates; i++) {
-          State s = fst.getState(i);
-          s.arcSort(cmp);
-      }
-  }
-
 }
