@@ -15,13 +15,13 @@ total_missing_comma = 0
 total_correct_period = 0
 total_extra_period = 0
 total_missing_period = 0
-
+line_count = 0
 while 1:
     input_text = input_file.readline()
     output_text = output_file.readline()
     if not input_text or not output_text:
         break
-
+    line_count += 1
     i = 0 
     j = 0
 
@@ -55,6 +55,7 @@ while 1:
             if word.lower() != input_list[i].lower():
                 print "ERROR: words do not match"
                 print "output " + word + " input " + input_list[i]
+                print line_count
                 break
             i += 1
             j += 1
