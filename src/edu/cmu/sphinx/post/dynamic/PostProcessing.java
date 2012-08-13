@@ -37,7 +37,7 @@ import edu.cmu.sphinx.util.LogMath;
  */
 public class PostProcessing {
 	
-	static int maxSequenceSize = 1000;	
+	static int maxSequenceSize = 10000;	
 	static LargeNGramModel lm;
 	
 	/**
@@ -46,9 +46,11 @@ public class PostProcessing {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
+
+		long start = System.currentTimeMillis();
 		
 		String text = null, lm_path = null, input_file = null;
-		int stackSize = 10000;
+		int stackSize = 100;
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-input_file")) input_file = args[i+1];
@@ -83,14 +85,14 @@ public class PostProcessing {
 		FullDictionary dict = new FullDictionary(
 				new URL("file:models/lm_giga_5k_nvp.sphinx.dic"), 
 				new URL("file:models/lm_giga_5k_nvp.sphinx.filler"),
-				null, false, null, true, true, new UnitManager());
+				null, false, null, true, true, new UnitManager(), true);
 		
 		dict.allocate();
 		
 		lm = new LargeNGramModel("", new URL("file:" + lm_path), 
 				"file:logfile", 0, false, 3, 
 				new LogMath(10f, false),
-				dict, false, 0.0f, 0.0, 0.7f, false);
+				dict, false, 0.0f, 0.0, 0.7f, false, true);
 		
 		lm.allocate();
 		
@@ -122,7 +124,7 @@ public class PostProcessing {
 				
 				if (currentSize == inputWords.size() + 1) {
 
-					WordSequence fullSentence = currentWordSequence.addWord(new Word("</s>", null, false), maxSequenceSize);
+					WordSequence fullSentence = currentWordSequence.addWord(new Word("<PERIOD>", null, false), maxSequenceSize).addWord(new Word("</s>", null, false), maxSequenceSize);
 					Sequence fullSentenceSequence = new Sequence(fullSentence, getWSProb(fullSentence, lm), currentSize, currentSequence);
 					
 					//output.write(formatOutput(fullSentenceSequence.getWordSequence()) + " " + fullSentenceSequence.getProbability() + "\n");
@@ -143,7 +145,7 @@ public class PostProcessing {
 				Word[] punctuationMarks = {new Word("<COMMA>", null, false),
 						new Word("<PERIOD>", null, false)}; 
 				
-				if (!lm.hasUnigram(currentWordForms[0]) && !lm.hasUnigram(currentWordForms[1])){
+				if (!lm.hasWord(currentWordForms[0]) && !lm.hasWord(currentWordForms[1])){
 	
 					WordSequence previousWords = new WordSequence(currentSequence.getWords());
 					WordSequence newSequence = previousWords.addWord(currentWord, maxSequenceSize);			
@@ -157,20 +159,32 @@ public class PostProcessing {
 				for (Word wordForm : currentWordForms) {
 					// verify if the written form currentWord is in the LM
 					
-					if (lm.hasUnigram(wordForm)) {
-						WordSequence previousWords = new WordSequence(currentSequence.getWords());
-						WordSequence newSequence = previousWords.addWord(wordForm, maxSequenceSize);	
+					if (lm.hasWord(wordForm)) {
+						
+						WordSequence commaWordSequence = currentWordSequence.addWord(punctuationMarks[0], maxSequenceSize);
+						WordSequence periodWordSequence = currentWordSequence.addWord(punctuationMarks[1], maxSequenceSize);
+							
+						Sequence commaSequence = new Sequence(commaWordSequence, getWSProb(commaWordSequence, lm), currentSize, currentSequence);
+						//stacks.addSequence(commaSequence);
+						Sequence periodSequence = new Sequence(periodWordSequence, getWSProb(periodWordSequence, lm), currentSize, currentSequence);
+						//stacks.addSequence(commaSequence);
+						
+						//WordSequence previousWords = new WordSequence(currentSequence.getWords());
+						WordSequence newSequence = commaWordSequence.addWord(wordForm, maxSequenceSize);	
 	
-						Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
+						Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, commaSequence);
 						stacks.addSequence(unpunctuated);
 						
-						WordSequence commaSequence = newSequence.addWord(punctuationMarks[0], maxSequenceSize);
-						WordSequence periodSequence = newSequence.addWord(punctuationMarks[1], maxSequenceSize);
-							
-						Sequence newSequenceHistory = new Sequence(commaSequence, getWSProb(commaSequence, lm), currentSize, unpunctuated);
-						stacks.addSequence(newSequenceHistory);
-						newSequenceHistory = new Sequence(periodSequence, getWSProb(periodSequence, lm), currentSize, unpunctuated);
-						stacks.addSequence(newSequenceHistory);
+						newSequence = periodWordSequence.addWord(wordForm, maxSequenceSize);
+						
+						unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, periodSequence);
+						stacks.addSequence(unpunctuated);
+						
+						newSequence = currentWordSequence.addWord(wordForm, maxSequenceSize);
+						
+						unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
+						stacks.addSequence(unpunctuated);
+						
 					}
 				}
 			}
@@ -181,12 +195,11 @@ public class PostProcessing {
 			
 		}
 		
-		//System.out.println(evaluateSentence("<s> I saw him <COMMA> putting a razor edge <COMMA> on his bayonet <PERIOD> Last night <COMMA> added Bart <PERIOD> Now <COMMA> he's anxious to see how it works <PERIOD> He'll have plenty of chances <COMMA> to find out <COMMA> said Frank <PERIOD> This is going to be a hot <COMMA> scrap <COMMA> or I miss my guess <PERIOD> </s>", lm));
-		//System.out.println(evaluateSentence("<s> I saw him putting a razor edge on his bayonet last night <COMMA> added Bart <PERIOD>  Now he's anxious to see how it works <PERIOD>  He'll have plenty of chances to find out <COMMA> said Frank <PERIOD>  This is going to be a hot scrap <COMMA> or I miss my guess <PERIOD> </s>", lm));
-
-		
 		output.close();
 		input.close();
+		long end = System.currentTimeMillis();
+		
+		System.out.println("Execution time was "+(end-start)+" ms.");
 	} 
 	
 	static String formatOutput(WordSequence output) {
@@ -238,7 +251,7 @@ public class PostProcessing {
 		ArrayList<Word> words = new ArrayList<Word>();
 		
 		for (Word w : ws.getWords()) {
-			if (lm.hasUnigram(w)) {
+			if (lm.hasWord(w)) {
 				words.add(w);
 			}
 		}
@@ -246,16 +259,6 @@ public class PostProcessing {
 		WordSequence trimmedWS = new WordSequence(words);
 		
 		prob = lm.getProbability(trimmedWS);
-		
-		//System.out.println(trimmedWS);
-		//System.out.println(trimmedWS.getSubSequence(trimmedWS.size()-1, trimmedWS.size()).toString());
-		
-		/*if (trimmedWS.getSubSequence(trimmedWS.size()-1, trimmedWS.size()).toString().equals("[<COMMA>]")) {
-			prob *= 4;
-			//System.out.println(trimmedWS);
-		} else if (trimmedWS.getSubSequence(trimmedWS.size()-1, trimmedWS.size()).toString().equals("[<PERIOD>]")) {
-			prob *= 3;
-		}*/
 		
 		return prob;
 	}
