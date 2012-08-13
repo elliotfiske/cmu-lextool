@@ -46,8 +46,6 @@ public class PostProcessing {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws ClassNotFoundException, IOException {
-
-		long start = System.currentTimeMillis();
 		
 		String text = null, lm_path = null, input_file = null;
 		int stackSize = 100;
@@ -115,19 +113,16 @@ public class PostProcessing {
 				// retrieve the first sequence in the stack
 				Sequence currentSequence = stacks.getSequence();
 				
-				//System.out.println(currentSequence);
 				WordSequence currentWordSequence = currentSequence.getWordSequence();
 				int currentSize = currentSequence.getSequenceNumber() + 1;
 				
-				// if the retrieved sequence is full-sized, add </s> and keep the sequence with the 
+				// if the retrieved sequence is full-sized, add <PERIOD> </s> and keep the sequence with the 
 				// biggest probability
 				
 				if (currentSize == inputWords.size() + 1) {
 
 					WordSequence fullSentence = currentWordSequence.addWord(new Word("<PERIOD>", null, false), maxSequenceSize).addWord(new Word("</s>", null, false), maxSequenceSize);
 					Sequence fullSentenceSequence = new Sequence(fullSentence, getWSProb(fullSentence, lm), currentSize, currentSequence);
-					
-					//output.write(formatOutput(fullSentenceSequence.getWordSequence()) + " " + fullSentenceSequence.getProbability() + "\n");
 				
 					if (fullSentenceSequence.getProbability() > max) {
 						finalSequence = fullSentenceSequence;
@@ -145,6 +140,7 @@ public class PostProcessing {
 				Word[] punctuationMarks = {new Word("<COMMA>", null, false),
 						new Word("<PERIOD>", null, false)}; 
 				
+				// in case the word isn't in the language model it's kept as lower-cased				
 				if (!lm.hasWord(currentWordForms[0]) && !lm.hasWord(currentWordForms[1])){
 	
 					WordSequence previousWords = new WordSequence(currentSequence.getWords());
@@ -165,9 +161,7 @@ public class PostProcessing {
 						WordSequence periodWordSequence = currentWordSequence.addWord(punctuationMarks[1], maxSequenceSize);
 							
 						Sequence commaSequence = new Sequence(commaWordSequence, getWSProb(commaWordSequence, lm), currentSize, currentSequence);
-						//stacks.addSequence(commaSequence);
 						Sequence periodSequence = new Sequence(periodWordSequence, getWSProb(periodWordSequence, lm), currentSize, currentSequence);
-						//stacks.addSequence(commaSequence);
 						
 						//WordSequence previousWords = new WordSequence(currentSequence.getWords());
 						WordSequence newSequence = commaWordSequence.addWord(wordForm, maxSequenceSize);	
@@ -190,18 +184,18 @@ public class PostProcessing {
 			}
 			
 			output.write(formatOutput(finalSequence.getWordSequence()) + '\n');
-			
-			System.out.println(formatOutput(finalSequence.getWordSequence()) + " " + finalSequence.getProbability() + '\n' );
-			
 		}
 		
 		output.close();
 		input.close();
-		long end = System.currentTimeMillis();
-		
-		System.out.println("Execution time was "+(end-start)+" ms.");
 	} 
 	
+	/**
+	 * Remove <s> and </s> and [] from Word object
+	 * 
+	 * @param output - the WordSequence outputed by the decoder
+	 * @return a string with correct formatting
+	 */
 	static String formatOutput(WordSequence output) {
 		
 		String newOutput = "";
@@ -214,6 +208,12 @@ public class PostProcessing {
 		return newOutput;
 	}
 	
+	/**
+	 * Break a string into Word objects and put them into a WordSequence
+	 * 
+	 * @param sentence
+	 * @return
+	 */
 	static WordSequence breakIntoWords(String sentence) {
 		LinkedList<Word> list = new LinkedList<Word>();
 		
@@ -228,6 +228,13 @@ public class PostProcessing {
 		return words;
 	}
 	
+	/**
+	 * Evaluate the probability of a sentence
+	 * 
+	 * @param s
+	 * @param lm
+	 * @return
+	 */
 	static float evaluateSentence(String s, LargeNGramModel lm) {
 		float prob = 0;
 		WordSequence sentence = breakIntoWords(s);
@@ -240,6 +247,13 @@ public class PostProcessing {
 		return prob + 99;
 	}
 	
+	/**
+	 * Get the probability of a WordSequence based on the language model
+	 * 
+	 * @param ws 
+	 * @param lm - language model used to get the probability of the sequence
+	 * @return - probability 
+	 */
 	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
 		
 		if (ws.size() > 3) {
