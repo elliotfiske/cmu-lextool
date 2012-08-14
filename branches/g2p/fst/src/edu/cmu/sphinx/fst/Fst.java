@@ -30,6 +30,11 @@ import java.util.HashMap;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
+ * A mutable finite state transducer implementation.
+ * 
+ * Holds an ArrayList of {@link edu.cmu.sphinx.fst.State} objects allowing
+ * additions/deletions.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class Fst {
@@ -57,8 +62,8 @@ public class Fst {
     }
 
     /**
-     * Constructor specifying the initial capacity of the states ArrayList
-     * (this is an optimization used in various operations) 
+     * Constructor specifying the initial capacity of the states ArrayList (this
+     * is an optimization used in various operations)
      * 
      * @param numStates the initial capacity
      */
@@ -69,8 +74,8 @@ public class Fst {
     }
 
     /**
-     * Constructor specifying the fst's semiring 
-     *   
+     * Constructor specifying the fst's semiring
+     * 
      * @param s the fst's semiring
      */
     public Fst(Semiring s) {
@@ -86,14 +91,14 @@ public class Fst {
     }
 
     /**
-     * Get the semiring 
+     * Get the semiring
      */
     public Semiring getSemiring() {
         return semiring;
     }
 
     /**
-     * Set the Semiring 
+     * Set the Semiring
      * 
      * @param semiring the semiring to set
      */
@@ -104,7 +109,7 @@ public class Fst {
     /**
      * Set the initial state
      * 
-     * @param start the initial state 
+     * @param start the initial state
      */
     public void setStart(State start) {
         this.start = start;
@@ -124,8 +129,7 @@ public class Fst {
     /**
      * Adds a state to the fst
      * 
-     * @param s the state to be added
-     * @return the state's index
+     * @param state the state to be added
      */
     public void addState(State state) {
         this.states.add(state);
@@ -166,8 +170,9 @@ public class Fst {
 
     /**
      * Serializes a symbol map to an ObjectOutputStream
-     *  
-     * @param out the ObjectOutputStream. It should be already be initialized by the caller.
+     * 
+     * @param out the ObjectOutputStream. It should be already be initialized by
+     *            the caller.
      * @param map the symbol map to serialize
      * @throws IOException
      */
@@ -181,8 +186,9 @@ public class Fst {
 
     /**
      * Serializes the current Fst instance to an ObjectOutputStream
-     *  
-     * @param out the ObjectOutputStream. It should be already be initialized by the caller.
+     * 
+     * @param out the ObjectOutputStream. It should be already be initialized by
+     *            the caller.
      * @throws IOException
      */
     private void writeFst(ObjectOutputStream out) throws IOException {
@@ -237,7 +243,8 @@ public class Fst {
     /**
      * Deserializes a symbol map from an ObjectInputStream
      * 
-     * @param in the ObjectInputStream. It should be already be initialized by the caller.
+     * @param in the ObjectInputStream. It should be already be initialized by
+     *            the caller.
      * @return the deserialized symbol map
      * @throws IOException
      * @throws ClassNotFoundException
@@ -258,7 +265,8 @@ public class Fst {
     /**
      * Deserializes an Fst from an ObjectInputStream
      * 
-     * @param in the ObjectInputStream. It should be already be initialized by the caller.
+     * @param in the ObjectInputStream. It should be already be initialized by
+     *            the caller.
      * @return
      * @throws IOException
      * @throws ClassNotFoundException
@@ -444,13 +452,14 @@ public class Fst {
     /**
      * Remaps the states' ids.
      * 
-     * States' ids are renumbered starting from 0 up to @see {@link edu.cmu.sphinx.fst.Fst#getNumStates()}
+     * States' ids are renumbered starting from 0 up to @see
+     * {@link edu.cmu.sphinx.fst.Fst#getNumStates()}
      */
     public void remapStateIds() {
         int numStates = states.size();
-        for(int i=0; i < numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             states.get(i).id = i;
         }
-        
+
     }
 }

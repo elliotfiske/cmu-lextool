@@ -18,6 +18,11 @@ import java.util.Collections;
 import java.util.Comparator;
 
 /**
+ * The fst's mutable state implementation.
+ * 
+ * Holds its outgoing {@link edu.cmu.sphinx.fst.Arc} objects in an ArrayList
+ * allowing additions/deletions
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class State {
@@ -28,19 +33,19 @@ public class State {
     // Final weight
     private float fnlWeight;
 
-    // Outgoing arcs 
+    // Outgoing arcs
     private ArrayList<Arc> arcs = null;
-    
+
     // initial number of arcs
     protected int initialNumArcs = -1;
-    
+
     /**
      * Default Constructor
      */
     protected State() {
-      arcs = new ArrayList<Arc>();
+        arcs = new ArrayList<Arc>();
     }
-    
+
     /**
      * Constructor specifying the state's final weight
      * 
@@ -51,21 +56,19 @@ public class State {
         this.fnlWeight = fnlWeight;
     }
 
-
     /**
-     * Constructor specifying the initial capacity of the arc's ArrayList
-     * (this is an optimization used in various operations)
-     *  
+     * Constructor specifying the initial capacity of the arc's ArrayList (this
+     * is an optimization used in various operations)
+     * 
      * @param initialNumArcs
      */
     public State(int initialNumArcs) {
         this.initialNumArcs = initialNumArcs;
-        if(initialNumArcs > 0) {
+        if (initialNumArcs > 0) {
             arcs = new ArrayList<Arc>(initialNumArcs);
         }
     }
-    
-    
+
     /**
      * Shorts the arc's ArrayList based on the provided Comparator
      */
@@ -83,7 +86,7 @@ public class State {
     /**
      * Set the state's arcs ArrayList
      * 
-     * @param arcs the arcs ArrayList to set 
+     * @param arcs the arcs ArrayList to set
      */
     public void setArcs(ArrayList<Arc> arcs) {
         this.arcs = arcs;
@@ -113,7 +116,7 @@ public class State {
     }
 
     /**
-     * Add an outgoing arc to the state 
+     * Add an outgoing arc to the state
      * 
      * @param arc the arc to add
      */
@@ -200,12 +203,11 @@ public class State {
     /**
      * Set an arc at the specified position in the arcs' ArrayList.
      * 
-     * @param index the position to the arcs' array 
+     * @param index the position to the arcs' array
      * @param arc the arc value to set
      */
     public void setArc(int index, Arc arc) {
         arcs.set(index, arc);
     }
-
 
 }

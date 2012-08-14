@@ -31,11 +31,11 @@ public class ComposeEpsilonTest {
         System.out.println("Testing Composition with Epsilons...");
         // Input label sort test
 
-        Fst fstA = Convert.importFloat("data/tests/algorithms/composeeps/A",
+        Fst fstA = Convert.importFst("data/tests/algorithms/composeeps/A",
                 new TropicalSemiring());
-        Fst fstB = Convert.importFloat("data/tests/algorithms/composeeps/B",
+        Fst fstB = Convert.importFst("data/tests/algorithms/composeeps/B",
                 new TropicalSemiring());
-        Fst fstC = Convert.importFloat(
+        Fst fstC = Convert.importFst(
                 "data/tests/algorithms/composeeps/fstcomposeeps",
                 new TropicalSemiring());
 

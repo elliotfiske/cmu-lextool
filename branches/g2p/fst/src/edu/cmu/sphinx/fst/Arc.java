@@ -14,6 +14,9 @@
 package edu.cmu.sphinx.fst;
 
 /**
+ * The fst's arc implementation.
+ * 
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class Arc {

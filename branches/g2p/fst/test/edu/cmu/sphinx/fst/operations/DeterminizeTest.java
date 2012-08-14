@@ -19,7 +19,7 @@ public class DeterminizeTest {
     @Test
     public void testDeterminize() {
         System.out.println("Testing Determinization...");
-        Fst fstA = Convert.importFloat("data/tests/algorithms/determinize/A",
+        Fst fstA = Convert.importFst("data/tests/algorithms/determinize/A",
                 new TropicalSemiring());
         Fst determinized = Fst
                 .loadModel("data/tests/algorithms/determinize/fstdeterminize.fst.ser");

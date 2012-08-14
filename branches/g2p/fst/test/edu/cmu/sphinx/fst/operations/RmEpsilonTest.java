@@ -31,7 +31,7 @@ public class RmEpsilonTest {
     public void testRmEpsilon() {
         System.out.println("Testing RmEpsilon...");
 
-        Fst fst = Convert.importFloat("data/tests/algorithms/rmepsilon/A",
+        Fst fst = Convert.importFst("data/tests/algorithms/rmepsilon/A",
                 new ProbabilitySemiring());
         Fst fstRmEps = Fst
                 .loadModel("data/tests/algorithms/rmepsilon/fstrmepsilon.fst.ser");

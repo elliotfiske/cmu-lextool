@@ -21,12 +21,14 @@ import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
+ * Connect operation.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */
 public class Connect {
     /**
-     * Calculates the coaccessible states of an fst 
+     * Calculates the coaccessible states of an fst
      */
     private static void calcCoAccessible(Fst fst, State state,
             ArrayList<ArrayList<State>> paths, ArrayList<State> coaccessible) {
@@ -121,7 +123,7 @@ public class Connect {
 
     }
 
-    /** 
+    /**
      * Initialization of a depth first search recursion
      */
     private static void depthFirstSearch(Fst fst, ArrayList<State> accessible,
@@ -145,7 +147,7 @@ public class Connect {
     }
 
     /**
-     * Trims an Fst, removing states and arcs that are not on successful paths. 
+     * Trims an Fst, removing states and arcs that are not on successful paths.
      * 
      * @param fst the fst to trim
      */
@@ -181,7 +183,7 @@ public class Connect {
         for (State sid : toDelete) {
             fst.deleteState(sid);
         }
-        
+
         fst.remapStateIds();
     }
 }

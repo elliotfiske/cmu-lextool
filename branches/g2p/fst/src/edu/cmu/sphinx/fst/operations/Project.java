@@ -9,6 +9,8 @@ import edu.cmu.sphinx.fst.ImmutableFst;
 import edu.cmu.sphinx.fst.State;
 
 /**
+ * Project operation. 
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */

@@ -20,6 +20,8 @@ import edu.cmu.sphinx.fst.Fst;
 import edu.cmu.sphinx.fst.State;
 
 /**
+ * ArcSort operation.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class ArcSort {
@@ -33,7 +35,7 @@ public class ArcSort {
      * Applies the ArcSort on the provided fst. Sorting can be applied either on
      * input or output label based on the provided comparator.
      * 
-     * ArcSort can be applied top both {@link edu.cmu.sphinx.fst.Fst} and
+     * ArcSort can be applied to both {@link edu.cmu.sphinx.fst.Fst} and
      * {@link edu.cmu.sphinx.fst.ImmutableFst}
      * 
      * @param fst the fst to sort it's arcs

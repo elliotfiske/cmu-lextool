@@ -36,9 +36,9 @@ public class ComposeTest {
     @Test
     public void testCompose() {
         System.out.println("Testing Composition...");
-        Fst fstA = Convert.importFloat("data/tests/algorithms/compose/A",
+        Fst fstA = Convert.importFst("data/tests/algorithms/compose/A",
                 new TropicalSemiring());
-        Fst fstB = Convert.importFloat("data/tests/algorithms/compose/B",
+        Fst fstB = Convert.importFst("data/tests/algorithms/compose/B",
                 new TropicalSemiring());
         Fst composed = Fst
                 .loadModel("data/tests/algorithms/compose/fstcompose.fst.ser");

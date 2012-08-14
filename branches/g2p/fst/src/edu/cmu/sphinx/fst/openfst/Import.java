@@ -49,7 +49,7 @@ public class Import {
             System.exit(1);
         }
 
-        Fst fst = Convert.importFloat(args[0], new TropicalSemiring());
+        Fst fst = Convert.importFst(args[0], new TropicalSemiring());
 
         // Serialize the java fst model to disk
         System.out.println("Saving as binary java fst model...");
