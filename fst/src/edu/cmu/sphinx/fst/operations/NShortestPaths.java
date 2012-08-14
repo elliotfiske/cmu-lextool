@@ -23,6 +23,13 @@ import edu.cmu.sphinx.fst.utils.Pair;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
+ * N-shortest paths operation.
+ * 
+ * See: M. Mohri, M. Riley,
+ * "An Efficient Algorithm for the n-best-strings problem", Proceedings of
+ * the International Conference on Spoken Language Processing 2002 (ICSLP
+ * ’02).
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */
@@ -95,11 +102,6 @@ public class NShortestPaths {
 
     /**
      * Calculates the n-best shortest path from the initial to the final state.
-     * 
-     * See: M. Mohri, M. Riley,
-     * "An Efficient Algorithm for the n-best-strings problem", Proceedings of
-     * the International Conference on Spoken Language Processing 2002 (ICSLP
-     * ’02).
      * 
      * @param fst the fst to calculate the nbest shortest paths
      * @param n number of best paths to return

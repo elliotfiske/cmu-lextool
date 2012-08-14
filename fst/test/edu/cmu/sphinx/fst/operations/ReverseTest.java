@@ -21,7 +21,7 @@ public class ReverseTest {
         System.out.println("Testing Reverse...");
         // Input label sort test
 
-        Fst fst = Convert.importFloat("data/tests/algorithms/reverse/A",
+        Fst fst = Convert.importFst("data/tests/algorithms/reverse/A",
                 new TropicalSemiring());
         Fst fstB = Fst
                 .loadModel("data/tests/algorithms/reverse/fstreverse.fst.ser");

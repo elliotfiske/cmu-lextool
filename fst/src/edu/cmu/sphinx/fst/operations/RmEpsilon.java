@@ -21,6 +21,8 @@ import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
+ * Remove epsilon operation.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */
@@ -32,14 +34,14 @@ public class RmEpsilon {
     }
 
     /**
-     * Put a new state in the epsilon closure 
+     * Put a new state in the epsilon closure
      */
     private static void put(State fromState, State toState, float weight,
             HashMap<State, Float>[] cl) {
         HashMap<State, Float> tmp = cl[fromState.getId()];
         if (tmp == null) {
             tmp = new HashMap<State, Float>();
-            cl[fromState.getId()]= tmp;
+            cl[fromState.getId()] = tmp;
         }
         tmp.put(toState, weight);
     }
@@ -88,7 +90,7 @@ public class RmEpsilon {
     }
 
     /**
-     * Get an epsilon path's cost in epsilon closure 
+     * Get an epsilon path's cost in epsilon closure
      */
     private static Float getPathWeight(State in, State out,
             HashMap<State, Float>[] cl) {
@@ -102,10 +104,10 @@ public class RmEpsilon {
     /**
      * Removes epsilon transitions from an fst.
      * 
-     * It return a new epsilon-free fst and does not modify the original fst 
+     * It return a new epsilon-free fst and does not modify the original fst
      * 
-     * @param fst the fst to remove epsilon transitions from 
-     * @return the epsilon-free fst 
+     * @param fst the fst to remove epsilon transitions from
+     * @return the epsilon-free fst
      */
     public static Fst get(Fst fst) {
         if (fst == null) {
@@ -122,30 +124,30 @@ public class RmEpsilon {
 
         @SuppressWarnings("unchecked")
         HashMap<State, Float>[] cl = new HashMap[fst.getNumStates()];
-        for(int i=0; i<cl.length; i++) {
+        for (int i = 0; i < cl.length; i++) {
             cl[i] = null;
         }
         State[] oldToNewStateMap = new State[fst.getNumStates()];
         State[] newToOldStateMap = new State[fst.getNumStates()];
-        for(int i=0;i<fst.getNumStates(); i++) {
-            oldToNewStateMap[i]=null;
-            newToOldStateMap[i]=null;
+        for (int i = 0; i < fst.getNumStates(); i++) {
+            oldToNewStateMap[i] = null;
+            newToOldStateMap[i] = null;
         }
 
         int numStates = fst.getNumStates();
-        for (int i=0; i<numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             State s = fst.getState(i);
             // Add non-epsilon arcs
             State newState = new State(s.getFinalWeight());
             res.addState(newState);
-            oldToNewStateMap[s.getId()]= newState;
+            oldToNewStateMap[s.getId()] = newState;
             newToOldStateMap[newState.getId()] = s;
             if (newState.getId() == fst.getStart().getId()) {
                 res.setStart(newState);
             }
         }
 
-        for (int i=0; i<numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             State s = fst.getState(i);
             // Add non-epsilon arcs
             State newState = oldToNewStateMap[s.getId()];
@@ -167,7 +169,7 @@ public class RmEpsilon {
 
         // augment fst with arcs generated from epsilon moves.
         numStates = res.getNumStates();
-        for (int i=0; i<numStates; i++) {
+        for (int i = 0; i < numStates; i++) {
             State s = res.getState(i);
             State oldState = newToOldStateMap[s.getId()];
             if (cl[oldState.getId()] != null) {
@@ -185,8 +187,7 @@ public class RmEpsilon {
                             Arc newArc = new Arc(a.getIlabel(), a.getOlabel(),
                                     semiring.times(a.getWeight(),
                                             getPathWeight(oldState, s1, cl)),
-                                    oldToNewStateMap[a.getNextState()
-                                            .getId()]);
+                                    oldToNewStateMap[a.getNextState().getId()]);
                             s.addArc(newArc);
                         }
                     }

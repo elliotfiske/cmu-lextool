@@ -14,30 +14,37 @@ import java.util.Arrays;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
+ * An immutable finite state transducer implementation.
+ * 
+ * Holds a fixed size array of {@link edu.cmu.sphinx.fst.ImmutableState} objects
+ * not allowing additions/deletions
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class ImmutableFst extends Fst {
-    
+
     // fst states
     private ImmutableState[] states = null;
-    
-    // number of states 
+
+    // number of states
     private int numStates;
 
     /**
      * Default private constructor.
      * 
      * An ImmutableFst cannot be created directly. It needs to be deserialized.
+     * 
      * @see edu.cmu.sphinx.fst.ImmutableFst#loadModel(String)
      */
     private ImmutableFst() {
-        
+
     }
-    
+
     /**
-     *  Private Constructor specifying the capacity of the states array
-     *
+     * Private Constructor specifying the capacity of the states array
+     * 
      * An ImmutableFst cannot be created directly. It needs to be deserialized.
+     * 
      * @see edu.cmu.sphinx.fst.ImmutableFst#loadModel(String)
      * 
      * @param numStates the number of fst's states
@@ -50,6 +57,7 @@ public class ImmutableFst extends Fst {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.Fst#getNumStates()
      */
     @Override
@@ -59,6 +67,7 @@ public class ImmutableFst extends Fst {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.Fst#getState(int)
      */
     @Override
@@ -68,6 +77,7 @@ public class ImmutableFst extends Fst {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.Fst#addState(edu.cmu.sphinx.fst.State)
      */
     @Override
@@ -77,6 +87,7 @@ public class ImmutableFst extends Fst {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.Fst#saveModel(java.lang.String)
      */
     @Override
@@ -88,7 +99,8 @@ public class ImmutableFst extends Fst {
     /**
      * Deserializes an ImmutableFst from an ObjectInputStream
      * 
-     * @param in the ObjectInputStream. It should be already be initialized by the caller.
+     * @param in the ObjectInputStream. It should be already be initialized by
+     *            the caller.
      * @return
      * @throws IOException
      * @throws ClassNotFoundException
@@ -134,11 +146,12 @@ public class ImmutableFst extends Fst {
 
         return res;
     }
-    
+
     /**
      * Deserializes an ImmutableFst from an InputStream
      * 
-     * @param inputStream the InputStream. It should be already be initialized by the caller.
+     * @param inputStream the InputStream. It should be already be initialized
+     *            by the caller.
      */
     public static ImmutableFst loadModel(InputStream inputStream) {
         ImmutableFst obj;
@@ -165,7 +178,7 @@ public class ImmutableFst extends Fst {
 
         return obj;
     }
-    
+
     /**
      * Deserializes an ImmutableFst from disk
      * 
@@ -201,6 +214,7 @@ public class ImmutableFst extends Fst {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.Fst#deleteState(edu.cmu.sphinx.fst.State)
      */
     @Override
@@ -210,6 +224,7 @@ public class ImmutableFst extends Fst {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.Fst#toString()
      */
     @Override

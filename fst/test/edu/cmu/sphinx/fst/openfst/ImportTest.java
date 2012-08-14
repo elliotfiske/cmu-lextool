@@ -31,7 +31,7 @@ public class ImportTest {
     public void testConvert() {
         System.out.println("Testing Import...");
 
-        Fst fst1 = Convert.importFloat("data/openfst/basic",
+        Fst fst1 = Convert.importFst("data/openfst/basic",
                 new TropicalSemiring());
 
         Fst fst2 = Fst.loadModel("data/openfst/basic.fst.ser");

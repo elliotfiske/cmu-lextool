@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.fst.semiring;
 
 /**
+ * Tropical semiring implementation.
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
@@ -117,6 +118,7 @@ public class TropicalSemiring extends Semiring {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.semiring.Semiring#reverse(float)
      */
     @Override

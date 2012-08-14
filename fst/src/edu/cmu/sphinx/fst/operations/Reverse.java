@@ -19,6 +19,8 @@ import edu.cmu.sphinx.fst.State;
 import edu.cmu.sphinx.fst.semiring.Semiring;
 
 /**
+ * Reverse operation.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */

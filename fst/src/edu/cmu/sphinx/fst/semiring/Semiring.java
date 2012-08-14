@@ -16,40 +16,42 @@ package edu.cmu.sphinx.fst.semiring;
 import java.io.Serializable;
 
 /**
+ * Abstract semiring class.
+ * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
  */
 public abstract class Semiring implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
-    // significant decimal digits in floating point numbers 
+
+    // significant decimal digits in floating point numbers
     protected static final int accuracy = 5;
 
     /**
-     *  Semiring's plus operation
+     * Semiring's plus operation
      */
     public abstract float plus(float w1, float w2);
 
     public abstract float reverse(float w1);
 
     /**
-     *  Semiring's times operation
+     * Semiring's times operation
      */
     public abstract float times(float w1, float w2);
 
     /**
-     *  Semiring's divide operation
+     * Semiring's divide operation
      */
     public abstract float divide(float w1, float w2);
 
     /**
-     *  Semiring's zero element
+     * Semiring's zero element
      */
     public abstract float zero();
 
     /**
-     *  Semiring's one element
+     * Semiring's one element
      */
     public abstract float one();
 

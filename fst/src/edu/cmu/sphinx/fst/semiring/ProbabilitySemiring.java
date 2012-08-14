@@ -13,6 +13,7 @@
 package edu.cmu.sphinx.fst.semiring;
 
 /**
+ * Probability semiring implementation.
  * 
  * @author "John Salatas <jsalatas@users.sourceforge.net>"
  * 
@@ -106,6 +107,7 @@ public class ProbabilitySemiring extends Semiring {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.semiring.Semiring#reverse(float)
      */
     @Override

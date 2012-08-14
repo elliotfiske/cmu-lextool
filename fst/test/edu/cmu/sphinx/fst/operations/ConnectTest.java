@@ -29,7 +29,7 @@ public class ConnectTest {
     @Test
     public void testConnect() {
         System.out.println("Testing Connect...");
-        Fst fst = Convert.importFloat("data/tests/algorithms/connect/A",
+        Fst fst = Convert.importFst("data/tests/algorithms/connect/A",
                 new TropicalSemiring());
         Fst connectSaved = Fst
                 .loadModel("data/tests/algorithms/connect/fstconnect.fst.ser");

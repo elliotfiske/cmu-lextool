@@ -18,16 +18,16 @@ import java.util.HashMap;
 
 /**
  * Several genearl use utility functions needed by the fst framework
- *  
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class Utils {
 
     /**
-     * Splits a string into an ArrayList of Strings based on a text delimeter
-     *   
+     * Splits a string into an ArrayList of Strings based on a text delimiter
+     * 
      * @param input the string to split
-     * @param delim the text delimeter
+     * @param delim the text delimiter
      * @return the splitted ArrayList
      */
     public static ArrayList<String> split_string(String input, String delim) {
@@ -60,12 +60,13 @@ public class Utils {
     }
 
     /**
-     * Searches an ArrayList of Strings starting from a specific position for a pattern 
-     *  
-     * @param src the input ArrayList of Strings 
+     * Searches an ArrayList of Strings starting from a specific position for a
+     * pattern
+     * 
+     * @param src the input ArrayList of Strings
      * @param pattern the pattern to search for
      * @param start the starting position
-     * @return the index of the first occurrence or -1 if no matches found  
+     * @return the index of the first occurrence or -1 if no matches found
      */
     public static int search(ArrayList<String> src, ArrayList<String> pattern,
             int start) {
@@ -105,7 +106,7 @@ public class Utils {
     }
 
     /**
-     * Rounds a float number to the specified number of decimal digits 
+     * Rounds a float number to the specified number of decimal digits
      * 
      * @param value the float numbe to round
      * @param digits the number of digits
@@ -118,19 +119,19 @@ public class Utils {
         return (float) (Math.round(value * Math.pow(10, digits)) / Math.pow(10,
                 digits));
     }
-    
+
     /**
-     * Get the position (index) of a particular string in a Strins array.
+     * Get the position (index) of a particular string in a Strings array.
      * 
-     * The search is case insensitive.  
+     * The search is case insensitive.
      * 
-     * @param strings the Strings array  
+     * @param strings the Strings array
      * @param string the string to search
-     * @return the index of the first occurrence or -1 if no matches found 
+     * @return the index of the first occurrence or -1 if no matches found
      */
     public static int getIndex(String[] strings, String string) {
-        for(int i=0; i<strings.length; i++) {
-            if(string.toLowerCase().equals(strings[i].toLowerCase())) {
+        for (int i = 0; i < strings.length; i++) {
+            if (string.toLowerCase().equals(strings[i].toLowerCase())) {
                 return i;
             }
         }
@@ -138,14 +139,14 @@ public class Utils {
     }
 
     /**
-     * Copnvert a HashMap<String, Integer> to Strings array
+     * Convert a HashMap<String, Integer> to Strings array
      * 
      * @param syms the input HashMap
      * @return the Strings array
      */
     public static String[] toStringArray(HashMap<String, Integer> syms) {
         String[] res = new String[syms.size()];
-        for(String sym: syms.keySet()) {
+        for (String sym : syms.keySet()) {
             res[syms.get(sym)] = sym;
         }
         return res;

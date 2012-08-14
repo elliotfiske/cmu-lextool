@@ -21,9 +21,9 @@ public class NShortestPathsTest {
     public void testNShortestPaths() {
         System.out.println("Testing NShortestPaths...");
 
-        Fst fst = Convert.importFloat("data/tests/algorithms/shortestpath/A",
+        Fst fst = Convert.importFst("data/tests/algorithms/shortestpath/A",
                 new TropicalSemiring());
-        Fst nsp = Convert.importFloat("data/tests/algorithms/shortestpath/nsp",
+        Fst nsp = Convert.importFst("data/tests/algorithms/shortestpath/nsp",
                 new TropicalSemiring());
 
         Fst fstNsp = NShortestPaths.get(fst, 6, true);

@@ -30,8 +30,8 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.utils.Utils;
 
 /**
- * Provides the required functionality in order to convert from/to openfst's text
- * format
+ * Provides the required functionality in order to convert from/to openfst's
+ * text format
  * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
@@ -173,7 +173,7 @@ public class Convert {
      * @param basename the files' base name
      * @param semiring the fst's semiring
      */
-    public static Fst importFloat(String basename, Semiring semiring) {
+    public static Fst importFst(String basename, Semiring semiring) {
         Fst fst = new Fst(semiring);
 
         HashMap<String, Integer> isyms = importSymbols(basename + ".input.syms");

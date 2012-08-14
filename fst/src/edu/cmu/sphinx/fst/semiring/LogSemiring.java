@@ -14,13 +14,15 @@
 package edu.cmu.sphinx.fst.semiring;
 
 /**
+ * Log semiring implementation.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  * 
  */
 public class LogSemiring extends Semiring {
 
     private static final long serialVersionUID = 5212106775584311083L;
-    
+
     // zero value
     private static float zero = Float.POSITIVE_INFINITY;
 
@@ -120,6 +122,7 @@ public class LogSemiring extends Semiring {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.semiring.Semiring#reverse(float)
      */
     @Override

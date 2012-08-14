@@ -7,27 +7,34 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 /**
+ * The fst's immutable state implementation.
+ * 
+ * holds its outgoing {@link edu.cmu.sphinx.fst.Arc} objects in a fixed size
+ * array not allowing additions/deletions.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 public class ImmutableState extends State {
-    
-    // Outgoing arcs 
+
+    // Outgoing arcs
     private Arc[] arcs = null;
-    
+
     /**
      * Default protected constructor.
      * 
-     * An ImmutableState cannot be created directly. It needs to be deserialized as part of an ImmutableFst.
+     * An ImmutableState cannot be created directly. It needs to be deserialized
+     * as part of an ImmutableFst.
+     * 
      * @see edu.cmu.sphinx.fst.ImmutableFst#loadModel(String)
-     *  
+     * 
      */
     protected ImmutableState() {
     }
-    
+
     /**
-     *  Constructor specifying the capacity of the arcs array.
-     *  
-     *  @param numArcs
+     * Constructor specifying the capacity of the arcs array.
+     * 
+     * @param numArcs
      */
     protected ImmutableState(int numArcs) {
         super(0);
@@ -37,6 +44,7 @@ public class ImmutableState extends State {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.State#arcSort(java.util.Comparator)
      */
     public void arcSort(Comparator<Arc> cmp) {
@@ -45,17 +53,19 @@ public class ImmutableState extends State {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.State#addArc(edu.cmu.sphinx.fst.Arc)
      */
     @Override
     public void addArc(Arc arc) {
-        throw new IllegalArgumentException("You cannot modify an ImmutableState.");
+        throw new IllegalArgumentException(
+                "You cannot modify an ImmutableState.");
     }
 
     /**
      * Set an arc at the specified position in the arcs' array.
      * 
-     * @param index the position to the arcs' array 
+     * @param index the position to the arcs' array
      * @param arc the arc value to set
      */
     public void setArc(int index, Arc arc) {
@@ -64,17 +74,19 @@ public class ImmutableState extends State {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.State#deleteArc(int)
      */
     @Override
     public Arc deleteArc(int index) {
-        throw new IllegalArgumentException("You cannot modify an ImmutableState.");
+        throw new IllegalArgumentException(
+                "You cannot modify an ImmutableState.");
     }
 
     /**
      * Set the state's arcs array
      * 
-     * @param arcs the arcs array to set 
+     * @param arcs the arcs array to set
      */
     public void setArcs(Arc[] arcs) {
         this.arcs = arcs;
@@ -82,6 +94,7 @@ public class ImmutableState extends State {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.State#getNumArcs()
      */
     @Override
@@ -91,6 +104,7 @@ public class ImmutableState extends State {
 
     /*
      * (non-Javadoc)
+     * 
      * @see edu.cmu.sphinx.fst.State#getArc(int)
      */
     @Override
@@ -98,7 +112,9 @@ public class ImmutableState extends State {
         return this.arcs[index];
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -109,7 +125,9 @@ public class ImmutableState extends State {
         return result;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override

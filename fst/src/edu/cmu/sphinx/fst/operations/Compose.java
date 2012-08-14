@@ -26,6 +26,11 @@ import edu.cmu.sphinx.fst.semiring.Semiring;
 import edu.cmu.sphinx.fst.utils.Pair;
 
 /**
+ * Compose operation.
+ * 
+ * See: M. Mohri, "Weighted automata algorithms", Handbook of Weighted Automata.
+ * Springer, pp. 213-250, 2009.
+ * 
  * @author John Salatas <jsalatas@users.sourceforge.net>
  */
 
@@ -122,9 +127,6 @@ public class Compose {
      * Computes the composition of two Fsts. The two Fsts are augmented in order
      * to avoid multiple epsilon paths in the resulting Fst
      * 
-     * See: M. Mohri, "Weighted automata algorithms", Handbook of Weighted
-     * Automata. Springer, pp. 213-250, 2009.
-     * 
      * @param fst1 the first Fst
      * @param fst2 the second Fst
      * @param semiring the semiring to use in the operation
@@ -210,51 +212,6 @@ public class Compose {
      * Augments the labels of an Fst in order to use it for composition avoiding
      * multiple epsilon paths in the resulting Fst
      * 
-     * @param label constant denoting if the augment should take place on input
-     *            or output labels For value equal to 0 augment will take place
-     *            for input labels For value equal to 1 augment will take place
-     *            for output labels
-     * 
-     * @param fst the fst to augment
-     * @param semiring the semiring to use in the operation
-     */
-//    public static void augment(int label, Fst fst, Semiring semiring) {
-//        // label: 0->augment on ilabel
-//        // 1->augment on olabel
-//
-//        String[] isyms = fst.getIsyms();
-//        String[] osyms = fst.getOsyms();
-//
-//        int e1inputIndex = isyms.length;
-//        int e2inputIndex = isyms.length + 1;
-//
-//        int e1outputIndex = osyms.length;
-//        int e2outputIndex = osyms.length + 1;
-//
-//        int numStates = fst.getNumStates();
-//        for (int i = 0; i < numStates; i++) {
-//            State s = fst.getState(i);
-//            int numArcs = s.getNumArcs();
-//            for (int j = 0; j < numArcs; j++) {
-//                Arc a = s.getArc(j);
-//                if ((label == 1) && (a.getOlabel() == 0)) {
-//                    a.setOlabel(e2outputIndex);
-//                } else if ((label == 0) && (a.getIlabel() == 0)) {
-//                    a.setIlabel(e1inputIndex);
-//                }
-//            }
-//            if (label == 0) {
-//                s.addArc(new Arc(e2inputIndex, 0, semiring.one(), s));
-//            } else if (label == 1) {
-//                s.addArc(new Arc(0, e1outputIndex, semiring.one(), s));
-//            }
-//        }
-//    }
-
-    /**
-     * Augments the labels of an Fst in order to use it for composition avoiding
-     * multiple epsilon paths in the resulting Fst
-     * 
      * Augment can be applied to both {@link edu.cmu.sphinx.fst.Fst} and
      * {@link edu.cmu.sphinx.fst.ImmutableFst}, as immutable fsts hold an
      * additional null arc for that operation
@@ -283,8 +240,8 @@ public class Compose {
         for (int i = 0; i < numStates; i++) {
             State s = fst.getState(i);
             // Immutable fsts hold an additional (null) arc for augmention
-            int numArcs = (fst instanceof ImmutableFst) ? s.getNumArcs() - 1: s
-                    .getNumArcs();
+            int numArcs = (fst instanceof ImmutableFst) ? s.getNumArcs() - 1
+                    : s.getNumArcs();
             for (int j = 0; j < numArcs; j++) {
                 Arc a = s.getArc(j);
                 if ((label == 1) && (a.getOlabel() == 0)) {
@@ -294,16 +251,16 @@ public class Compose {
                 }
             }
             if (label == 0) {
-                if(fst instanceof ImmutableFst) {
-                    s.setArc(numArcs,
-                            new Arc(e2inputIndex, 0, semiring.one(), s));
+                if (fst instanceof ImmutableFst) {
+                    s.setArc(numArcs, new Arc(e2inputIndex, 0, semiring.one(),
+                            s));
                 } else {
                     s.addArc(new Arc(e2inputIndex, 0, semiring.one(), s));
                 }
             } else if (label == 1) {
-                if(fst instanceof ImmutableFst) {
-                    s.setArc(numArcs,
-                            new Arc(0, e1outputIndex, semiring.one(), s));
+                if (fst instanceof ImmutableFst) {
+                    s.setArc(numArcs, new Arc(0, e1outputIndex, semiring.one(),
+                            s));
                 } else {
                     s.addArc(new Arc(0, e1outputIndex, semiring.one(), s));
                 }
