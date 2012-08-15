@@ -37,7 +37,7 @@ import edu.cmu.sphinx.util.LogMath;
  */
 public class PostProcessing {
 	
-	static int maxSequenceSize = 10000;	
+	static int maxSequenceSize = 11000;	
 	static LargeNGramModel lm;
 	
 	/**
@@ -49,6 +49,8 @@ public class PostProcessing {
 		
 		String text = null, lm_path = null, input_file = null;
 		int stackSize = 100;
+		int count = 0;
+		long start = System.currentTimeMillis();
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-input_file")) input_file = args[i+1];
@@ -70,7 +72,7 @@ public class PostProcessing {
 		}
 		
 		try {
-			outputFile = new FileWriter("output");
+			outputFile = new FileWriter(input_file.split(".input")[0] + ".output");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -78,19 +80,10 @@ public class PostProcessing {
 		BufferedReader input = new BufferedReader(inputFile);
 		BufferedWriter output = new BufferedWriter(outputFile);
 		
-		
-		// load dictionary and language model
-		FullDictionary dict = new FullDictionary(
-				new URL("file:models/lm_giga_5k_nvp.sphinx.dic"), 
-				new URL("file:models/lm_giga_5k_nvp.sphinx.filler"),
-				null, false, null, true, true, new UnitManager(), true);
-		
-		dict.allocate();
-		
 		lm = new LargeNGramModel("", new URL("file:" + lm_path), 
 				"file:logfile", 0, false, 3, 
 				new LogMath(10f, false),
-				dict, false, 0.0f, 0.0, 0.7f, false, true);
+				null, false, 0.0f, 0.0, 0.7f, false);
 		
 		lm.allocate();
 		
@@ -146,7 +139,6 @@ public class PostProcessing {
 					WordSequence previousWords = new WordSequence(currentSequence.getWords());
 					WordSequence newSequence = previousWords.addWord(currentWord, maxSequenceSize);			
 					
-	
 					Sequence unpunctuated = new Sequence(newSequence, getWSProb(newSequence, lm), currentSize, currentSequence);
 					stacks.addSequence(unpunctuated);
 					continue;
@@ -184,10 +176,14 @@ public class PostProcessing {
 			}
 			
 			output.write(formatOutput(finalSequence.getWordSequence()) + '\n');
+			System.out.println(formatOutput(finalSequence.getWordSequence()));
 		}
 		
 		output.close();
 		input.close();
+		long end = System.currentTimeMillis();
+
+		System.out.println("Execution time was "+(end-start)+" ms.");
 	} 
 	
 	/**
@@ -272,7 +268,8 @@ public class PostProcessing {
 
 		WordSequence trimmedWS = new WordSequence(words);
 		
-		prob = lm.getProbability(trimmedWS);
+		if (trimmedWS.size() > 0)		
+			prob = lm.getProbability(trimmedWS);
 		
 		return prob;
 	}
