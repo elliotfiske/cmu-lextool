@@ -45,8 +45,8 @@ while 1:
     input_period_list = []
 
     for word in output_list:
-        if word != "<PERIOD>" and word != "<COMMA>":
-            if input_list[i] == "<COMMA>" or input_list[i] == "<PERIOD>":
+        if word != "<PERIOD>" and word != "<COMMA>" and word != "<period>" and word != "<comma>":
+            while input_list[i] == "<COMMA>" or input_list[i] == "<PERIOD>":
                 i += 1
             if word == input_list[i]:
                 correct_cap += 1
@@ -54,7 +54,7 @@ while 1:
                 incorrect_cap += 1
             if word.lower() != input_list[i].lower():
                 print "ERROR: words do not match"
-                print "output " + word + " input " + input_list[i]
+                print "output " + word + " input " + input_list[i] + " " + str(i)
                 print line_count
                 break
             i += 1
