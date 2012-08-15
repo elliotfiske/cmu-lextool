@@ -84,7 +84,8 @@ public class RobotsParser {
 			br = new BufferedReader(new InputStreamReader(is,
 					Charset.forName("utf-8"))); //$NON-NLS-1$
 		} catch (FileNotFoundException e) {
-			logger.warn("robots.txt could not be found at {}. Assuming everything is okay and using default crawl delay.", //$NON-NLS-1$
+			logger.warn(
+					"robots.txt could not be found at {}. Assuming everything is okay and using default crawl delay.", //$NON-NLS-1$
 					robotsUrl.toString());
 			return new RobotSettings(new ArrayList<RobotRule>(),
 					new ArrayList<String>(), this.defaultCrawlDelay);
@@ -144,18 +145,16 @@ public class RobotsParser {
 
 						expressionString += "\\b"; //$NON-NLS-1$
 
-						Pattern expression = Pattern.compile(expressionString);
 						ruleList.add(new RobotRule(RobotRule.Rule.DISALLOW,
-								expression));
+								expressionString));
 					} else if (rule.equals("allow:")) { //$NON-NLS-1$
 						String expressionString = tokenizer.nextToken();
 						expressionString = expressionString.replaceAll(
 								Pattern.quote("*"), ".*"); //$NON-NLS-1$ //$NON-NLS-2$
 
 						expressionString += "\\b"; //$NON-NLS-1$
-						Pattern expression = Pattern.compile(expressionString);
 						ruleList.add(new RobotRule(RobotRule.Rule.ALLOW,
-								expression));
+								expressionString));
 					} else if (rule.equals("crawl-delay:")) { //$NON-NLS-1$
 						/*
 						 * Take the higher crawl delay value for politeness
@@ -177,10 +176,11 @@ public class RobotsParser {
 		br.close();
 
 		if (crawlDelay > this.maxCrawlDelay) {
-			throw new CrawlDelayException(String.format(
-					"Robot settings for %s is %f second(s), which is higher than the maximum setting %f second(s) in configuration file. Skipping this host.", //$NON-NLS-1$
-					robotsUrl.getHost(), crawlDelay / 1000.0F,
-					this.maxCrawlDelay / 1000.0F));
+			throw new CrawlDelayException(
+					String.format(
+							"Robot settings for %s is %f second(s), which is higher than the maximum setting %f second(s) in configuration file. Skipping this host.", //$NON-NLS-1$
+							robotsUrl.getHost(), crawlDelay / 1000.0F,
+							this.maxCrawlDelay / 1000.0F));
 		}
 
 		RobotSettings robotSettings = new RobotSettings(ruleList, sitemapList,

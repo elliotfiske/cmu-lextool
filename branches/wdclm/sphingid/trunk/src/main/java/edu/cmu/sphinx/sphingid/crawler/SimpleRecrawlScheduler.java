@@ -16,8 +16,7 @@ import java.io.Serializable;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  * 
  */
-public class SimpleRecrawlScheduler implements RecrawlScheduler, Serializable {
-	private static final long serialVersionUID = -1425722222101992929L;
+public class SimpleRecrawlScheduler implements RecrawlScheduler {
 	private long defaultRecrawlInterval;
 	private long minimumRecrawlInterval;
 	private float recrawlTimeMultiplier;
@@ -34,6 +33,11 @@ public class SimpleRecrawlScheduler implements RecrawlScheduler, Serializable {
 		this.minimumRecrawlInterval = minimumRecrawlInterval;
 		this.recrawlTimeMultiplier = recrawlTimeMultiplier;
 	}
+	
+	private SimpleRecrawlScheduler() {
+		super();
+	}
+		
 
 	@Override
 	public long getNextRecrawlTime(Page page) {

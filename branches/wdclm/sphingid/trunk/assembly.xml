@@ -21,10 +21,8 @@
 				<include>README*</include>
 				<include>LICENSE*</include>
 				<include>NOTICE*</include>
-				<include>irstlm</include>
-				<include>conf</include>
-				<include></include>
 				<include>crawler-configuration.xml</include>
+				<include>crawler-configuration.xs</include>
 			</includes>
 		</fileSet>
 		<fileSet>
@@ -32,6 +30,13 @@
 			<outputDirectory>conf/</outputDirectory>
 			<includes>
 				<include>*</include>
+			</includes>
+		</fileSet>
+		<fileSet>
+			<directory>${project.basedir}/irstlm</directory>
+			<outputDirectory>irstlm/</outputDirectory>
+			<includes>
+				<include>**/*</include>
 			</includes>
 		</fileSet>
 	</fileSets>

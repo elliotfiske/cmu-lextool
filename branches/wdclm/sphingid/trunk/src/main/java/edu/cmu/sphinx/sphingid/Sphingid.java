@@ -31,6 +31,10 @@ public class Sphingid {
 
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
+		if (args.length == 0) {
+			printUsage();
+			return;
+		}
 		if (args[0].equals("combine")) { //$NON-NLS-1$
 			if (args.length >= 3) {
 				ArrayList<File> files = new ArrayList<File>();
@@ -148,7 +152,7 @@ public class Sphingid {
 						Messages.getString("Sphingid.UseTlmUsage")); //$NON-NLS-1$
 				return;
 			}
-		} else if (args[0].equals("lm-data-selection-with-existing-models")) { //$NON-NLS-1$
+		} else if (args[0].equals("lm-data-selection-wem")) { //$NON-NLS-1$
 			if (args.length >= 5) {
 				GiganticLanguageModel corpusModel = null;
 				GiganticLanguageModel inDomainModel = null;
@@ -234,8 +238,8 @@ public class Sphingid {
 				return;
 			}
 		} else if (args[0].equals("crawl")) { //$NON-NLS-1$
-			if (args.length == 1) {
-				String confPath = args[0];
+			if (args.length == 2) {
+				String confPath = args[1];
 
 				XMLConfiguration crawlerConfiguration = null;
 
@@ -254,8 +258,9 @@ public class Sphingid {
 
 				new Crawler(crawlerConfiguration, false);
 			} else {
-				System.out.println(Messages.getString("Sphingid.CrawlUsage") //$NON-NLS-1$
-						+ Messages.getString("Sphingid.CrawlDescription")); //$NON-NLS-1$
+				System.out.println(Messages.getString("Sphingid.CrawlUsage")); //$NON-NLS-1$
+				System.out.println(Messages
+						.getString("Sphingid.CrawlDescription")); //$NON-NLS-1$
 			}
 		} else {
 			printUsage();
@@ -269,17 +274,17 @@ public class Sphingid {
 		System.out.println(Messages
 				.getString("Sphingid.CorrectArgumentsListedBelow")); //$NON-NLS-1$
 		System.out
-				.printf("%-45s %s\n\n", "add-sentence-markers", //$NON-NLS-1$ //$NON-NLS-2$
+				.printf("%-25s %s\n\n", "add-sentence-markers", //$NON-NLS-1$ //$NON-NLS-2$
 						Messages.getString("Sphingid.AddSentenceMarkersShortDescription")); //$NON-NLS-1$
 		System.out
-				.printf("%-45s %s\n\n", "combine", Messages.getString("Sphingid.CombineShortDescription")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+				.printf("%-25s %s\n\n", "combine", Messages.getString("Sphingid.CombineShortDescription")); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
-		System.out.printf("%-45s %s\n\n", "lm-data-selection", //$NON-NLS-1$ //$NON-NLS-2$
+		System.out.printf("%-25s %s\n\n", "lm-data-selection", //$NON-NLS-1$ //$NON-NLS-2$
 				Messages.getString("Sphingid.LMDataSelectionShortDescription")); //$NON-NLS-1$
 		System.out
-				.printf("%-45s %s\n\n", //$NON-NLS-1$
-						"lm-data-selection-with-existing-models", Messages.getString("Sphingid.LMDataSelectionWithExistingModelsShortDescription")); //$NON-NLS-1$ //$NON-NLS-2$
-		System.out.printf("%-45s %s\n\n", //$NON-NLS-1$
+				.printf("%-25s %s\n\n", //$NON-NLS-1$
+						"lm-data-selection-wem", Messages.getString("Sphingid.LMDataSelectionWithExistingModelsShortDescription")); //$NON-NLS-1$ //$NON-NLS-2$
+		System.out.printf("%-25s %s\n\n", //$NON-NLS-1$
 				"crawl", Messages.getString("Sphingid.CrawlShortDescription")); //$NON-NLS-1$ //$NON-NLS-2$
 
 		// + "construct-lm Constructs an LM using IRST LM.\n\n"

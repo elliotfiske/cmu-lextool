@@ -14,9 +14,7 @@ import java.io.Serializable;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  * 
  */
-public class EarliestDeadlineFirstScheduler implements FetchScheduler,
-		Serializable {
-	private static final long serialVersionUID = 5711499624459871445L;
+public class EarliestDeadlineFirstScheduler implements FetchScheduler {
 
 	@Override
 	public long getNextFetchTime(LinkQueue queue) {

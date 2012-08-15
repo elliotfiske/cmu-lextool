@@ -15,17 +15,21 @@ import edu.cmu.sphinx.sphingid.crawler.robots.RobotsParser.CrawlDelayException;
  * 
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  */
-public class Host implements Serializable {
-	private static final long serialVersionUID = 3087728909594575128L;
-	private URL url;
+public class Host {
+	private String url;
 	private RobotSettings robotSettings;
 
-	public Host(URL url) throws MalformedURLException, IOException,
+	public Host(String url) throws IOException,
 			CrawlDelayException, NoPageAllowedException {
+		URL temp = new URL(url);
 		this.robotSettings = RobotsParser.getInstance().parse(
-				new URL(url.getProtocol() + "://" + url.getHost() //$NON-NLS-1$
+				new URL(temp.getProtocol() + "://" + temp.getHost() //$NON-NLS-1$
 						+ "/robots.txt")); //$NON-NLS-1$
 		this.url = url;
+	}
+
+	private Host() {
+		super();
 	}
 
 	public long getCrawlDelay() {
@@ -36,7 +40,7 @@ public class Host implements Serializable {
 		return this.robotSettings;
 	}
 
-	public URL getUrl() {
+	public String getUrl() {
 		return this.url;
 	}
 }

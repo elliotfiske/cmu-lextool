@@ -1,8 +1,17 @@
 package edu.cmu.sphinx.sphingid.lm;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Language model class that represents language models built with tlm of IRST
@@ -11,6 +20,8 @@ import java.io.IOException;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  */
 public class LanguageModel extends AbstractLanguageModel {
+	private static final Logger logger = LoggerFactory
+			.getLogger(LanguageModel.class);
 
 	/**
 	 * Creates a LanguageModel instance using an existing model file.
@@ -56,14 +67,13 @@ public class LanguageModel extends AbstractLanguageModel {
 			throw new FileNotFoundException(
 					Messages.getString("LanguageModel.0")); //$NON-NLS-1$
 
-		if (!lmFile.canWrite()) {
-			throw new IOException(Messages.getString("CannotWriteToModelFile")); //$NON-NLS-1$
-		}
-
 		File tlm = new File("irstlm/bin/tlm"); //$NON-NLS-1$
 		if (!tlm.canRead() || !tlm.canExecute()) {
 			throw new IOException(Messages.getString("LanguageModel.2")); //$NON-NLS-1$
 		}
+
+		ArrayList<String> command = new ArrayList<String>();
+		command.add("irstlm/bin/tlm"); //$NON-NLS-1$
 
 		String bo;
 		if (backoff)
@@ -71,36 +81,45 @@ public class LanguageModel extends AbstractLanguageModel {
 		else
 			bo = "no"; //$NON-NLS-1$
 
-		String args = "-tr=" + corpusFile.getPath() + " -n=" + n + //$NON-NLS-1$ //$NON-NLS-2$
-				" -bo=" + bo + " -o=" + lmFile.getPath(); //$NON-NLS-1$ //$NON-NLS-2$
+		command.add("-tr=" + corpusFile.getPath()); //$NON-NLS-1$
+		command.add("-n=" + n); //$NON-NLS-1$
+		command.add("-bo=" + bo); //$NON-NLS-1$
+		command.add("-o=" + lmFile.getPath()); //$NON-NLS-1$ 
 
 		switch (smoothing) {
 		case WITTEN_BELL:
-			args += " -lm=wb"; //$NON-NLS-1$
+			command.add("-lm=wb"); //$NON-NLS-1$
 			break;
 		case SHIFT_BETA:
-			args += " -lm=sb"; //$NON-NLS-1$
+			command.add("-lm=sb"); //$NON-NLS-1$
 			break;
 		case MODIFIED_SHIFT_BETA:
-			args += " -lm=msb"; //$NON-NLS-1$
+			command.add("-lm=msb"); //$NON-NLS-1$
 			break;
 		default:
-			args += " -lm=msb"; //$NON-NLS-1$
+			command.add("-lm=msb"); //$NON-NLS-1$
 			break;
 		}
 
 		if (dictionary != null) {
 			if (dictionary.getDictFile().exists()
 					&& dictionary.getDictFile().canRead())
-				args += " -d=" + dictionary.getDictFile().getPath(); //$NON-NLS-1$
+				command.add("-d=" + dictionary.getDictFile().getPath()); //$NON-NLS-1$
 			else {
 				throw new IOException(
 						Messages.getString("GiganticLanguageModel.CannotAccessDictionary")); //$NON-NLS-1$
 			}
 		}
+		ProcessBuilder pb = new ProcessBuilder(command);
+		Process p = pb.start();
 
-		Process p = Runtime.getRuntime().exec(
-				new String[] { "bash", "-c", "irstlm/bin/tlm " + args }); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+				p.getErrorStream()));
+
+		String temp;
+		while ((temp = br.readLine()) != null) {
+			logger.debug(temp);
+		}
 
 		p.waitFor();
 

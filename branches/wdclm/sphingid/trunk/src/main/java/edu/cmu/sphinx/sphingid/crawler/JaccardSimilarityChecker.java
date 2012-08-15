@@ -13,13 +13,15 @@ import java.util.HashSet;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  * 
  */
-public class JaccardSimilarityChecker implements DocumentSimilarityChecker,
-		Serializable {
-	private static final long serialVersionUID = -7035637509315788188L;
+public class JaccardSimilarityChecker implements DocumentSimilarityChecker {
 	private byte n;
 
 	public JaccardSimilarityChecker(byte n) {
 		this.n = n;
+	}
+	
+	private JaccardSimilarityChecker () {
+		super();
 	}
 
 	public boolean isSimilar(String doc1, String doc2, float similarityThreshold) {

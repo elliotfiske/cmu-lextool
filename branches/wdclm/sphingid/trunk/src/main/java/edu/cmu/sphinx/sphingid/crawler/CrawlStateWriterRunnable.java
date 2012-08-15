@@ -54,14 +54,16 @@ public class CrawlStateWriterRunnable implements Runnable {
 					}
 				}
 			}
-			logger.info(Messages.getString("CrawlStateWriterRunnable.0")); //$NON-NLS-1$
+			logger.info(Messages
+					.getString("CrawlStateWriterRunnable.CrawlerStatesWasWritten")); //$NON-NLS-1$
 		} while (isThreadsStillRunning);
 	}
 
 	static void writeCrawlerStateToDisk(CrawlerRunnable crawlerRunnable)
 			throws IOException {
-		FileUtils.writeObjectToFile(new File(crawlerRunnable.getCrawlDbPath()
-				.getParentFile(), "crawler" + crawlerRunnable.getCrawlerNum() //$NON-NLS-1$
-				+ ".ser"), crawlerRunnable); //$NON-NLS-1$
+		File state = new File(crawlerRunnable.getCrawlDbPath(),
+				"crawler" + crawlerRunnable.getCrawlerNum() //$NON-NLS-1$
+						+ ".ser");
+		FileUtils.serializeObject(state, crawlerRunnable); //$NON-NLS-1$
 	}
 }

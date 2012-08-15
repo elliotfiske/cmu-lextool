@@ -6,12 +6,12 @@ package edu.cmu.sphinx.sphingid.crawler;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
@@ -41,8 +41,7 @@ import edu.cmu.sphinx.sphingid.crawler.robots.RobotSettings;
  * @author Emre Çelikten
  * 
  */
-public class CrawlerRunnable implements Serializable, Runnable {
-	private static final long serialVersionUID = -382378357366013618L;
+public class CrawlerRunnable implements Runnable {
 	private static final Logger logger = LoggerFactory
 			.getLogger(CrawlerRunnable.class);
 
@@ -60,7 +59,6 @@ public class CrawlerRunnable implements Serializable, Runnable {
 	private transient Thread associatedThread;
 	private int connectionTimeout, readTimeout;
 	private String crawlerName;
-	private File extractedPath;
 	private volatile long fetchDurationHistory[];
 	private Host[] hosts;
 	private volatile int lastHistoryPos;
@@ -76,7 +74,7 @@ public class CrawlerRunnable implements Serializable, Runnable {
 	private FetchScheduler fetchScheduler;
 	private RecrawlScheduler recrawlScheduler;
 	private DocumentSimilarityChecker similarityChecker;
-	private File pagesFolder, crawlDbPath;
+	private String pagesFolder, crawlDbPath, extractedPath;
 
 	private int crawlerNum;
 
@@ -95,7 +93,7 @@ public class CrawlerRunnable implements Serializable, Runnable {
 		this.hosts = hosts;
 		this.linkQueues = new LinkQueue[hosts.length];
 		this.urlTable = new UrlTable(100000);
-		this.pageTable = new PageTable();
+		this.pageTable = new PageTable(100000);
 		this.fetchScheduler = scheduler;
 		this.recrawlScheduler = recrawlScheduler;
 
@@ -115,12 +113,12 @@ public class CrawlerRunnable implements Serializable, Runnable {
 		HttpConnectionParams.setSoTimeout(params, this.readTimeout * 1000);
 		this.httpClient = new DefaultHttpClient(params);
 
-		this.extractedPath = new File(
-				crawlerConfiguration.getString("paths.extractedDocuments")); //$NON-NLS-1$
-		this.extractedPath.mkdirs();
-		this.crawlDbPath = new File(
-				crawlerConfiguration.getString("paths.crawlDatabase")); //$NON-NLS-1$
-		this.pagesFolder = new File(this.crawlDbPath, "pages"); //$NON-NLS-1$
+		this.extractedPath = crawlerConfiguration
+				.getString("paths.extractedDocuments"); //$NON-NLS-1$
+		new File(this.extractedPath).mkdirs();
+		this.crawlDbPath = crawlerConfiguration
+				.getString("paths.crawlDatabase"); //$NON-NLS-1$
+		this.pagesFolder = new File(this.crawlDbPath, "pages").toString(); //$NON-NLS-1$
 
 		/*
 		 * Statistics
@@ -131,18 +129,23 @@ public class CrawlerRunnable implements Serializable, Runnable {
 		this.numTotalPages = this.numTotalWords = 0;
 		this.averageCrawlDelay = 0;
 
-		logger.trace(Messages.getString("CrawlerRunnable.7")); //$NON-NLS-1$
+		logger.trace(""); //$NON-NLS-1$
 		for (int i = 0; i < hosts.length; i++) {
 			int url = this.urlTable.add(hosts[i].getUrl().toString());
 			this.linkQueues[i] = new LinkQueue(hosts[i],
 					System.currentTimeMillis());
 			this.linkQueues[i].add(url);
-			logger.trace(Messages.getString("CrawlerRunnable.8"), new Object[] { //$NON-NLS-1$
+			logger.trace("", new Object[] { //$NON-NLS-1$
 					hosts[i].getUrl(), url });
 			this.averageCrawlDelay += hosts[i].getCrawlDelay();
 		}
 		this.averageCrawlDelay /= hosts.length;
-		logger.trace(Messages.getString("CrawlerRunnable.9")); //$NON-NLS-1$
+		logger.trace(""); //$NON-NLS-1$
+	}
+
+	@SuppressWarnings("unused")
+	private CrawlerRunnable() {
+		super();
 	}
 
 	/**
@@ -187,15 +190,13 @@ public class CrawlerRunnable implements Serializable, Runnable {
 	 * @throws BoilerpipeProcessingException
 	 * @throws IOException
 	 *             when there are deserialization problems
-	 * @throws ClassNotFoundException
-	 *             when there are deserialization problems
 	 */
 	Page getAndUpdatePage(long lastFetch, int pageUrlEntry, String checksum,
-			String htmlDoc) throws BoilerpipeProcessingException, IOException,
-			ClassNotFoundException {
-		Page page = (Page) FileUtils.readObjectFromFile(new File(
-				this.pagesFolder, this.crawlerNum
-						+ "pf" + String.valueOf(pageUrlEntry))); //$NON-NLS-1$
+			String htmlDoc) throws BoilerpipeProcessingException, IOException {
+		File pageFile = new File(this.pagesFolder, this.crawlerNum + "pf" //$NON-NLS-1$
+				+ String.valueOf(pageUrlEntry));
+
+		Page page = FileUtils.deserializeObject(pageFile, Page.class);
 
 		if (!page.getChecksum().equals(checksum)) {
 			/*
@@ -227,7 +228,7 @@ public class CrawlerRunnable implements Serializable, Runnable {
 	/**
 	 * @return the crawlDbPath
 	 */
-	public final File getCrawlDbPath() {
+	public final String getCrawlDbPath() {
 		return this.crawlDbPath;
 	}
 
@@ -276,7 +277,7 @@ public class CrawlerRunnable implements Serializable, Runnable {
 	/**
 	 * @return the pagesZipFile
 	 */
-	public final File getPagesFolder() {
+	public final String getPagesFolder() {
 		return this.pagesFolder;
 	}
 
@@ -294,8 +295,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 		return this.wordsPerSecond;
 	}
 
-	String readContent(String url) throws Exception {
-		HttpGet httpget = new HttpGet(url);
+	String readContent(String url) throws IOException {
+		HttpGet httpget = new HttpGet(url.toString());
 		httpget.setHeader("User-Agent", this.crawlerName + "/0.1"); //$NON-NLS-1$ //$NON-NLS-2$
 		HttpResponse response = this.httpClient.execute(httpget);
 		if (response == null) {
@@ -338,7 +339,7 @@ public class CrawlerRunnable implements Serializable, Runnable {
 				this.connectionTimeout * 1000);
 		HttpConnectionParams.setSoTimeout(params, this.readTimeout * 1000);
 		this.httpClient = new DefaultHttpClient(params);
-		this.extractedPath.mkdirs();
+		new File(this.extractedPath).mkdirs();
 	}
 
 	@Override
@@ -347,6 +348,20 @@ public class CrawlerRunnable implements Serializable, Runnable {
 	 */
 	public void run() {
 		while (true) {
+			/*
+			 * Check if there are still links to fetch
+			 */
+			boolean found = false;
+			for (int i = 0; i < this.linkQueues.length; i++) {
+				if (this.linkQueues[i].size() > 0) {
+					found = true;
+				}
+			}
+
+			if (!found) {
+				logger.info("No links left for thread {}, terminating thread...", this.crawlerNum+1);
+				break;
+			}
 			/*
 			 * Find the earliest URL that we must fetch (or must have fetched)
 			 */
@@ -361,7 +376,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 						this.linkQueues[currentQueue],
 						System.currentTimeMillis()));
 			} catch (InterruptedException e) {
-				logger.warn(Messages.getString("CrawlerRunnable.15")); //$NON-NLS-1$
+				logger.warn(Messages
+						.getString("CrawlerRunnable.ThreadWasAwoken")); //$NON-NLS-1$
 				logger.debug(ExceptionUtils.getStackTrace(e));
 			}
 
@@ -376,7 +392,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 			try {
 				htmlDoc = readContent(pageUrl);
 			} catch (Exception e) {
-				logger.warn(Messages.getString("CrawlerRunnable.16"), pageUrl); //$NON-NLS-1$
+				logger.warn(
+						Messages.getString("CrawlerRunnable.ErrorWhileFetching"), pageUrl); //$NON-NLS-1$
 				logger.debug(ExceptionUtils.getStackTrace(e));
 				continue;
 			}
@@ -393,8 +410,15 @@ public class CrawlerRunnable implements Serializable, Runnable {
 			try {
 				extractedText = Parser.getInstance().parseArticle(htmlDoc);
 			} catch (BoilerpipeProcessingException e) {
-				logger.warn(Messages.getString("CrawlerRunnable.17"), pageUrl); //$NON-NLS-1$
+				logger.warn(
+						Messages.getString("CrawlerRunnable.ErrorWhileParsing"), pageUrl); //$NON-NLS-1$
 				logger.debug(ExceptionUtils.getStackTrace(e));
+				continue;
+			}
+
+			if (extractedText == null) {
+				logger.warn(
+						Messages.getString("CrawlerRunnable.ErrorWhileParsing"), pageUrl); //$NON-NLS-1$
 				continue;
 			}
 
@@ -403,7 +427,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 			 * parsed contents
 			 */
 			if (extractedText.length() < 20) {
-				logger.info(Messages.getString("CrawlerRunnable.18"), //$NON-NLS-1$
+				logger.info(Messages
+						.getString("CrawlerRunnable.NoMeaningfulTextOutput"), //$NON-NLS-1$
 						pageUrl);
 			} else {
 				String filename = Parser.getInstance().hash256(extractedText);
@@ -421,7 +446,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 					}
 					writer.close();
 				} catch (IOException e) {
-					logger.error(Messages.getString("CrawlerRunnable.0"), //$NON-NLS-1$
+					logger.error(Messages
+							.getString("CrawlerRunnable.ErrorWhileParsing"), //$NON-NLS-1$
 							pageUrl);
 					logger.debug(ExceptionUtils.getStackTrace(e));
 					System.exit(1);
@@ -442,7 +468,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 			try {
 				links = Parser.extractLinks(new URL(pageUrl), htmlDoc);
 			} catch (MalformedURLException e) {
-				logger.warn(Messages.getString("CrawlerRunnable.24"), //$NON-NLS-1$
+				logger.warn(
+						Messages.getString("CrawlerRunnable.ErrorWhileExtractingLinks"), //$NON-NLS-1$
 						pageUrl);
 				logger.debug(ExceptionUtils.getStackTrace(e));
 				continue;
@@ -451,7 +478,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 			removeDisallowedAndOutgoing(links, this.hosts[currentQueue]);
 
 			if (links.size() == 0) {
-				logger.warn(Messages.getString("CrawlerRunnable.26"), pageUrl); //$NON-NLS-1$
+				logger.warn(
+						Messages.getString("CrawlerRunnable.NoLinksWereExtracted"), pageUrl); //$NON-NLS-1$
 			}
 
 			// TODO: Check if all linkqueues are empty and links are empty, then
@@ -482,17 +510,14 @@ public class CrawlerRunnable implements Serializable, Runnable {
 					page = getAndUpdatePage(fetchEnd, pageUrlEntry, checksum,
 							htmlDoc);
 				} catch (BoilerpipeProcessingException e) {
-					logger.warn(Messages.getString("CrawlerRunnable.27"), //$NON-NLS-1$
-							pageUrl);
-					logger.debug(ExceptionUtils.getStackTrace(e));
-					continue;
-				} catch (ClassNotFoundException e) {
-					logger.warn(Messages.getString("CrawlerRunnable.28"), //$NON-NLS-1$
+					logger.warn(
+							Messages.getString("CrawlerRunnable.ErrorWhileReadingLocalCacheButTextWasExtracted"), //$NON-NLS-1$
 							pageUrl);
 					logger.debug(ExceptionUtils.getStackTrace(e));
 					continue;
 				} catch (IOException e) {
-					logger.warn(Messages.getString("CrawlerRunnable.29"), //$NON-NLS-1$
+					logger.warn(
+							Messages.getString("CrawlerRunnable.ErrorWhileReadingLocalCacheButTextWasExtracted"), //$NON-NLS-1$
 							pageUrl);
 					logger.debug(ExceptionUtils.getStackTrace(e));
 					continue;
@@ -502,7 +527,8 @@ public class CrawlerRunnable implements Serializable, Runnable {
 				try {
 					allText = Parser.getInstance().extractText(htmlDoc);
 				} catch (BoilerpipeProcessingException e) {
-					logger.warn(Messages.getString("CrawlerRunnable.30"), //$NON-NLS-1$
+					logger.warn(
+							Messages.getString("CrawlerRunnable.ErrorWhileParsingButTextWasExtracted"), //$NON-NLS-1$
 							pageUrl);
 					logger.debug(ExceptionUtils.getStackTrace(e));
 					continue;
@@ -511,14 +537,18 @@ public class CrawlerRunnable implements Serializable, Runnable {
 
 			}
 
+			/*
+			 * Write the page to local cache
+			 */
+			File pageFile = new File(this.pagesFolder, this.crawlerNum + "pf" //$NON-NLS-1$
+					+ pageUrlEntry);
+
 			try {
-				FileUtils.writeObjectToFile(new File(this.pagesFolder,
-						this.crawlerNum + "pf" + pageUrlEntry), page); //$NON-NLS-1$
-			} catch (IOException e) {
-				logger.warn(Messages.getString("CrawlerRunnable.32"), //$NON-NLS-1$
+				FileUtils.serializeObject(pageFile, page);
+			} catch (FileNotFoundException e) {
+				logger.warn(
+						Messages.getString("CrawlerRunnable.ErrorWhileWritingPageToDiskButTextWasExtracted"), //$NON-NLS-1$
 						pageUrl);
-				logger.debug(ExceptionUtils.getStackTrace(e));
-				continue;
 			}
 
 			/*
@@ -535,24 +565,7 @@ public class CrawlerRunnable implements Serializable, Runnable {
 				}
 			}
 
-			/*
-			 * Check if there are still links to fetch
-			 */
-			boolean found = false;
-			for (int i = 0; i < this.linkQueues.length; i++) {
-				if (this.linkQueues[i].size() > 0) {
-					found = true;
-				}
-			}
-
-			if (!found) {
-				String info = Messages.getString("CrawlerRunnable.33"); //$NON-NLS-1$
-				for (Host host : this.hosts) {
-					info += host.getUrl().getHost();
-				}
-				logger.info(info);
-				break;
-			}
+			
 		}
 	}
 

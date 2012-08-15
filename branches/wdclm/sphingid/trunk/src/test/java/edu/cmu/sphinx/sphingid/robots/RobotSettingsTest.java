@@ -20,7 +20,7 @@ import edu.cmu.sphinx.sphingid.crawler.robots.RobotSettings.NoPageAllowedExcepti
 /**
  * 
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
- *
+ * 
  */
 public class RobotSettingsTest {
 	@SuppressWarnings("static-method")
@@ -28,14 +28,14 @@ public class RobotSettingsTest {
 	public void canRemoveDuplicates() {
 		ArrayList<RobotRule> ruleList = new ArrayList<RobotRule>();
 
-		ruleList.add(new RobotRule(Rule.DISALLOW, Pattern.compile("/"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.ALLOW, Pattern.compile("/"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.ALLOW, Pattern.compile("/url1"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.DISALLOW, Pattern.compile("/url1"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.DISALLOW, Pattern.compile("/url2"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.DISALLOW, Pattern.compile("/url2"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.ALLOW, Pattern.compile("/url3"))); //$NON-NLS-1$
-		ruleList.add(new RobotRule(Rule.ALLOW, Pattern.compile("/url3"))); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.DISALLOW, "/")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.ALLOW, "/")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.ALLOW, "/url1")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.DISALLOW, "/url1")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.DISALLOW, "/url2")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.DISALLOW, "/url2")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.ALLOW, "/url3")); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.ALLOW, "/url3")); //$NON-NLS-1$
 
 		RobotSettings robotSettings = null;
 		try {
@@ -58,7 +58,7 @@ public class RobotSettingsTest {
 	public void canThrowNoPageAllowedException() throws NoPageAllowedException {
 		ArrayList<RobotRule> ruleList = new ArrayList<RobotRule>();
 
-		ruleList.add(new RobotRule(Rule.DISALLOW, Pattern.compile("/"))); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.DISALLOW, "/")); //$NON-NLS-1$
 
 		new RobotSettings(ruleList, null, 5);
 	}
@@ -68,7 +68,7 @@ public class RobotSettingsTest {
 	public void noAllows() {
 		ArrayList<RobotRule> ruleList = new ArrayList<RobotRule>();
 
-		ruleList.add(new RobotRule(Rule.DISALLOW, Pattern.compile("/url1"))); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.DISALLOW, "/url1")); //$NON-NLS-1$
 
 		RobotSettings robotSettings = null;
 		try {
@@ -86,7 +86,7 @@ public class RobotSettingsTest {
 	public void noDisallows() {
 		ArrayList<RobotRule> ruleList = new ArrayList<RobotRule>();
 
-		ruleList.add(new RobotRule(Rule.ALLOW, Pattern.compile("/url1"))); //$NON-NLS-1$
+		ruleList.add(new RobotRule(Rule.ALLOW, "/url1")); //$NON-NLS-1$
 
 		RobotSettings robotSettings = null;
 		try {

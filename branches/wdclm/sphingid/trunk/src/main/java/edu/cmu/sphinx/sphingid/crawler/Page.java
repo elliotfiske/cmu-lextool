@@ -8,13 +8,12 @@ import java.io.Serializable;
  * @author Emre Çelikten
  * 
  */
-public class Page implements Serializable {
-	private static final long serialVersionUID = 5636344609107717929L;
+public class Page  {
 	private String allTextContent;
 	private String checksum;
 	private long[] fetchTimes;
 	private boolean[] fetchUpdateStatuses;
-	private final int url;
+	private int url;
 
 	/**
 	 * @param url
@@ -25,7 +24,6 @@ public class Page implements Serializable {
 	 */
 	public Page(int url, String checksum, String allTextContent,
 			long lastFetchTime) {
-		super();
 		this.url = url;
 		this.checksum = checksum;
 		this.allTextContent = allTextContent;
@@ -33,6 +31,10 @@ public class Page implements Serializable {
 		this.fetchUpdateStatuses = new boolean[20];
 		this.fetchTimes[19] = lastFetchTime;
 		this.fetchUpdateStatuses[19] = true;
+	}
+	
+	private Page() {
+		super();
 	}
 
 	/**

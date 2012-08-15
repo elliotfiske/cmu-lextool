@@ -151,10 +151,11 @@ public class LMDataSelector {
 
 		boolean sentenceMarkers = false;
 		String sentenceString = corpusReader.readLine();
-		
-		if(sentenceString == null) {
+
+		if (sentenceString == null) {
 			corpusReader.close();
-			throw new IOException(Messages.getString("LMDataSelector.CorpusIsEmpty")); //$NON-NLS-1$
+			throw new IOException(
+					Messages.getString("LMDataSelector.CorpusIsEmpty")); //$NON-NLS-1$
 		}
 
 		if (sentenceString.equals("</s>")) //$NON-NLS-1$
@@ -176,10 +177,10 @@ public class LMDataSelector {
 			int numTrainingSetLines = FileUtils.countLines(trainingSet,
 					this.encoding);
 			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-					+ ((System.currentTimeMillis() - startTime) / 1000));
+					, ((System.currentTimeMillis() - startTime) / 1000));
 
 			/*
-			 * Extract dictionary from the big corpus
+			 * Extract dictionary from the general corpus
 			 */
 			logger.info(Messages
 					.getString("LMDataSelector.ExtractingDictionary")); //$NON-NLS-1$
@@ -187,7 +188,7 @@ public class LMDataSelector {
 			Dictionary dictionary = new Dictionary(trainingSet, new File(
 					trainingSet + ".dict"), 2, -1); //$NON-NLS-1$
 			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-					+ ((System.currentTimeMillis() - startTime) / 1000));
+					, ((System.currentTimeMillis() - startTime) / 1000));
 
 			/*
 			 * Construct in domain model
@@ -197,8 +198,7 @@ public class LMDataSelector {
 			startTime = System.currentTimeMillis();
 			if (useBuildLmScript) {
 
-				this.inDomainModel = new GiganticLanguageModel(
-						trainingSet,
+				this.inDomainModel = new GiganticLanguageModel(trainingSet,
 						new File(trainingSet + ".giglm"), dictionary, this.n, //$NON-NLS-1$
 						this.smoothing, true, sentenceMarkers, 3);
 			} else {
@@ -208,10 +208,10 @@ public class LMDataSelector {
 						true);
 			}
 			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-					+ ((System.currentTimeMillis() - startTime) / 1000));
+					, ((System.currentTimeMillis() - startTime) / 1000));
 
 			/*
-			 * Select the same amount of lines from the big corpus randomly
+			 * Select the same amount of lines from the general corpus randomly
 			 */
 			logger.info(
 					Messages.getString("LMDataSelector.SelectingLinesFromCorpusRandomly"), numInDomainLines); //$NON-NLS-1$
@@ -222,7 +222,7 @@ public class LMDataSelector {
 			FileUtils.chooseNRandomLines(this.corpusFile, corpusRandomSubset,
 					numTrainingSetLines, this.encoding);
 			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-					+ ((System.currentTimeMillis() - startTime) / 1000));
+					, ((System.currentTimeMillis() - startTime) / 1000));
 
 			/*
 			 * Construct corpus model
@@ -235,40 +235,48 @@ public class LMDataSelector {
 						corpusRandomSubset, new File(corpusRandomSubset
 								+ ".giglm"), dictionary, //$NON-NLS-1$
 						this.n, this.smoothing, true, sentenceMarkers, 3);
-				logger.info(Messages
-						.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-						+ ((System.currentTimeMillis() - startTime) / 1000));
+
 			} else {
-				this.inDomainModel = new LanguageModel(corpusRandomSubset,
+				this.corpusModel = new LanguageModel(corpusRandomSubset,
 						new File(corpusRandomSubset + ".lm"), dictionary, //$NON-NLS-1$
 						this.n, this.smoothing, true);
 			}
+			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
+					, ((System.currentTimeMillis() - startTime) / 1000));
 		}
 
 		/*
-		 * Get perplexities of sentences of big corpus against big corpus LM
+		 * Get perplexities of sentences of general corpus against general
+		 * corpus LM
 		 */
 		logger.info(Messages
-				.getString("LMDataSelector.ComputingSentencePerplexitiesBigAgainstBig")); //$NON-NLS-1$
+				.getString("LMDataSelector.ComputingSentencePerplexitiesGeneralAgainstGeneral")); //$NON-NLS-1$
 		long startTime = System.currentTimeMillis();
 		ArrayList<SentencePerplexity> corpusModelSentencePerplexities = this.corpusModel
 				.computeSentencePerplexities(this.corpusFile);
+		logger.info(
+				"{} sentence perplexities obtained against general corpus model.",
+				corpusModelSentencePerplexities.size());
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
-		 * Get perplexities of sentences of big corpus against in-domain corpus
-		 * LM
+		 * Get perplexities of sentences of general corpus against in-domain
+		 * corpus LM
 		 */
 		logger.info(Messages
-				.getString("LMDataSelector.ComputingSentencePerplexitiesBigAgainstInDomain")); //$NON-NLS-1$
+				.getString("LMDataSelector.ComputingSentencePerplexitiesGeneralAgainstInDomain")); //$NON-NLS-1$
 		startTime = System.currentTimeMillis();
 		ArrayList<SentencePerplexity> inDomainModelSentencePerplexities = this.inDomainModel
 				.computeSentencePerplexities(this.corpusFile);
+		logger.info(
+				"{} sentence perplexities obtained against in-domain corpus model.",
+				corpusModelSentencePerplexities.size());
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
+
 		/*
-		 * Calculate perplexity differences for the main corpus
+		 * Calculate perplexity differences
 		 */
 		ArrayList<SentencePerplexity> perplexityDifferences = new ArrayList<SentencePerplexity>();
 
@@ -291,7 +299,7 @@ public class LMDataSelector {
 		inDomainModelSentencePerplexities.clear();
 
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
 		 * Sort perplexity differences
@@ -302,7 +310,7 @@ public class LMDataSelector {
 		Collections.sort(perplexityDifferences,
 				SentencePerplexity.SentenceComparator.compareByPerplexity);
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
 		 * Write perplexity differences to disk for analysis purposes
@@ -320,7 +328,7 @@ public class LMDataSelector {
 
 		pdw.close();
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
 		 * Divide to cutoff parts
@@ -371,7 +379,7 @@ public class LMDataSelector {
 
 		intArray.shuffle();
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
 		 * Sort perplexity differences according to sentence number, since we
@@ -383,7 +391,7 @@ public class LMDataSelector {
 		Collections.sort(perplexityDifferences,
 				SentencePerplexity.SentenceComparator.compareBySentenceNumber);
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
 		 * Read and write all segments in one pass
@@ -451,13 +459,16 @@ public class LMDataSelector {
 			randomWriters[i].close();
 		}
 		logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
-				+ ((System.currentTimeMillis() - startTime) / 1000));
+				, ((System.currentTimeMillis() - startTime) / 1000));
 
 		/*
 		 * Construct LMs for each segment and compute perplexities
 		 */
+		logger.info(Messages
+				.getString("LMDataSelector.ConstructingLanguageModelsForSegments")); //$NON-NLS-1$
 		for (int i = 1; i < numCutoffSegments; ++i) {
 			AbstractLanguageModel lm = null;
+			logger.info("Constructing language model for segment {}...", i);
 			if (useBuildLmScript) {
 				lm = new GiganticLanguageModel(segments[i], new File(
 						segments[i] + ".giglm"), null, this.n, //$NON-NLS-1$
@@ -466,11 +477,15 @@ public class LMDataSelector {
 				lm = new LanguageModel(segments[i], new File(segments[i]
 						+ ".lm"), null, this.n, this.smoothing, true); //$NON-NLS-1$
 			}
+			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
+					, ((System.currentTimeMillis() - startTime) / 1000));
 
 			logger.info(
 					Messages.getString("LMDataSelector.PerplexityOfSegment"), i, //$NON-NLS-1$
 					lm.computePerplexity(this.testSet));
 
+			logger.info("Constructing language model for random segment {}...",
+					i);
 			if (useBuildLmScript) {
 				lm = new GiganticLanguageModel(randomSegments[i], new File(
 						randomSegments[i] + ".giglm"), null, this.n, //$NON-NLS-1$
@@ -480,10 +495,13 @@ public class LMDataSelector {
 						randomSegments[i] + ".lm"), null, this.n, //$NON-NLS-1$
 						this.smoothing, true);
 			}
+			logger.info(Messages.getString("LMDataSelector.OperationCompleted") //$NON-NLS-1$
+					, ((System.currentTimeMillis() - startTime) / 1000));
 
 			logger.info(Messages
 					.getString("LMDataSelector.PerplexityOfRandomSegment"), //$NON-NLS-1$
 					i, lm.computePerplexity(this.testSet));
+
 		}
 	}
 }

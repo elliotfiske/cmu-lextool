@@ -3,27 +3,33 @@
  */
 package edu.cmu.sphinx.sphingid.crawler.robots;
 
-import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  * 
  */
-public class RobotRule implements Comparable<RobotRule>, Serializable {
+public class RobotRule implements Comparable<RobotRule>, KryoSerializable {
 	public static enum Rule {
 		ALLOW, DISALLOW
 	}
 
-	private static final long serialVersionUID = 4127475952675796115L;
-
 	private Rule rule;
 	private Pattern expression;
 
-	public RobotRule(Rule rule, Pattern expression) {
+	public RobotRule(Rule rule, String expressionString) {
 		this.rule = rule;
-		this.expression = expression;
+		this.expression = Pattern.compile(expressionString);
+	}
+	
+	private RobotRule() {
+		super();
 	}
 
 	/**
@@ -88,6 +94,22 @@ public class RobotRule implements Comparable<RobotRule>, Serializable {
 
 	public Rule getRuleType() {
 		return this.rule;
+	}
+
+	@Override
+	public void read(Kryo arg0, Input arg1) {
+		this.expression = Pattern.compile(arg1.readString());
+		this.rule = Rule.valueOf(arg1.readString());
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void write(Kryo arg0, Output arg1) {
+		arg1.writeString(expression.pattern());
+		arg1.writeString(rule.name());
+		// TODO Auto-generated method stub
+		
 	}
 
 }
