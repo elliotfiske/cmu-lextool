@@ -1,6 +1,5 @@
 package edu.cmu.sphinx.sphingid.crawler;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.NoSuchElementException;
 
@@ -11,8 +10,7 @@ import java.util.NoSuchElementException;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  * 
  */
-public class LinkQueue implements Serializable {
-	private static final long serialVersionUID = -7882623554275775317L;
+public class LinkQueue {
 	private LinkQueueEntry first;
 	private Host host;
 	private int size;
@@ -36,6 +34,10 @@ public class LinkQueue implements Serializable {
 		this.first = null;
 		this.size = 0;
 		this.queueTimePointer = currentTime;
+	}
+	
+	private LinkQueue() {
+		super();
 	}
 
 	/**

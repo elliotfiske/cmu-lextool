@@ -114,8 +114,11 @@ public class Parser {
 	}
 
 	public String hash256(String string) {
-		this.messageDigest.reset();
-		byte[] array = this.messageDigest.digest(string.getBytes());
+		byte[] array = null;
+		synchronized (this) {
+			this.messageDigest.reset();
+			array = this.messageDigest.digest(string.getBytes());
+		}
 		StringBuffer sb = new StringBuffer();
 		for (int i = 0; i < array.length; i++)
 			sb.append(Integer.toHexString(array[i] & 0xFF));
@@ -124,8 +127,11 @@ public class Parser {
 	}
 
 	public long hash64(String string) {
-		this.messageDigest.reset();
-		byte[] array = this.messageDigest.digest(string.getBytes());
+		byte[] array = null;
+		synchronized (this) {
+			this.messageDigest.reset();
+			array = this.messageDigest.digest(string.getBytes());
+		}
 		return ((long) (array[0] & 0xff) << 56)
 				| ((long) (array[1] & 0xff) << 48)
 				| ((long) (array[2] & 0xff) << 40)

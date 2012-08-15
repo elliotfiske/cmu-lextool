@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -50,13 +51,7 @@ public class CrawlerRunnableTest {
 		configuration.setProperty("paths.crawlDatabase", //$NON-NLS-1$
 				this.crawlDatabase.toString());
 
-		URL url = null;
-
-		try {
-			url = new URL("http://sourceforge.net"); //$NON-NLS-1$
-		} catch (MalformedURLException e) {
-			fail(ExceptionUtils.getStackTrace(e));
-		}
+		String url = "http://sourceforge.net";
 
 		Host host = null;
 		try {
@@ -122,9 +117,10 @@ public class CrawlerRunnableTest {
 		Page page = new Page(17, "checksum", "lorem ipsum", 2000L); //$NON-NLS-1$ //$NON-NLS-2$
 		File pagesFolder = new File(this.crawlDatabase, "pages"); //$NON-NLS-1$
 		File pageFile = new File(pagesFolder, "0pf17"); //$NON-NLS-1$
+
 		try {
-			FileUtils.writeObjectToFile(pageFile, page);
-		} catch (IOException e) {
+			FileUtils.serializeObject(pageFile, page);
+		} catch (FileNotFoundException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
 
@@ -133,8 +129,6 @@ public class CrawlerRunnableTest {
 		try {
 			page = this.crawler.getAndUpdatePage(4000L, 17, "checksum2", //$NON-NLS-1$
 					"dolor sit amet"); //$NON-NLS-1$
-		} catch (ClassNotFoundException e) {
-			fail(ExceptionUtils.getStackTrace(e));
 		} catch (BoilerpipeProcessingException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		} catch (IOException e) {
@@ -146,18 +140,17 @@ public class CrawlerRunnableTest {
 		assertThat(page.getAllTextContent(), is("dolor sit amet\n")); //$NON-NLS-1$
 
 		page = new Page(17, "checksum", "lorem ipsum", 2000L); //$NON-NLS-1$ //$NON-NLS-2$
-		pageFile = new File(this.crawlDatabase, "0pf17"); //$NON-NLS-1$
+		pageFile = new File(pagesFolder, "0pf17"); //$NON-NLS-1$
+
 		try {
-			FileUtils.writeObjectToFile(pageFile, page);
-		} catch (IOException e) {
+			FileUtils.serializeObject(pageFile, page);
+		} catch (FileNotFoundException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
 
 		try {
 			page = this.crawler.getAndUpdatePage(4000L, 17, "checksum", //$NON-NLS-1$
 					"lorem ipsum"); //$NON-NLS-1$
-		} catch (ClassNotFoundException e) {
-			fail(ExceptionUtils.getStackTrace(e));
 		} catch (BoilerpipeProcessingException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		} catch (IOException e) {
@@ -170,17 +163,16 @@ public class CrawlerRunnableTest {
 
 		page = new Page(17, "checksum", "lorem ipsum", 2000L); //$NON-NLS-1$ //$NON-NLS-2$
 		pageFile = new File(this.crawlDatabase, "0pf17"); //$NON-NLS-1$
+
 		try {
-			FileUtils.writeObjectToFile(pageFile, page);
-		} catch (IOException e) {
+			FileUtils.serializeObject(pageFile, page);
+		} catch (FileNotFoundException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
 
 		try {
 			page = this.crawler.getAndUpdatePage(4000L, 17, "checksum2", //$NON-NLS-1$
 					"lorem ipsum"); //$NON-NLS-1$
-		} catch (ClassNotFoundException e) {
-			fail(ExceptionUtils.getStackTrace(e));
 		} catch (BoilerpipeProcessingException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		} catch (IOException e) {
@@ -212,11 +204,7 @@ public class CrawlerRunnableTest {
 
 		Host host = mock(Host.class);
 		when(host.getRobotSettings()).thenReturn(this.robotSettings);
-		try {
-			when(host.getUrl()).thenReturn(new URL("http://www.test.com")); //$NON-NLS-1$
-		} catch (MalformedURLException e) {
-			fail(ExceptionUtils.getStackTrace(e));
-		}
+		when(host.getUrl()).thenReturn("http://www.test.com"); //$NON-NLS-1$
 
 		CrawlerRunnable.removeDisallowedAndOutgoing(urls, host);
 
@@ -230,30 +218,26 @@ public class CrawlerRunnableTest {
 	public void canSerialize() {
 
 		File crawlerStateFile = new File(this.crawlDatabase, "crawler0.ser"); //$NON-NLS-1$
+
 		try {
-			FileUtils.writeObjectToFile(crawlerStateFile, this.crawler);
-		} catch (IOException e) {
+			FileUtils.serializeObject(crawlerStateFile, this.crawler);
+		} catch (FileNotFoundException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
 
 		CrawlerRunnable newCrawler = null;
 
 		try {
-			newCrawler = (CrawlerRunnable) FileUtils
-					.readObjectFromFile(crawlerStateFile);
-		} catch (ClassNotFoundException e) {
-			fail(ExceptionUtils.getStackTrace(e));
-		} catch (IOException e) {
+			newCrawler = FileUtils.deserializeObject(crawlerStateFile,
+					CrawlerRunnable.class);
+		} catch (FileNotFoundException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
 
-		newCrawler.getCrawlerNum();
+		assertThat(newCrawler.getCrawlerNum(), is(0));
+		assertThat(newCrawler.getUrlTable().getUrl(0),
+				is("http://sourceforge.net")); //$NON-NLS-1$
 	}
 
-	@Test(expected = Exception.class)
-	public void canThrowExceptionWhenCannotRead() throws Exception {
-		this.crawler
-				.readContent("http://www.veryprobablynonexistenttestwebsite.com"); //$NON-NLS-1$
-	}
-
+	
 }

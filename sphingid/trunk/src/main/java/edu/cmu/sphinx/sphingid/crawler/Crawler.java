@@ -4,10 +4,9 @@
 package edu.cmu.sphinx.sphingid.crawler;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -95,42 +94,25 @@ public final class Crawler {
 					.configurationsAt("seedUrls.seedUrl"); //$NON-NLS-1$
 
 			for (HierarchicalConfiguration seedUrl : seedUrls) {
-				URL url = null;
 				String urlString = seedUrl.getString("url"); //$NON-NLS-1$
-				try {
-					url = new URL(urlString);
-				} catch (MalformedURLException e) {
-					logger.warn(
-							Messages.getString("Crawler.0"), //$NON-NLS-1$
-							urlString);
-					logger.debug(ExceptionUtils.getStackTrace(e));
-					continue;
-				}
+
 				SubnodeConfiguration customUrlFilterConfiguration = seedUrl
 						.configurationAt("customUrlFilters"); //$NON-NLS-1$
 				ArrayList<RobotRule> customUrlFilters = readUrlFilters(customUrlFilterConfiguration);
 				Host host = null;
 
 				try {
-					host = new Host(url);
-				} catch (MalformedURLException e) {
-					logger.warn(
-							Messages.getString("Crawler.12"), //$NON-NLS-1$
-							url);
-					logger.debug(ExceptionUtils.getStackTrace(e));
-					continue;
+					host = new Host(urlString);
 				} catch (IOException e) {
-					logger.warn(
-							Messages.getString("Crawler.11"), //$NON-NLS-1$
-							url);
+					logger.warn("", //$NON-NLS-1$
+							urlString);
 					logger.debug(ExceptionUtils.getStackTrace(e));
 					continue;
 				} catch (CrawlDelayException e) {
 					logger.warn(e.getMessage());
 					continue;
 				} catch (NoPageAllowedException e) {
-					logger.warn(
-							Messages.getString("Crawler.9"), //$NON-NLS-1$
+					logger.warn("", //$NON-NLS-1$
 							seedUrl.toString());
 					// TODO: Something is fishy with the error message here,
 					// check.
@@ -141,17 +123,15 @@ public final class Crawler {
 					host.getRobotSettings().addRules(generalUrlFilters);
 					host.getRobotSettings().addRules(customUrlFilters);
 				} catch (NoPageAllowedException e) {
-					logger.warn(
-							Messages.getString("Crawler.14"), //$NON-NLS-1$
+					logger.warn("", //$NON-NLS-1$
 							seedUrl.toString());
 					// TODO: Something is fishy with the error message here,
 					// check.
 					continue;
 				}
 
-				if (host != null) {
-					hosts.add(host);
-				}
+				hosts.add(host);
+
 			}
 
 			// Find crawl database
@@ -196,24 +176,24 @@ public final class Crawler {
 						}
 					});
 
+			if (crawlerStates.length == 0) {
+				logger.error("No crawler states found in crawl database. Terminating...");
+			}
+
 			CrawlerRunnable[] crawlerRunnables = new CrawlerRunnable[crawlerStates.length];
 
 			for (File state : crawlerStates) {
 				int crawlerNum = Integer.parseInt(state.getName().replaceAll(
 						"crawler([0-9]+).ser", "$1")); //$NON-NLS-1$ //$NON-NLS-2$
+
 				try {
-					crawlerRunnables[crawlerNum] = (CrawlerRunnable) FileUtils
-							.readObjectFromFile(state);
-				} catch (ClassNotFoundException e) {
-					logger.error(
-							Messages.getString("Crawler.23"), //$NON-NLS-1$
-							state.toString());
+					crawlerRunnables[crawlerNum] = FileUtils.deserializeObject(
+							state, CrawlerRunnable.class);
+				} catch (FileNotFoundException e) {
+					logger.error(Messages
+							.getString("Crawler.CrawlerStateFileCannotBeFound")); //$NON-NLS-1$
 					logger.debug(ExceptionUtils.getStackTrace(e));
-				} catch (IOException e) {
-					logger.error(
-							Messages.getString("Crawler.24"), //$NON-NLS-1$
-							state.toString());
-					logger.debug(ExceptionUtils.getStackTrace(e));
+					continue;
 				}
 
 				Thread thread = new Thread(crawlerRunnables[crawlerNum]);
@@ -233,7 +213,8 @@ public final class Crawler {
 
 	}
 
-	static ArrayList<RobotRule> readUrlFilters(SubnodeConfiguration filterConfiguration) {
+	static ArrayList<RobotRule> readUrlFilters(
+			SubnodeConfiguration filterConfiguration) {
 		ArrayList<RobotRule> urlFilters = new ArrayList<RobotRule>();
 		List<HierarchicalConfiguration> disallows = filterConfiguration
 				.configurationsAt("disallow"); //$NON-NLS-1$
@@ -241,8 +222,7 @@ public final class Crawler {
 		for (HierarchicalConfiguration disallow : disallows) {
 			String ruleString = disallow.getString(""); //$NON-NLS-1$
 			Rule ruleType = Rule.DISALLOW;
-			Pattern expression = Pattern.compile(ruleString);
-			RobotRule robotRule = new RobotRule(ruleType, expression);
+			RobotRule robotRule = new RobotRule(ruleType, ruleString);
 			urlFilters.add(robotRule);
 		}
 
@@ -251,8 +231,7 @@ public final class Crawler {
 		for (HierarchicalConfiguration allow : allows) {
 			String ruleString = allow.getString(""); //$NON-NLS-1$
 			Rule ruleType = Rule.ALLOW;
-			Pattern expression = Pattern.compile(ruleString);
-			RobotRule robotRule = new RobotRule(ruleType, expression);
+			RobotRule robotRule = new RobotRule(ruleType, ruleString);
 			urlFilters.add(robotRule);
 		}
 

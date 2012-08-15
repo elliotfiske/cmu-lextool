@@ -1,8 +1,14 @@
 package edu.cmu.sphinx.sphingid.lm;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Dictionary class for language models. Builds using IRST LM.
@@ -10,6 +16,8 @@ import java.io.IOException;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  */
 public class Dictionary {
+	private static final Logger logger = LoggerFactory
+			.getLogger(Dictionary.class);
 	private File dictFile;
 
 	/**
@@ -53,17 +61,29 @@ public class Dictionary {
 					Messages.getString("Dictionary.CannotAccessDict")); //$NON-NLS-1$
 		}
 
-		String args = "-i=" + corpusFile.getPath() + " -o=" //$NON-NLS-1$ //$NON-NLS-2$
-				+ dictFile.getPath();
+		ArrayList<String> command = new ArrayList<String>();
+		command.add("irstlm/bin/dict"); //$NON-NLS-1$
+		command.add("-i=" + corpusFile.getPath()); //$NON-NLS-1$
+		command.add("-o=" + dictFile.getPath()); //$NON-NLS-1$
 
 		if (pruneFrequency != -1)
-			args += " -pf=" + pruneFrequency; //$NON-NLS-1$
+			command.add("-pf=" + pruneFrequency);//$NON-NLS-1$
 
 		if (dictionaryLimit != -1)
-			args += " -pr=" + dictionaryLimit; //$NON-NLS-1$
+			command.add("-pr=" + dictionaryLimit);//$NON-NLS-1$
 
-		Process p = Runtime.getRuntime().exec(
-				new String[] { "bash", "-c", "irstlm/bin/dict " + args }); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		ProcessBuilder pb = new ProcessBuilder(command);
+
+		Process p = pb.start();
+		
+		//if (logger.isDebugEnabled()) {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					p.getInputStream()));
+			String temp = null;
+			while((temp = reader.readLine()) != null) {
+				logger.debug(temp);
+			}
+		//}
 
 		p.waitFor();
 		this.dictFile = dictFile;

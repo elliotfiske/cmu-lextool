@@ -3,8 +3,6 @@
  */
 package edu.cmu.sphinx.sphingid.commons;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,19 +11,19 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 import edu.cmu.sphinx.sphingid.lm.IntegerArray;
 
@@ -104,12 +102,6 @@ public class FileUtils {
 
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(
 				new FileOutputStream(output), encoding));
-
-		if (first == null) {
-			br.close();
-			throw new IOException(String.format(
-					Messages.getString("FileUtils.FileIsEmpty"), input)); //$NON-NLS-1$
-		}
 
 		if (first.equals("</s>")) { //$NON-NLS-1$
 			sentenceMarkers = true;
@@ -332,6 +324,7 @@ public class FileUtils {
 
 		if (first == null) {
 			br.close();
+			bw.close();
 			throw new IOException(String.format(
 					Messages.getString("FileUtils.FileIsEmpty"), input)); //$NON-NLS-1$
 		}
@@ -363,79 +356,30 @@ public class FileUtils {
 		bw.close();
 	}
 
-	public static Object readObjectFromFile(File file) throws IOException,
-			ClassNotFoundException {
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
-				file));
-
-		ObjectInputStream ois = new ObjectInputStream(bis);
-
-		Object object = ois.readObject();
-
-		ois.close();
-
-		return object;
-
-	}
-
-	public static Object readObjectFromZipFile(File zipFile, String filename)
-			throws IOException, ClassNotFoundException {
-		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(
-				zipFile));
-		ZipInputStream zis = new ZipInputStream(bis);
-		ZipEntry zipEntry;
-
-		while ((zipEntry = zis.getNextEntry()) != null) {
-			if (zipEntry.getName().equals(filename))
-				break;
-		}
-
-		if (zipEntry == null) {
-			/*
-			 * Something has gone wrong, the entry is not in here while it
-			 * should have been
-			 */
-			zis.close();
-			throw new IOException(Messages.getString("FileUtils.0")); //$NON-NLS-1$
-		}
-
-		ObjectInputStream ois = new ObjectInputStream(zis);
-
-		Object object = ois.readObject();
-
-		ois.close();
-
-		return object;
-	}
-
-	public static void writeObjectToFile(File file, Object object)
-			throws IOException {
+	public static void serializeObject(File file, Object object) throws FileNotFoundException {
 		file.getParentFile().mkdirs();
-
-		BufferedOutputStream bos = new BufferedOutputStream(
-				new FileOutputStream(file));
-
-		ObjectOutputStream oos = new ObjectOutputStream(bos);
-
-		oos.writeObject(object);
-		oos.close();
+		Output output = new Output(new FileOutputStream(file));
+		Kryo kryo = new Kryo();
+		kryo.writeObject(output, object);
+		
+		output.close();
 	}
-
-	/*
-	 * TODO: BROKEN FOR NOW, HAVE TO FIND AN EFFICIENT WAY OF APPENDING
-	 */
-	@SuppressWarnings("unused")
-	private static void writeObjectToZipFile(File zipFile, Object object,
-			String filename) throws IOException {
-		zipFile.getParentFile().mkdirs();
-
-		BufferedOutputStream bos = new BufferedOutputStream(
-				new FileOutputStream(zipFile));
-		ZipOutputStream zos = new ZipOutputStream(bos);
-		zos.putNextEntry(new ZipEntry(filename));
-		ObjectOutputStream oos = new ObjectOutputStream(zos);
-		oos.writeObject(object);
-		oos.close();
+	
+	public static <T> void serializeSynchronizedList(File file, List<T> list) throws FileNotFoundException {
+		file.getParentFile().mkdirs();
+		Output output = new Output(new FileOutputStream(file));
+		Kryo kryo = new Kryo();
+		List<T> clone = new ArrayList<T>(list);
+		kryo.writeObject(output, clone);
+		output.close();
+	}
+	
+	public static <T> T deserializeObject(File file, Class<T> clazz) throws FileNotFoundException {
+		Input input = new Input(new FileInputStream(file));
+		Kryo kryo = new Kryo();
+		T object =kryo.readObject(input, clazz); 
+		input.close();
+		return object;
 	}
 
 	public static boolean contentEquals(File file1, File file2)

@@ -1,6 +1,5 @@
 package edu.cmu.sphinx.sphingid.crawler.robots;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -9,19 +8,13 @@ import edu.cmu.sphinx.sphingid.crawler.robots.RobotRule.Rule;
 /**
  * 
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
- *
+ * 
  */
-public class RobotSettings implements Serializable {
+public class RobotSettings {
 	public class NoPageAllowedException extends Exception {
-
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = 8376081880267522399L;
-
 	}
 
-	private static final long serialVersionUID = -8901367150589299758L;
 	private ArrayList<RobotRule> ruleList;
 	private ArrayList<String> sitemapList;
 
@@ -35,6 +28,10 @@ public class RobotSettings implements Serializable {
 
 		this.sitemapList = sitemapList;
 		this.crawlDelay = crawlDelay;
+	}
+
+	private RobotSettings() {
+		super();
 	}
 
 	public boolean accepts(String url) {

@@ -9,8 +9,7 @@ import java.io.Serializable;
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
  * 
  */
-public class LinkQueueEntry implements Comparable<LinkQueueEntry>, Serializable {
-	private static final long serialVersionUID = 8255964856060164201L;
+public class LinkQueueEntry implements Comparable<LinkQueueEntry> {
 	private int urlEntry;
 	private long suggestedFetchTime;
 	private LinkQueueEntry next;
@@ -22,6 +21,10 @@ public class LinkQueueEntry implements Comparable<LinkQueueEntry>, Serializable 
 	public LinkQueueEntry(int urlEntry, long suggestedFetchTime) {
 		this.urlEntry = urlEntry;
 		this.suggestedFetchTime = suggestedFetchTime;
+	}
+	
+	private LinkQueueEntry() {
+		super();
 	}
 
 	@Override

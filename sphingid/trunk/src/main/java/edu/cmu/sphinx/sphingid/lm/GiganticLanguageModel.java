@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,7 @@ public class GiganticLanguageModel extends AbstractLanguageModel {
 			throw new FileNotFoundException(
 					Messages.getString("CannotAccessCorpus")); //$NON-NLS-1$
 		}
-		
+
 		File giganticLMScript = new File("irstlm/bin/build-lm.sh"); //$NON-NLS-1$
 
 		if (!giganticLMScript.canRead() || !giganticLMScript.canExecute()) {
@@ -73,52 +74,79 @@ public class GiganticLanguageModel extends AbstractLanguageModel {
 					Messages.getString("GiganticLanguageModel.CannotAccessBuildLM")); //$NON-NLS-1$
 		}
 
-		String args = "-i " + corpusFile.getPath() + " -o " + lmFile.getPath() //$NON-NLS-1$ //$NON-NLS-2$
-				+ " -k " + numSplits + " -n " + n; //$NON-NLS-1$ //$NON-NLS-2$
-
+		ArrayList<String> command = new ArrayList<String>();
+		command.add("irstlm/bin/build-lm.sh"); //$NON-NLS-1$
+		command.add("-i"); //$NON-NLS-1$
+		command.add(corpusFile.getPath());
+		command.add("-o"); //$NON-NLS-1$
+		command.add(lmFile.getPath());
+		command.add("-k"); //$NON-NLS-1$
+		command.add(String.valueOf(numSplits));
+		command.add("-n"); //$NON-NLS-1$
+		command.add(String.valueOf(n));
+		command.add("-v"); //$NON-NLS-1$ 
+		command.add("-s"); //$NON-NLS-1$
 		switch (smoothing) {
 		case WITTEN_BELL:
-			args += " -s witten-bell"; //$NON-NLS-1$
+			command.add("witten-bell"); //$NON-NLS-1$
 			break;
 		case SHIFT_BETA:
-			args += " -s kneser-ney"; //$NON-NLS-1$
+			command.add("kneser-ney"); //$NON-NLS-1$
 			break;
 		case MODIFIED_SHIFT_BETA:
-			args += " -s improved-kneser-ney"; //$NON-NLS-1$
+			command.add("improved-kneser-ney"); //$NON-NLS-1$
 			break;
 		default:
-			args += " -s improved-kneser-ney"; //$NON-NLS-1$
+			command.add("improved-kneser-ney"); //$NON-NLS-1$
 			break;
 		}
 
 		if (pruneSingletons)
-			args += " -p"; //$NON-NLS-1$
+			command.add("-p"); //$NON-NLS-1$
 
 		if (sentenceMarkers)
-			args += " -b"; //$NON-NLS-1$
+			command.add("-b"); //$NON-NLS-1$
 
 		if (dictionary != null) {
 			if (dictionary.getDictFile().exists()
-					&& dictionary.getDictFile().canRead())
-				args += " -d " + dictionary.getDictFile().getPath(); //$NON-NLS-1$
-			else {
+					&& dictionary.getDictFile().canRead()) {
+				command.add("-d"); //$NON-NLS-1$
+				command.add(dictionary.getDictFile().getPath());
+			} else {
 				throw new IOException(
 						Messages.getString("GiganticLanguageModel.CannotAccessDictionary")); //$NON-NLS-1$
 			}
 		}
 
-		System.out.println(args);
-		Process p = Runtime.getRuntime().exec(new String[] { "bash", "-c", //$NON-NLS-1$ //$NON-NLS-2$
-				"./irstlm/bin/build-lm.sh " + args }, //$NON-NLS-1$
-				new String[] { "IRSTLM=irstlm" }); //$NON-NLS-1$
+		command.trimToSize();
+		ProcessBuilder pb = new ProcessBuilder(command);
+		pb.environment().put("IRSTLM", "irstlm"); //$NON-NLS-1$ //$NON-NLS-2$
+		Process p = pb.start();
+		/*
+		 * Process p = Runtime.getRuntime().exec(new String[] { "bash", "-c",
+		 * "./irstlm/bin/build-lm.sh " + args }, new String[] { "IRSTLM=irstlm"
+		 * }); *
+		 */
 
 		// p.waitFor();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
 				p.getInputStream()));
+		BufferedReader errorReader = null;
+		if (logger.isDebugEnabled()) {
+			errorReader = new BufferedReader(
+					new InputStreamReader(p.getInputStream()));
+		}
+		
 		int completion = 0;
 
-		String temp = null;
+		String temp = null, error = null;
 		while ((temp = reader.readLine()) != null) {
+			if (logger.isDebugEnabled()) {
+				logger.debug(temp);
+				if ((error = errorReader.readLine()) != null) {
+					logger.debug(error);
+				}
+			}
 			if (temp.startsWith("dict.")) { //$NON-NLS-1$
 				logger.info(
 						Messages.getString("GiganticLanguageModel.LMConstructionStatus"), completion * 50 //$NON-NLS-1$

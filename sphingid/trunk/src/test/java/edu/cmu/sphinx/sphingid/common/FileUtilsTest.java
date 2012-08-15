@@ -59,25 +59,22 @@ public class FileUtilsTest {
 		File tmpFile = null;
 		try {
 			tmpFile = this.tempFolder.newFile();
-		} catch (IOException e1) {
-			fail();
-		}
-
-		try {
-			FileUtils.writeObjectToFile(tmpFile, testList);
 		} catch (IOException e) {
-			fail();
+			fail(ExceptionUtils.getStackTrace(e));
 		}
-
+		
+		try {
+			FileUtils.serializeObject(tmpFile, testList);
+		} catch (FileNotFoundException e) {
+			fail(ExceptionUtils.getStackTrace(e));
+		}
+		
 		testList = null;
-
+		
 		try {
-			testList = (ArrayList<String>) FileUtils
-					.readObjectFromFile(tmpFile);
-		} catch (ClassNotFoundException e) {
-			fail();
-		} catch (IOException e) {
-			fail();
+			testList = FileUtils.deserializeObject(tmpFile, ArrayList.class);
+		} catch (FileNotFoundException e) {
+			fail(ExceptionUtils.getStackTrace(e));
 		}
 
 		assertThat(testList.get(0), is("one")); //$NON-NLS-1$

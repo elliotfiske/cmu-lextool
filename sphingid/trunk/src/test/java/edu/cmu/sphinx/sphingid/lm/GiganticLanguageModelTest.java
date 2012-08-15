@@ -39,10 +39,10 @@ public class GiganticLanguageModelTest {
 		} catch (InterruptedException e) {
 			fail(ExceptionUtils.getStackTrace(e));
 		}
-		assertThat(perplexities.get(0).getPerplexity(), is((float) 23.50));
-		assertThat(perplexities.get(1).getPerplexity(), is((float) 2965.17));
-		assertThat(perplexities.get(2).getPerplexity(), is((float) 5475.84));
-		assertThat(perplexities.get(3).getPerplexity(), is((float) 769.24));
+		assertThat(perplexities.get(0).getPerplexity(), is((float) 23.50F));
+		assertThat(perplexities.get(1).getPerplexity(), is((float) 345.77002F));
+		assertThat(perplexities.get(2).getPerplexity(), is((float) 583.8496F));
+		assertThat(perplexities.get(3).getPerplexity(), is((float) 177.72998F));
 	}
 
 	@SuppressWarnings("unused")

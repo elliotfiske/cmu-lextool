@@ -42,10 +42,10 @@ public class StatisticsRunnable implements Runnable {
 			for (int i = 0; i < this.crawlerRunnables.length; i++) {
 				if (this.crawlerRunnables[i].getAssociatedThread().isAlive()) {
 					isThreadsStillRunning = true;
-					logger.debug(Messages.getString("StatisticsRunnable.0"), //$NON-NLS-1$
+					logger.debug(Messages.getString("SStatisticsRunnable.AverageWPS"), //$NON-NLS-1$
 							i, this.crawlerRunnables[i].getWordsPerSecond());
 					logger.debug(
-							Messages.getString("StatisticsRunnable.1"), //$NON-NLS-1$
+							Messages.getString("StatisticsRunnable.AverageWPF"), //$NON-NLS-1$
 							this.crawlerRunnables[i].getMovingWordAverage(),
 							this.crawlerRunnables[i].getFetchDurationAverage());
 					totalWPS += this.crawlerRunnables[i].getWordsPerSecond();
@@ -55,7 +55,7 @@ public class StatisticsRunnable implements Runnable {
 							.getFetchDurationAverage();
 				}
 				logger.debug(
-						Messages.getString("StatisticsRunnable.2"), //$NON-NLS-1$
+						Messages.getString("StatisticsRunnable.TotalWords"), //$NON-NLS-1$
 						new Object[] { new Integer(i),
 								this.crawlerRunnables[i].getNumTotalWords(),
 								new Integer(i),
@@ -65,14 +65,14 @@ public class StatisticsRunnable implements Runnable {
 				totalPages += this.crawlerRunnables[i].getNumTotalPages();
 			}
 
-			logger.info(Messages.getString("StatisticsRunnable.3"), totalWPS); //$NON-NLS-1$
-			logger.info(Messages.getString("StatisticsRunnable.4"), //$NON-NLS-1$
+			logger.info(Messages.getString("StatisticsRunnable.TotalWPS"), totalWPS); //$NON-NLS-1$
+			logger.info(Messages.getString("StatisticsRunnable.TotalMovingAverages"), //$NON-NLS-1$
 					totalAvgWords, totalAvgDurations);
-			logger.info(Messages.getString("StatisticsRunnable.5"), //$NON-NLS-1$
+			logger.info(Messages.getString("StatisticsRunnable.GrandTotalWords"), //$NON-NLS-1$
 					totalWords, totalPages);
 			long secondsElapsed = (System.currentTimeMillis() - startTime) / 1000;
 			float hoursElapsed = secondsElapsed / 3600.0F;
-			logger.info(Messages.getString("StatisticsRunnable.6"), //$NON-NLS-1$
+			logger.info(Messages.getString("StatisticsRunnable.GrandTotalWPS"), //$NON-NLS-1$
 					new Object[] { secondsElapsed, hoursElapsed,
 							totalWords / hoursElapsed,
 							totalPages / hoursElapsed });

@@ -138,14 +138,18 @@ public abstract class AbstractLanguageModel {
 		while ((temp = br.readLine()) != null) {
 			if (temp.startsWith("%%")) { //$NON-NLS-1$
 				StringTokenizer tok = new StringTokenizer(temp);
-				float perplexity = 0;
+				float perplexity = 0.0F;
+				float oovPerplexity = 0.0F;
 				while (tok.hasMoreTokens()) {
 					String token = tok.nextToken();
 					if (token.startsWith("sent_PP=")) { //$NON-NLS-1$
 						perplexity = Float.parseFloat(token.substring(8,
 								token.length()));
+						token = tok.nextToken();
+						oovPerplexity = Float.parseFloat(token.substring(10,
+								token.length()));
 						results.add(new SentencePerplexity(sentenceNum,
-								perplexity));
+								perplexity - oovPerplexity));
 						sentenceNum++;
 						break;
 					}
