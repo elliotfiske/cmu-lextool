@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<project name="postprocessing" default="main" basedir=".">
+	<!-- Sets variables which can later be used. -->
+	<!-- The value of a property is accessed via ${} -->
+	<property name="src.dir" location="src" />
+	<property name="test.src.dir" location="test" />
+	<property name="build.dir" location="bin" />
+	<property name="dist.dir" location="dist" />
+	<property name="docs.dir" location="docs" />
+	
+	<!-- Define the compile time classpath -->
+	<path id="javac.class.path">
+		<pathelement location="lib/sphinx4.jar" />
+        <pathelement location="lib/commons-lang-2.0.jar" />
+        <pathelement path="bin/edu/cmu/sphinx/post/dynamic/" />
+	</path>
+	    
+	<!-- Deletes the existing build, docs and dist directory-->
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${docs.dir}" />
+		<delete dir="${dist.dir}" />
+	</target>
+
+	<!-- Creates the  build, docs and dist directory-->
+	<target name="makedir">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${docs.dir}" />
+		<mkdir dir="${dist.dir}" />
+	</target>
+
+	<!-- Compiles the java code -->
+	<target name="compile" depends="clean, makedir">
+		<javac srcdir="${src.dir}" destdir="${build.dir}" debug="true" debuglevel="lines,vars,source" includeantruntime="false">
+		    <classpath refid="javac.class.path" />
+		</javac>
+	</target>
+
+	<!-- Creates Javadoc -->
+	<target name="docs" depends="compile">
+		<javadoc packagenames="*." sourcepath="${src.dir}" destdir="${docs.dir}">
+		  <classpath refid="javac.class.path" />
+		</javadoc>
+	</target>
+
+	<!--Creates the deployable jar file  -->
+	<target name="jar" depends="compile">
+		<jar destfile="${dist.dir}\postprocessing.jar" basedir="${build.dir}" />
+	</target>
+
+	<target name="main" depends="compile, jar">
+		<description>Main target</description>
+	</target>
+
+</project> 
+
+
