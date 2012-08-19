@@ -278,12 +278,14 @@ public class PostProcessing {
 		//System.out.println("inainte " + prob);
 		
 		if (periodDistance <= 100) {
-			prob /= Math.log10(periodProbability[periodDistance]);
+			if (periodProbability[periodDistance] != 0)
+				prob += 0.1 * Math.log10(periodProbability[periodDistance]);
 		} else prob = 0;
 		
 
 		if (commaDistance <= 100) {
-			prob /= Math.log10(commaProbability[commaDistance]);
+			if (commaProbability[commaDistance] != 0)
+				prob += 1 * Math.log10(commaProbability[commaDistance]);
 		} else prob = 0;
 		
 		//System.out.println("dupa " + prob);
