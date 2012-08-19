@@ -23,8 +23,6 @@ import java.util.LinkedList;
 import org.apache.commons.lang.WordUtils;
 
 import edu.cmu.sphinx.linguist.WordSequence;
-import edu.cmu.sphinx.linguist.acoustic.UnitManager;
-import edu.cmu.sphinx.linguist.dictionary.FullDictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.large.LargeNGramModel;
 import edu.cmu.sphinx.util.LogMath;
@@ -39,6 +37,7 @@ public class PostProcessing {
 	
 	static int maxSequenceSize = 11000;	
 	static LargeNGramModel lm;
+	static float[] commaProbability = new float[101], periodProbability = new float[101];
 	
 	/**
 	 * @param args
@@ -49,7 +48,6 @@ public class PostProcessing {
 		
 		String text = null, lm_path = null, input_file = null;
 		int stackSize = 100;
-		int count = 0;
 		long start = System.currentTimeMillis();
 		
 		for (int i = 0; i < args.length; i++) {
@@ -58,7 +56,7 @@ public class PostProcessing {
 		}
 		
 		if (args.length < 4 || input_file == null || lm_path == null) {
-			System.out.println("Usage: sh ./postp.sh -input_file t -lm lm_path ");
+			System.out.println("Usage: sh ./postprocess.sh -input_file t -lm lm_path ");
 			return;
 		}
 		
@@ -87,6 +85,8 @@ public class PostProcessing {
 		
 		lm.allocate();
 		
+		readDistanceProbabilities();
+		
 		
 		while ((text = input.readLine()) != null) {
 			float max = Integer.MIN_VALUE;
@@ -107,6 +107,7 @@ public class PostProcessing {
 				Sequence currentSequence = stacks.getSequence();
 				
 				WordSequence currentWordSequence = currentSequence.getWordSequence();
+				
 				int currentSize = currentSequence.getSequenceNumber() + 1;
 				
 				// if the retrieved sequence is full-sized, add <PERIOD> </s> and keep the sequence with the 
@@ -252,6 +253,9 @@ public class PostProcessing {
 	 */
 	public static float getWSProb(WordSequence ws, LargeNGramModel lm) {
 		
+		int[] punctuationDistance = getPunctuationDistance(ws);
+		int commaDistance = punctuationDistance[0], periodDistance = punctuationDistance[1];
+		
 		if (ws.size() > 3) {
 			ws = ws.getSubSequence(ws.size() - 3, ws.size());
 		}
@@ -271,6 +275,64 @@ public class PostProcessing {
 		if (trimmedWS.size() > 0)		
 			prob = lm.getProbability(trimmedWS);
 		
+		if (periodDistance <= 100) {
+			prob *= periodProbability[periodDistance];
+		} else prob = 0;
+		
+
+		if (commaDistance <= 100) {
+			prob *= commaProbability[commaDistance];
+		} else prob = 0;
+			
 		return prob;
+	}
+	
+	public static int[] getPunctuationDistance(WordSequence ws) {
+		int commaDistance = ws.size(), periodDistance = ws.size();
+		for (int i = ws.size() - 1; i >= 0; i--) {
+			if (ws.getWord(i).toString().equals("<COMMA>")) {
+				commaDistance = ws.size() - i - 1;
+			}
+			else if (ws.getWord(i).toString().equals("<PERIOD>")) {
+				periodDistance = ws.size() - i - 1;
+			}
+		}
+		
+		int[] p = {commaDistance, periodDistance};
+		return p;
+	}
+	
+	public static void readDistanceProbabilities() throws IOException {
+		
+		FileReader f = null;
+		String line = null;
+		int aux = 0;
+		
+		try {
+			f = new FileReader("percentage");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		BufferedReader input = new BufferedReader(f);
+		
+		while ((line = input.readLine()) != null) {
+			if (line.equals("COMMA")) {
+				aux = 0;
+			}
+			else if (line.equals("PERIOD")) {
+				aux = 1;
+			}
+			else {
+				if (aux == 0) {
+					commaProbability[Integer.parseInt(line.split("\t")[0])] = Float.parseFloat(line.split("\t")[1]);
+				}
+				else {
+					periodProbability[Integer.parseInt(line.split("\t")[0])] = Float.parseFloat(line.split("\t")[1]);
+				}
+			}
+			
+		}
+
 	}
 }
