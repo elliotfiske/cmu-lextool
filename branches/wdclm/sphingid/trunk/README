@@ -1,0 +1,109 @@
+Sphingid Readme Version 0.1  
+Thu Aug 16 04:47:15 EEST 2012
+
+
+1. Installation instructions
+
+You will need
+
+* JDK 1.6
+* maven
+* IRST LM 5.70.04: http://sourceforge.net/projects/irstlm/files/irstlm/irstlm-5.70/
+
+to be able to use Sphingid.
+
+After extracting the sources, you will see an empty folder with the name of "irstlm". You have to download IRST LM, build it and place the its contents inside that folder. Binaries must be under irstlm/bin. Make sure that you have execution permissions for the binary files.
+
+After placing IRST LM in the appropriate place, run "mvn package" without the quotes in the project folder to build Sphingid. Installation archives will be created in "target" folder. Pick one that is suitable for you (they all contain the same files) and extract it wherever you like. 
+
+
+2. Usage
+
+Sphingid is a web data collection and language modelling tool. The purpose is to enlarge a relatively small subset of data by downloading data from the web. Therefore its primary use cases are crawling the web and data selection.
+
+Sphingid also has some extra features that will help you process files easily.
+
+To run Sphingid, you must run it with the command:
+
+java -jar sphingid-0.1.jar. It will display a list of commands that you can use.
+
+2.1. combine input1 input2 ... output
+
+Combines files. This command is useful for constructing a corpus from crawled data, as each page is recorded as a separate file while crawling.
+
+2.2. add-sentence-markers input output [encoding]
+
+Adds sentence markers <s> and </s> to start and end of each line in the input file and writes it to disk as output. Encoding parameter is optional but recommended if you are dealing with files with more than one encoding style. Defaults to system encoding.
+
+2.3. lm-data-selection general-corpus in-domain-corpus [OPTIONS]
+
+Runs the intelligent data selection algorithm described in the paper R. Moore, W. Lewis, "Intelligent Selection of Language Model Training Data" on a general corpus and an in-domain-corpus. Basically it obtains perplexities against both corpus models for each sentence in the general corpus and ranks sentences according to perplexity difference (PP_indomain - PP_general). Sentences are divided into segments with different cutoff thresholds. A language model is trained on each of these segments and test set perplexities will be printed.
+
+Important note: You must use sentence-marked files with this function.
+
+Options are:
+
+--n <number>         
+Sets the number of tokens in an ngram. Default is 3.
+
+--encoding <encoding>
+Sets the encoding to use. Examples are utf-8 and iso-8859-1. Defaults to system encoding.
+
+--smoothing <type>   
+Sets the smoothing type for language models. Possible choices are: wb, sb, msb, which stand for Witten-Bell, shift-beta and modified shift-beta. Default is msb.
+
+--cutoffsegments <number>
+Number of perplexity cutoff segments. A higher number results in more precise calculations but takes much more time. Default is 5.
+
+--testsetpercentage <number>
+The percentage of test set that will be extracted from in-domain corpus. A value of 10 means 10% of the in-domain corpus will be held out as the test set. Selection starts from the beginning of the file. Default is 10. 
+
+--usetlm
+Uses tlm binary of IRST LM instead of build-lm.sh. May require high amount of memory, but gives better results for sb and msb smoothing techniques.
+
+2.4. lm-data-selection-wem corpus-lm in-domain-lm corpus test-corpus [OPTIONS]
+
+Almost the same as 2.3, but uses existing models instead. Use this if you already have existing language models that were created by Sphingid.
+
+Options are:
+
+--n <number>         
+Sets the number of tokens in an ngram. Default is 3.
+
+--encoding <encoding>
+Sets the encoding to use. Examples are utf-8 and iso-8859-1. Defaults to system encoding.
+
+--smoothing <type>   
+Sets the smoothing type for language models. Possible choices are: wb, sb, msb, which stand for Witten-Bell, shift-beta and modified shift-beta. Default is msb.
+
+--cutoffsegments <number>
+Number of perplexity cutoff segments. A higher number results in more precise calculations but takes much more time. Default is 5.
+
+--usetlm
+Uses tlm binary of IRST LM instead of build-lm.sh. May require high amount of memory, but gives better results for sb and msb smoothing techniques.
+
+2.5 crawl crawler-configuration [--incremental]
+
+Runs a crawl with given configuration.
+
+There is an example crawler configuration provided with Sphingid that you can tailor to your needs.
+
+The crawler crawls pages, extracts text using Boilerpipe library and writes it to extracted folder. You must tokenize and normalize the text before using data selection on it. Sphingid currently does not have functions for text normalization.
+
+
+3. Changelog
+0.1 =================-
+First alpha release.
+Implemented custom crawler. Removed Nutch.
+Optimizations.
+
+0.0.4 ===============-
+Implemented lm-data-selection.
+k-means removed.
+
+0.0.2 ===============-
+Implemented iterative crawling.
+Implemented logging with slf4j.
+
+0.0.1 ===============-
+Initial version. Builds with Maven, can crawl, dump and extract. Includes IRST LM k-means that does not work.

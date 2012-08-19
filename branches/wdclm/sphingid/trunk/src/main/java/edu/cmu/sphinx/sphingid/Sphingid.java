@@ -17,9 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import edu.cmu.sphinx.sphingid.commons.FileUtils;
 import edu.cmu.sphinx.sphingid.crawler.Crawler;
+import edu.cmu.sphinx.sphingid.dataselection.PerplexityBasedDataSelector;
 import edu.cmu.sphinx.sphingid.lm.AbstractLanguageModel.Smoothing;
 import edu.cmu.sphinx.sphingid.lm.GiganticLanguageModel;
-import edu.cmu.sphinx.sphingid.lm.LMDataSelector;
 
 /**
  * @author Emre Çelikten <emrecelikten@users.sourceforge.net>
@@ -116,11 +116,11 @@ public class Sphingid {
 					}
 				}
 
-				LMDataSelector dataSelector;
+				PerplexityBasedDataSelector dataSelector;
 				try {
-					dataSelector = new LMDataSelector(corpus, inDomainCorpus,
-							testSetPercentage, n, smoothing, encoding);
-					dataSelector.selectData(numSegments, useBuildLmScript);
+					dataSelector = new PerplexityBasedDataSelector(corpus, inDomainCorpus,
+							testSetPercentage, n, smoothing, numSegments, encoding, useBuildLmScript);
+					dataSelector.selectData();
 				} catch (FileNotFoundException e) {
 					System.out.println(ExceptionUtils.getStackTrace(e));
 					System.exit(1);
@@ -199,12 +199,12 @@ public class Sphingid {
 						return;
 					}
 				}
-				LMDataSelector dataSelector;
+				PerplexityBasedDataSelector dataSelector;
 				try {
-					dataSelector = new LMDataSelector(corpusModel,
+					dataSelector = new PerplexityBasedDataSelector(corpusModel,
 							inDomainModel, corpusFile, testSet, n, smoothing,
-							encoding);
-					dataSelector.selectData(numSegments, useBuildLmScript);
+							numSegments, encoding, useBuildLmScript);
+					dataSelector.selectData();
 				} catch (FileNotFoundException e) {
 					System.out.println(ExceptionUtils.getStackTrace(e));
 					System.exit(1);
@@ -238,7 +238,7 @@ public class Sphingid {
 				return;
 			}
 		} else if (args[0].equals("crawl")) { //$NON-NLS-1$
-			if (args.length == 2) {
+			if (args.length > 1) {
 				String confPath = args[1];
 
 				XMLConfiguration crawlerConfiguration = null;
@@ -256,7 +256,17 @@ public class Sphingid {
 					System.exit(1);
 				}
 
-				new Crawler(crawlerConfiguration, false);
+				boolean incremental = false;
+				if (args.length > 2) {
+					if (args[2].startsWith("--incremental")) { //$NON-NLS-1$
+						incremental = true;
+					} else {
+						System.out.println(Messages
+								.getString("Sphingid.CrawlUsage")); //$NON-NLS-1$
+					}
+				}
+
+				new Crawler(crawlerConfiguration, incremental);
 			} else {
 				System.out.println(Messages.getString("Sphingid.CrawlUsage")); //$NON-NLS-1$
 				System.out.println(Messages

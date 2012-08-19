@@ -62,15 +62,15 @@ public class SearchEngine {
 	 * @param encoding encoding to use while reading files
 	 * @throws IOException when files cannot be read or index cannot be written
 	 */
-	public static void extractIndex(File textDirectory, Charset encoding)
+	public static void extractIndex(File documentFolder, File indexFolder, Charset encoding)
 			throws IOException {
-		Directory fsDir = FSDirectory.open(textDirectory);
+		Directory fsDir = FSDirectory.open(indexFolder);
 		IndexWriterConfig iwConf = new IndexWriterConfig(Version.LUCENE_36,
 				analyzer);
 		iwConf.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 		IndexWriter indexWriter = new IndexWriter(fsDir, iwConf);
 
-		for (File file : textDirectory.listFiles()) {
+		for (File file : documentFolder.listFiles()) {
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					new FileInputStream(file), encoding));
 			StringBuilder text = new StringBuilder();

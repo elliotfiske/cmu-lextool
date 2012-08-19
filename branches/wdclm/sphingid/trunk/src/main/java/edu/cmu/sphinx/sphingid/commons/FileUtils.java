@@ -386,4 +386,8 @@ public class FileUtils {
 			throws IOException {
 		return org.apache.commons.io.FileUtils.contentEquals(file1, file2);
 	}
+	
+	public static String readFileToString(File file, Charset encoding) throws IOException {
+		return org.apache.commons.io.FileUtils.readFileToString(file, encoding);
+	}
 }

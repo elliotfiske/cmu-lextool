@@ -52,7 +52,10 @@ public class CrawlStateWriterRunnable implements Runnable {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+				} else {
+					deleteCrawlerState(this.crawlerRunnables[i]);
 				}
+					
 			}
 			logger.info(Messages
 					.getString("CrawlStateWriterRunnable.CrawlerStatesWasWritten")); //$NON-NLS-1$
@@ -65,5 +68,14 @@ public class CrawlStateWriterRunnable implements Runnable {
 				"crawler" + crawlerRunnable.getCrawlerNum() //$NON-NLS-1$
 						+ ".ser");
 		FileUtils.serializeObject(state, crawlerRunnable); //$NON-NLS-1$
+	}
+	
+	static void deleteCrawlerState(CrawlerRunnable crawlerRunnable) {
+		File state = new File(crawlerRunnable.getCrawlDbPath(),
+				"crawler" + crawlerRunnable.getCrawlerNum() //$NON-NLS-1$
+						+ ".ser");
+		if (state.exists() && state.canWrite()) {
+			state.delete();
+		}
 	}
 }

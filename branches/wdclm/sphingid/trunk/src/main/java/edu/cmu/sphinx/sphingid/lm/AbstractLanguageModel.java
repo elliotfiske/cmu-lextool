@@ -86,8 +86,11 @@ public abstract class AbstractLanguageModel {
 		while (tok.hasMoreTokens()) {
 			String token = tok.nextToken();
 			if (token.startsWith("PP=")) { //$NON-NLS-1$
-				perplexity = Float
-						.parseFloat(token.substring(3, token.length()));
+				perplexity = Float.parseFloat(token.substring(3,
+						token.length()));
+				token = tok.nextToken();
+				perplexity -= Float.parseFloat(token.substring(5,
+						token.length()));
 				break;
 			}
 		}
