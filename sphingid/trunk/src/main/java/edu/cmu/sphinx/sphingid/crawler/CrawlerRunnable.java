@@ -246,12 +246,6 @@ public class CrawlerRunnable implements Runnable {
 		return this.fetchDurationAverage;
 	}
 
-	/**
-	 * @return the linkQueues
-	 */
-	public final LinkQueue[] getLinkQueues() {
-		return this.linkQueues;
-	}
 
 	/**
 	 * @return the movingWordAverage
@@ -272,20 +266,6 @@ public class CrawlerRunnable implements Runnable {
 	 */
 	public long getNumTotalWords() {
 		return this.numTotalWords;
-	}
-
-	/**
-	 * @return the pagesZipFile
-	 */
-	public final String getPagesFolder() {
-		return this.pagesFolder;
-	}
-
-	/**
-	 * @return the urlTable
-	 */
-	public final UrlTable getUrlTable() {
-		return this.urlTable;
 	}
 
 	/**

@@ -17,7 +17,10 @@
 		<disallow>\.(gif|GIF|jpg|JPG|png|PNG|ico|ICO|css|sit|eps|wmf|zip|ppt|mpg|xls|gz|rpm|tgz|mov|MOV|exe|jpeg|JPEG|bmp|BMP|pdf|PDF|doc|docx|DOC|DOCX|rtf|RTF|avi|AVI|txt|TXT|mp3|MP3|wav|WAV)$
 		</disallow>
 		<disallow>.*(/[^/]+)/[^/]+\1/[^/]+\1/</disallow>
-		<disallow>.*/video(/.*)?</disallow>
+		<disallow>.*/videos?(/.*)?</disallow>
+		<disallow>.*/images?([\.?/].*)?</disallow>
+		<disallow>.*\.xml$</disallow>
+		<disallow>.*/rss/?.*</disallow>
 	</urlFilters>
 	<seedUrls>
 		<seedUrl>

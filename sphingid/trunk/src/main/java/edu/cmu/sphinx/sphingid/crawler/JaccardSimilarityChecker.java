@@ -6,6 +6,8 @@ package edu.cmu.sphinx.sphingid.crawler;
 import java.io.Serializable;
 import java.util.HashSet;
 
+import edu.cmu.sphinx.sphingid.lm.NGramExtractor;
+
 /**
  * A simple document similarity checker for comparing two documents. Uses
  * Jaccard similarity.
@@ -29,8 +31,8 @@ public class JaccardSimilarityChecker implements DocumentSimilarityChecker {
 	}
 
 	public float getSimilarity(String doc1, String doc2) {
-		HashSet<String> ngramsDoc1 = extractNgrams(doc1, this.n);
-		HashSet<String> ngramsDoc2 = extractNgrams(doc2, this.n);
+		HashSet<String> ngramsDoc1 = NGramExtractor.extractNgramSet(doc1, this.n);
+		HashSet<String> ngramsDoc2 = NGramExtractor.extractNgramSet(doc2, this.n);
 
 		HashSet<String> union = new HashSet<String>(ngramsDoc1.size()
 				+ ngramsDoc2.size());
@@ -53,36 +55,6 @@ public class JaccardSimilarityChecker implements DocumentSimilarityChecker {
 		return jaccard;
 	}
 
-	static HashSet<String> extractNgrams(String doc1, byte n) {
-		if (n < 1)
-			throw new IllegalArgumentException(
-					Messages.getString("JaccardSimilarityChecker.0")); //$NON-NLS-1$
-
-		String[] words = doc1.split("([.,!?:;'\"-]|\\s)+"); //$NON-NLS-1$
-
-		int numNgrams = Math.max(words.length - n + 1, 1);
-
-		HashSet<String> ngrams = new HashSet<String>(numNgrams);
-
-		if (words.length == 0)
-			return ngrams;
-
-		if (numNgrams == 1) {
-			String ngram = words[0];
-			for (int i = 1; i < words.length; i++)
-				ngram += " " + words[i]; //$NON-NLS-1$
-
-			ngrams.add(ngram);
-		} else {
-			for (int i = 0; i < numNgrams; i++) {
-				String ngram = words[i];
-				for (int j = 1; j < n; j++)
-					ngram += " " + words[i + j]; //$NON-NLS-1$
-
-				ngrams.add(ngram.toLowerCase());
-			}
-		}
-		return ngrams;
-	}
+	
 
 }

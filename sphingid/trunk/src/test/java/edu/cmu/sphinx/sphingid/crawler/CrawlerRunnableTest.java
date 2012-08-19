@@ -235,8 +235,6 @@ public class CrawlerRunnableTest {
 		}
 
 		assertThat(newCrawler.getCrawlerNum(), is(0));
-		assertThat(newCrawler.getUrlTable().getUrl(0),
-				is("http://sourceforge.net")); //$NON-NLS-1$
 	}
 
 	
