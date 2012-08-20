@@ -1,0 +1,240 @@
+
+USE gsoc;
+
+/* create independent tables first */
+
+DROP TABLE IF EXISTS languages;
+
+CREATE TABLE languages
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	code CHAR(2) NOT NULL,
+	description VARCHAR(100),
+	CONSTRAINT PRIMARY KEY (id),
+	CONSTRAINT uq_code UNIQUE (code)
+);
+
+
+DROP TABLE IF EXISTS regions;
+
+CREATE TABLE regions
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	country CHAR(2) NOT NULL,
+	subdivision VARCHAR(3) DEFAULT '-',
+	description VARCHAR(100),
+	CONSTRAINT PRIMARY KEY (id),
+	CONSTRAINT uq_region UNIQUE (country, subdivision)
+);
+
+
+DROP TABLE IF EXISTS phonemes;
+
+CREATE TABLE phonemes
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	name VARCHAR(3) NOT NULL,
+	CONSTRAINT PRIMARY KEY (id)
+);
+
+
+DROP TABLE IF EXISTS words;
+
+CREATE TABLE words
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	name VARCHAR(50) NOT NULL,
+	numpro INTEGER NOT NULL DEFAULT 1,
+	CONSTRAINT PRIMARY KEY (id)
+);
+
+
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users 
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	email VARCHAR(200) NOT NULL,
+	password VARCHAR(50) NOT NULL,
+	type CHAR(8) NOT NULL DEFAULT '10000000',
+	time DATETIME,
+	name VARCHAR(100),
+	birthdate DATE,
+	sex SET('m', 'f'),
+	langid INTEGER,
+	regionid INTEGER,
+	CONSTRAINT PRIMARY KEY (id),
+	CONSTRAINT chk_age CHECK (age>=0 AND age<=150),
+	FOREIGN KEY (langid) REFERENCES languages(id) ON DELETE SET NULL,
+	FOREIGN KEY (regionid) REFERENCES regions(id) ON DELETE SET NULL
+);
+	
+DROP TABLE IF EXISTS pronunciations;
+
+CREATE TABLE pronunciations
+(
+	wordid INTEGER NOT NULL,
+	proid INTEGER NOT NULL DEFAULT 0,
+	phnid INTEGER NOT NULL,
+	phnpos INTEGER NOT NULL,
+	FOREIGN KEY (wordid) REFERENCES words(id) ON DELETE RESTRICT,
+	FOREIGN KEY (phnid) REFERENCES phonemes(id) ON DELETE RESTRICT
+);
+
+DROP TABLE IF EXISTS phrases;
+
+CREATE TABLE phrases
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	name VARCHAR(200) NOT NULL,
+	CONSTRAINT PRIMARY KEY (id)
+);
+
+
+DROP TABLE IF EXISTS phraseinfo;
+
+CREATE TABLE phraseinfo
+(
+	phraseid INTEGER NOT NULL,
+	wordpos INTEGER NOT NULL,
+	wordid INTEGER NOT NULL,
+	proid INTEGER NOT NULL,
+	postag SET('q', 'n', 'v', '-', 'w', 'm', 'o', 's', 'p', 'c', 'a'),
+	FOREIGN KEY (phraseid) REFERENCES phrases(id) ON DELETE RESTRICT,
+	FOREIGN KEY (wordid) REFERENCES words(id) ON DELETE RESTRICT
+);
+
+DROP TABLE IF EXISTS phrasestats;
+
+CREATE TABLE phrasestats
+(
+	phraseid INTEGER NOT NULL,
+	phnpos INTEGER NOT NULL,
+	phnid INTEGER NOT NULL,
+	acomean DECIMAL(10,6) NOT NULL,
+	acostd DECIMAL(10,6) NOT NULL,
+	acomaxz DECIMAL(10,6) NOT NULL,
+	durmean DECIMAL(10,6) NOT NULL,
+	durstd DECIMAL(10,6) NOT NULL,
+	durmaxz DECIMAL(10,6) NOT NULL,
+	FOREIGN KEY (phraseid) REFERENCES phrases(id) ON DELETE RESTRICT,
+	FOREIGN KEY (phnid) REFERENCES phonemes(id) ON DELETE RESTRICT
+);
+
+
+DROP TABLE IF EXISTS recordings;
+
+CREATE TABLE recordings
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	userid INTEGER NOT NULL,
+	phraseid INTEGER NOT NULL,
+	time DATETIME NOT NULL,
+	audio VARCHAR(300) NOT NULL,
+	exemplar SET('y', 'n') NOT NULL,
+	FOREIGN KEY (userid) REFERENCES users(id) ON DELETE RESTRICT,
+	FOREIGN KEY (phraseid) REFERENCES phrases(id) ON DELETE RESTRICT,
+	CONSTRAINT PRIMARY KEY (id)
+);
+
+
+DROP TABLE IF EXISTS scores;
+
+CREATE TABLE scores
+(
+	recordingid INTEGER NOT NULL,
+	type SET('p', 'b', 'w', 's') NOT NULL,
+	wordid INTEGER,
+	wordpos INTEGER,
+	proid INTEGER,
+	phoneid INTEGER,
+	phonepos INTEGER,
+	acousticscore DECIMAL(10,6) NOT NULL,
+	judge INTEGER NOT NULL,
+	durationscore DECIMAL(10,6) NOT NULL,
+	FOREIGN KEY (recordingid) REFERENCES recordings(id) ON DELETE RESTRICT,
+	FOREIGN KEY (wordid) REFERENCES words(id) ON DELETE RESTRICT,
+	FOREIGN KEY (phoneid) REFERENCES phonemes(id) ON DELETE RESTRICT,
+	FOREIGN KEY (judge) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+
+DROP TABLE IF EXISTS tests;
+
+CREATE TABLE tests
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	title VARCHAR(50) NOT NULL,
+	type CHAR(4) NOT NULL,
+	length INTEGER NOT NULL,
+	ordered SET('y', 'n') NOT NULL,
+	CONSTRAINT PRIMARY KEY (id)
+);
+
+
+DROP TABLE IF EXISTS testinfo;
+
+CREATE TABLE testinfo
+(
+	testid INTEGER NOT NULL,
+	phraseid INTEGER NOT NULL,
+	orderid INTEGER NOT NULL,
+	FOREIGN KEY (testid) REFERENCES tests(id) ON DELETE RESTRICT,
+	FOREIGN KEY (phraseid) REFERENCES phrases(id) ON DELETE RESTRICT
+);
+
+
+DROP TABLE IF EXISTS nodes;
+
+CREATE TABLE nodes
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	phraseid INTEGER NOT NULL,
+	description VARCHAR(200),
+	graph VARCHAR(200),
+	sound VARCHAR(200),
+	CONSTRAINT PRIMARY KEY(id),
+	FOREIGN KEY (phraseid) REFERENCES phrases(id) ON DELETE RESTRICT
+);
+
+
+DROP TABLE IF EXISTS nodeinfo;
+
+CREATE TABLE nodeinfo
+(
+	nodeid INTEGER NOT NULL,
+	oldwid INTEGER NOT NULL,
+	oldpos INTEGER NOT NULL,
+	newwid INTEGER NOT NULL,
+	FOREIGN KEY (nodeid) REFERENCES nodes(id) ON DELETE RESTRICT,
+	FOREIGN KEY (oldwid) REFERENCES words(id) ON DELETE RESTRICT,
+	FOREIGN KEY (newwid) REFERENCES words(id) ON DELETE RESTRICT
+);
+
+
+DROP TABLE IF EXISTS games;
+
+CREATE TABLE games
+(
+	id INTEGER NOT NULL AUTO_INCREMENT,
+	nodeid INTEGER NOT NULL,
+	description VARCHAR(200),
+	level INTEGER NOT NULL,
+	CONSTRAINT PRIMARY KEY (id),
+	CONSTRAINT chk_age CHECK (level>=1),
+	FOREIGN KEY (nodeid) REFERENCES nodes(id) ON DELETE RESTRICT
+);
+
+
+DROP TABLE IF EXISTS gameinfo;
+
+CREATE TABLE gameinfo
+(
+	gameid INTEGER NOT NULL,
+	nodeid INTEGER NOT NULL,
+	nodepos INTEGER NOT NULL,
+	FOREIGN KEY (gameid) REFERENCES games(id) ON DELETE RESTRICT,
+	FOREIGN KEY (nodeid) REFERENCES nodes(id) ON DELETE RESTRICT
+);
+
+
