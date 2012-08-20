@@ -18,15 +18,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.cmu.sphinx.sphingid.commons.FileUtils;
+import edu.cmu.sphinx.sphingid.commons.MathUtils;
 import edu.cmu.sphinx.sphingid.lm.AbstractLanguageModel;
+import edu.cmu.sphinx.sphingid.lm.AbstractLanguageModel.Smoothing;
 import edu.cmu.sphinx.sphingid.lm.Dictionary;
 import edu.cmu.sphinx.sphingid.lm.GiganticLanguageModel;
 import edu.cmu.sphinx.sphingid.lm.IntegerArray;
 import edu.cmu.sphinx.sphingid.lm.LanguageModel;
-import edu.cmu.sphinx.sphingid.lm.Messages;
 import edu.cmu.sphinx.sphingid.lm.SentencePerplexity;
-import edu.cmu.sphinx.sphingid.lm.AbstractLanguageModel.Smoothing;
-import edu.cmu.sphinx.sphingid.lm.SentencePerplexity.SentenceComparator;
 
 /**
  * A class for intelligently selecting a subset of data from a general corpus
@@ -113,6 +112,8 @@ public class PerplexityBasedDataSelector implements DataSelector {
 			throw new IllegalArgumentException(
 					String.format(
 							Messages.getString("PerplexityBasedDataSelector.IllegalNumberOfCutoffSegments"), numCutoffSegments)); //$NON-NLS-1$
+		
+		this.numCutoffSegments = numCutoffSegments;
 
 		this.encoding = encoding;
 		this.useBuildLmScript = useBuildLmScript;
@@ -491,7 +492,6 @@ public class PerplexityBasedDataSelector implements DataSelector {
 			}
 		}
 
-		perplexityDifferences.clear();
 		intArray = null;
 
 		if (sentenceMarkers) {
@@ -512,12 +512,16 @@ public class PerplexityBasedDataSelector implements DataSelector {
 		/*
 		 * Construct LMs for each segment and compute perplexities
 		 */
+
+		float[] perplexities = new float[this.numCutoffSegments];
+
 		logger.info(Messages
 				.getString("PerplexityBasedDataSelector.ConstructingLanguageModelsForSegments")); //$NON-NLS-1$
 		for (int i = 1; i < this.numCutoffSegments; ++i) {
 			AbstractLanguageModel lm = null;
 			startTime = System.currentTimeMillis();
-			logger.info("Constructing language model for segment {}...", i);
+			logger.info(Messages
+					.getString("PerplexityBasedDataSelector.ConstructingSegmentModel"), i); //$NON-NLS-1$
 			if (this.useBuildLmScript) {
 				lm = new GiganticLanguageModel(segments[i], new File(
 						segments[i] + ".giglm"), null, this.n, //$NON-NLS-1$
@@ -530,12 +534,13 @@ public class PerplexityBasedDataSelector implements DataSelector {
 					Messages.getString("PerplexityBasedDataSelector.OperationCompleted") //$NON-NLS-1$
 					, ((System.currentTimeMillis() - startTime) / 1000));
 
+			perplexities[i] = lm.computePerplexity(this.testSet);
 			logger.info(
 					Messages.getString("PerplexityBasedDataSelector.PerplexityOfSegment"), i, //$NON-NLS-1$
-					lm.computePerplexity(this.testSet));
+					perplexities[i]);
 
 			startTime = System.currentTimeMillis();
-			logger.info("Constructing language model for random segment {}...",
+			logger.info(Messages.getString("PerplexityBasedDataSelector.ConstructingRandomSegmentModel"), //$NON-NLS-1$
 					i);
 			if (this.useBuildLmScript) {
 				lm = new GiganticLanguageModel(randomSegments[i], new File(
@@ -555,5 +560,126 @@ public class PerplexityBasedDataSelector implements DataSelector {
 					i, lm.computePerplexity(this.testSet));
 
 		}
+
+		/*
+		 * Calculate optimum number of sentences
+		 */
+
+		startTime = System.currentTimeMillis();
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.FittingPolynomial")); //$NON-NLS-1$
+		int optimum = MathUtils.findOptimumThreshold(perplexities,
+				sentencesPerSegment, 6);
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.OperationCompleted") //$NON-NLS-1$
+				, ((System.currentTimeMillis() - startTime) / 1000));
+
+		if (optimum < sentencesPerSegment) {
+			logger.info("Optimum number of sentences are smaller than the number of sentences in the smallest LM! You might want to use smaller LMs. Terminating...");
+			return;
+		} else if (optimum > sentencesPerSegment * numCutoffSegments) {
+			logger.info("Optimum number of sentences are greater than the number of sentences in the biggest LM! Terminating...");
+			return;
+		}
+
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.NumSentencesForLowestPerplexity")); //$NON-NLS-1$
+
+		/*
+		 * Sort perplexity differences
+		 */
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.SortingPerplexityDifferences")); //$NON-NLS-1$
+		startTime = System.currentTimeMillis();
+		Collections.sort(perplexityDifferences,
+				SentencePerplexity.SentenceComparator.compareByPerplexity);
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.OperationCompleted") //$NON-NLS-1$
+				, ((System.currentTimeMillis() - startTime) / 1000));
+
+		/*
+		 * Selecting optimum perplexity threshold
+		 */
+		float optimumThreshold = perplexityDifferences.get(optimum)
+				.getPerplexity();
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.ChoosingThresholdForOptimumSegment")); //$NON-NLS-1$
+
+		/*
+		 * Sort perplexity differences according to sentence number, since we
+		 * need to read the file sequentially
+		 */
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.SortingPerplexityDifferences")); //$NON-NLS-1$
+		startTime = System.currentTimeMillis();
+		Collections.sort(perplexityDifferences,
+				SentencePerplexity.SentenceComparator.compareBySentenceNumber);
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.OperationCompleted") //$NON-NLS-1$
+				, ((System.currentTimeMillis() - startTime) / 1000));
+
+		/*
+		 * Write optimum segment file to disk
+		 */
+		corpusReader = new BufferedReader(new InputStreamReader(
+				new FileInputStream(new File(this.corpusFile.getPath())),
+				this.encoding));
+
+		File optimumSegment = new File(this.corpusFile + ".optimumsegment" //$NON-NLS-1$
+				+ ".txt"); //$NON-NLS-1$
+
+		BufferedWriter optimumWriter = new BufferedWriter(
+				new OutputStreamWriter(new FileOutputStream(optimumSegment),
+						this.encoding));
+
+		if (sentenceMarkers) {
+			for (int i = 1; i < this.numCutoffSegments; ++i) {
+				optimumWriter.write("</s>" //$NON-NLS-1$
+						+ System.getProperty("line.separator")); //$NON-NLS-1$
+			}
+		}
+
+		for (int i = 0; i < perplexityDifferences.size(); ++i) {
+			SentencePerplexity sentence = perplexityDifferences.get(i);
+			sentenceString = corpusReader.readLine();
+
+			if (sentenceMarkers)
+				if (sentenceString.trim().equalsIgnoreCase("<s>") //$NON-NLS-1$
+						|| sentenceString.trim().equalsIgnoreCase("</s>")) //$NON-NLS-1$
+					continue;
+
+			if (sentence.getPerplexity() < optimumThreshold) {
+				optimumWriter.write(sentenceString
+						+ System.getProperty("line.separator")); //$NON-NLS-1$
+			} else
+				break;
+		}
+		
+		optimumWriter.close();
+		corpusReader.close();
+
+		/*
+		 * Construct LM for the optimum segment
+		 */
+		AbstractLanguageModel lm = null;
+		startTime = System.currentTimeMillis();
+		logger.info(Messages.getString("PerplexityBasedDataSelector.ConstructingOptimumModel")); //$NON-NLS-1$
+		if (this.useBuildLmScript) {
+			lm = new GiganticLanguageModel(optimumSegment, new File(
+					optimumSegment + ".giglm"), null, this.n, //$NON-NLS-1$
+					this.smoothing, false, sentenceMarkers, 3);
+		} else {
+			lm = new LanguageModel(optimumSegment, new File(optimumSegment
+					+ ".lm"), null, this.n, this.smoothing, true); //$NON-NLS-1$
+		}
+		logger.info(Messages
+				.getString("PerplexityBasedDataSelector.OperationCompleted") //$NON-NLS-1$
+				, ((System.currentTimeMillis() - startTime) / 1000));
+
+		double optimumPerplexity = lm.computePerplexity(this.testSet);
+		logger.info(
+				Messages.getString("PerplexityBasedDataSelector.PerplexityOfOptimumSegment"), //$NON-NLS-1$
+				optimumPerplexity);
+
 	}
 }

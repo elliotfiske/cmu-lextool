@@ -1,7 +1,7 @@
 /**
  * 
  */
-package edu.cmu.sphinx.sphingid.common;
+package edu.cmu.sphinx.sphingid.commons;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;

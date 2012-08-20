@@ -1,5 +1,5 @@
-Sphingid Readme Version 0.1  
-Thu Aug 16 04:47:15 EEST 2012
+Sphingid Readme Version 0.15 
+Tuesday, August 21 2012
 
 
 1. Installation instructions
@@ -92,8 +92,11 @@ The crawler crawls pages, extracts text using Boilerpipe library and writes it t
 
 
 3. Changelog
+0.15 ================-
+Added curve fitting for creating optimal language models for perplexity based data selection.
+Bugfixes.
+ 
 0.1 =================-
-First alpha release.
 Implemented custom crawler. Removed Nutch.
 Optimizations.
 
