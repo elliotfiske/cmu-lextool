@@ -1,0 +1,12 @@
+I am not providing neural network to train between mfc and pf
+
+Please use your own neural network to train between 
+
+< TIMIT_all_aligned.mfc and TIMIT_all_aligned.pf >
+
+TIMIT_all_aligned.mfc = http://talknicer.net/~ronanki/PF_Features/train/TIMIT_all_aligned.mfc
+TIMIT_all_aligned.pf = http://talknicer.net/~ronanki/PF_Features/train/TIMIT_all_aligned.pf
+
+See nn_param_analysis to check network
+
+13N 26N 10N 52N 26L
