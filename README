@@ -1,58 +1,41 @@
-This project aims at postprocessing the ASR output. This means recovering 
-capitalization and punctuation. 
-At this stage, capitalization and punctuation recovery is done only based
-on a capitalized and punctuated Language Model. All commas and periods have
-been replaced with <COMMA> and <PERIOD> tokens, and whitespaces with <NONE>.
-
-The project contains two implementations: using WFST and with Viterbi Algorithm.
-The WFST method relies on openFST for composition and bestpath. The Viterbi
-Algorithm outputs the postprocessed text with no further processing.
-
-== Viterbi Algorithm ==
-
-This method relies on iterating through word symbols, and considering all the
-cases, and putting the results in a stack. When the stack gets full, it gets
-sorted (by probability) and the lowest scoring half is discarded. This way only
-the best solutions are considered.
-The final solution (contains </s> word symbol) with the best probabilty is
-considered the output.
-
-To compile the script used 'make' command in the root of the branch. The bash
-script in the scripts/ folder can be used:
-
-sh ./postp.sh -text t -lm lm_path
+This project aims at postprocessing the ASR output by recovering capitalization
+and punctuation marks. This is done based on a capitalized and punctuated
+Language Model.
 
 
+The Language Model:
+
+For the post processing task the language model used has to contain capitalized
+words and punctuation mark word tokens. In the training data, commas are
+replaced with <COMMA> and periods are replaced with <PERIOD>. Also sentences
+should be grouped into paragraphs so that start and end of sentence markers (<s>
+and </s>) are not very frequent.  The language model need to be compressed from
+ARPA format to DMP format with sphinx_lm_convert (or sphinx3_lm_convert).
+
+The gutenberg.DMP language model is correctly formatted and can be found in the
+models/ folder.
+
+The project contains two implementations: one using WFST and one using a dynamic
+programming Viterbi Algorithm. The WFST method relies on openFST for composition
+and bestpath, while the Viterbi Algorithm outputs the capitalized and punctuated
+text with no forther processing.
 
 
-== WFST postprocessing ==
+The dynamic algorithm relies on iterating throught word symbols to create word
+sequences, which are evaluated and put into stacks. When a stack gets full (a
+maximum capacity is set) it gets sorted (by sequence probabilities) and the
+lowest scoring part is discarded. This way bad scoring sequences are discarded,
+and only the best ones are kept. The final solution is the sequence with the
+same size as the input, with the best probability.
 
-This tool can be used to create Finite State Transducers from hyperstrings and
-language models. These are actually Finite State Automata with the same input
-and output labels for transitions.
+To compile the project install ant and be sure to set the required enviroment
+variables.
 
-The results can be written to file for further usage: a file with the
-transitions and two files for the symbols (input/output and states).
+Then type the following:
 
-These files can be used for capitalization and punctuation recovery by composing
-a hyperstring FST with a punctuated and capitalized Language Model.
+ant
 
-The Language Model has to be trained from a text containing capitalized text and
-punctuation normalized as <COMMA> and <PERIOD>. Whitespaces have to be
-represented by <NONE>.
+To postprocess text use the postprocess.sh script:
 
-The resulted FSTs from hyperstring and language model have to be composed
-(OpenFst can be used). A shortest-path tool can be the used to output the
-capitalized and punctuated string.
-
-To compile the script used 'make' command in the root of the branch. The bash
-scripts in the scripts/ folder can be used:
-
-sh ./scrips/hyperstring2fst.sh -text t -path output_path 
-sh ./scripts/lm2fst.sh -lm lm_path -path output_path 
-sh ./scripts/generateFST.sh -text t -lm lm_path -path output_path
-
-The hyperstring2fst and lm2fst scrips will create the .fst.txt and individual
-isyms and ssyms files, and the generateFST scripts will create the .fst.txt
-files and identical isyms and ssyms files for composition.
+sh ./postprocessing.sh -input_text path_to_file -lm path_to_lm
 

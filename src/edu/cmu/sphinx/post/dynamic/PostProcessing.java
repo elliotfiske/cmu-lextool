@@ -275,24 +275,25 @@ public class PostProcessing {
 		if (trimmedWS.size() > 0)		
 			prob = lm.getProbability(trimmedWS);
 		
-		//System.out.println("inainte " + prob);
-		
 		if (periodDistance <= 100) {
 			if (periodProbability[periodDistance] != 0)
-				prob += 0.1 * Math.log10(periodProbability[periodDistance]);
+				prob += 0 * Math.log10(periodProbability[periodDistance]);
 		} else prob = 0;
 		
 
 		if (commaDistance <= 100) {
 			if (commaProbability[commaDistance] != 0)
-				prob += 1 * Math.log10(commaProbability[commaDistance]);
+				prob += 0 * Math.log10(commaProbability[commaDistance]);
 		} else prob = 0;
-		
-		//System.out.println("dupa " + prob);
 			
 		return prob;
 	}
 	
+	/**
+	 * Returns the distance from the last comma or period 
+	 * @param ws - the word sequence that is evaluated
+	 * @return - Integer array containing commaDistance and periodDistance
+	 */
 	public static int[] getPunctuationDistance(WordSequence ws) {
 		int commaDistance = ws.size(), periodDistance = ws.size();
 		for (int i = ws.size() - 1; i >= 0; i--) {
@@ -308,6 +309,10 @@ public class PostProcessing {
 		return p;
 	}
 	
+	/**
+	 * Read comma and period distance probabilities from the distance_probabilities file
+	 * @throws IOException
+	 */
 	public static void readDistanceProbabilities() throws IOException {
 		
 		FileReader f = null;
@@ -315,7 +320,7 @@ public class PostProcessing {
 		int aux = 0;
 		
 		try {
-			f = new FileReader("percentage");
+			f = new FileReader("distance_probabilities");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
