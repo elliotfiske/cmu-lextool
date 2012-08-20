@@ -48,7 +48,6 @@ public class PostProcessing {
 		
 		String text = null, lm_path = null, input_file = null;
 		int stackSize = 100;
-		long start = System.currentTimeMillis();
 		
 		for (int i = 0; i < args.length; i++) {
 			if (args[i].equals("-input_file")) input_file = args[i+1];
@@ -177,14 +176,10 @@ public class PostProcessing {
 			}
 			
 			output.write(formatOutput(finalSequence.getWordSequence()) + '\n');
-			System.out.println(formatOutput(finalSequence.getWordSequence()));
 		}
 		
 		output.close();
 		input.close();
-		long end = System.currentTimeMillis();
-
-		System.out.println("Execution time was "+(end-start)+" ms.");
 	} 
 	
 	/**
@@ -198,8 +193,16 @@ public class PostProcessing {
 		String newOutput = "";
 		
 		for (Word w : output.getWords()) {
-			if (!w.toString().equals("<s>") && !w.toString().equals("</s>"))
-				newOutput += w.toString() + " ";			
+			if (!w.toString().equals("<s>") && !w.toString().equals("</s>")) {
+				if (w.toString().equals("<COMMA>")) {
+					newOutput += ", ";
+				} else if (w.toString().equals("<PERIOD>")) {
+					newOutput += ". ";
+				} else {
+					newOutput += w.toString() + " ";		
+				}
+			}
+				
 		}
 		
 		return newOutput;
@@ -238,7 +241,6 @@ public class PostProcessing {
 
 		for (int i = 1; i <= sentence.size(); i++) {
 			prob += getWSProb(sentence.getSubSequence(0, i), lm);
-			System.out.println(formatOutput(sentence.getSubSequence(0, i)) + " " + getWSProb(sentence.getSubSequence(0, i), lm));
 		}
 		
 		return prob + 99;
