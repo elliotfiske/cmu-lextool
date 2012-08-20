@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- In build setting select "merger framework into code" -->
+<mx:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" layout="absolute" width="250" height="180" 
+				initialize="init();" backgroundAlpha="0" >
+	<!-- width="160" height="164" -->
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+		<!--
+		<mx:HTTPService result="flv2wavDone(event);" fault="flv2wavFault(event);" id="flv2wavHttp" url="bg_flv2wav.php" method="POST" useProxy="false" resultFormat="text">
+			<mx:request xmlns="">
+				<flvname>
+					{audiopath}
+				</flvname>
+			</mx:request>
+		</mx:HTTPService>
+		-->
+		<mx:HTTPService result="checkFileDone(event);" fault="checkFileFault(event);" id="checkFileHttp" url="bg_checkfile.php" method="POST" useProxy="false" resultFormat="text">
+			<mx:request xmlns="">
+				<flvname>
+					{audiopath}
+				</flvname>
+			</mx:request>
+		</mx:HTTPService>
+		<mx:HTTPService result="saverecDone(event);" fault="saverecFault(event);" id="saverecHttp" url="bg_saverec.php" method="POST" useProxy="false" resultFormat="text">
+			<mx:request xmlns="">
+				<flvname>
+					{audiopath}
+				</flvname>
+			</mx:request>
+		</mx:HTTPService>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			import flash.events.Event;
+			import flash.utils.Timer;
+			
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			private var delayTimer:Timer=new Timer(500,1);
+			
+			private var isRecording:Boolean;
+			private var isPlaying:Boolean;
+			
+			private var nc:NetConnection;
+			private var ns:NetStream;
+			
+			[Bindable] private var btnTop:Number=0;
+			
+			
+			// parameters could be set 
+			//private var urlstr:String="rtmp://localhost/audioRecorder";
+			private var urlstr:String="rtmp://talknicer.net/audioRecorder";
+			[Bindable] private var audiopath:String="";
+			[Bindable] private var hasRecording:Boolean=false; // indicating whether there is already a recording of the given file 
+			private var quality:int=8;
+			private var delayInterval:Number=500;
+			[Bindable] private var showdebug:Boolean=false;
+			[Bindable] private var isEnabled:Boolean=true; // whether the whole player is enabled or not
+			[Bindable] private var isPlayEnabled:Boolean=true; // whether the play button is enabled or not
+			
+			// set the recording file name (no path, the full audio file name without suffix: project/userid/fileid) and indicate whether it exists or not
+			public function setFileName(fname:String): void{
+				audiopath=fname;
+				debug("setFileName:"+fname);
+				checkFileHttp.send();
+			}
+			public function setRecordingExistance(exist:Boolean): void {
+				hasRecording=exist;
+				isPlayEnabled=hasRecording && isEnabled;
+			}
+			public function setQuality(value:int): void{
+				quality=value;
+				debug("change quality");
+			}
+			public function setTimerDelay(value:Number): void{
+				if(delayInterval != value) {
+					delayInterval = value;
+					delayTimer = null;
+					delayTimer = new Timer(delayInterval, 1);
+					delayTimer.addEventListener(TimerEvent.TIMER, stopRecordingDelayFinished);
+					debug("change timer delay");
+				}
+			}
+			public function showDebug(value:Boolean):void {
+				showdebug=value;
+				debug("change debug status");
+				if(showdebug){
+					btnTop=0;
+				}else {
+					btnTop=58;
+				}
+			}
+			public function setEnabled(flag:Boolean): void{
+				isEnabled=flag;
+				isPlayEnabled=hasRecording && isEnabled;
+			}
+			
+			public function init():void {
+				debug("Initialize the recorder...");
+				
+				// check if microphone is accessible or not
+				var mic:Microphone = Microphone.getMicrophone();
+				
+				if(!mic) {
+					Alert.show("No microphone available");
+					debug("No microphone available");
+					Security.showSettings("microphone");
+				}else if(mic.muted) {
+					debug("Microphone muted!");
+					Security.showSettings("privacy");
+				}
+				
+				// check if the container is able to use the external API.
+				if (ExternalInterface.available)
+				{
+					try
+					{
+						// this calls the isContainerReady() method, which in turn calls the container to see
+						// if Flash Player has loaded and the container is ready to receive calls from the SWF.
+						var containerReady:Boolean = ExternalInterface.call("isReady");
+						if (containerReady)
+						{
+							// if the container is ready, register the SWF's functions
+							setupCallbacks();
+						}else
+						{
+							// if not ready, set up a timer to call the container at 100ms intervals.
+							var readyTimer:Timer = new Timer(100);
+							readyTimer.addEventListener(TimerEvent.TIMER, readyTimerHandler);
+							readyTimer.start();
+						}
+					}catch(error:SecurityError)
+					{
+						debug("A SecurityError occured: " + error.message + "\n");
+						throw error;
+					}catch (error: Error)
+					{
+						debug("An Error occurred: " + error.message + "\n");
+						throw error;
+					}
+				}else {
+					debug("External interface is not available for this container!");
+				}
+				
+				
+				// init the delay timer
+				delayTimer.addEventListener(TimerEvent.TIMER, stopRecordingDelayFinished);
+				// connect to the rtmp server
+				connect(urlstr);
+				
+			}
+			
+			private function readyTimerHandler(event:TimerEvent):void {
+				// check if the container is ready
+				var isReady:Boolean = ExternalInterface.call("isReady");
+				if (isReady)
+				{
+					// stop the timer
+					Timer(event.target).stop();
+					// set up the AS methods that will be availabel to the container
+					setupCallbacks();
+				}
+			}
+			
+			private function setupCallbacks():void {
+				// register the swf client function wiht the container
+				ExternalInterface.addCallback("setFileName", setFileName);
+				ExternalInterface.addCallback("setRecordingExistance", setRecordingExistance);
+				ExternalInterface.addCallback("setQuality", setQuality);
+				ExternalInterface.addCallback("setTimerDelay", setTimerDelay);
+				ExternalInterface.addCallback("showDebug", showDebug);
+				ExternalInterface.addCallback("setEnabled", setEnabled);
+				
+				ExternalInterface.call("setSWFisReady");
+				
+			}
+			
+			private function stopRecordingDelayFinished(event:TimerEvent):void {
+				var date:Date=new Date();
+				debug('timer ends at:'+date.milliseconds);
+				closeStream();
+				debug('delay done! Closing stream...');
+				debug('Sending conversion request...');
+				saverecHttp.send();
+				
+			}
+			
+			private function connect(url:String):void {
+				NetConnection.defaultObjectEncoding = ObjectEncoding.AMF0; // MUST SUPPLY THIS!!!
+				
+				if (nc == null) {
+					nc = new NetConnection();
+					nc.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+					nc.addEventListener(IOErrorEvent.IO_ERROR, errorHandler, false, 0, true);
+					nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, errorHandler, false, 0, true);
+					nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, errorHandler, false, 0, true);
+					nc.client = {};
+					
+					debug('connect() ' + url);
+					nc.connect(url);
+				}
+			}
+			
+			private function close():void {
+				debug('close()');
+				if (nc != null) {
+					nc.close();
+					nc = null;
+					closeStream();
+				}
+			}
+			
+			
+			private function closeStream():void {
+				if (ns != null) {
+					ns.close();
+					ns = null;
+				}
+			}
+			
+			private function netStatusHandler(event:NetStatusEvent):void {
+				debug('netStatusHandler() ' + event.type + ' ' + event.info.code);
+				switch (event.info.code) {
+					case 'NetConnection.Connect.Success':
+						ExternalInterface.call("setRecorderReady", true);
+						break;
+					case 'NetConnection.Connect.Failed':
+						Alert.show("Connection failed! Please try it again!");
+						nc = null;
+						closeStream();
+						break;
+					case 'NetConnection.Connect.Reject':
+						Alert.show("Connection rejected! Checking your settings and retry again!");
+						nc = null;
+						closeStream();
+						break;
+					case 'NetConnection.Connect.Closed':
+						nc = null;
+						closeStream();
+						break;
+					case 'NetStream.Play.Stop':
+						playStopped();
+						break;
+					case 'NetStream.Publish.Start':
+						playBtn.enabled=false;
+						recordBtn.selected=true;
+						isRecording=true;
+						break;
+				}
+			}
+			
+			private function errorHandler(event:ErrorEvent):void {
+				debug('errorHandler() ' + event.type + ' ' + event.text);
+				if (nc != null)
+					nc.close();
+				nc = null;
+				closeStream();
+			}
+			
+			private function streamErrorHandler(event:ErrorEvent):void {
+				debug('streamErrorHandler() ' + event.type + ' ' + event.text);
+				closeStream();
+			}
+			
+			private function onMicStatus(event:StatusEvent):void 
+			{ 
+				if (event.code == "Microphone.Unmuted") 
+				{ 
+					debug("Microphone access was allowed.");
+				}  
+				else if (event.code == "Microphone.Muted") 
+				{ 
+					debug("Microphone access was denied.");
+				} 
+			}
+			
+			
+			private function debug(msg:String):void {
+				if (debugTxt != null)
+				{
+					debugTxt.text += msg + '\n';
+					debugTxt.validateNow();
+					debugTxt.verticalScrollPosition=debugTxt.maxVerticalScrollPosition;
+				}
+			}
+			
+			//////////////////////////////////////////////////////////////////////
+			
+			
+			
+			
+			
+			/////////////////////////////////////////////////////////////////////
+			
+			
+			private function recordBtnClicked(event:Event):void {
+				//debug('recordBtnClicked() ' + event.type + ' ' + event.toString());
+				
+				if(!isRecording)
+				{
+					recordBtn.selected=false; // only if the stream starts publishing, set it to selected
+					ExternalInterface.call("startRecording");
+					
+					if (ns == null && nc != null && nc.connected) {
+						ns = new NetStream(nc);
+						ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+						ns.addEventListener(IOErrorEvent.IO_ERROR, streamErrorHandler, false, 0, true);
+						ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, streamErrorHandler, false, 0, true);
+						ns.client = {};
+						
+						var mic:Microphone = Microphone.getMicrophone(); // little known fact that -1 gives default microphone.
+						
+						if(!mic) {
+							Alert.show("No microphone available");
+							Security.showSettings("microphone");
+						}else if(mic.muted) {
+							Security.showSettings("privacy");
+						}
+						
+						mic.setUseEchoSuppression(true);
+						mic.setLoopBack(false);
+						//mic.setSilenceLevel(0);
+						mic.codec = 'Speex';
+						mic.encodeQuality = quality; // 27.8kbits/s
+						mic.gain = 60;
+						
+						mic.addEventListener(StatusEvent.STATUS, this.onMicStatus); 
+						
+						ns.attachAudio(mic);
+						
+						ns.publish(audiopath, 'record');
+						debug("Recording: "+audiopath);
+					}
+				}else
+				{
+					recordBtn.selected=false;
+					recordBtn.enabled=false; // only can record again when the conversion is done
+					isRecording=false;
+					hasRecording=true;
+					isPlayEnabled=hasRecording && isEnabled;
+					
+					// delay 0.5s before closing the stream
+					var date:Date=new Date();
+					debug('start timer at:'+date.milliseconds);
+					delayTimer.start();
+				}
+				
+				
+			}
+			
+			private function playStopped():void {
+				playBtn.selected=false;
+				isPlaying=false;
+				recordBtn.enabled=true;
+				
+				closeStream();
+				
+				ExternalInterface.call("finishPlaying");
+			}
+			
+			private function playBtnClicked(event:Event):void {
+				if(!isPlaying)
+				{
+					ExternalInterface.call("startPlaying");
+					// disable recording
+					recordBtn.enabled=false;
+					playBtn.selected=true;
+					isPlaying=true;
+					
+					if (ns == null && nc != null && nc.connected) {
+						ns = new NetStream(nc);
+						ns.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler, false, 0, true);
+						ns.addEventListener(IOErrorEvent.IO_ERROR, streamErrorHandler, false, 0, true);
+						ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, streamErrorHandler, false, 0, true);
+						ns.client = {};
+						
+						ns.play(audiopath);
+						
+						debug("Playing: "+audiopath);
+					}
+				}else
+				{
+					playStopped();
+				}
+				
+			}
+			
+			/////////////////////////////////////////////////////////////////////
+			// HTTPService event functions
+			private function saverecDone(event:ResultEvent): void
+			{
+				debug("saverecDone: "+event.type+" " +event.result.toString());
+				debug("Save recording done!");
+				ExternalInterface.call("finishRecording");
+				recordBtn.enabled=true;
+				playBtn.enabled=true;
+			}
+			
+			private function saverecFault(event:Event): void
+			{
+				debug("saverecFault: "+event.type+" "+event.toString());
+				debug("Save recording failed!");
+				ExternalInterface.call("finishRecording");
+				recordBtn.enabled=true;
+				playBtn.enabled=false;
+			}
+			
+			private function checkFileDone(event:ResultEvent):void
+			{
+				debug("checkFileDone: "+event.type+" #" + event.result.toString()+"#");
+				if(event.result.toString().search("yes")>-1)
+				{
+					setRecordingExistance(true);
+					debug("recording exists");
+				}else{
+					setRecordingExistance(false);
+					debug("recording not exists");
+				}
+			}
+			
+			private function checkFileFault(event:Event): void
+			{
+				debug("checkFileFault: "+event.type+" " + event.toString());
+				setRecordingExistance(false);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<mx:Button id="recordBtn" top="{btnTop}" label="" toggle="true" enabled="{isEnabled}"
+			   skin="@Embed('images/microphone_up.png')"
+			   upSkin="@Embed('images/microphone_up.png')"
+			   disabledSkin="@Embed('images/microphone_disabled.png')"
+			   selectedUpSkin="@Embed('images/microphone_down.png')"
+			   selectedOverSkin="@Embed('images/microphone_down.png')"
+			   selectedDownSkin="@Embed('images/microphone_down.png')"
+			   horizontalCenter="-48"
+			   overSkin="@Embed('images/microphone_over.png')"
+			   click="recordBtnClicked(event)"/>
+	<mx:Button id="playBtn" top="{btnTop}" label="" toggle="true" enabled="{isPlayEnabled}"
+			   skin="@Embed('images/play_up.png')"
+			   upSkin="@Embed('images/play_up.png')"
+			   disabledSkin="@Embed('images/play_disabled.png')"
+			   selectedUpSkin="@Embed('images/play_down.png')"
+			   selectedOverSkin="@Embed('images/play_down.png')"
+			   selectedDownSkin="@Embed('images/play_down.png')"
+			   horizontalCenter="48"
+			   overSkin="@Embed('images/play_over.png')" 
+			   click="playBtnClicked(event)"/>
+	<mx:TextArea id="debugTxt" visible="{showdebug}" bottom="0" width="100%" height="100" horizontalCenter="0" text="Debug:"/>
+	
+</mx:Application>

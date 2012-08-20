@@ -1,0 +1,4 @@
+cp /home/ronanki/web/ronanki/scripts/neighborphones_decode/phrases/sample.fsg fsgs/phrase1.fsg
+cp /home/ronanki/web/phrase_data/phrase2.fsg phrase2.fsg
+cp /home/ronanki/web/phrase_data/phrase3.fsg phrase3.fsg
+

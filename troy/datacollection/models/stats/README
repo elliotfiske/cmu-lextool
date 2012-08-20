@@ -1,0 +1,3 @@
+cp /home/ronanki/web/phrase_data/phrase1_stats.txt phrase1.stats
+cp /home/ronanki/web/phrase_data/phrase3_stats.txt phrase2.stats
+cp /home/ronanki/web/phrase_data/phrase3_stats.txt phrase3.stats
