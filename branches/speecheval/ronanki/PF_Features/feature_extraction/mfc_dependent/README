@@ -1,0 +1,6 @@
+
+src directory contains codes
+
+1.extract_binary_features.py is used to extract binary features for single file
+
+2.extract_binary_mfc2pf_directory.py is used to extract binary features for a complete directory
