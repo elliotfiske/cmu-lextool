@@ -1,0 +1,43 @@
+	 SFrm  EFrm   SegAScr Phone
+	    0     9    -32148 SIL
+	   10    16    -29879 IH SIL G b
+	   17    23    -20047 G IH Z i
+	   24    34    -28072 Z G AE i
+	   35    46    -36514 AE Z M i
+	   47    53    -23332 M AE IH i
+	   54    57    -21839 IH M N i
+	   58    63    -13948 N IH W e
+	   64    71    -29587 W N AY b
+	   72    76    -53471 AY W L e
+	   77    93    -91779 L AY ER b
+	   94   102    -18649 ER L N i
+	  103   106    -12269 N ER ER i
+	  107   118    -73800 ER N Z i
+	  119   126    -93075 Z ER F e
+	  127   143   -234737 F Z EY b
+	  144   154   -152721 EY F L i
+	  155   162    -51796 L EY T e
+	  163   167    -19017 T L AH b
+	  168   176    -78555 AH T AH e
+	  177   181    -91005 AH AH CH b
+	  182   195   -154885 CH AH IY i
+	  196   205    -34121 IY CH V i
+	  206   217    -38605 V IY G e
+	  218   224    -25237 G V UH b
+	  225   231    -64642 UH G D i
+	  232   241   -101477 D UH P e
+	  242   245    -16151 P D R b
+	  246   248     -9712 R P AH i
+	  249   251     -7346 AH R N i
+	  252   255    -45091 N AH AH i
+	  256   261    -67582 AH N N i
+	  262   265    -18426 N AH S i
+	  266   273    -16663 S N IY i
+	  274   285    -35795 IY S EY i
+	  286   294    -61288 EY IY SH i
+	  295   303   -215692 SH EY AH i
+	  304   307    -10483 AH SH N i
+	  308   326    -78741 N AH SIL e
+	  327   338    -47796 SIL
+	  339   351    -39531 SIL
+ Total score:    -2295504
