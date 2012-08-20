@@ -1,0 +1,14 @@
+This is the main folder for Text-independent pronunciation evaluation system:
+
+src directory: Contains all codes
+files directory: contains all required arguments
+
+1. Use calc_statistics.py to calculate statistics for any data 
+
+2. Here, I used TIMIT database to do so and check TIMIT_statistics.txt
+
+3. Use test_phrase_random_feedback.py to get the score
+
+Note: To use these scripts, you should have already done the alignment and its output ready
+
+
