@@ -1,6 +1,7 @@
-Author: Srikanth Ronanki
-
 This is the main folder for Text-independent pronunciation evaluation system:
+
+src directory: Contains all codes
+files directory: contains all required arguments
 
 1. Use calc_statistics.py to calculate statistics for any data 
 
@@ -8,6 +9,6 @@ This is the main folder for Text-independent pronunciation evaluation system:
 
 3. Use test_phrase_random_feedback.py to get the score
 
-4. Note: To use these scripts, you should have already done the alignment and its output ready
+Note: To use these scripts, you should have already done the alignment and its output ready
 
-Thanks
+
