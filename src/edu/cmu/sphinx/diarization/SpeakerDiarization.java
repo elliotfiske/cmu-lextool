@@ -45,26 +45,17 @@ public class SpeakerDiarization implements Diarization {
 	private StreamDataSource audioSource;
 	private ConfigurationManager cm;
 
-	/***
-	 * @param inputFile
-	 *            the name of the file that needs speaker diarization
-	 */
-	public SpeakerDiarization(String inputFile) {
+	public SpeakerDiarization() {
 		cm = new ConfigurationManager(CONFIG_FILE);
 		audioSource = (StreamDataSource) cm.lookup("streamDataSource");
-		try {
-			audioSource.setInputStream(new FileInputStream(inputFile), "audio");
-		} catch (FileNotFoundException e) {
-			System.out.println(e.toString());
-			System.exit(1);
-		}
 		frontEnd = (FrontEnd) cm.lookup(FRONTEND_NAME);
 	}
 
 	/**
-	 * @return The list of feature vectors from the file given as input
+	 * @return The list of feature vectors from the fileStream used by
+	 *         audioSource
 	 */
-	public ArrayList<float[]> getFeatures() {
+	private ArrayList<float[]> getFeatures() {
 		ArrayList<float[]> ret = new ArrayList<float[]>();
 		try {
 			int featureLength = -1;
@@ -106,7 +97,7 @@ public class SpeakerDiarization implements Diarization {
 	 */
 	private double getLikelihoodRatio(int frame,
 			Array2DRowRealMatrix featuresMatrix) {
-		double ret = 0, det, det1, det2;
+		double ret = 0, logDet, logDet1, logDet2;
 		int nrows = featuresMatrix.getRowDimension(), ncols = featuresMatrix
 				.getColumnDimension();
 		Array2DRowRealMatrix sub1, sub2;
@@ -114,37 +105,60 @@ public class SpeakerDiarization implements Diarization {
 				0, ncols - 1);
 		sub2 = (Array2DRowRealMatrix) featuresMatrix.getSubMatrix(frame,
 				nrows - 1, 0, ncols - 1);
-		det = new EigenDecomposition(
-				new Covariance(featuresMatrix).getCovarianceMatrix())
-				.getDeterminant();
-		det1 = new EigenDecomposition(
-				new Covariance(sub1).getCovarianceMatrix()).getDeterminant();
-		det2 = new EigenDecomposition(
-				new Covariance(sub2).getCovarianceMatrix()).getDeterminant();
-		ret = nrows * Math.log(det) - frame * Math.log(det1) - (nrows - frame)
-				* Math.log(det2);
-		if (det <= 0 || det1 <= 0 || det2 <= 0)
-			System.out.println(det + " " + det1 + " " + det2 + " " + frame);
+		logDet = getLogDet(featuresMatrix);
+		logDet1 = getLogDet(sub1);
+		logDet2 = getLogDet(sub2);
+		ret = nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2;
+		return ret;
+	}
+
+	/**
+	 * @param mat
+	 *            A matrix for which is computed log(det(cov(mat)))
+	 * @return log(det(cov(mat))) computed as sum of log(eigenvalues)
+	 */
+	private double getLogDet(Array2DRowRealMatrix mat) {
+		double ret = 0;
+		EigenDecomposition ed = new EigenDecomposition(
+				new Covariance(mat).getCovarianceMatrix());
+		double[] re = ed.getRealEigenvalues();
+		for (int i = 0; i < re.length; i++)
+			ret += Math.log(re[i]);
 		return ret;
 	}
 
 	@Override
 	/**
+	 * @param inputFileName The name of the file used for diarization
 	 * @return A cluster for each speaker found in the input file
 	 */
-	public ArrayList<SpeakerCluster> cluster() {
+	public ArrayList<SpeakerCluster> cluster(String inputFileName) {
+		try {
+			audioSource.setInputStream(new FileInputStream(inputFileName),
+					"audio");
+		} catch (Exception e) {
+			System.out.println(e.toString());
+			System.exit(1);
+		}
+		ArrayList<float[]> features = getFeatures();
+		return cluster(features);
+	}
+
+	@Override
+	/**
+	 * @param features The feature vectors to be used for clustering
+	 * @return A cluster for each speaker detected based on the feature vectors provided
+	 */
+	public ArrayList<SpeakerCluster> cluster(ArrayList<float[]> features) {
 		ArrayList<SpeakerCluster> ret = new ArrayList<SpeakerCluster>();
-		ArrayList<float[]> features = Tester.generateFeatures(13, 100, 2);
 		Array2DRowRealMatrix featuresMatrix = ArrayToRealMatrix(features,
 				features.size());
 		int framesCount = features.size();
 		double maxBIC = Double.MIN_VALUE;
-		System.out.println(maxBIC);
 		int breakPoint = 0;
 		for (int i = Segment.FEATURES_COUNT + 1; i < framesCount
 				- Segment.FEATURES_COUNT; i++) {
 			double aux = getLikelihoodRatio(i, featuresMatrix);
-			// System.out.println(aux);
 			if (aux > maxBIC) {
 				breakPoint = i;
 				maxBIC = aux;

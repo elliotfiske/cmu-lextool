@@ -15,5 +15,7 @@ package edu.cmu.sphinx.diarization;
 import java.util.ArrayList;
 
 public interface Diarization {
-	ArrayList<SpeakerCluster> cluster();
+	ArrayList<SpeakerCluster> cluster(String inputFileName);
+
+	ArrayList<SpeakerCluster> cluster(ArrayList<float[]> features);
 }

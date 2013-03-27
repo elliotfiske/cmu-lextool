@@ -26,8 +26,8 @@ public class Tester {
 	 *            The number of speakers
 	 * @return List of features that satisfies the given requirements
 	 */
-	static public ArrayList<float[]> generateFeatures(int vectorSize,
-			int vectorsCount, int speakersCount) {
+	static public void testSpeakerDiarization(int vectorSize, int vectorsCount,
+			int speakersCount) {
 
 		Random rd = new Random();
 		ArrayList<float[]> ret = new ArrayList<float[]>();
@@ -42,12 +42,18 @@ public class Tester {
 				ret.add(copy);
 			}
 		}
-		return ret;
+		SpeakerDiarization sd = new SpeakerDiarization();
+		ArrayList<SpeakerCluster> speakers = sd.cluster(ret);
+		System.out.println("Detected " + speakers.size() + " Speakers :");
+		for (int i = 0; i < speakers.size(); i++)
+			System.out.println("Speaker " + i + " : "
+					+ speakers.get(i).getSpeakerIntervals().toString());
+
 	}
 
 	static public void testSpeakerDiarization(String inputFile) {
-		SpeakerDiarization sd = new SpeakerDiarization(inputFile);
-		ArrayList<SpeakerCluster> speakers = sd.cluster();
+		SpeakerDiarization sd = new SpeakerDiarization();
+		ArrayList<SpeakerCluster> speakers = sd.cluster(inputFile);
 		System.out.println("Detected " + speakers.size() + " Speakers :");
 		for (int i = 0; i < speakers.size(); i++)
 			System.out.println("Speaker " + i + " : "
@@ -61,7 +67,6 @@ public class Tester {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		String inputFile = null;
-
 		for (int i = 0; i < args.length; i++)
 			if (args[i].equals("-i"))
 				inputFile = args[++i];
