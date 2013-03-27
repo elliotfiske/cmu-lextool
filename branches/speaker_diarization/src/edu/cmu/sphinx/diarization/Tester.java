@@ -13,8 +13,37 @@
 package edu.cmu.sphinx.diarization;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Tester {
+
+	/**
+	 * @param vectorSize
+	 *            The dimension of a feature vector
+	 * @param vectorsCount
+	 *            The number of features vectors per speakers
+	 * @param speakersCount
+	 *            The number of speakers
+	 * @return List of features that satisfies the given requirements
+	 */
+	static public ArrayList<float[]> generateFeatures(int vectorSize,
+			int vectorsCount, int speakersCount) {
+
+		Random rd = new Random();
+		ArrayList<float[]> ret = new ArrayList<float[]>();
+		float[] dummy = new float[vectorSize];
+		for (int i = 0; i < speakersCount; i++) {
+			for (int j = 0; j < vectorSize; j++)
+				dummy[j] = (float) rd.nextInt(5000) / 5000;
+			for (int j = 0; j < vectorsCount; j++) {
+				float[] copy = new float[vectorSize];
+				for (int k = 0; k < vectorSize; k++)
+					copy[k] = dummy[k] + (float) rd.nextInt(5000) / 5000;
+				ret.add(copy);
+			}
+		}
+		return ret;
+	}
 
 	static public void testSpeakerDiarization(String inputFile) {
 		SpeakerDiarization sd = new SpeakerDiarization(inputFile);
