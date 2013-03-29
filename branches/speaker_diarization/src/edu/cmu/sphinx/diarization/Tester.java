@@ -28,7 +28,6 @@ public class Tester {
 	 */
 	static public void testSpeakerDiarization(int vectorSize, int vectorsCount,
 			int speakersCount) {
-
 		Random rd = new Random();
 		ArrayList<float[]> ret = new ArrayList<float[]>();
 		float[] dummy = new float[vectorSize];
@@ -38,7 +37,7 @@ public class Tester {
 			for (int j = 0; j < vectorsCount; j++) {
 				float[] copy = new float[vectorSize];
 				for (int k = 0; k < vectorSize; k++)
-					copy[k] = dummy[k] + (float) rd.nextInt(5000) / 5000;
+					copy[k] = dummy[k] + (float) rd.nextInt(5000) / 500000;
 				ret.add(copy);
 			}
 		}
@@ -70,7 +69,7 @@ public class Tester {
 		for (int i = 0; i < args.length; i++)
 			if (args[i].equals("-i"))
 				inputFile = args[++i];
-		testSpeakerDiarization(inputFile);
+		testSpeakerDiarization(13, 500, 4);
 	}
 
 }
