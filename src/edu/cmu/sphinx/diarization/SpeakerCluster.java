@@ -99,6 +99,6 @@ public class SpeakerCluster {
 		while (it.hasNext())
 			if (!this.addSegment(it.next()))
 				System.out
-				.println("Something doesn't work in mergeWith method, Cluster class");
+						.println("Something doesn't work in mergeWith method, Cluster class");
 	}
 }

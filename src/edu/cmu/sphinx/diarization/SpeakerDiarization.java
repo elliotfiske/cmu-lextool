@@ -13,14 +13,13 @@
 package edu.cmu.sphinx.diarization;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.Covariance;
 
 import edu.cmu.sphinx.frontend.Data;
@@ -95,20 +94,74 @@ public class SpeakerDiarization implements Diarization {
 	 *            ...]
 	 * @return Maximum likelihood ratio
 	 */
-	private double getLikelihoodRatio(int frame,
-			Array2DRowRealMatrix featuresMatrix) {
+	private double getLikelihoodRatio(int frame, Array2DRowRealMatrix features) {
 		double ret = 0, logDet, logDet1, logDet2;
-		int nrows = featuresMatrix.getRowDimension(), ncols = featuresMatrix
+		int nrows = features.getRowDimension(), ncols = features
 				.getColumnDimension();
 		Array2DRowRealMatrix sub1, sub2;
-		sub1 = (Array2DRowRealMatrix) featuresMatrix.getSubMatrix(0, frame - 1,
+		sub1 = (Array2DRowRealMatrix) features.getSubMatrix(0, frame - 1, 0,
+				ncols - 1);
+		sub2 = (Array2DRowRealMatrix) features.getSubMatrix(frame, nrows - 1,
 				0, ncols - 1);
-		sub2 = (Array2DRowRealMatrix) featuresMatrix.getSubMatrix(frame,
-				nrows - 1, 0, ncols - 1);
-		logDet = getLogDet(featuresMatrix);
+		logDet = getLogDet(features);
 		logDet1 = getLogDet(sub1);
 		logDet2 = getLogDet(sub2);
 		ret = nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2;
+		return ret;
+	}
+
+	/**
+	 * @param start
+	 *            The starting frame
+	 * @param length
+	 *            The length of the interval, as numbers of frames
+	 * @param features
+	 *            The matrix build with feature vectors as rows
+	 * @return Returns the index of the frame for which the function
+	 *         getLikelihoodRatio returns maximum value.
+	 */
+
+	private int getPoint(int start, int length, Array2DRowRealMatrix features) {
+		double max = Double.NEGATIVE_INFINITY;
+		int d = Segment.FEATURES_SIZE;
+		double penalty = 0.5 * (d + 0.5 * d * (d + 1)) * Math.log(length) * 5;
+		int ncols = features.getColumnDimension(), point = 0;
+		Array2DRowRealMatrix sub = (Array2DRowRealMatrix) features
+				.getSubMatrix(start, start + length - 1, 0, ncols - 1);
+		for (int i = Segment.FEATURES_SIZE + 1; i < length
+				- Segment.FEATURES_SIZE; i++) {
+			double aux = getLikelihoodRatio(i, sub);
+			if (aux > max) {
+				max = aux;
+				point = i;
+			}
+		}
+		if (max - penalty < 0)
+			point = Integer.MIN_VALUE;
+		return point + start;
+	}
+
+	/**
+	 * @param features
+	 *            Matrix with feature vectors as rows
+	 * @return A list with all changing points detected in the file
+	 */
+	private LinkedList<Integer> getAllChangingPoints(
+			Array2DRowRealMatrix features) {
+		LinkedList<Integer> ret = new LinkedList<Integer>();
+		ret.add(0);
+		int framesCount = features.getRowDimension(), step = 150;
+		int start = 0, end = step, cp;
+		while (end < framesCount) {
+			cp = getPoint(start, end - start + 1, features);
+			if (cp > 0) {
+				start = cp;
+				end = start + step;
+				ret.add(cp);
+			} else
+				end += step;
+		}
+		ret.add(framesCount);
 		return ret;
 	}
 
@@ -153,22 +206,17 @@ public class SpeakerDiarization implements Diarization {
 		ArrayList<SpeakerCluster> ret = new ArrayList<SpeakerCluster>();
 		Array2DRowRealMatrix featuresMatrix = ArrayToRealMatrix(features,
 				features.size());
-		int framesCount = features.size();
-		double maxBIC = Double.MIN_VALUE;
-		int breakPoint = 0;
-		for (int i = Segment.FEATURES_COUNT + 1; i < framesCount
-				- Segment.FEATURES_COUNT; i++) {
-			double aux = getLikelihoodRatio(i, featuresMatrix);
-			if (aux > maxBIC) {
-				breakPoint = i;
-				maxBIC = aux;
-			}
+		LinkedList<Integer> l = getAllChangingPoints(featuresMatrix);
+		Iterator<Integer> it = l.iterator();
+		int curent, previous = it.next();
+		while (it.hasNext()) {
+			curent = it.next();
+			SpeakerCluster c = new SpeakerCluster(new Segment(previous
+					* Segment.FRAME_LENGTH, (curent - previous)
+					* Segment.FRAME_LENGTH));
+			ret.add(c);
+			previous = curent;
 		}
-		ret.add(new SpeakerCluster());
-		ret.add(new SpeakerCluster());
-		for (int i = 0; i < framesCount; i++)
-			ret.get((i >= breakPoint ? 1 : 0)).addSegment(
-					new Segment(i * 10, 10, features.get(i)));
 		return ret;
 	}
 

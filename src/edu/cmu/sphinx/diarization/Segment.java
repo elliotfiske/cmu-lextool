@@ -13,15 +13,17 @@
 package edu.cmu.sphinx.diarization;
 
 public class Segment implements Comparable<Segment> {
-	public final static int FEATURES_COUNT = 39;
+	public final static int FEATURES_SIZE = 13;
+
+	public final static int FRAME_LENGTH = 10;
 
 	private int startTime, length;
-	float[] features = new float[FEATURES_COUNT];
+	float[] features = new float[FEATURES_SIZE];
 
 	public Segment(Segment ref) {
 		this.startTime = ref.startTime;
 		this.length = ref.length;
-		for (int i = 0; i < 39; i++)
+		for (int i = 0; i < FEATURES_SIZE; i++)
 			this.features[i] = ref.features[i];
 	}
 
