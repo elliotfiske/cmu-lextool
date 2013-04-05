@@ -95,7 +95,7 @@ public class SpeakerDiarization implements Diarization {
 	 * @return Maximum likelihood ratio
 	 */
 	private double getLikelihoodRatio(int frame, Array2DRowRealMatrix features) {
-		double ret = 0, logDet, logDet1, logDet2;
+		double logDet, logDet1, logDet2;
 		int nrows = features.getRowDimension(), ncols = features
 				.getColumnDimension();
 		Array2DRowRealMatrix sub1, sub2;
@@ -106,8 +106,7 @@ public class SpeakerDiarization implements Diarization {
 		logDet = getLogDet(features);
 		logDet1 = getLogDet(sub1);
 		logDet2 = getLogDet(sub2);
-		ret = nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2;
-		return ret;
+		return (nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2);
 	}
 
 	/**
@@ -117,19 +116,19 @@ public class SpeakerDiarization implements Diarization {
 	 *            The length of the interval, as numbers of frames
 	 * @param features
 	 *            The matrix build with feature vectors as rows
-	 * @return Returns the index of the frame for which the function
-	 *         getLikelihoodRatio returns maximum value.
+	 * @return Returns the changing point in the input represented by features
 	 */
 
-	private int getPoint(int start, int length, Array2DRowRealMatrix features) {
+	private int getPoint(int start, int length, int step,
+			Array2DRowRealMatrix features) {
 		double max = Double.NEGATIVE_INFINITY;
 		int d = Segment.FEATURES_SIZE;
-		double penalty = 0.5 * (d + 0.5 * d * (d + 1)) * Math.log(length) * 5;
+		double penalty = 0.5 * (d + 0.5 * d * (d + 1)) * Math.log(length);
 		int ncols = features.getColumnDimension(), point = 0;
 		Array2DRowRealMatrix sub = (Array2DRowRealMatrix) features
 				.getSubMatrix(start, start + length - 1, 0, ncols - 1);
 		for (int i = Segment.FEATURES_SIZE + 1; i < length
-				- Segment.FEATURES_SIZE; i++) {
+				- Segment.FEATURES_SIZE; i += step) {
 			double aux = getLikelihoodRatio(i, sub);
 			if (aux > max) {
 				max = aux;
@@ -150,10 +149,10 @@ public class SpeakerDiarization implements Diarization {
 			Array2DRowRealMatrix features) {
 		LinkedList<Integer> ret = new LinkedList<Integer>();
 		ret.add(0);
-		int framesCount = features.getRowDimension(), step = 150;
+		int framesCount = features.getRowDimension(), step = 100;
 		int start = 0, end = step, cp;
 		while (end < framesCount) {
-			cp = getPoint(start, end - start + 1, features);
+			cp = getPoint(start, end - start + 1, step / 5, features);
 			if (cp > 0) {
 				start = cp;
 				end = start + step;
