@@ -117,6 +117,7 @@ public class SpeakerDiarization implements Diarization {
 	 * @param features
 	 *            The matrix build with feature vectors as rows
 	 * @return Returns the changing point in the input represented by features
+	 * 
 	 */
 
 	private int getPoint(int start, int length, int step,
@@ -152,7 +153,7 @@ public class SpeakerDiarization implements Diarization {
 		int framesCount = features.getRowDimension(), step = 100;
 		int start = 0, end = step, cp;
 		while (end < framesCount) {
-			cp = getPoint(start, end - start + 1, step / 5, features);
+			cp = getPoint(start, end - start + 1, step / 10, features);
 			if (cp > 0) {
 				start = cp;
 				end = start + step;
@@ -212,11 +213,102 @@ public class SpeakerDiarization implements Diarization {
 			curent = it.next();
 			SpeakerCluster c = new SpeakerCluster(new Segment(previous
 					* Segment.FRAME_LENGTH, (curent - previous)
-					* Segment.FRAME_LENGTH));
+					* Segment.FRAME_LENGTH),
+					(Array2DRowRealMatrix) featuresMatrix.getSubMatrix(
+							previous, curent - 1, 0, 12));
 			ret.add(c);
 			previous = curent;
 		}
+
+		int clusterCount = ret.size();
+		Array2DRowRealMatrix distance;
+		distance = new Array2DRowRealMatrix(clusterCount, clusterCount);
+		distance = updateDistances(ret);
+		while (true) {
+			double distmin = 0;
+			int imin = -1, jmin = -1;
+			for (int i = 0; i < clusterCount; i++) {
+				for (int j = 0; j < clusterCount; j++) {
+					if (distance.getEntry(i, j) < distmin
+							&& distance.getEntry(i, j) <= 0 && i != j) {
+						distmin = distance.getEntry(i, j);
+						imin = i;
+						jmin = j;
+					}
+				}
+			}
+			if (imin == -1) {
+			    break;
+			}
+			ret.get(imin).mergeWith(ret.get(jmin));
+			updateDistances(ret, imin, jmin);
+			ret.remove(jmin);
+			clusterCount--;
+		}
 		return ret;
+	}
+
+	/**
+	 * @param Clustering
+	 *            The array of clusters
+	 * @param posi
+	 *            The index of the merged cluster
+	 * @param posj
+	 *            The index of the cluster that will be eliminated from the
+	 *            clustering
+	 */
+	Array2DRowRealMatrix updateDistances(
+			ArrayList<SpeakerCluster> clustering, int posi, int posj) {
+		int clusterCount = clustering.size();
+		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(
+				clusterCount, clusterCount);
+		for (int i = 0; i < clusterCount; i++) {
+			distance.setEntry(i, posi,
+					computeDistance(clustering.get(i), clustering.get(posi)));
+			distance.setEntry(posi, i,
+					computeDistance(clustering.get(i), clustering.get(posi)));
+		}
+		for (int i = posj; i < clusterCount - 1; i++) {
+			for (int j = 0; j < clusterCount; j++) {
+				distance.setEntry(i, j, distance.getEntry(i + 1, j));
+				distance.setEntry(j, i, distance.getEntry(j, i + 1));
+			}
+		}
+		return distance;
+	}
+
+	/**
+	 * @param Clustering
+	 *            The array of clusters
+	 */
+	Array2DRowRealMatrix updateDistances(
+			ArrayList<SpeakerCluster> clustering) {
+		int clusterCount = clustering.size();
+		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(
+				clusterCount, clusterCount);
+		for (int i = 0; i < clusterCount; i++) {
+			for (int j = 0; j <= i; j++) {
+				distance.setEntry(i, j,
+						computeDistance(clustering.get(i), clustering.get(j)));
+				distance.setEntry(j, i,
+						computeDistance(clustering.get(i), clustering.get(j)));
+			}
+		}
+		return distance;
+	}
+
+	double computeDistance(SpeakerCluster c1, SpeakerCluster c2) {
+		int rowDim = c1.getFeatureMatrix().getRowDimension()
+				+ c2.getFeatureMatrix().getRowDimension();
+		int colDim = c1.getFeatureMatrix().getColumnDimension();
+		Array2DRowRealMatrix combinedFeatures = new Array2DRowRealMatrix(
+				rowDim, colDim);
+		combinedFeatures.setSubMatrix(c1.getFeatureMatrix().getData(),
+				0, 0);
+		combinedFeatures.setSubMatrix(c2.getFeatureMatrix().getData(),
+				c1.getFeatureMatrix().getRowDimension(), 0);
+		return getLikelihoodRatio(c1.getFeatureMatrix().getRowDimension(),
+				combinedFeatures);
 	}
 
 	/**

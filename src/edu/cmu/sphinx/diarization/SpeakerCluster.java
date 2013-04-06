@@ -16,24 +16,34 @@ import java.util.TreeSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+
 public class SpeakerCluster {
 	private TreeSet<Segment> segmentSet;
 	protected String speakerGender;
+	
+	protected Array2DRowRealMatrix featureMatrix;
+	
+	public Array2DRowRealMatrix getFeatureMatrix() {
+		return featureMatrix;
+	}
 
 	public SpeakerCluster() {
 		this.segmentSet = new TreeSet<Segment>();
 		this.speakerGender = new String();
 	}
 
-	public SpeakerCluster(Segment s) {
+	public SpeakerCluster(Segment s, Array2DRowRealMatrix featureMatrix) {
 		this.segmentSet = new TreeSet<Segment>();
 		this.speakerGender = new String();
+		this.featureMatrix = new Array2DRowRealMatrix(featureMatrix.getData());
 		addSegment(s);
 	}
 
 	public SpeakerCluster(SpeakerCluster c) {
 		this.segmentSet = new TreeSet<Segment>();
 		this.speakerGender = c.speakerGender;
+		this.featureMatrix = new Array2DRowRealMatrix(c.getFeatureMatrix().getData());
 		Iterator<Segment> it = c.segmentSet.iterator();
 		while (it.hasNext())
 			this.addSegment(it.next());
@@ -59,13 +69,12 @@ public class SpeakerCluster {
 		return this.segmentSet.remove(s);
 	}
 
-	/*
-	 * returns a 2 * n length array where n is the numbers of intervals assigned
+	/**
+	 * Returns a 2 * n length array where n is the numbers of intervals assigned
 	 * to the speaker modeled by this cluster every pair of elements with
 	 * indexes (2 * i, 2 * i + 1) represents the start time and the length for
 	 * each interval
-	 */
-	/*
+	 * 
 	 * We may need a delay parameter to this function because the segments may
 	 * not be exactly consecutive
 	 */
@@ -73,16 +82,18 @@ public class SpeakerCluster {
 		ArrayList<Integer> ret = new ArrayList<Integer>();
 		Iterator<Segment> it = segmentSet.iterator();
 		Segment curent, previous = it.next();
-		int start = previous.getStartTime(), length = previous.getLength(), idx = 0;
+		int start = previous.getStartTime();
+		int length = previous.getLength();
+		int idx = 0;
 		ret.add(start);
 		ret.add(length);
 		while (it.hasNext()) {
 			curent = it.next();
 			start = ret.get(2 * idx);
 			length = ret.get(2 * idx + 1);
-			if ((start + length) == curent.getStartTime())
+			if ((start + length) == curent.getStartTime()) {
 				ret.set(2 * idx + 1, length + curent.getLength());
-			else {
+			} else {
 				idx++;
 				ret.add(curent.getStartTime());
 				ret.add(curent.getLength());
@@ -96,9 +107,14 @@ public class SpeakerCluster {
 		if (target == null)
 			throw new NullPointerException();
 		Iterator<Segment> it = target.segmentSet.iterator();
-		while (it.hasNext())
+		while (it.hasNext()) {
 			if (!this.addSegment(it.next()))
-				System.out
-						.println("Something doesn't work in mergeWith method, Cluster class");
+				System.out.println("Something doesn't work in mergeWith method, Cluster class");
+		}
+		int rowDim = this.getFeatureMatrix().getRowDimension() + target.getFeatureMatrix().getRowDimension();
+		int colDim = this.getFeatureMatrix().getColumnDimension();
+		Array2DRowRealMatrix ConcatenatedFeatureMatrix = new Array2DRowRealMatrix(rowDim, colDim);
+		ConcatenatedFeatureMatrix.setSubMatrix(getFeatureMatrix().getData(), 0, 0);
+		ConcatenatedFeatureMatrix.setSubMatrix(target.getFeatureMatrix().getData(), getFeatureMatrix().getRowDimension(), 0);
 	}
 }
