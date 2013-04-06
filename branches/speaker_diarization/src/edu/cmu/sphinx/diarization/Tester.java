@@ -28,14 +28,15 @@ public class Tester {
 	 *            The number of speakers
 	 * @return List of features that satisfies the given requirements
 	 */
-	static public ArrayList<float[]> generateDistinctSpeakers(int vectorSize,
+	public static ArrayList<float[]> generateDistinctSpeakers(int vectorSize,
 			int vectorsCount, int speakersCount) {
 		Random rd = new Random();
 		ArrayList<float[]> ret = new ArrayList<float[]>();
 		float[] dummy = new float[vectorSize];
 		for (int i = 0; i < speakersCount; i++) {
-			for (int j = 0; j < vectorSize; j++)
+			for (int j = 0; j < vectorSize; j++) {
 				dummy[j] = (float) rd.nextInt(5000) / 5000;
+			}
 			for (int j = 0; j < vectorsCount; j++) {
 				float[] copy = new float[vectorSize];
 				for (int k = 0; k < vectorSize; k++)
@@ -51,7 +52,7 @@ public class Tester {
 	 *            An array of clusters for which it is needed to be printed the
 	 *            speakers intervals
 	 */
-	static public void printIntervals(ArrayList<SpeakerCluster> speakers) {
+	public static void printIntervals(ArrayList<SpeakerCluster> speakers) {
 		System.out.println("Detected " + speakers.size() + " Speakers :");
 		for (int i = 0; i < speakers.size(); i++)
 			System.out.println("Speaker " + i + " : "
@@ -69,7 +70,7 @@ public class Tester {
 	 * @param speakersCount
 	 *            number of speakers
 	 */
-	static public void testDistinctSpeakerDiarization(int vectorSize,
+	public static void testDistinctSpeakerDiarization(int vectorSize,
 			int vectorsCount, int speakersCount) {
 		ArrayList<float[]> ret = generateDistinctSpeakers(vectorSize,
 				vectorsCount, speakersCount);
@@ -100,12 +101,12 @@ public class Tester {
 	}
 
 	/**
-	 * Tests SpeakerDiarization on input file given as parameter
-	 * 
+	 * Tests SpeakerDiarization on input file given as parameter.
+	 *
 	 * @param inputFile
 	 *            the input file that needs to be diarized
 	 */
-	static public void testSpeakerDiarization(String inputFile) {
+	public static void testSpeakerDiarization(String inputFile) {
 		printIntervals(new SpeakerDiarization().cluster(inputFile));
 	}
 
