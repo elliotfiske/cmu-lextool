@@ -21,9 +21,9 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 public class SpeakerCluster {
 	private TreeSet<Segment> segmentSet;
 	protected String speakerGender;
-	
+
 	protected Array2DRowRealMatrix featureMatrix;
-	
+
 	public Array2DRowRealMatrix getFeatureMatrix() {
 		return featureMatrix;
 	}
@@ -43,7 +43,8 @@ public class SpeakerCluster {
 	public SpeakerCluster(SpeakerCluster c) {
 		this.segmentSet = new TreeSet<Segment>();
 		this.speakerGender = c.speakerGender;
-		this.featureMatrix = new Array2DRowRealMatrix(c.getFeatureMatrix().getData());
+		this.featureMatrix = new Array2DRowRealMatrix(c.getFeatureMatrix()
+				.getData());
 		Iterator<Segment> it = c.segmentSet.iterator();
 		while (it.hasNext())
 			this.addSegment(it.next());
@@ -109,12 +110,17 @@ public class SpeakerCluster {
 		Iterator<Segment> it = target.segmentSet.iterator();
 		while (it.hasNext()) {
 			if (!this.addSegment(it.next()))
-				System.out.println("Something doesn't work in mergeWith method, Cluster class");
+				System.out
+						.println("Something doesn't work in mergeWith method, Cluster class");
 		}
-		int rowDim = this.getFeatureMatrix().getRowDimension() + target.getFeatureMatrix().getRowDimension();
-		int colDim = this.getFeatureMatrix().getColumnDimension();
-		Array2DRowRealMatrix ConcatenatedFeatureMatrix = new Array2DRowRealMatrix(rowDim, colDim);
-		ConcatenatedFeatureMatrix.setSubMatrix(getFeatureMatrix().getData(), 0, 0);
-		ConcatenatedFeatureMatrix.setSubMatrix(target.getFeatureMatrix().getData(), getFeatureMatrix().getRowDimension(), 0);
+		int rowDim = featureMatrix.getRowDimension()
+				+ target.getFeatureMatrix().getRowDimension();
+		int colDim = featureMatrix.getColumnDimension();
+		Array2DRowRealMatrix combinedFeatures = new Array2DRowRealMatrix(
+				rowDim, colDim);
+		combinedFeatures.setSubMatrix(featureMatrix.getData(), 0, 0);
+		combinedFeatures.setSubMatrix(target.getFeatureMatrix().getData(),
+				featureMatrix.getRowDimension(), 0);
+		featureMatrix = combinedFeatures;
 	}
 }

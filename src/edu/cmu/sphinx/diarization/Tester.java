@@ -102,7 +102,7 @@ public class Tester {
 
 	/**
 	 * Tests SpeakerDiarization on input file given as parameter.
-	 *
+	 * 
 	 * @param inputFile
 	 *            the input file that needs to be diarized
 	 */
@@ -120,6 +120,7 @@ public class Tester {
 		for (int i = 0; i < args.length; i++)
 			if (args[i].equals("-i"))
 				inputFile = args[++i];
+		testSpeakerDiarization(inputFile);
 		testRepeatedSpeakerDiarization(13, 300, 3, 3);
 	}
 }
