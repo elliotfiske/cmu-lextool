@@ -96,6 +96,9 @@ public class SpeakerDiarization implements Diarization {
 	 */
 	private double getLikelihoodRatio(int frame, Array2DRowRealMatrix features) {
 		double logDet, logDet1, logDet2;
+		int d = Segment.FEATURES_SIZE;
+		double penalty = 0.5 * (d + 0.5 * d * (d + 1))
+				* Math.log(features.getRowDimension()) * 4;
 		int nrows = features.getRowDimension(), ncols = features
 				.getColumnDimension();
 		Array2DRowRealMatrix sub1, sub2;
@@ -106,7 +109,7 @@ public class SpeakerDiarization implements Diarization {
 		logDet = getLogDet(features);
 		logDet1 = getLogDet(sub1);
 		logDet2 = getLogDet(sub2);
-		return (nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2);
+		return (nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2 - penalty);
 	}
 
 	/**
@@ -123,8 +126,6 @@ public class SpeakerDiarization implements Diarization {
 	private int getPoint(int start, int length, int step,
 			Array2DRowRealMatrix features) {
 		double max = Double.NEGATIVE_INFINITY;
-		int d = Segment.FEATURES_SIZE;
-		double penalty = 0.5 * (d + 0.5 * d * (d + 1)) * Math.log(length);
 		int ncols = features.getColumnDimension(), point = 0;
 		Array2DRowRealMatrix sub = (Array2DRowRealMatrix) features
 				.getSubMatrix(start, start + length - 1, 0, ncols - 1);
@@ -136,7 +137,7 @@ public class SpeakerDiarization implements Diarization {
 				point = i;
 			}
 		}
-		if (max - penalty < 0)
+		if (max < 0)
 			point = Integer.MIN_VALUE;
 		return point + start;
 	}
@@ -155,9 +156,12 @@ public class SpeakerDiarization implements Diarization {
 		while (end < framesCount) {
 			cp = getPoint(start, end - start + 1, step / 10, features);
 			if (cp > 0) {
-				start = cp;
-				end = start + step;
-				ret.add(cp);
+				if (cp - ret.get(ret.size() - 1) > step / 2) {
+					start = cp;
+					end = start + step;
+					ret.add(cp);
+				} else
+					end += step;
 			} else
 				end += step;
 		}
@@ -219,7 +223,6 @@ public class SpeakerDiarization implements Diarization {
 			ret.add(c);
 			previous = curent;
 		}
-
 		int clusterCount = ret.size();
 		Array2DRowRealMatrix distance;
 		distance = new Array2DRowRealMatrix(clusterCount, clusterCount);
@@ -238,7 +241,7 @@ public class SpeakerDiarization implements Diarization {
 				}
 			}
 			if (imin == -1) {
-			    break;
+				break;
 			}
 			ret.get(imin).mergeWith(ret.get(jmin));
 			updateDistances(ret, imin, jmin);
@@ -257,11 +260,11 @@ public class SpeakerDiarization implements Diarization {
 	 *            The index of the cluster that will be eliminated from the
 	 *            clustering
 	 */
-	Array2DRowRealMatrix updateDistances(
-			ArrayList<SpeakerCluster> clustering, int posi, int posj) {
+	Array2DRowRealMatrix updateDistances(ArrayList<SpeakerCluster> clustering,
+			int posi, int posj) {
 		int clusterCount = clustering.size();
-		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(
-				clusterCount, clusterCount);
+		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(clusterCount,
+				clusterCount);
 		for (int i = 0; i < clusterCount; i++) {
 			distance.setEntry(i, posi,
 					computeDistance(clustering.get(i), clustering.get(posi)));
@@ -274,18 +277,18 @@ public class SpeakerDiarization implements Diarization {
 				distance.setEntry(j, i, distance.getEntry(j, i + 1));
 			}
 		}
-		return distance;
+		return (Array2DRowRealMatrix) distance.getSubMatrix(0,
+				clusterCount - 1, 0, clusterCount - 1);
 	}
 
 	/**
 	 * @param Clustering
 	 *            The array of clusters
 	 */
-	Array2DRowRealMatrix updateDistances(
-			ArrayList<SpeakerCluster> clustering) {
+	Array2DRowRealMatrix updateDistances(ArrayList<SpeakerCluster> clustering) {
 		int clusterCount = clustering.size();
-		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(
-				clusterCount, clusterCount);
+		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(clusterCount,
+				clusterCount);
 		for (int i = 0; i < clusterCount; i++) {
 			for (int j = 0; j <= i; j++) {
 				distance.setEntry(i, j,
@@ -303,10 +306,9 @@ public class SpeakerDiarization implements Diarization {
 		int colDim = c1.getFeatureMatrix().getColumnDimension();
 		Array2DRowRealMatrix combinedFeatures = new Array2DRowRealMatrix(
 				rowDim, colDim);
-		combinedFeatures.setSubMatrix(c1.getFeatureMatrix().getData(),
-				0, 0);
-		combinedFeatures.setSubMatrix(c2.getFeatureMatrix().getData(),
-				c1.getFeatureMatrix().getRowDimension(), 0);
+		combinedFeatures.setSubMatrix(c1.getFeatureMatrix().getData(), 0, 0);
+		combinedFeatures.setSubMatrix(c2.getFeatureMatrix().getData(), c1
+				.getFeatureMatrix().getRowDimension(), 0);
 		return getLikelihoodRatio(c1.getFeatureMatrix().getRowDimension(),
 				combinedFeatures);
 	}
