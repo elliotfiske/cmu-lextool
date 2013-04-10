@@ -34,13 +34,13 @@ public class Tester {
 		ArrayList<float[]> ret = new ArrayList<float[]>();
 		float[] dummy = new float[vectorSize];
 		for (int i = 0; i < speakersCount; i++) {
-			for (int j = 0; j < vectorSize; j++) {
-				dummy[j] = (float) rd.nextInt(5000) / 5000;
-			}
+			for (int j = 0; j < vectorSize; j++) 
+				dummy[j] = (float)(i + 1) / 10 + (float)rd.nextInt(5000) / 50000;
+			dummy[0] = 3 + (float)(i + 1) / 10;
 			for (int j = 0; j < vectorsCount; j++) {
 				float[] copy = new float[vectorSize];
 				for (int k = 0; k < vectorSize; k++)
-					copy[k] = dummy[k] + (float) rd.nextInt(5000) / 5000;
+					copy[k] = dummy[k] + (float) rd.nextInt(5000) / 50000;
 				ret.add(copy);
 			}
 		}
@@ -121,6 +121,6 @@ public class Tester {
 			if (args[i].equals("-i"))
 				inputFile = args[++i];
 		testSpeakerDiarization(inputFile);
-		testRepeatedSpeakerDiarization(13, 300, 3, 3);
+		testRepeatedSpeakerDiarization(13, 900, 4, 4);
 	}
 }

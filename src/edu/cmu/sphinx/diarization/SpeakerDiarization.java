@@ -95,7 +95,21 @@ public class SpeakerDiarization implements Diarization {
 	 * @return Maximum likelihood ratio
 	 */
 	private double getLikelihoodRatio(int frame, Array2DRowRealMatrix features) {
-		double logDet, logDet1, logDet2;
+		double logDet = getLogDet(features);
+		return getLikelihoodRatio(logDet, frame, features);
+	}
+
+	/**
+	 * 
+	 * @param logDet log(det(cov(features))), this parameter it's useful when this
+	 * function is called repeatedly for different frame values and the same features
+	 * parameter
+	 * @param frame the frame which is tested for being a change point
+	 * @param features the feature vectors matrix
+	 * @return the likelihood ratio
+	 */
+	double getLikelihoodRatio(double logDet, int frame, Array2DRowRealMatrix features){
+		double logDet1, logDet2;
 		int d = Segment.FEATURES_SIZE;
 		double penalty = 0.5 * (d + 0.5 * d * (d + 1))
 				* Math.log(features.getRowDimension()) * 4;
@@ -106,12 +120,11 @@ public class SpeakerDiarization implements Diarization {
 				ncols - 1);
 		sub2 = (Array2DRowRealMatrix) features.getSubMatrix(frame, nrows - 1,
 				0, ncols - 1);
-		logDet = getLogDet(features);
 		logDet1 = getLogDet(sub1);
 		logDet2 = getLogDet(sub2);
 		return (nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2 - penalty);
+		
 	}
-
 	/**
 	 * @param start
 	 *            The starting frame
@@ -129,9 +142,10 @@ public class SpeakerDiarization implements Diarization {
 		int ncols = features.getColumnDimension(), point = 0;
 		Array2DRowRealMatrix sub = (Array2DRowRealMatrix) features
 				.getSubMatrix(start, start + length - 1, 0, ncols - 1);
+		double logDet = getLogDet(sub);
 		for (int i = Segment.FEATURES_SIZE + 1; i < length
 				- Segment.FEATURES_SIZE; i += step) {
-			double aux = getLikelihoodRatio(i, sub);
+			double aux = getLikelihoodRatio(logDet, i, sub);
 			if (aux > max) {
 				max = aux;
 				point = i;
@@ -151,7 +165,7 @@ public class SpeakerDiarization implements Diarization {
 			Array2DRowRealMatrix features) {
 		LinkedList<Integer> ret = new LinkedList<Integer>();
 		ret.add(0);
-		int framesCount = features.getRowDimension(), step = 100;
+		int framesCount = features.getRowDimension(), step = 200;
 		int start = 0, end = step, cp;
 		while (end < framesCount) {
 			cp = getPoint(start, end - start + 1, step / 10, features);
@@ -244,7 +258,7 @@ public class SpeakerDiarization implements Diarization {
 				break;
 			}
 			ret.get(imin).mergeWith(ret.get(jmin));
-			updateDistances(ret, imin, jmin);
+			updateDistances(ret, imin, jmin, distance);
 			ret.remove(jmin);
 			clusterCount--;
 		}
@@ -259,26 +273,24 @@ public class SpeakerDiarization implements Diarization {
 	 * @param posj
 	 *            The index of the cluster that will be eliminated from the
 	 *            clustering
+	 * @param distance The distance matrix that will be updated
 	 */
-	Array2DRowRealMatrix updateDistances(ArrayList<SpeakerCluster> clustering,
-			int posi, int posj) {
+	void updateDistances(ArrayList<SpeakerCluster> clustering,
+			int posi, int posj, Array2DRowRealMatrix distance) {
 		int clusterCount = clustering.size();
-		Array2DRowRealMatrix distance = new Array2DRowRealMatrix(clusterCount,
-				clusterCount);
 		for (int i = 0; i < clusterCount; i++) {
 			distance.setEntry(i, posi,
 					computeDistance(clustering.get(i), clustering.get(posi)));
 			distance.setEntry(posi, i,
 					computeDistance(clustering.get(i), clustering.get(posi)));
 		}
-		for (int i = posj; i < clusterCount - 1; i++) {
-			for (int j = 0; j < clusterCount; j++) {
+		for (int i = posj; i < clusterCount - 1; i++) 
+			for (int j = 0; j < clusterCount; j++) 
 				distance.setEntry(i, j, distance.getEntry(i + 1, j));
-				distance.setEntry(j, i, distance.getEntry(j, i + 1));
-			}
-		}
-		return (Array2DRowRealMatrix) distance.getSubMatrix(0,
-				clusterCount - 1, 0, clusterCount - 1);
+		
+		for (int i = 0; i < clusterCount; i++)
+			for(int j = posj; j < clusterCount - 1; j++)
+				distance.setEntry(i, j, distance.getEntry(i, j + 1));
 	}
 
 	/**

@@ -121,6 +121,6 @@ public class SpeakerCluster {
 		combinedFeatures.setSubMatrix(featureMatrix.getData(), 0, 0);
 		combinedFeatures.setSubMatrix(target.getFeatureMatrix().getData(),
 				featureMatrix.getRowDimension(), 0);
-		featureMatrix = combinedFeatures;
+		featureMatrix = new Array2DRowRealMatrix(combinedFeatures.getData());
 	}
 }
