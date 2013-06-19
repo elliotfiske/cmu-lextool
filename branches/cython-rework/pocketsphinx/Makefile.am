@@ -3,6 +3,7 @@ SUBDIRS = src \
 	  model \
 	  include \
 	  test \
+	  swig \
 	  python
 
 EXTRA_DIST = autogen.sh							\

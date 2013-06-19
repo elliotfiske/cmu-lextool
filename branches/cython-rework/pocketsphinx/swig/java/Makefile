@@ -6,11 +6,11 @@ all: libpocketsphinx_jni.so
 libpocketsphinx_jni.so: pocketsphinx_wrap.o
 	$(CC) -shared -o $@ pocketsphinx_wrap.o `pkg-config --libs sphinxbase pocketsphinx`
 
-pocketsphinx_wrap.c: pocketsphinx.i
+pocketsphinx_wrap.c: ../pocketsphinx.i
 	mkdir -p edu/cmu/pocketsphinx
 	swig -I../include -I../../sphinxbase/include \
 		-java -package edu.cmu.pocketsphinx \
-		-outdir edu/cmu/pocketsphinx pocketsphinx.i
+		-outdir edu/cmu/pocketsphinx $<
 
 clean:
 	$(RM) *.so *_wrap.c *_wrap.o *.class edu/cmu/pocketsphinx/*.class

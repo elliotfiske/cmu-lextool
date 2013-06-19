@@ -47,6 +47,51 @@ dnl
 AC_CHECK_PROG(HAVE_DOXYGEN, doxygen, yes, no)
 AM_CONDITIONAL(BUILD_DOXYGEN, test "x$HAVE_DOXYGEN" = "xyes")
 
+###### swig python vvvvv
+swig_python=true
+PYTHON=python
+AC_ARG_WITH(swig-python,
+	AS_HELP_STRING([--without-swig-python],
+		       [Disable Python extension, built with swig]),[
+if test x$withval = xno; then
+   swig_python=false
+elif test x$withval = xyes; then
+   # No specific python binary was given, so check for it in PATH
+   swig_python=true
+   PYTHON=python
+else
+   # A python was given, assume it is in the user's PATH or is fully qualified
+   swig_python=true
+   PYTHON="$withval"
+   PYTHON_CONFIG="$withval"-config
+fi
+])
+
+if test "x$swig_python" = xtrue -a "x$PYTHON" = xpython; then
+   AC_PATH_PROG(PYTHON, python, bogus)
+   AC_PATH_PROG(PYTHON_CONFIG, python-config, bogus)
+fi
+if test "x$swig_python" = xtrue -a "x$PYTHON" != xbogus -a "x$PYTHON_CONFIG" != xbogus; then
+    PYTHON_INCLUDES=`"$PYTHON_CONFIG" --includes` 
+    CPPFLAGS="$CPPFLAGS $PYTHON_INCLUDES"
+    AC_CHECK_HEADER(Python.h,swig_python=true,swig_python=false)
+else
+    swig_python=false
+    PYTHON=bogus
+fi
+if test "x$swig_python" != xtrue ; then
+    AC_WARN([Disabling python with swig since development headers were not found])
+else 
+    AC_WARN([Enabling experimental python with swig])
+fi
+AM_CONDITIONAL(BUILD_SWIG_PYTHON, test "x$swig_python" = "xtrue")
+AC_SUBST(PYTHON)
+    
+# TODO need to check for SWIG and enable accordingly
+
+###### swig python ^^^^^^^^
+
+########################################## cython vvvvvvvvvvv
 dnl
 dnl Check for Python, and build python module if present
 dnl
@@ -94,6 +139,8 @@ if test "x$PYTHON" != "xbogus"; then
    AC_CHECK_PROG(HAVE_CYTHON, cython, yes, no)
 fi
 AM_CONDITIONAL(BUILD_CYTHON, test "x$HAVE_CYTHON" = "xyes")
+########################################## cython ^^^^^^^
+
 
 dnl
 dnl Now check for GStreamer, and build the plugin if it's available
@@ -240,6 +287,8 @@ include/Makefile
 python/Makefile
 python/setup.py
 src/Makefile
+swig/Makefile
+swig/python/Makefile
 src/libpocketsphinx/Makefile
 src/programs/Makefile
 src/gst-plugin/Makefile
