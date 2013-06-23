@@ -3,8 +3,7 @@ SUBDIRS = src \
 	  model \
 	  include \
 	  test \
-	  swig \
-	  python
+	  swig
 
 EXTRA_DIST = autogen.sh							\
 	pocketsphinx.sln						\

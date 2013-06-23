@@ -7,8 +7,8 @@
 #include <sphinxbase/err.h>
 
 /* Typedefs to make Java-esque class names. */
-typedef struct cmd_ln_s {} Config;
-typedef struct ps_decoder_s {} Decoder;
+typedef struct cmd_ln_s Config;
+typedef struct ps_decoder_s Decoder;
 
 typedef struct ps_seg_s {} SegmentIterator;
 typedef struct ps_lattice_s {} Lattice;
@@ -18,18 +18,34 @@ typedef int bool;
 #define true 1
 
 /* Auxiliary objects used to return multiple values. */
-typedef struct hyp_s {
+typedef struct {
   char *hypstr;
   char *uttid;
   int best_score;
 } Hypothesis;
 
 /* Nbest iterator */
-typedef struct nbest_s {
+typedef struct {
   ps_nbest_t *nbest;
 } Nbest;
 
 %}
+
+typedef struct {
+  char *hypstr;
+  char *uttid;
+  int best_score;
+} Hypothesis;
+
+typedef struct {
+  ps_nbest_t *nbest;
+} Nbest;
+
+/* These are opaque types but we have to "define" them for SWIG. */
+typedef struct {} Config;
+typedef struct {} SegmentIterator;
+typedef struct {} Lattice;
+typedef struct {} Decoder;
 
 #ifdef SWIGPYTHON
 /* Converts a PyFile instance to a stdio FILE* */
@@ -185,9 +201,6 @@ typedef struct nbest_s {
   int processRaw(const short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
     return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
   }
-  int processRaw(short const shorts[], size_t nshorts, bool no_search, bool full_utt) {
-    return ps_process_raw($self, shorts, nshorts, no_search, full_utt);
-  }
   int decodeRaw(FILE *f) {
     return ps_decode_raw($self, f, 0, -1);
   }
@@ -204,7 +217,7 @@ typedef struct nbest_s {
 
 %inline {
   /* Static method to set the logging file. */
-  void setLogfile(char const *path) {
+  void setLogFile(char const *path) {
     err_set_logfile(path);
   }
 };
