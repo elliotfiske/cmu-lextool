@@ -14,7 +14,8 @@ EXTRA_DIST = autogen.sh							\
 	win32/pocketsphinx_continuous/pocketsphinx_continuous.vcxproj	\
 	win32/pocketsphinx_mdef_convert/pocketsphinx_mdef_convert.vcxproj	\
 	swig/Makefile							\
-	swig/Android.mk							\
+	swig/python/Makefile							\
+	swig/java/Android.mk							\
 	swig/pocketsphinx.i						\
 	m4/pkg.m4							\
 	group/ABLD.BAT							\
