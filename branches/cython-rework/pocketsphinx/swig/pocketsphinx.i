@@ -3,7 +3,6 @@
  *   fe.h
  *   feat.h
  *   fsg_model.h
- *   jsgf.h
  *   ngram_model.h
  *  
  * TODO: use camelcase names for Java, underscore names for Python, see %rename
@@ -27,6 +26,8 @@ typedef int bool;
 
 typedef jsgf_t Jsgf;
 typedef cmd_ln_t Config;
+typedef fsg_model_t FsgModel;
+
 typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
 %}
@@ -70,14 +71,17 @@ typedef struct {
 %typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
 #endif
 
-typedef struct {} Jsgf;
 typedef struct {} Config;
+typedef struct {} Jsgf;
+typedef struct {} FsgModel;
+
 typedef struct {} Decoder;
 typedef struct {} Lattice;
 
 %include cmd_ln.i
 //%include fe.i
 //%include "feat.i"
+%include fsg_model.i
 %include jsgf.i
 //%include "ngram_model.i"
 
