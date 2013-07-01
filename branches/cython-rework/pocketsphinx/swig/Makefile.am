@@ -1,11 +1,11 @@
 SUBDIRS = python
 
-EXTRA_DIST := \
+EXTRA_DIST = \
 	pocketsphinx.i \
 	cmd_ln.i \
-	#fe.i \
-	#feat.i \
-	#jsgf.i \
-	#ngram_model.i \
+	#fe.i
+	#feat.i
+	jsgf.i \
+	#ngram_model.i
 	ps_decoder.i \
 	ps_lattice.i

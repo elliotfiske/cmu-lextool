@@ -6,9 +6,7 @@
  *   jsgf.h
  *   ngram_model.h
  *  
- * TODO: use camelcase names for Java, underscore names for Python
- *       see %rename
- *       use %inline for header duplication
+ * TODO: use camelcase names for Java, underscore names for Python, see %rename
  *       use %newobject
  */
 %module pocketsphinx
@@ -27,6 +25,7 @@ typedef int bool;
 #define false 0
 #define true 1
 
+typedef jsgf_t Jsgf;
 typedef cmd_ln_t Config;
 typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
@@ -71,6 +70,7 @@ typedef struct {
 %typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
 #endif
 
+typedef struct {} Jsgf;
 typedef struct {} Config;
 typedef struct {} Decoder;
 typedef struct {} Lattice;
@@ -78,7 +78,7 @@ typedef struct {} Lattice;
 %include cmd_ln.i
 //%include fe.i
 //%include "feat.i"
-//%include jsgf.i
+%include jsgf.i
 //%include "ngram_model.i"
 
 %include ps_decoder.i
