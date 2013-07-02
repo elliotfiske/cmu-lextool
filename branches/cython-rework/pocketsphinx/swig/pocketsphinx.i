@@ -4,9 +4,10 @@
  *   feat.h
  *   ngram_model.h
  *  
- * TODO: use camelcase names for Java, underscore names for Python, see %rename
- *       use %newobject
  */
+ // TODO: use camelcase names for Java, underscore names for Python, see %rename
+ // TODO: use %newobject
+ // TODO: create exception handling for the functions returning error codes
 %module pocketsphinx
 
 #ifdef SWIGJAVA
@@ -23,8 +24,9 @@ typedef int bool;
 #define false 0
 #define true 1
 
-typedef jsgf_t Jsgf;
 typedef cmd_ln_t Config;
+typedef jsgf_t Jsgf;
+typedef feat_t Feature;
 typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
 
@@ -81,7 +83,7 @@ typedef struct {} Lattice;
 
 %include cmd_ln.i
 %include fe.i
-//%include "feat.i"
+%include feat.i
 %include fsg_model.i
 %include jsgf.i
 //%include "ngram_model.i"

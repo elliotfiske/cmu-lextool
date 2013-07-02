@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	pocketsphinx.i \
 	cmd_ln.i \
 	fe.i \
+	feat.i \
 	fsg_model.i \
 	jsgf.i \
 	ps_decoder.i \

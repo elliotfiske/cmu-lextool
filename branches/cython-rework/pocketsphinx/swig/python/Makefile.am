@@ -10,6 +10,7 @@ SWIG_FILES = \
 	$(SWIG_DIR)/pocketsphinx.i \
 	$(SWIG_DIR)/cmd_ln.i \
 	$(SWIG_DIR)/fe.i \
+	$(SWIG_DIR)/feat.i \
 	$(SWIG_DIR)/jsgf.i \
 	$(SWIG_DIR)/fsg_model.i \
 	$(SWIG_DIR)/ps_decoder.i \
