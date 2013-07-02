@@ -2,7 +2,6 @@
  * SphinxBase headers to process:
  *   fe.h
  *   feat.h
- *   fsg_model.h
  *   ngram_model.h
  *  
  * TODO: use camelcase names for Java, underscore names for Python, see %rename
@@ -26,6 +25,7 @@ typedef int bool;
 
 typedef jsgf_t Jsgf;
 typedef cmd_ln_t Config;
+typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
 
 typedef ps_decoder_t Decoder;
@@ -72,6 +72,7 @@ typedef struct {
 #endif
 
 typedef struct {} Config;
+typedef struct {} FrontEnd;
 typedef struct {} Jsgf;
 typedef struct {} FsgModel;
 
@@ -79,7 +80,7 @@ typedef struct {} Decoder;
 typedef struct {} Lattice;
 
 %include cmd_ln.i
-//%include fe.i
+%include fe.i
 //%include "feat.i"
 %include fsg_model.i
 %include jsgf.i
