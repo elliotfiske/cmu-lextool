@@ -1,10 +1,3 @@
-/**
- * SphinxBase headers to process:
- *   fe.h
- *   feat.h
- *   ngram_model.h
- *  
- */
  // TODO: use camelcase names for Java, underscore names for Python, see %rename
  // TODO: use %newobject
  // TODO: create exception handling for the functions returning error codes
@@ -15,7 +8,11 @@
 #endif
 
 %{
+#include <sphinxbase/cmd_ln.h>
 #include <sphinxbase/jsgf.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/ngram_model.h>
 #include <sphinxbase/err.h>
 
 #include <pocketsphinx.h>
@@ -29,6 +26,7 @@ typedef jsgf_t Jsgf;
 typedef feat_t Feature;
 typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
+typedef ngram_model_t NgramModel;
 
 typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
@@ -75,8 +73,10 @@ typedef struct {
 
 typedef struct {} Config;
 typedef struct {} FrontEnd;
+typedef struct {} Feature;
 typedef struct {} Jsgf;
 typedef struct {} FsgModel;
+typedef struct {} NgramModel;
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
@@ -86,7 +86,7 @@ typedef struct {} Lattice;
 %include feat.i
 %include fsg_model.i
 %include jsgf.i
-//%include "ngram_model.i"
+%include ngram_model.i
 
 %include ps_decoder.i
 %include ps_lattice.i

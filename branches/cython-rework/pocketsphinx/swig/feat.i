@@ -11,7 +11,7 @@
     int32 start_frame, int32 end_frame)
   {
     mfcc_t ***feat;
-    return feat_s2mfc2feat($self->ptr, path, NULL, cepext, start_frame,
+    return feat_s2mfc2feat($self, path, NULL, cepext, start_frame,
       end_frame, feat, -1);
   }
 };
