@@ -2,7 +2,7 @@ if BUILD_SWIG
 
 # TODO: use AC_SUBST for LIBADD and CPPFLAGS
 # TODO: take SWIG_DIR and SWIG_FILES out to swig/Makefile
-# TODO: fix dependencies
+# TODO: use conditional to determine sphinxbase.{so,la} location
 
 SWIG_DIR = $(top_srcdir)/swig
 
@@ -24,7 +24,6 @@ nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
 _pocketsphinx_la_CPPFLAGS = \
 	-I$(sphinxbase)/include \
 	-I$(top_srcdir)/include \
-	-I$(SWIG_DIR) \
 	$(PYTHON_CPPFLAGS)
 _pocketsphinx_la_LDFLAGS = -module
 _pocketsphinx_la_LIBADD = \
