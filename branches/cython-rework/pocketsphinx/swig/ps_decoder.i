@@ -1,14 +1,6 @@
 %extend Decoder {
   /* Following functions have no bindings:
-   * arg_t ps_args
-   * TODO: implement reference counting
-   * TODO: check Decoder for multiple return values
-   * ps_decoder_t *ps_retain
-   * fe_t *ps_get_fe - requires fe_t implementation
-   * feat_t *ps_get_feat - requires feat_t implementation
    * ps_mllr_t *ps_update_mllr - requires 
-   * ngram_model_t *ps_get_lmset
-   * ngram_model_t *ps_update_lmset
    * fsg_set_t *ps_get_fsgset
    * fsg_set_t *ps_update_fsgset
    * int ps_decode_senscr
@@ -95,6 +87,26 @@
   Segment * seg() {
     int32 best_score;
     return new_Segment(ps_seg_iter($self, &best_score));
+  }
+
+  FrontEnd * get_fe() {
+    return new_FrontEnd(ps_get_fe($self));
+  }
+
+  Feature * get_feat() {
+    return new_Feature(ps_get_feat($self));
+  }
+
+  NgramModel * get_lmset() {
+    return new_NgramModel(ps_get_lmset($self));
+  }
+
+  NgramModel * update_lmset(NgramModel *lm_set) {
+    ngram_model_t *new_lm_set = ps_update_lmset($self, lm_set);
+    if (new_lm_set)
+      return new_NgramModel(new_lm_set);
+    else
+      return NULL;
   }
 
   int n_frames() {

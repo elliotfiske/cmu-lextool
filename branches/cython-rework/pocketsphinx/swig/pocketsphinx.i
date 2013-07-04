@@ -3,6 +3,8 @@
  // TODO: create exception handling for the functions returning error codes
 %module pocketsphinx
 
+%include file.i
+
 #ifdef SWIGJAVA
 %include <arrays_java.i>
 #endif
