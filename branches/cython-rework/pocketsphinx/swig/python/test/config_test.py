@@ -1,24 +1,20 @@
 #!/usr/bin/env python
 
-import pocketsphinx as ps
+from pocketsphinx import Config, Decoder
 
 #some dumb test for checking during developent
-
 
 intval = 512
 floatval = 8000.0
 stringval = "~/pocketsphinx"
 boolval = True
 
-
-
-c = ps.Config()
+c = Config()
 
 print "----Smoke testing config----"
 c.setFloat("-samprate", floatval)
 s = c.getFloat("-samprate")
 print "Float: ",floatval ,"--------", s
-
 
 c.setInt("-nfft", intval)
 s = c.getInt("-nfft")
@@ -32,10 +28,8 @@ c.setBoolean("-backtrace", boolval);
 s = c.getBoolean("-backtrace")
 print "Boolean:", boolval, "-------", s
 
-
-
 print "----Smoke testing config reread----"
-decoder = ps.Decoder(c)
+decoder = Decoder(c)
 cn = decoder.getConfig()
 #print "config:", cn
 

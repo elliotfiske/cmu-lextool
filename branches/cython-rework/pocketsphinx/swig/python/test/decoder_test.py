@@ -1,21 +1,13 @@
-#!/usr/bin/env python
+from itertools import izip
+from pocketsphinx import _resource_path, Config, Decoder
 
+decoder = Decoder(Config())
+decoder.decodeRaw(open(_resource_path('goforward.raw'), 'rb'))
+hypothesis = decoder.hyp()
 
-import pocketsphinx as ps
+print 'Best hypothesis: ', hypothesis.best_score, hypothesis.hypstr
+print 'Best hypothesis segments: ', list([seg.word for seg in decoder.seg()])
 
-
-
-#some dumb test for checking during developent
-
-c = ps.Config()
-decoder = ps.Decoder(c)
-
-f = open("../../test/data/goforward.raw", "rb")
-samp_num = decoder.decodeRaw(f)
-print "------DECODED SAMPLES:" , samp_num
-hyp = decoder.getHyp()
-print "hyp", hyp
-print "------RECOGNIZED TEXT:", hyp.hypstr
-print "------UTTID:", hyp.uttid
-print "------BEST_SCORE:", hyp.best_score
-#help (hyp)
+print 'Best 10 hypothesis: '
+for best, i in izip(decoder.nbest(), range(10)):
+	print best.hyp().best_score, best.hyp().hypstr

@@ -27,7 +27,8 @@ nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
 _pocketsphinx_la_CPPFLAGS = \
 	-I$(sphinxbase)/include \
 	-I$(top_srcdir)/include \
-	$(PYTHON_CPPFLAGS)
+	$(PYTHON_CPPFLAGS) \
+	-DDATADIR=\"$(datadir)/@PACKAGE@/examples/data/\"
 _pocketsphinx_la_LDFLAGS = -module
 _pocketsphinx_la_LIBADD = \
 	-lsphinxbase \

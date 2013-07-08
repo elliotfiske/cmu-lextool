@@ -221,6 +221,7 @@ include/Makefile
 src/Makefile
 swig/Makefile
 swig/python/Makefile
+swig/python/test/Makefile
 src/libpocketsphinx/Makefile
 src/programs/Makefile
 src/gst-plugin/Makefile
