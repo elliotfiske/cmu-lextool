@@ -1,4 +1,4 @@
-examplesdir = $(prefix)/share/@PACKAGE@/examples/python
+examplesdir = $(datadir)/@PACKAGE@/examples/python
 dist_examples_DATA = \
 	config_test.py \
 	decoder_test.py

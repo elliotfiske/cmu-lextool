@@ -42,8 +42,8 @@
     return c;
   }
 
-  Config(char const *file) {
-    Config *c = cmd_ln_parse_file_r(NULL, ps_args(), file, FALSE);
+  Config(char const *path) {
+    Config *c = cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
     return c;
   }
 
@@ -51,19 +51,19 @@
     cmd_ln_free_r($self);
   }
 
-  void setBoolean(char const *key, bool val) {
+  void set_boolean(char const *key, bool val) {
     cmd_ln_set_boolean_r($self, key, val);
   }
 
-  void setInt(char const *key, int val) {
+  void set_int(char const *key, int val) {
     cmd_ln_set_int_r($self, key, val);
   }
 
-  void setFloat(char const *key, double val) {
+  void set_float(char const *key, double val) {
     cmd_ln_set_float_r($self, key, val);
   }
 
-  void setString(char const *key, char const *val) {
+  void set_string(char const *key, char const *val) {
     cmd_ln_set_str_r($self, key, val);
   }
 
@@ -71,19 +71,19 @@
     return cmd_ln_exists_r($self, key);
   }
 
-  bool getBoolean(char const *key) {
+  bool get_boolean(char const *key) {
     return cmd_ln_boolean_r($self, key);
   }
 
-  int getInt(char const *key) {
+  int get_int(char const *key) {
     return cmd_ln_int_r($self, key);
   }
 
-  double getFloat(char const *key) {
+  double get_float(char const *key) {
     return cmd_ln_float_r($self, key);
   }
 
-  char const *getString(char const *key) {
+  char const *get_string(char const *key) {
     return cmd_ln_str_r($self, key);
   }
 }

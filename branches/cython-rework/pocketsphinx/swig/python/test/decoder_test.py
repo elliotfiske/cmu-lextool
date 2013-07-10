@@ -38,7 +38,7 @@ from itertools import izip
 from pocketsphinx import _resource_path, Config, Decoder
 
 decoder = Decoder(Config())
-decoder.decodeRaw(open(_resource_path('goforward.raw'), 'rb'))
+decoder.decode_raw(open(_resource_path('goforward.raw'), 'rb'))
 hypothesis = decoder.hyp()
 
 print 'Best hypothesis: ', hypothesis.best_score, hypothesis.hypstr

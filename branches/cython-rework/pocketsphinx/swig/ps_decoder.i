@@ -48,6 +48,7 @@
   // TODO: underscore names of methods
   // TODO: check for multiple values
   Decoder() {
+    // TODO: use new_Config()
     Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
     return d;
   }
@@ -65,48 +66,44 @@
     return ps_reinit($self, config);
   }
 
-  int loadDict(char const *fdict, char const *ffilter, char const *format) {
+  int load_dict(char const *fdict, char const *ffilter, char const *format) {
     return ps_load_dict($self, fdict, ffilter, format);
   }
 
-  int saveDict(char const *dictfile, char const *format) {
+  int save_dict(char const *dictfile, char const *format) {
     return ps_save_dict($self, dictfile, format);
   }
 
-  int addWord(char const *word, char const *phones, int update) {
+  int add_word(char const *word, char const *phones, int update) {
     return ps_add_word($self, word, phones, update);
   }
 
-  Lattice * getLattice() {
+  Lattice * get_lattice() {
     return ps_lattice_retain(ps_get_lattice($self));
   }
 
-  Config *getConfig() {
+  Config *get_config() {
     return cmd_ln_retain(ps_get_config($self));
-  }
-
-  int startUtt() {
-    return ps_start_utt($self, NULL);
   }
 
   int startUtt(char const *uttid) {
     return ps_start_utt($self, uttid);
   }
 
-  char const *getUttid() {
+  char const *get_uttid() {
     return ps_get_uttid($self);
   }
 
-  int endUtt() {
+  int end_utt() {
     return ps_end_utt($self);
   }
 
-  int processRaw(
+  int process_raw(
     const short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
     return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
   }
 
-  int decodeRaw(FILE *f) {
+  int decode_raw(FILE *f) {
     return ps_decode_raw($self, f, 0, -1);
   }
 

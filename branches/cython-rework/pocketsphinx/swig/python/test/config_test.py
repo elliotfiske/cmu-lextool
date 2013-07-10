@@ -46,35 +46,34 @@ boolval = True
 c = Config()
 
 print "----Smoke testing config----"
-c.setFloat("-samprate", floatval)
-s = c.getFloat("-samprate")
+c.set_float("-samprate", floatval)
+s = c.get_float("-samprate")
 print "Float: ",floatval ,"--------", s
 
-c.setInt("-nfft", intval)
-s = c.getInt("-nfft")
+c.set_int("-nfft", intval)
+s = c.get_int("-nfft")
 print "Int:",intval, "-------", s
 
-c.setString("-rawlogdir", stringval)
-s = c.getString("-rawlogdir")
+c.set_string("-rawlogdir", stringval)
+s = c.get_string("-rawlogdir")
 print "String:",stringval, "--------", s
 
-c.setBoolean("-backtrace", boolval);
-s = c.getBoolean("-backtrace")
+c.set_boolean("-backtrace", boolval);
+s = c.get_boolean("-backtrace")
 print "Boolean:", boolval, "-------", s
 
 print "----Smoke testing config reread----"
 decoder = Decoder(c)
-cn = decoder.getConfig()
-#print "config:", cn
+cn = decoder.get_config()
 
-s = cn.getFloat("-samprate")
+s = cn.get_float("-samprate")
 print "Float: ",floatval ,"--------", s
 
-s = cn.getInt("-nfft")
+s = cn.get_int("-nfft")
 print "Int:",intval, "-------", s
 
-s = cn.getString("-rawlogdir")
+s = cn.get_string("-rawlogdir")
 print "String:",stringval, "--------", s
 
-s = cn.getBoolean("-backtrace")
+s = cn.get_boolean("-backtrace")
 print "Boolean:", boolval, "-------", s

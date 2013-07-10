@@ -238,9 +238,11 @@ typedef struct {} Lattice;
 // Clear exception handler for 'next'.
 %exception;
 
-%newobject _datafile_path;
-
 %inline {
+
+const char *_SRC_DIR = SRCDIR;
+const char *_DATA_DIR = DATADIR;
+
 /* Static method to set the logging file. */
 // TODO: use underscore name
 void setLogFile(char const *path)
@@ -248,23 +250,13 @@ void setLogFile(char const *path)
   err_set_logfile(path);
 }
 
-// Helper function to locate data files.
-const char * _datafile_path(const char *fname)
-{
-  char *buf = (char *) strcpy(ckd_malloc(1024 * sizeof *buf), DATADIR);
-  return strcat(buf, fname);
-}
-
 }
 
 %pythoncode {
 
-def _resource_path(filename):
-  import os
-  local_path = os.path.join('../../../test/data', filename)
-  if os.path.exists(local_path):
-    return local_path
-  else:
-    return _datafile_path(filename)
+def _resource_path(fname):
+  from os import path
+  local = path.join('..', cvar._SRC_DIR, 'test', 'data', fname)
+  return local if path.exists(local) else path.join(cvar._DATA_DIR, fname)
 
 }
