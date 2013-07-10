@@ -3,6 +3,7 @@ dist_examples_DATA = \
 	config_test.py \
 	decoder_test.py
 
-TESTS_ENVIRONMENT = PYTHONPATH=..:../.libs $(PYTHON) 
+LIBPATH = $(top_builddir)/swig/python
+TESTS_ENVIRONMENT = PYTHONPATH=$(LIBPATH):$(LIBPATH)/.libs $(PYTHON)
 
 TESTS = $(dist_examples_DATA)
