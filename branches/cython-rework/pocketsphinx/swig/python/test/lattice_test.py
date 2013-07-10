@@ -39,3 +39,4 @@ from pocketsphinx import _resource_path, Decoder
 decoder = Decoder()
 decoder.decode_raw(open(_resource_path('goforward.raw'), 'rb'))
 decoder.get_lattice().write('goforward.lat')
+decoder.get_lattice().write_htk('goforward.htk')
