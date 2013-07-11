@@ -45,8 +45,8 @@
     ngram_model_free($self);
   }
 
-  int write(const char *path, ngram_file_type_t ftype) {
-    return ngram_model_write($self, path, ftype);
+  void write(const char *path, ngram_file_type_t ftype, int *errcode) {
+    *errcode = ngram_model_write($self, path, ftype);
   }
 
   // TODO: make static
@@ -59,12 +59,12 @@
     return ngram_type_to_str(type);
   }
 
-  int recode(const char *from, const char *to) {
-    return ngram_model_recode($self, from, to);
+  void recode(const char *from, const char *to, int *errcode) {
+    *errcode = ngram_model_recode($self, from, to);
   }
 
-  int casefold(int kase) {
-    return ngram_model_casefold($self, kase);
+  void casefold(int kase, int *errcode) {
+    *errcode = ngram_model_casefold($self, kase);
   }
 
   int32 size() {

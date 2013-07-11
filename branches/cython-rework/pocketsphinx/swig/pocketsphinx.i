@@ -42,7 +42,8 @@
 // TODO: use %newobject
 // TODO: create exception handling for the functions returning error codes
 
-%include file.i
+%include <exception.i>
+%include <file.i>
 
 #ifdef SWIGJAVA
 %include <arrays_java.i>
@@ -73,7 +74,24 @@ typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
 %}
 
+// Define typemaps to wrap error codes returned by some functions,
+// into runtime exceptions.
+   
+%typemap(in, numinputs=0, noblock=1) int *errcode {
+  int errcode;
+  $1 = &errcode;
+}
+
+%typemap(argout) int *errcode {
+  if (*$1 < 0) {
+    char buf[1024];
+    sprintf(buf, "$symname returned %d", *$1);
+    SWIG_exception(SWIG_RuntimeError, buf);
+  }
+}
+
 %inline {
+
 typedef struct {
   char *hypstr;
   char *uttid;
@@ -93,6 +111,7 @@ typedef struct {
 typedef struct {
   ps_nbest_t *ptr;
 } Nbest;
+
 }
 
 #ifdef SWIGJAVA
@@ -191,11 +210,13 @@ typedef struct {} Lattice;
   Hypothesis * hyp() {
       int32 score;
       const char *hyp = ps_nbest_hyp($self->ptr, &score);
+      // TODO: refactor; what is this empty argument?
       return new_Hypothesis(hyp, "", score);
   }
 
   Segment * seg() {
     int32 score;
+    // TODO: refactor; use 'score' value
     return new_Segment(ps_nbest_seg($self->ptr, &score));
   }
 }
@@ -240,7 +261,6 @@ typedef struct {} Lattice;
 
 %inline {
 
-const char *_SRC_DIR = SRCDIR;
 const char *_DATA_DIR = DATADIR;
 
 /* Static method to set the logging file. */
@@ -256,7 +276,7 @@ void setLogFile(char const *path)
 
 def _resource_path(fname):
   from os import path
-  local = path.join('..', cvar._SRC_DIR, 'test', 'data', fname)
+  local = path.join('..', '..', '..', 'test', 'data', fname)
   return local if path.exists(local) else path.join(cvar._DATA_DIR, fname)
 
 }

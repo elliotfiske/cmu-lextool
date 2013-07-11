@@ -3,7 +3,7 @@ if BUILD_SWIG
 # TODO: use AC_SUBST for LIBADD and CPPFLAGS
 # TODO: use conditional to determine sphinxbase.{so,la} location
 
-SUBDIRS = test
+SUBDIRS = . test
 
 SWIG_DIR = $(top_srcdir)/swig
 

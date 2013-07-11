@@ -62,20 +62,22 @@
     ps_free($self);
   }  
 
-  int reinit(Config *config) {
-    return ps_reinit($self, config);
+  void reinit(Config *config, int *errcode) {
+    *errcode = ps_reinit($self, config);
   }
 
-  int load_dict(char const *fdict, char const *ffilter, char const *format) {
-    return ps_load_dict($self, fdict, ffilter, format);
+  void load_dict(
+    char const *fdict, char const *ffilter, char const *format, int *errcode)
+  {
+    *errcode = ps_load_dict($self, fdict, ffilter, format);
   }
 
-  int save_dict(char const *dictfile, char const *format) {
-    return ps_save_dict($self, dictfile, format);
+  void save_dict(char const *dictfile, char const *format, int *errcode) {
+    *errcode = ps_save_dict($self, dictfile, format);
   }
 
-  int add_word(char const *word, char const *phones, int update) {
-    return ps_add_word($self, word, phones, update);
+  void add_word(char const *word, char const *phones, int update, int *errcode) {
+    *errcode = ps_add_word($self, word, phones, update);
   }
 
   Lattice * get_lattice() {
@@ -86,25 +88,30 @@
     return cmd_ln_retain(ps_get_config($self));
   }
 
-  int startUtt(char const *uttid) {
-    return ps_start_utt($self, uttid);
+  void start_utt(char const *uttid, int *errcode) {
+    *errcode = ps_start_utt($self, uttid);
   }
 
   char const *get_uttid() {
     return ps_get_uttid($self);
   }
 
-  int end_utt() {
-    return ps_end_utt($self);
+  void end_utt(int *errcode) {
+    *errcode = ps_end_utt($self);
   }
 
   int process_raw(
-    const short const *SDATA, size_t NSAMP, bool no_search, bool full_utt) {
-    return ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+    const short const *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+    int *errcode)
+  {
+    *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+    // Also returns the number of frames.
+    return *errcode;
   }
 
-  int decode_raw(FILE *f) {
-    return ps_decode_raw($self, f, 0, -1);
+  int decode_raw(FILE *f, int *errcode) {
+    *errcode = ps_decode_raw($self, f, 0, -1);
+    return *errcode;
   }
 
   Hypothesis * hyp() {
