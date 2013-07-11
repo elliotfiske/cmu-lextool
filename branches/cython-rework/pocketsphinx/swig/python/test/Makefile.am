@@ -5,8 +5,7 @@ TESTS = \
 
 examplesdir = $(datadir)/@PACKAGE@/examples/python
 dist_examples_DATA = \
-	$(TESTS) \
-	decode_memory.py
+	$(TESTS)
 
 LIBPATH = $(top_builddir)/swig/python
 TESTS_ENVIRONMENT = PYTHONPATH=$(LIBPATH):$(LIBPATH)/.libs $(PYTHON)
