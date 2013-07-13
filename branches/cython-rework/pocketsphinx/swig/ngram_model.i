@@ -36,12 +36,12 @@
  */
 
 
-%extend NgramModel {
-  NgramModel(ngram_model_t *ptr) {
-    return ptr;
+%extend NGramModel {
+  NGramModel(const char *path) {
+    return ngram_model_read(NULL, path, NGRAM_AUTO, logmath_init(1.001, 0, 0));
   }
 
-  ~NgramModel() {
+  ~NGramModel() {
     ngram_model_free($self);
   }
 
@@ -80,4 +80,64 @@
   {
     return ngram_model_add_class($self, c, w, words, weights, nwords);
   }
+}
+
+%extend NGramModelSetIterator {
+  NGramModelSetIterator(ngram_model_set_iter_t *ptr) {
+    NGramModelSetIterator *iter = ckd_malloc(sizeof *iter);
+    iter->ptr = ptr;
+    return iter;
+  }
+
+  ~NGramModelSetIterator() {
+    ngram_model_set_iter_free($self->ptr);
+    ckd_free($self);
+  }
+
+  #ifdef SWIGPYTHON
+  NGramModel * next() {
+    const char *name;
+    NGramModel *model = ngram_model_set_iter_model($self->ptr, &name);
+    $self->ptr = ngram_model_set_iter_next($self->ptr);
+    return model;
+  }
+  #endif
+}
+
+%extend NGramModelSet {
+  NGramModelSet(const char *path) {
+    return ngram_model_set_read(NULL, path, logmath_init(1.001, 0, 0));
+  }
+
+  ~NGramModelSet() {
+    ngram_model_free($self);
+  }
+
+  int32 count() {
+    return ngram_model_set_count($self);
+  }
+
+  NGramModel * add(
+    NGramModel *model, const char *name, float weight, int reuse_widmap)
+  {
+    return ngram_model_set_add($self, model, name, weight, reuse_widmap);
+  }
+
+  NGramModel * select(const char *name) {
+    return ngram_model_set_select($self, name);
+  }
+
+  NGramModel * lookup(const char *name) {
+    return ngram_model_set_lookup($self, name);
+  }
+
+  const char * current() {
+    return ngram_model_set_current($self);
+  }
+
+  #ifdef SWIGPYTHON
+  NGramModelSetIterator * __iter__() {
+    return new_NGramModelSetIterator(ngram_model_set_iter($self));
+  }
+  #endif
 }

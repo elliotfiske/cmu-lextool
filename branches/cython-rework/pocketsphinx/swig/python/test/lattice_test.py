@@ -34,9 +34,23 @@
 # ====================================================================
 
 
-from pocketsphinx import _resource_path, Decoder
+from os import environ, path
+from pocketsphinx import *
 
-decoder = Decoder()
-decoder.decode_raw(open(_resource_path('goforward.raw'), 'rb'))
+MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
+DATADIR = environ.get('DATADIR', path.join(cvar.DATADIR, 'examples/python'))
+
+config = Config()
+config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
+config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/wsj0vp.5000.DMP'))
+config.set_string('-dict', path.join(DATADIR, 'defective.dic'))
+config.set_boolean('-dictcase', True)
+config.set_boolean('-bestpath', False)
+config.set_boolean('-fwdflat', False)
+config.set_string('-input_endian', 'little')
+config.set_int('-samprate', 16000)
+
+decoder = Decoder(config)
+decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
 decoder.get_lattice().write('goforward.lat')
 decoder.get_lattice().write_htk('goforward.htk')

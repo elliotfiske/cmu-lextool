@@ -34,36 +34,49 @@
 # ====================================================================
 
 
-from pocketsphinx import Config, Decoder
+from os import environ, path
+from itertools import izip
+from pocketsphinx import *
 
 #some dumb test for checking during developent
+
+MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
+DATADIR = environ.get('DATADIR', path.join(cvar.DATADIR, 'examples/python'))
+
+config = Config()
+config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
+config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/wsj0vp.5000.DMP'))
+config.set_string('-dict', path.join(DATADIR, 'defective.dic'))
+config.set_boolean('-dictcase', True)
+config.set_boolean('-bestpath', False)
+config.set_boolean('-fwdflat', False)
+config.set_string('-input_endian', 'little')
+config.set_int('-samprate', 16000)
 
 intval = 512
 floatval = 8000.0
 stringval = "~/pocketsphinx"
 boolval = True
 
-c = Config()
-
 print "----Smoke testing config----"
-c.set_float("-samprate", floatval)
-s = c.get_float("-samprate")
+config.set_float("-samprate", floatval)
+s = config.get_float("-samprate")
 print "Float: ",floatval ,"--------", s
 
-c.set_int("-nfft", intval)
-s = c.get_int("-nfft")
+config.set_int("-nfft", intval)
+s = config.get_int("-nfft")
 print "Int:",intval, "-------", s
 
-c.set_string("-rawlogdir", stringval)
-s = c.get_string("-rawlogdir")
+config.set_string("-rawlogdir", stringval)
+s = config.get_string("-rawlogdir")
 print "String:",stringval, "--------", s
 
-c.set_boolean("-backtrace", boolval);
-s = c.get_boolean("-backtrace")
+config.set_boolean("-backtrace", boolval);
+s = config.get_boolean("-backtrace")
 print "Boolean:", boolval, "-------", s
 
 print "----Smoke testing config reread----"
-decoder = Decoder(c)
+decoder = Decoder(config)
 cn = decoder.get_config()
 
 s = cn.get_float("-samprate")

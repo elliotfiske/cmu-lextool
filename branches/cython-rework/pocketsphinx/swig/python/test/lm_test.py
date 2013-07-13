@@ -35,7 +35,6 @@
 
 
 from os import environ, path
-from itertools import izip
 from pocketsphinx import *
 
 MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
@@ -53,11 +52,20 @@ config.set_int('-samprate', 16000)
 
 decoder = Decoder(config)
 decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
-hypothesis = decoder.hyp()
+print 'Decoding with default settings:', decoder.hyp().hypstr
 
-print 'Best hypothesis: ', hypothesis.best_score, hypothesis.hypstr
-print 'Best hypothesis segments: ', [seg.word for seg in decoder.seg()]
+# Load "turtle" language model and decode again.
+lm = NGramModel(path.join(MODELDIR, 'lm/en/turtle.DMP'))
+lm_set = decoder.get_lmset()
+lm_set.add(lm, 'turtle', 1., True)
+lm_set.select('turtle')
+decoder.update_lmset(lm_set)
+decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+print 'Decoding with "turtle" language:', decoder.hyp().hypstr
 
-print 'Best 10 hypothesis: '
-for best, i in izip(decoder.nbest(), range(10)):
-	print best.hyp().best_score, best.hyp().hypstr
+## The word 'meters' isn't in the loaded dictionary.
+## Let's add it manually.
+decoder.add_word('foobie', 'F UW B IY', False)
+decoder.add_word('meters', 'M IY T ER Z', True)
+decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+print 'Decoding with customized language:', decoder.hyp().hypstr

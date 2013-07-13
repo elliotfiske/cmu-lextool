@@ -18,23 +18,23 @@ SWIG_FILES = \
 	$(SWIG_DIR)/ps_decoder.i \
 	$(SWIG_DIR)/ps_lattice.i
 
-CLEANFILES = pocketsphinx_wrap.c pocketsphinx.py
+CLEANFILES = pocketsphinx_wrap.c pocketsphinx.py pocketsphinx.pyc
 
 pkgpython_PYTHON = __init__.py 
 nodist_pkgpython_PYTHON = pocketsphinx.py
 pkgpyexec_LTLIBRARIES = _pocketsphinx.la
 nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
 _pocketsphinx_la_CPPFLAGS = \
+	$(PYTHON_CPPFLAGS) \
 	-I$(sphinxbase)/include \
 	-I$(top_srcdir)/include \
-	$(PYTHON_CPPFLAGS) \
-	-DDATADIR=\"$(datadir)/@PACKAGE@/examples/data/\"
+	-D_DATADIR=\"$(datadir)/@PACKAGE@\"
 _pocketsphinx_la_LDFLAGS = -module
 _pocketsphinx_la_LIBADD = \
 	-lsphinxbase \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
 
 pocketsphinx_wrap.c: $(SWIG_FILES)
-	$(SWIG) -I$(top_srcdir)/include -outdir . -o $@ -python $<
+	$(SWIG) -Werror -I$(top_srcdir)/include -outdir . -o $@ -python $<
 
 endif

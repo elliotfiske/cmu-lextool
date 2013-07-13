@@ -68,7 +68,8 @@ typedef jsgf_t Jsgf;
 typedef feat_t Feature;
 typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
-typedef ngram_model_t NgramModel;
+typedef ngram_model_t NGramModel;
+typedef ngram_model_t NGramModelSet;
 
 typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
@@ -90,6 +91,33 @@ typedef ps_lattice_t Lattice;
   }
 }
 
+#ifdef SWIGJAVA
+/* Special typemap for arrays of audio. */
+%typemap(in) (short const *SDATA, size_t NSAMP) {
+  $1 = (short const *) JCALL2(GetShortArrayElements, jenv, $input, NULL);
+  $2 = JCALL1(GetArrayLength, jenv, $input);
+};
+
+%typemap(freearg) (short const *SDATA, size_t NSAMP) {
+  JCALL3(ReleaseShortArrayElements, jenv, $input, $1, 0);
+}
+
+%typemap(jni) (short const *SDATA, size_t NSAMP) "jshortArray"
+%typemap(jtype) (short const *SDATA, size_t NSAMP) "short[]"
+%typemap(jstype) (short const *SDATA, size_t NSAMP) "short[]"
+%typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
+#endif
+
+#ifdef SWIGPYTHON
+%exception next() {
+  $action
+  if (!arg1->ptr) {
+    PyErr_SetString(PyExc_StopIteration, "");
+    SWIG_fail;
+  }
+}
+#endif
+
 %inline {
 
 typedef struct {
@@ -110,33 +138,21 @@ typedef struct {
 
 typedef struct {
   ps_nbest_t *ptr;
-} Nbest;
+} NBest;
+
+typedef struct {
+  ngram_model_set_iter_t *ptr;
+} NGramModelSetIterator;
 
 }
-
-#ifdef SWIGJAVA
-/* Special typemap for arrays of audio. */
-%typemap(in) (short const *SDATA, size_t NSAMP) {
-  $1 = (short const *) JCALL2(GetShortArrayElements, jenv, $input, NULL);
-  $2 = JCALL1(GetArrayLength, jenv, $input);
-};
-
-%typemap(freearg) (short const *SDATA, size_t NSAMP) {
-  JCALL3(ReleaseShortArrayElements, jenv, $input, $1, 0);
-}
-
-%typemap(jni) (short const *SDATA, size_t NSAMP) "jshortArray"
-%typemap(jtype) (short const *SDATA, size_t NSAMP) "short[]"
-%typemap(jstype) (short const *SDATA, size_t NSAMP) "short[]"
-%typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
-#endif
 
 typedef struct {} Config;
 typedef struct {} FrontEnd;
 typedef struct {} Feature;
 typedef struct {} Jsgf;
 typedef struct {} FsgModel;
-typedef struct {} NgramModel;
+typedef struct {} NGramModel;
+typedef struct {} NGramModelSet;
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
@@ -170,38 +186,28 @@ typedef struct {} Lattice;
   }
 }
 
-#ifdef SWIGPYTHON
-%exception next() {
-  $action
-  if (!arg1->ptr) {
-    PyErr_SetString(PyExc_StopIteration, "end of iteration");
-    SWIG_fail;
-  }
-}
-#endif
-
-%extend Nbest {
-  Nbest(ps_nbest_t *ptr) {
+%extend NBest {
+  NBest(ps_nbest_t *ptr) {
     if (!ptr)
       return NULL;
 
-    Nbest *nbest = ckd_malloc(sizeof *nbest);
+    NBest *nbest = ckd_malloc(sizeof *nbest);
     nbest->ptr = ptr;
 
     return nbest;
   }
 
-  ~Nbest() {
+  ~NBest() {
       ps_nbest_free($self->ptr);
       ckd_free($self);
   }
   
 #ifdef SWIGPYTHON
-  Nbest * __iter__() {
+  NBest * __iter__() {
     return $self;
   }
 
-  Nbest * next() {
+  NBest * next() {
     $self->ptr = ps_nbest_next($self->ptr);
     return $self;
   }
@@ -261,7 +267,7 @@ typedef struct {} Lattice;
 
 %inline {
 
-const char *_DATA_DIR = DATADIR;
+const char DATADIR[] = _DATADIR;
 
 /* Static method to set the logging file. */
 // TODO: use underscore name
@@ -269,14 +275,5 @@ void setLogFile(char const *path)
 {
   err_set_logfile(path);
 }
-
-}
-
-%pythoncode {
-
-def _resource_path(fname):
-  from os import path
-  local = path.join('..', '..', '..', 'test', 'data', fname)
-  return local if path.exists(local) else path.join(cvar._DATA_DIR, fname)
 
 }

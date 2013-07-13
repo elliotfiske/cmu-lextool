@@ -122,8 +122,8 @@
     return new_Hypothesis(hyp, uttid, best_score);
   }
 
-  Nbest * nbest() {
-    return new_Nbest(ps_nbest($self, 0, -1, NULL, NULL));
+  NBest * nbest() {
+    return new_NBest(ps_nbest($self, 0, -1, NULL, NULL));
   }
 
   Segment * seg() {
@@ -139,14 +139,14 @@
     return new_Feature(ps_get_feat($self));
   }
 
-  NgramModel * get_lmset() {
-    return new_NgramModel(ps_get_lmset($self));
+  NGramModelSet * get_lmset() {
+    return ngram_model_retain(ps_get_lmset($self));
   }
 
-  NgramModel * update_lmset(NgramModel *lm_set) {
+  NGramModelSet * update_lmset(NGramModelSet *lm_set) {
     ngram_model_t *new_lm_set = ps_update_lmset($self, lm_set);
     if (new_lm_set)
-      return new_NgramModel(new_lm_set);
+      return ngram_model_retain(new_lm_set);
     else
       return NULL;
   }
