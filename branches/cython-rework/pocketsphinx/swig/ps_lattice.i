@@ -37,8 +37,12 @@
 
 
 %extend Lattice {
-  Lattice(ps_lattice_t *ptr) {
-    return ptr;
+  Lattice(const char *path) {
+    return ps_lattice_read(NULL, path);
+  }
+
+  Lattice(Decoder *decoder, char *path) {
+    return ps_lattice_read(decoder, path);
   }
 
   ~Lattice() {
