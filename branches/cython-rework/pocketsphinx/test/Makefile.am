@@ -3,6 +3,7 @@ SUBDIRS = unit regression
 examplesdatadir = $(datadir)/@PACKAGE@/examples/data
 dist_examplesdata_DATA = \
 	data/defective.dic \
+	data/goforward.gram \
 	data/goforward.raw
 
 EXTRA_DIST = \
@@ -26,7 +27,6 @@ EXTRA_DIST = \
 	data/cards/cards.hyp \
 	data/cards/cards.transcription \
 	data/goforward.fsg \
-	data/goforward.gram \
 	data/mllr_matrices \
 	data/numbers.raw \
 	data/something.raw \

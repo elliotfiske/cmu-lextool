@@ -151,6 +151,10 @@
       return NULL;
   }
 
+  LogMath * get_logmath() {
+    return logmath_retain(ps_get_logmath($self));
+  }
+
   int n_frames() {
     return ps_get_n_frames($self);
   }

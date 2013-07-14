@@ -36,6 +36,7 @@
  */
 
 
+// TODO: search for functions returning error code
 %extend FsgModel {
   FsgModel(fsg_model_t *ptr) {
     return ptr;
@@ -71,5 +72,13 @@
 
   int add_alt(const char *baseword, const char *altword) {
     return fsg_model_add_alt($self, baseword, altword);
+  }
+
+  void write(FILE *file) {
+    fsg_model_write($self, file);
+  }
+
+  void writefile(const char *path) {
+    fsg_model_writefile($self, path);
   }
 }

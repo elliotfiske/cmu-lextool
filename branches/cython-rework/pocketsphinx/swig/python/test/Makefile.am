@@ -1,6 +1,7 @@
 TESTS = \
 	config_test.py \
 	decoder_test.py \
+	jsgf_test.py \
 	lattice_test.py \
 	lm_test.py
 
@@ -15,4 +16,4 @@ TESTS_ENVIRONMENT = \
 	DATADIR=$(top_srcdir)/test/data \
 	$(PYTHON)
 
-CLEANFILES = goforward.lat goforward.htk
+CLEANFILES = goforward.lat goforward.htk goforward.fsg

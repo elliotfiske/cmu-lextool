@@ -65,9 +65,11 @@ typedef int bool;
 
 typedef cmd_ln_t Config;
 typedef jsgf_t Jsgf;
+typedef jsgf_t JsgfRule;
 typedef feat_t Feature;
 typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
+typedef logmath_t LogMath;
 typedef ngram_model_t NGramModel;
 typedef ngram_model_t NGramModelSet;
 
