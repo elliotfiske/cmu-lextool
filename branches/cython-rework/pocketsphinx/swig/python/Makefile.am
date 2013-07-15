@@ -28,7 +28,9 @@ _pocketsphinx_la_CPPFLAGS = \
 	$(PYTHON_CPPFLAGS) \
 	-I$(sphinxbase)/include \
 	-I$(top_srcdir)/include \
-	-D_DATADIR=\"$(datadir)/@PACKAGE@\"
+	-D_DATADIR=\"$(datadir)/@PACKAGE@\" \
+	-Wno-unused-value \
+	-Werror
 _pocketsphinx_la_LDFLAGS = -module
 _pocketsphinx_la_LIBADD = \
 	-lsphinxbase \

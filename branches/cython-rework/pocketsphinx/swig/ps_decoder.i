@@ -100,10 +100,12 @@
     *errcode = ps_end_utt($self);
   }
 
+  // TODO: ensure NSAMP to be divisible by sizeof(int16)
   int process_raw(
-    const short const *SDATA, size_t NSAMP, bool no_search, bool full_utt,
+    const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
     int *errcode)
   {
+    NSAMP /= sizeof(int16);
     *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
     // Also returns the number of frames.
     return *errcode;

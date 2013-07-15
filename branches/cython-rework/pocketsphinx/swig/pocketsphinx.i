@@ -42,10 +42,11 @@
 // TODO: use %newobject
 // TODO: create exception handling for the functions returning error codes
 
+%include <cdata.i>
 %include <exception.i>
 %include <file.i>
 
-#ifdef SWIGJAVA
+#if SWIGJAVA
 %include <arrays_java.i>
 #endif
 
@@ -65,7 +66,7 @@ typedef int bool;
 
 typedef cmd_ln_t Config;
 typedef jsgf_t Jsgf;
-typedef jsgf_t JsgfRule;
+typedef jsgf_rule_t JsgfRule;
 typedef feat_t Feature;
 typedef fe_t FrontEnd;
 typedef fsg_model_t FsgModel;
@@ -93,8 +94,8 @@ typedef ps_lattice_t Lattice;
   }
 }
 
-#ifdef SWIGJAVA
 /* Special typemap for arrays of audio. */
+#if SWIGJAVA
 %typemap(in) (short const *SDATA, size_t NSAMP) {
   $1 = (short const *) JCALL2(GetShortArrayElements, jenv, $input, NULL);
   $2 = JCALL1(GetArrayLength, jenv, $input);
@@ -108,9 +109,12 @@ typedef ps_lattice_t Lattice;
 %typemap(jtype) (short const *SDATA, size_t NSAMP) "short[]"
 %typemap(jstype) (short const *SDATA, size_t NSAMP) "short[]"
 %typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
+#elif SWIGPYTHON
+%typemap(in) \ 
+  (const void *SDATA, size_t NSAMP) = (const char *STRING, size_t LENGTH);
 #endif
 
-#ifdef SWIGPYTHON
+#if SWIGPYTHON
 %exception next() {
   $action
   if (!arg1->ptr) {
@@ -151,8 +155,8 @@ typedef struct {
 typedef struct {} Config;
 typedef struct {} FrontEnd;
 typedef struct {} Feature;
-typedef struct {} Jsgf;
 typedef struct {} FsgModel;
+typedef struct {} Jsgf;
 typedef struct {} NGramModel;
 typedef struct {} NGramModelSet;
 

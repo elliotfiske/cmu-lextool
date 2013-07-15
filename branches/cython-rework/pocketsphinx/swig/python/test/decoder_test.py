@@ -51,13 +51,26 @@ config.set_boolean('-fwdflat', False)
 config.set_string('-input_endian', 'little')
 config.set_int('-samprate', 16000)
 
+# Decode static file.
 decoder = Decoder(config)
 decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+# Retrieve hypothesis.
 hypothesis = decoder.hyp()
-
 print 'Best hypothesis: ', hypothesis.best_score, hypothesis.hypstr
 print 'Best hypothesis segments: ', [seg.word for seg in decoder.seg()]
-
+# Access N best decodings.
 print 'Best 10 hypothesis: '
 for best, i in izip(decoder.nbest(), range(10)):
 	print best.hyp().best_score, best.hyp().hypstr
+# Decode streaming data.
+decoder = Decoder(config)
+decoder.start_utt('goforward')
+stream = open(path.join(DATADIR, 'goforward.raw'), 'rb')
+while True:
+  buf = stream.read(1024)
+  if buf:
+    decoder.process_raw(buf, False, False)
+  else:
+    break
+decoder.end_utt()
+print 'Stream decoding result:', decoder.hyp().hypstr
