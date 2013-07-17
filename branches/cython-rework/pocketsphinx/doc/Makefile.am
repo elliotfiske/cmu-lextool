@@ -37,4 +37,4 @@ clean-local:
 
 # Totally CMU-specific rule for uploading documentation
 upload: html/index.html
-	rsync -av html/ fife:/usr12/apache2/htdocs/sphinx/doc/doxygen/pocketsphinx/
+	rsync -av html/ file:/usr12/apache2/htdocs/sphinx/doc/doxygen/pocketsphinx/
