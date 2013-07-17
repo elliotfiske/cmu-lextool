@@ -113,10 +113,11 @@ typedef ps_lattice_t Lattice;
 %typemap(in) \ 
   (const void *SDATA, size_t NSAMP) = (const char *STRING, size_t LENGTH);
 %typemap(check) size_t NSAMP {
-  char buf[1024];
-  sprintf(buf, "block size must be a multiple of %zd", sizeof(short));
-  if ($1 % sizeof(int16))
+  char buf[64];
+  if ($1 % sizeof(int16)) {
     SWIG_exception(SWIG_ValueError, buf);
+    sprintf(buf, "block size must be a multiple of %zd", sizeof(short));
+  }
 }
 #endif
 
