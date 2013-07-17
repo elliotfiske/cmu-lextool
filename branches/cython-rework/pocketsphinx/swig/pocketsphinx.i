@@ -112,6 +112,12 @@ typedef ps_lattice_t Lattice;
 #elif SWIGPYTHON
 %typemap(in) \ 
   (const void *SDATA, size_t NSAMP) = (const char *STRING, size_t LENGTH);
+%typemap(check) size_t NSAMP {
+  char buf[1024];
+  sprintf(buf, "block size must be a multiple of %zd", sizeof(short));
+  if ($1 % sizeof(int16))
+    SWIG_exception(SWIG_ValueError, buf);
+}
 #endif
 
 #if SWIGPYTHON
