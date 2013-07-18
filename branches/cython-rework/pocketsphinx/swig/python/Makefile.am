@@ -5,6 +5,12 @@ if BUILD_SWIG
 
 SUBDIRS = . test
 
+SWIG_FEATURES = -Werror -I$(top_srcdir)/include
+
+if BUILD_DOXYGEN
+SWIG_FEATURES += -DHAS_DOC -I$(top_builddir)/doc
+endif
+
 SWIG_DIR = $(top_srcdir)/swig
 
 SWIG_FILES = \
@@ -16,7 +22,8 @@ SWIG_FILES = \
 	$(SWIG_DIR)/fsg_model.i \
 	$(SWIG_DIR)/ngram_model.i \
 	$(SWIG_DIR)/ps_decoder.i \
-	$(SWIG_DIR)/ps_lattice.i
+	$(SWIG_DIR)/ps_lattice.i \
+	$(top_builddir)/doc/pydoc.i
 
 CLEANFILES = pocketsphinx_wrap.c pocketsphinx.py pocketsphinx.pyc
 
@@ -37,6 +44,6 @@ _pocketsphinx_la_LIBADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
 
 pocketsphinx_wrap.c: $(SWIG_FILES)
-	$(SWIG) -Werror -I$(top_srcdir)/include -outdir . -o $@ -python $<
+	SWIG_FEATURES="$(SWIG_FEATURES)" $(SWIG) -outdir . -o $@ -python $<
 
 endif

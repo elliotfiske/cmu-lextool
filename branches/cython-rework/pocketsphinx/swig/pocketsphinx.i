@@ -36,10 +36,22 @@
  */
 
 
-%module pocketsphinx
+%define DOCSTRING
+"This documentation was automatically generated using original comments in
+Doxygen format. As some C types and data structures cannot be directly mapped
+into Python types, some non-trivial type conversion could have place.
+Basically a type is replaced with another one that has the closest match, and
+sometimes one argument of generated function comprises several arguments of the
+original function (usually two). Apparently Doxygen comments do not mention
+this fact, so here is a list of all known conversions so far:
 
-// TODO: use camelcase names for Java, underscore names for Python, see %rename
-// TODO: use %newobject
+  FILE * -> file
+  const int16 *SDATA, size_t NSAMP -> str"
+%enddef
+
+%module(docstring=DOCSTRING) pocketsphinx
+
+// TODO: use %newobject in a couple with ckd_malloc/ckd_free
 // TODO: create exception handling for the functions returning error codes
 
 %include <cdata.i>
@@ -170,6 +182,9 @@ typedef struct {} NGramModelSet;
 typedef struct {} Decoder;
 typedef struct {} Lattice;
 
+#ifdef HAS_DOC
+%include pydoc.i
+#endif
 %include cmd_ln.i
 %include fe.i
 %include feat.i

@@ -17,8 +17,15 @@ EXTRA_DIST = \
 # 	$(srcdir)/args2man.pl $(top_builddir)/src/programs/pocketsphinx_continuous \
 # 		< $< > $@
 
+if BUILD_SWIG
+SWIG_DOC = pydoc.i
+
+pydoc.i: html/index.html
+	$(PYTHON) doxy2swig.py xml/index.xml pydoc.i
+endif
+
 if BUILD_DOXYGEN
-all-local: html/index.html
+all-local: html/index.html $(SWIG_DOC)
 endif
 
 headers = $(top_srcdir)/include/pocketsphinx.h \
