@@ -37,6 +37,13 @@ import types
 import os.path
 import optparse
 
+TYPEMAP = {
+  'ps_decoder_t': ('Decoder', 'ps_'),
+  'ps_lattice_t': ('Lattice', 'ps_lattice_'),
+  'ps_nbest_t': ('NBest', 'ps_nbest_'),
+  'ps_seg_t': ('Segment', 'ps_seg_')
+}
+
 
 def my_open_read(source):
     if hasattr(source, "read"):
@@ -277,6 +284,17 @@ class Doxy2SWIG:
         if prot == 'public':
             first = self.get_specific_nodes(node, ('definition', 'name'))
             name = first['name'].firstChild.data
+
+            for n in node.getElementsByTagName('param'):
+              arg_type = n.getElementsByTagName('type')[0]
+              ref = self.get_specific_nodes(arg_type, ('ref'))
+              if 'ref' in ref:
+                type_name = ref['ref'].firstChild.data
+                if type_name in TYPEMAP:
+                  alias, prefix = TYPEMAP[type_name]
+                  name =  alias + '::' + name.replace(prefix, '')
+                  break
+
             if name[:8] == 'operator': # Don't handle operators yet.
                 return
 
