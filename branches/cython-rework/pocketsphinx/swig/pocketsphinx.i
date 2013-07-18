@@ -51,6 +51,8 @@ this fact, so here is a list of all known conversions so far:
 
 %module(docstring=DOCSTRING) pocketsphinx
 
+%feature("autodoc", "1");
+
 // TODO: use %newobject in a couple with ckd_malloc/ckd_free
 // TODO: create exception handling for the functions returning error codes
 

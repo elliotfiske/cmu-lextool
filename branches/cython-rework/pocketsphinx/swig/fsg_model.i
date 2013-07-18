@@ -54,16 +54,16 @@
     return fsg_model_word_add($self, word);
   }
 
-  void trans_add(int32 from, int32 to, int32 logp, int32 wid) {
-    fsg_model_trans_add($self, from, to, logp, wid);
+  void trans_add(int32 src, int32 dst, int32 logp, int32 wid) {
+    fsg_model_trans_add($self, src, dst, logp, wid);
   }
 
-  int32 null_trans_add(int32 from, int32 to, int32 logp) {
-    return fsg_model_null_trans_add($self, from, to, logp);
+  int32 null_trans_add(int32 src, int32 dst, int32 logp) {
+    return fsg_model_null_trans_add($self, src, dst, logp);
   }
 
-  int32 tag_trans_add(int32 from, int32 to, int32 logp, int32 wid) {
-    return fsg_model_tag_trans_add($self, from, to, logp, wid);
+  int32 tag_trans_add(int32 src, int32 dst, int32 logp, int32 wid) {
+    return fsg_model_tag_trans_add($self, src, dst, logp, wid);
   }
 
   int add_silence(const char *silword, int state, int32 silprob) {

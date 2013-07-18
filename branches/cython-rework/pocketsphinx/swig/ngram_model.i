@@ -59,8 +59,8 @@
     return ngram_type_to_str(type);
   }
 
-  void recode(const char *from, const char *to, int *errcode) {
-    *errcode = ngram_model_recode($self, from, to);
+  void recode(const char *src, const char *dst, int *errcode) {
+    *errcode = ngram_model_recode($self, src, dst);
   }
 
   void casefold(int kase, int *errcode) {
