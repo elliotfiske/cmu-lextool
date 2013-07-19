@@ -47,6 +47,11 @@ this fact, so here is a list of all known conversions so far:
 
   FILE * -> file
   const int16 *SDATA, size_t NSAMP -> str"
+
+Also functions having error code as the return value and returning effective
+value in one of its arguments are transformed so that the effective value is
+returned in a regular fashion and run-time exception is being thrown in case of
+negative error code.
 %enddef
 
 %module(docstring=DOCSTRING) pocketsphinx
