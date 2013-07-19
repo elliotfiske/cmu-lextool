@@ -58,7 +58,7 @@ floatval = 8000.0
 stringval = "~/pocketsphinx"
 boolval = True
 
-print "----Smoke testing config----"
+# Check values that was previously set.
 config.set_float("-samprate", floatval)
 s = config.get_float("-samprate")
 print "Float: ",floatval ,"--------", s
@@ -75,7 +75,7 @@ config.set_boolean("-backtrace", boolval);
 s = config.get_boolean("-backtrace")
 print "Boolean:", boolval, "-------", s
 
-print "----Smoke testing config reread----"
+# Check values of the Config instance obtained from Decoder
 decoder = Decoder(config)
 cn = decoder.get_config()
 
@@ -90,3 +90,9 @@ print "String:",stringval, "--------", s
 
 s = cn.get_boolean("-backtrace")
 print "Boolean:", boolval, "-------", s
+
+# Check values read from file.
+config = Config('config.cfg')
+print config.get_int('-nfft')
+print config.get_float('-samprate')
+print config.get_string('-input_endian')
