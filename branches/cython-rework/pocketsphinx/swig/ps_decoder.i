@@ -36,6 +36,7 @@
  */
 
 
+// TODO: check for multiple values
 %extend Decoder {
   /* Following functions have no bindings:
    * ps_mllr_t *ps_update_mllr - requires 
@@ -45,11 +46,8 @@
    * int ps_process_cep
    */
 
-  // TODO: underscore names of methods
-  // TODO: check for multiple values
   Decoder() {
-    // TODO: use new_Config()
-    Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
+    Decoder *d = ps_init(new_Config__SWIG_0());
     return d;
   }
 

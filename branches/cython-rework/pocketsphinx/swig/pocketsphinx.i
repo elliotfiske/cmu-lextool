@@ -46,12 +46,12 @@ original function (usually two). Apparently Doxygen comments do not mention
 this fact, so here is a list of all known conversions so far:
 
   FILE * -> file
-  const int16 *SDATA, size_t NSAMP -> str"
+  const int16 *SDATA, size_t NSAMP -> str
 
 Also functions having error code as the return value and returning effective
 value in one of its arguments are transformed so that the effective value is
 returned in a regular fashion and run-time exception is being thrown in case of
-negative error code.
+negative error code."
 %enddef
 
 %module(docstring=DOCSTRING) pocketsphinx
@@ -60,6 +60,8 @@ negative error code.
 
 // TODO: use %newobject in a couple with ckd_malloc/ckd_free
 // TODO: create exception handling for the functions returning error codes
+// TODO: split SegmentIterator off Segment
+// TODO: split NBestIterator off NBest
 
 %include <cdata.i>
 %include <exception.i>
@@ -300,15 +302,12 @@ typedef struct {} Lattice;
 // Clear exception handler for 'next'.
 %exception;
 
+%rename(set_logfile) err_set_logfile;
 %inline {
 
 const char DATADIR[] = _DATADIR;
 
 /* Static method to set the logging file. */
-// TODO: use underscore name
-void setLogFile(char const *path)
-{
-  err_set_logfile(path);
-}
+int err_set_logfile(char const *);
 
 }

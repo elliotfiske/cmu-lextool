@@ -49,13 +49,11 @@
     *errcode = ngram_model_write($self, path, ftype);
   }
 
-  // TODO: make static
   ngram_file_type_t str_to_type(const char *str) {
     return ngram_str_to_type(str);
   }
 
-  // TODO: make static
-  const char *type_to_str(int type) {
+  const char * type_to_str(int type) {
     return ngram_type_to_str(type);
   }
 
