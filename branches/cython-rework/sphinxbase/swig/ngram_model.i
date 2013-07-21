@@ -80,28 +80,7 @@
   }
 }
 
-%extend NGramModelSetIterator {
-  NGramModelSetIterator(ngram_model_set_iter_t *ptr) {
-    NGramModelSetIterator *iter = ckd_malloc(sizeof *iter);
-    iter->ptr = ptr;
-    return iter;
-  }
-
-  ~NGramModelSetIterator() {
-    ngram_model_set_iter_free($self->ptr);
-    ckd_free($self);
-  }
-
-  #ifdef SWIGPYTHON
-  NGramModel * next() {
-    const char *name;
-    NGramModel *model = ngram_model_set_iter_model($self->ptr, &name);
-    $self->ptr = ngram_model_set_iter_next($self->ptr);
-    return model;
-  }
-  #endif
-}
-
+// TODO: shares ptr type with NGramModel, docstrings are not generated
 %extend NGramModelSet {
   NGramModelSet(const char *path) {
     return ngram_model_set_read(NULL, path, logmath_init(1.001, 0, 0));
@@ -132,10 +111,12 @@
   const char * current() {
     return ngram_model_set_current($self);
   }
-
-  #ifdef SWIGPYTHON
-  NGramModelSetIterator * __iter__() {
-    return new_NGramModelSetIterator(ngram_model_set_iter($self));
-  }
-  #endif
 }
+
+%runtime %{
+ngram_model_t * next_NGramModelSetIterator(ngram_model_set_iter_t *iter)
+{
+  const char *name;
+  return ngram_model_set_iter_model(iter, &name);
+}
+%}

@@ -47,8 +47,9 @@
    */
 
   Decoder() {
-    Decoder *d = ps_init(new_Config__SWIG_0());
+    Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
     return d;
+    return NULL;
   }
 
   Decoder(Config *c) {
@@ -98,15 +99,12 @@
     *errcode = ps_end_utt($self);
   }
 
-  // TODO: ensure NSAMP to be divisible by sizeof(int16)
   int process_raw(
     const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
     int *errcode)
   {
     NSAMP /= sizeof(int16);
-    *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
-    // Also returns the number of frames.
-    return *errcode;
+    return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
   }
 
   int decode_raw(FILE *f, int *errcode) {
@@ -132,11 +130,11 @@
   }
 
   FrontEnd * get_fe() {
-    return new_FrontEnd(ps_get_fe($self));
+    return ps_get_fe($self);
   }
 
   Feature * get_feat() {
-    return new_Feature(ps_get_feat($self));
+    return ps_get_feat($self);
   }
 
   NGramModelSet * get_lmset() {

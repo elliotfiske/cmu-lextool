@@ -4,10 +4,11 @@ man_MANS = \
 	pocketsphinx_mdef_convert.1
 
 EXTRA_DIST = \
+	args2man.pl \
+	doxy2swig.py \
 	pocketsphinx_batch.1 \
 	pocketsphinx_continuous.1 \
-	pocketsphinx_mdef_convert.1 \
-	args2man.pl
+	pocketsphinx_mdef_convert.1
 
 # pocketsphinx_batch.1: pocketsphinx_batch.1.in
 # 	$(srcdir)/args2man.pl $(top_builddir)/src/programs/pocketsphinx_batch \
@@ -21,7 +22,7 @@ if BUILD_SWIG
 SWIG_DOC = pydoc.i
 
 pydoc.i: html/index.html
-	$(PYTHON) doxy2swig.py -q -n xml/index.xml pydoc.i
+	$(PYTHON) $(srcdir)/doxy2swig.py -q -n xml/index.xml pydoc.i
 endif
 
 if BUILD_DOXYGEN
@@ -40,7 +41,7 @@ html/index.html: doxyfile $(headers)
 	doxygen
 
 clean-local:
-	-rm -rf html latex doxytags
+	-rm -rf html latex doxytags $(SWIG_DOC)
 
 # Totally CMU-specific rule for uploading documentation
 upload: html/index.html

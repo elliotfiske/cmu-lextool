@@ -1,29 +1,20 @@
 if BUILD_SWIG
 
-# TODO: use AC_SUBST for LIBADD and CPPFLAGS
-# TODO: use conditional to determine sphinxbase.{so,la} location
-
 SUBDIRS = . test
 
-SWIG_FEATURES = -Werror -I$(top_srcdir)/include
-
-if BUILD_DOXYGEN
-SWIG_FEATURES += -DHAS_DOC -I$(top_builddir)/doc
-endif
+SWIG_FLAGS = -Werror -I$(top_srcdir)/include -I$(sphinxbase)/swig
 
 SWIG_DIR = $(top_srcdir)/swig
 
 SWIG_FILES = \
 	$(SWIG_DIR)/pocketsphinx.i \
-	$(SWIG_DIR)/cmd_ln.i \
-	$(SWIG_DIR)/fe.i \
-	$(SWIG_DIR)/feat.i \
-	$(SWIG_DIR)/jsgf.i \
-	$(SWIG_DIR)/fsg_model.i \
-	$(SWIG_DIR)/ngram_model.i \
 	$(SWIG_DIR)/ps_decoder.i \
-	$(SWIG_DIR)/ps_lattice.i \
-	$(top_builddir)/doc/pydoc.i
+	$(SWIG_DIR)/ps_lattice.i
+
+if BUILD_DOXYGEN
+SWIG_FLAGS += -DHAS_DOC -I$(top_builddir)/doc
+SWIG_FILES += $(top_builddir)/doc/pydoc.i
+endif
 
 CLEANFILES = pocketsphinx_wrap.c pocketsphinx.py pocketsphinx.pyc
 
@@ -44,6 +35,6 @@ _pocketsphinx_la_LIBADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
 
 pocketsphinx_wrap.c: $(SWIG_FILES)
-	SWIG_FEATURES="$(SWIG_FEATURES)" $(SWIG) -outdir . -o $@ -python $<
+	 $(SWIG) $(SWIG_FLAGS) -outdir . -o $@ -python $<
 
 endif

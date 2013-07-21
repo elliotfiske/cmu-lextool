@@ -54,20 +54,24 @@ returned in a regular fashion and run-time exception is being thrown in case of
 negative error code."
 %enddef
 
-%module(docstring=DOCSTRING) pocketsphinx
+%module(docstring=DOCSTRING) sphinxbase
 
 %feature("autodoc", "1");
 
 %include typemaps.i
 
-%import sphinxbase.i
+%begin %{
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/err.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/feat.h>
+#include <sphinxbase/jsgf.h>
+#include <sphinxbase/ngram_model.h>
 
-// TODO: use %newobject in a couple with ckd_malloc/ckd_free
-// TODO: split SegmentIterator off Segment
-// TODO: split NBestIterator off NBest
+typedef int bool;
+#define false 0
+#define true 1
 
-// TODO: probably these definitions should be imported from sphinxbase
-%{
 typedef cmd_ln_t Config;
 typedef jsgf_t Jsgf;
 typedef jsgf_rule_t JsgfRule;
@@ -79,144 +83,24 @@ typedef ngram_model_t NGramModel;
 typedef ngram_model_t NGramModelSet;
 %}
 
-%begin %{
-#include <pocketsphinx.h>
+typedef struct {} Config;
+typedef struct {} FrontEnd;
+typedef struct {} Feature;
+typedef struct {} FsgModel;
+typedef struct {} Jsgf;
+typedef struct {} NGramModel;
 
-typedef int bool;
-#define false 0
-#define true 1
+iterable(NGramModelSet, ngram_model_set, NGramModel)
 
-typedef ps_decoder_t Decoder;
-typedef ps_lattice_t Lattice;
-%}
-
-%inline %{
-
-typedef struct {
-  char *hypstr;
-  char *uttid;
-  int best_score;
-} Hypothesis;
-
-typedef struct {
-  ps_seg_t *ptr;
-  char *word;
-  int32 ascr;
-  int32 lscr;
-  int32 lback;
-  int start_frame;
-  int end_frame;
-} Segment;
-
-typedef struct {
-  ps_nbest_t *ptr;
-} NBest;
-%}
-
-typedef struct {} Decoder;
-typedef struct {} Lattice;
+%rename(set_logfile) err_set_logfile;
+int err_set_logfile(char const *);
 
 #ifdef HAS_DOC
 %include pydoc.i
 #endif
-%include ps_decoder.i
-%include ps_lattice.i
-
-%extend Hypothesis {
-  Hypothesis(char const *hypstr, char const *uttid, int best_score) {
-    Hypothesis *h = ckd_malloc(sizeof *h);
-    if (hypstr)
-      h->hypstr = ckd_salloc(hypstr);
-    if (uttid)
-      h->uttid = ckd_salloc(uttid);
-    h->best_score = best_score;
-    return h;
-    
-  }
-
-  ~Hypothesis() {
-    ckd_free($self->hypstr);
-    ckd_free($self->uttid);
-    ckd_free($self);
-  }
-}
-
-%extend NBest {
-  NBest(ps_nbest_t *ptr) {
-    if (!ptr)
-      return NULL;
-
-    NBest *nbest = ckd_malloc(sizeof *nbest);
-    nbest->ptr = ptr;
-
-    return nbest;
-  }
-
-  ~NBest() {
-      ps_nbest_free($self->ptr);
-      ckd_free($self);
-  }
-  
-#ifdef SWIGPYTHON
-  NBest * __iter__() {
-    return $self;
-  }
-
-  NBest * next() {
-    $self->ptr = ps_nbest_next($self->ptr);
-    return $self;
-  }
-#endif
-  
-  Hypothesis * hyp() {
-      int32 score;
-      const char *hyp = ps_nbest_hyp($self->ptr, &score);
-      // TODO: refactor; what is this empty argument?
-      return new_Hypothesis(hyp, "", score);
-  }
-
-  Segment * seg() {
-    int32 score;
-    // TODO: refactor; use 'score' value
-    return new_Segment(ps_nbest_seg($self->ptr, &score));
-  }
-}
-
-%extend Segment {
-  Segment(ps_seg_t *ptr) {
-    if (!ptr)
-      return NULL;
-
-    Segment *seg = ckd_malloc(sizeof *seg);
-    seg->ptr = ptr;
-    seg->word = 0;
-
-    return seg;
-  }
-
-  ~Segment() {
-    ps_seg_free($self->ptr);
-    ckd_free($self->word);
-    ckd_free($self);
-  }
-
-#ifdef SWIGPYTHON
-  Segment * __iter__() {
-    return $self;
-  }  
-
-  Segment * next() {
-    if (($self->ptr = ps_seg_next($self->ptr))) {
-      $self->word = ckd_salloc(ps_seg_word($self->ptr));
-      ps_seg_prob($self->ptr, &$self->ascr, &$self->lscr, &$self->lback);
-      ps_seg_frames($self->ptr, &$self->start_frame, &$self->end_frame);
-    }
-
-    return $self;
-  }
-#endif
-}
-
-%inline {
-const char DATADIR[] = _DATADIR;
-}
+%include cmd_ln.i
+%include fe.i
+%include feat.i
+%include fsg_model.i
+%include jsgf.i
+%include ngram_model.i
