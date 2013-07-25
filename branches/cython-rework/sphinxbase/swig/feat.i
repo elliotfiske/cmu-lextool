@@ -37,11 +37,11 @@
 
 
 %extend Feature {
-  Feature(feat_t *ptr) {
-    return ptr;
-  }
+    Feature(feat_t *ptr) {
+      return ptr;
+    }
 
-  ~Feature() {
-    feat_free($self);
-  }
+    ~Feature() {
+        feat_free($self);
+    }
 };

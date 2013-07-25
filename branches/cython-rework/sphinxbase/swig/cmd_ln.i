@@ -38,55 +38,55 @@
 // TODO: implement proper Config constructors Config
 // TODO: docstrings have '_r' prefix
 %extend Config {
-  Config() {
-    //Config *c = cmd_ln_init(NULL, ps_args(), FALSE, NULL);
-    //return c;
-    return NULL;
-  }
+    Config() {
+        //Config *c = cmd_ln_init(NULL, ps_args(), FALSE, NULL);
+        //return c;
+        return NULL;
+    }
 
-  Config(char const *path) {
-    //Config *c = cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
-    //return c;
-    return NULL;
-  }
+    Config(char const *path) {
+        //Config *c = cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
+        //return c;
+        return NULL;
+    }
 
-  ~Config() {
-    cmd_ln_free_r($self);
-  }
+    ~Config() {
+        cmd_ln_free_r($self);
+    }
 
-  void set_boolean(char const *key, bool val) {
-    cmd_ln_set_boolean_r($self, key, val);
-  }
+    void set_boolean(char const *key, bool val) {
+        cmd_ln_set_boolean_r($self, key, val);
+    }
 
-  void set_int(char const *key, int val) {
-    cmd_ln_set_int_r($self, key, val);
-  }
+    void set_int(char const *key, int val) {
+        cmd_ln_set_int_r($self, key, val);
+    }
 
-  void set_float(char const *key, double val) {
-    cmd_ln_set_float_r($self, key, val);
-  }
+    void set_float(char const *key, double val) {
+        cmd_ln_set_float_r($self, key, val);
+    }
 
-  void set_string(char const *key, char const *val) {
-    cmd_ln_set_str_r($self, key, val);
-  }
+    void set_string(char const *key, char const *val) {
+        cmd_ln_set_str_r($self, key, val);
+    }
 
-  bool exists(char const *key) {
-    return cmd_ln_exists_r($self, key);
-  }
+    bool exists(char const *key) {
+        return cmd_ln_exists_r($self, key);
+    }
 
-  bool get_boolean(char const *key) {
-    return cmd_ln_boolean_r($self, key);
-  }
+    bool get_boolean(char const *key) {
+        return cmd_ln_boolean_r($self, key);
+    }
 
-  int get_int(char const *key) {
-    return cmd_ln_int_r($self, key);
-  }
+    int get_int(char const *key) {
+        return cmd_ln_int_r($self, key);
+    }
 
-  double get_float(char const *key) {
-    return cmd_ln_float_r($self, key);
-  }
+    double get_float(char const *key) {
+        return cmd_ln_float_r($self, key);
+    }
 
-  char const *get_string(char const *key) {
-    return cmd_ln_str_r($self, key);
-  }
+    char const *get_string(char const *key) {
+        return cmd_ln_str_r($self, key);
+    }
 }

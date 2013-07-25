@@ -37,33 +37,31 @@
 
 
 %extend FrontEnd {
-  FrontEnd(fe_t *ptr) {
-    return ptr;
-  }
+    FrontEnd(fe_t *ptr) {
+        return ptr;
+    }
 
-  ~FrontEnd() {
-    fe_free($self);
-  }
+    ~FrontEnd() {
+        fe_free($self);
+    }
 
-  int output_size() {
-    return fe_get_output_size($self);
-  }
+    int output_size() {
+        return fe_get_output_size($self);
+    }
 
-  void start_utt(int *errcode) {
-    *errcode = fe_start_utt($self);
-  }
+    void start_utt(int *errcode) {
+        *errcode = fe_start_utt($self);
+    }
 
-  int32 process_utt(
-    const int16 *spch, size_t nsamps, mfcc_t ***cep_block, int *errcode)
-  {
-    int32 nframes;
-    *errcode = fe_process_utt($self, spch, nsamps, cep_block, &nframes);
-    return nframes;
-  }
+    int32 process_utt(const int16 *spch, size_t nsamps, mfcc_t ***cep_block, int *errcode) {
+        int32 nframes;
+        *errcode = fe_process_utt($self, spch, nsamps, cep_block, &nframes);
+        return nframes;
+    }
 
-  int32 end_utt(mfcc_t *out_cepvector, int *errcode) {
-    int32 nframes;
-    *errcode = fe_end_utt($self, out_cepvector, &nframes);
-    return nframes;
-  }
+    int32 end_utt(mfcc_t *out_cepvector, int *errcode) {
+        int32 nframes;
+        *errcode = fe_end_utt($self, out_cepvector, &nframes);
+        return nframes;
+    }
 }
