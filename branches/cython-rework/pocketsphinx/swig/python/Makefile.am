@@ -1,8 +1,8 @@
 if BUILD_SWIG
 
-SUBDIRS = . test
+SUBDIRS = test
 
-SWIG_FLAGS = -Werror -I$(top_srcdir)/include -I$(sphinxbase)/swig
+SWIG_FLAGS = -I$(top_srcdir)/include -I$(sphinxbase)/swig
 
 SWIG_DIR = $(top_srcdir)/swig
 
@@ -18,8 +18,8 @@ endif
 
 CLEANFILES = pocketsphinx_wrap.c pocketsphinx.py pocketsphinx.pyc
 
-pkgpython_PYTHON = __init__.py 
-nodist_pkgpython_PYTHON = pocketsphinx.py
+pkgpyexec_PYTHON = __init__.py 
+nodist_pkgpyexec_PYTHON = pocketsphinx.py
 pkgpyexec_LTLIBRARIES = _pocketsphinx.la
 nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
 _pocketsphinx_la_CPPFLAGS = \
@@ -27,8 +27,8 @@ _pocketsphinx_la_CPPFLAGS = \
 	-I$(sphinxbase)/include \
 	-I$(top_srcdir)/include \
 	-D_DATADIR=\"$(datadir)/@PACKAGE@\" \
-	-Wno-unused-value \
-	-Werror
+	-Wno-unused-value
+
 _pocketsphinx_la_LDFLAGS = -module
 _pocketsphinx_la_LIBADD = \
 	-lsphinxbase \
