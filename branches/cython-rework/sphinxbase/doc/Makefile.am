@@ -66,8 +66,5 @@ html/index.html: doxyfile $(headers)
 	doxygen
 
 clean-local:
-	-rm -rf html latex doxytags $(SWIG_DOC)
+	-rm -rf html latex xml doxytags $(SWIG_DOC)
 
-# Totally CMU-specific rule for uploading documentation
-upload: html/index.html
-	rsync -av html/ fife:/usr12/apache2/htdocs/sphinx/doc/doxygen/sphinxbase/

@@ -302,6 +302,5 @@ test/regression/testfuncs.sh
 test/regression/Makefile
 swig/Makefile
 swig/python/Makefile
-swig/python/examples/Makefile
 ])
 AC_OUTPUT

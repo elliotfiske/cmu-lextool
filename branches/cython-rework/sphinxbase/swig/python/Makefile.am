@@ -1,6 +1,6 @@
 if BUILD_SWIG
 
-SWIG_FLAGS = -Werror -I$(top_srcdir)/include
+SWIG_FLAGS = -I$(top_srcdir)/include
 
 SWIG_DIR = $(top_srcdir)/swig
 
@@ -25,12 +25,13 @@ pkgpython_PYTHON = __init__.py
 nodist_pkgpython_PYTHON = sphinxbase.py
 pkgpyexec_LTLIBRARIES = _sphinxbase.la
 nodist__sphinxbase_la_SOURCES = sphinxbase_wrap.c
+
 _sphinxbase_la_CPPFLAGS = \
 	$(PYTHON_CPPFLAGS) \
 	-I$(top_srcdir)/include \
 	-D_DATADIR=\"$(datadir)/@PACKAGE@\" \
-	-Wno-unused-value \
-	-Werror
+	-Wno-unused-value
+
 _sphinxbase_la_LDFLAGS = -module
 _sphinxbase_la_LIBADD = $(top_builddir)/src/libsphinxbase/libsphinxbase.la
 
