@@ -2,7 +2,7 @@ if BUILD_SWIG
 
 SUBDIRS = test
 
-SWIG_FLAGS = -I$(top_srcdir)/include -I$(sphinxbase)/swig
+SWIG_FLAGS = -I$(top_srcdir)/include -I@SPHINXBASE_SWIG@
 
 SWIG_DIR = $(top_srcdir)/swig
 
@@ -22,12 +22,11 @@ pkgpyexec_PYTHON = __init__.py
 nodist_pkgpyexec_PYTHON = pocketsphinx.py
 pkgpyexec_LTLIBRARIES = _pocketsphinx.la
 nodist__pocketsphinx_la_SOURCES = pocketsphinx_wrap.c
-_pocketsphinx_la_CPPFLAGS = \
+
+INCLUDES = \
 	$(PYTHON_CPPFLAGS) \
-	-I$(sphinxbase)/include \
 	-I$(top_srcdir)/include \
-	-D_DATADIR=\"$(datadir)/@PACKAGE@\" \
-	-Wno-unused-value
+	-D_DATADIR=\"$(datadir)/@PACKAGE@\"
 
 _pocketsphinx_la_LDFLAGS = -module
 _pocketsphinx_la_LIBADD = \

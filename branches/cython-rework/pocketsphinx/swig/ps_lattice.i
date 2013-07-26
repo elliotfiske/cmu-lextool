@@ -37,23 +37,23 @@
 
 
 %extend Lattice {
-  Lattice(const char *path) {
-    return ps_lattice_read(NULL, path);
-  }
+    Lattice(const char *path) {
+        return ps_lattice_read(NULL, path);
+    }
 
-  Lattice(Decoder *decoder, char *path) {
-    return ps_lattice_read(decoder, path);
-  }
+    Lattice(Decoder *decoder, char *path) {
+        return ps_lattice_read(decoder, path);
+    }
 
-  ~Lattice() {
-    ps_lattice_free($self);
-  }
+    ~Lattice() {
+        ps_lattice_free($self);
+    }
 
-  void write(char const *path, int *errcode) {
-    *errcode = ps_lattice_write($self, path);
-  }
+    void write(char const *path, int *errcode) {
+        *errcode = ps_lattice_write($self, path);
+    }
 
-  void write_htk(char const *path, int *errcode) {
-    *errcode = ps_lattice_write_htk($self, path);
-  }
+    void write_htk(char const *path, int *errcode) {
+        *errcode = ps_lattice_write_htk($self, path);
+    }
 }

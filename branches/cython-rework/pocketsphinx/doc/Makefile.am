@@ -41,7 +41,7 @@ html/index.html: doxyfile $(headers)
 	doxygen
 
 clean-local:
-	-rm -rf html latex doxytags $(SWIG_DOC)
+	-rm -rf html xml latex doxytags $(SWIG_DOC)
 
 # Totally CMU-specific rule for uploading documentation
 upload: html/index.html

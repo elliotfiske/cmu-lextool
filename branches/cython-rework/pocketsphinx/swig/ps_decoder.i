@@ -38,122 +38,118 @@
 
 // TODO: check for multiple values
 %extend Decoder {
-  /* Following functions have no bindings:
-   * ps_mllr_t *ps_update_mllr - requires 
-   * fsg_set_t *ps_get_fsgset
-   * fsg_set_t *ps_update_fsgset
-   * int ps_decode_senscr
-   * int ps_process_cep
-   */
+    /* Following functions have no bindings:
+     * ps_mllr_t *ps_update_mllr - requires 
+     * fsg_set_t *ps_get_fsgset
+     * fsg_set_t *ps_update_fsgset
+     * int ps_decode_senscr
+     * int ps_process_cep
+     */
 
-  Decoder() {
-    Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
-    return d;
-    return NULL;
-  }
+    Decoder() {
+        Decoder *d = ps_init(cmd_ln_init(NULL, ps_args(), FALSE, NULL));
+        return d;
+        return NULL;
+    }
 
-  Decoder(Config *c) {
-    Decoder *d = ps_init(c);
-    return d;
-  }
+    Decoder(Config *c) {
+        Decoder *d = ps_init(c);
+        return d;
+    }
 
-  ~Decoder() {
-    ps_free($self);
-  }  
+    ~Decoder() {
+        ps_free($self);
+    }  
 
-  void reinit(Config *config, int *errcode) {
-    *errcode = ps_reinit($self, config);
-  }
+    void reinit(Config *config, int *errcode) {
+        *errcode = ps_reinit($self, config);
+    }
 
-  void load_dict(
-    char const *fdict, char const *ffilter, char const *format, int *errcode)
-  {
-    *errcode = ps_load_dict($self, fdict, ffilter, format);
-  }
+    void load_dict(
+        char const *fdict, char const *ffilter, char const *format, int *errcode) {
+        *errcode = ps_load_dict($self, fdict, ffilter, format);
+    }
 
-  void save_dict(char const *dictfile, char const *format, int *errcode) {
-    *errcode = ps_save_dict($self, dictfile, format);
-  }
+    void save_dict(char const *dictfile, char const *format, int *errcode) {
+        *errcode = ps_save_dict($self, dictfile, format);
+    }
 
-  void add_word(char const *word, char const *phones, int update, int *errcode) {
-    *errcode = ps_add_word($self, word, phones, update);
-  }
+    void add_word(char const *word, char const *phones, int update, int *errcode) {
+        *errcode = ps_add_word($self, word, phones, update);
+    }
 
-  Lattice * get_lattice() {
-    return ps_lattice_retain(ps_get_lattice($self));
-  }
+    Lattice * get_lattice() {
+        return ps_lattice_retain(ps_get_lattice($self));
+    }
 
-  Config *get_config() {
-    return cmd_ln_retain(ps_get_config($self));
-  }
+    Config *get_config() {
+        return cmd_ln_retain(ps_get_config($self));
+    }
 
-  void start_utt(char const *uttid, int *errcode) {
-    *errcode = ps_start_utt($self, uttid);
-  }
+    void start_utt(char const *uttid, int *errcode) {
+        *errcode = ps_start_utt($self, uttid);
+    }
 
-  char const *get_uttid() {
-    return ps_get_uttid($self);
-  }
+    char const *get_uttid() {
+        return ps_get_uttid($self);
+    }
 
-  void end_utt(int *errcode) {
-    *errcode = ps_end_utt($self);
-  }
+    void end_utt(int *errcode) {
+        *errcode = ps_end_utt($self);
+    }
 
-  int process_raw(
-    const void *SDATA, size_t NSAMP, bool no_search, bool full_utt,
-    int *errcode)
-  {
-    NSAMP /= sizeof(int16);
-    return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
-  }
+    int process_raw(const void *SDATA, size_t NSAMP, bool no_search, bool full_utt, int *errcode) {
+        NSAMP /= sizeof(int16);
+        return *errcode = ps_process_raw($self, SDATA, NSAMP, no_search, full_utt);
+    }
 
-  int decode_raw(FILE *f, int *errcode) {
-    *errcode = ps_decode_raw($self, f, 0, -1);
-    return *errcode;
-  }
+    int decode_raw(FILE *f, int *errcode) {
+        *errcode = ps_decode_raw($self, f, 0, -1);
+        return *errcode;
+    }
 
-  Hypothesis * hyp() {
-    char const *hyp, *uttid;
-    int32 best_score;
-    hyp = ps_get_hyp($self, &best_score, &uttid);
+    Hypothesis * hyp() {
+        char const *hyp, *uttid;
+        int32 best_score;
+        hyp = ps_get_hyp($self, &best_score, &uttid);
 
-    return new_Hypothesis(hyp, uttid, best_score);
-  }
+        return new_Hypothesis(hyp, uttid, best_score);
+    }
 
-  NBest * nbest() {
-    return new_NBest(ps_nbest($self, 0, -1, NULL, NULL));
-  }
+    NBest * nbest() {
+        return new_NBest(ps_nbest($self, 0, -1, NULL, NULL));
+    }
 
-  Segment * seg() {
-    int32 best_score;
-    return new_Segment(ps_seg_iter($self, &best_score));
-  }
+    Segment * seg() {
+        int32 best_score;
+        return new_Segment(ps_seg_iter($self, &best_score));
+    }
 
-  FrontEnd * get_fe() {
-    return ps_get_fe($self);
-  }
+    FrontEnd * get_fe() {
+        return ps_get_fe($self);
+    }
 
-  Feature * get_feat() {
-    return ps_get_feat($self);
-  }
+    Feature * get_feat() {
+        return ps_get_feat($self);
+    }
 
-  NGramModelSet * get_lmset() {
-    return ngram_model_retain(ps_get_lmset($self));
-  }
+    NGramModelSet * get_lmset() {
+        return ngram_model_retain(ps_get_lmset($self));
+    }
 
-  NGramModelSet * update_lmset(NGramModelSet *lm_set) {
-    ngram_model_t *new_lm_set = ps_update_lmset($self, lm_set);
-    if (new_lm_set)
-      return ngram_model_retain(new_lm_set);
-    else
-      return NULL;
-  }
+    NGramModelSet * update_lmset(NGramModelSet *lm_set) {
+        ngram_model_t *new_lm_set = ps_update_lmset($self, lm_set);
+        if (new_lm_set)
+            return ngram_model_retain(new_lm_set);
+        else
+            return NULL;
+    }
 
-  LogMath * get_logmath() {
-    return logmath_retain(ps_get_logmath($self));
-  }
+    LogMath * get_logmath() {
+        return logmath_retain(ps_get_logmath($self));
+    }
 
-  int n_frames() {
-    return ps_get_n_frames($self);
-  }
+    int n_frames() {
+        return ps_get_n_frames($self);
+    }
 }
