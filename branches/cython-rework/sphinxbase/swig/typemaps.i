@@ -1,5 +1,9 @@
 %include <exception.i>
+
+#if SWIGPYTHON
 %include <file.i>
+#endif
+
 #if SWIGJAVA
 %include <arrays_java.i>
 #endif
@@ -21,7 +25,9 @@
 
 // Special typemap for arrays of audio.
 #if SWIGJAVA
-%typemap(in) (short const *SDATA, size_t NSAMP) {
+
+%typemap(in) \
+  (const void *SDATA, size_t NSAMP) {
   $1 = (short const *) JCALL2(GetShortArrayElements, jenv, $input, NULL);
   $2 = JCALL1(GetArrayLength, jenv, $input);
 };
@@ -30,13 +36,16 @@
   JCALL3(ReleaseShortArrayElements, jenv, $input, $1, 0);
 }
 
-%typemap(jni) (short const *SDATA, size_t NSAMP) "jshortArray"
-%typemap(jtype) (short const *SDATA, size_t NSAMP) "short[]"
-%typemap(jstype) (short const *SDATA, size_t NSAMP) "short[]"
-%typemap(javain) (short const *SDATA, size_t NSAMP) "$javainput"
+%typemap(jni) (const void *SDATA, size_t NSAMP) "jshortArray"
+%typemap(jtype) (const void *SDATA, size_t NSAMP) "short[]"
+%typemap(jstype) (const void *SDATA, size_t NSAMP) "short[]"
+%typemap(javain) (const void *SDATA, size_t NSAMP) "$javainput"
+
 #elif SWIGPYTHON
+
 %typemap(in) \ 
   (const void *SDATA, size_t NSAMP) = (const char *STRING, size_t LENGTH);
+
 %typemap(check) size_t NSAMP {
   char buf[64];
   if ($1 % sizeof(int16)) {
@@ -58,6 +67,7 @@ typedef struct {
 
 typedef struct {} TYPE;
 
+#if SWIGPYTHON
 %exception TYPE##Iterator##::next() {
   $action
   if (!arg1->ptr) {
@@ -65,6 +75,7 @@ typedef struct {} TYPE;
     SWIG_fail;
   }
 }
+#endif
 
 %extend TYPE##Iterator {
   TYPE##Iterator(PREFIX##_iter_t *ptr) {
@@ -95,3 +106,4 @@ typedef struct {} TYPE;
   }
 }
 %enddef
+

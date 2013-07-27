@@ -143,6 +143,7 @@ typedef struct {} FsgSet;
     }
 }
 
+#ifdef SWIGPYTHON
 %exception NBest::next() {
     $action
     if (!arg1->ptr) {
@@ -150,6 +151,7 @@ typedef struct {} FsgSet;
         SWIG_fail;
     }
 }
+#endif
 
 %extend NBest {
     NBest(ps_nbest_t *ptr) {
@@ -192,6 +194,7 @@ typedef struct {} FsgSet;
     }
 }
 
+#ifdef SWIGPYTHON
 %exception Segment::next() {
     $action
     if (!arg1->ptr) {
@@ -199,6 +202,7 @@ typedef struct {} FsgSet;
         SWIG_fail;
     }
 }
+#endif
 
 %extend Segment {
     Segment(ps_seg_t *ptr) {
