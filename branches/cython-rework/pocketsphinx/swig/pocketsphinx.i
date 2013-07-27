@@ -86,6 +86,7 @@ typedef int bool;
 #define false 0
 #define true 1
 
+typedef fsg_set_t FsgSet;
 typedef ps_decoder_t Decoder;
 typedef ps_lattice_t Lattice;
 %}
@@ -115,12 +116,14 @@ typedef struct {
 
 typedef struct {} Decoder;
 typedef struct {} Lattice;
+typedef struct {} FsgSet;
 
 #ifdef HAS_DOC
 %include pydoc.i
 #endif
 %include ps_decoder.i
 %include ps_lattice.i
+%include fsg_set.i
 
 %extend Hypothesis {
     Hypothesis(char const *hypstr, char const *uttid, int best_score) {

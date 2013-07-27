@@ -38,21 +38,37 @@ from itertools import izip
 from os import environ, path
 from sys import stdout
 
-import pocketsphinx
-import sphinxbase
+from pocketsphinx import *
+from sphinxbase import *
 
-MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
-DATADIR = environ.get('DATADIR', path.join(cvar.DATADIR, 'examples/python'))
+MODELDIR = "../../../model"
+DATADIR = "../../../test/data"
 
-config = Config()
+# Create a decoder with certain model
+config = Decoder.default_config()
 config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-dict', path.join(DATADIR, 'turtle.dic'))
-config.set_string('-input_endian', 'little')
-config.set_int('-samprate', 16000)
-
+config.set_string('-lm', path.join(MODELDIR, 'lm/en/turtle.DMP'))
+config.set_string('-dict', path.join(MODELDIR, 'lm/en/turtle.dic'))
 decoder = Decoder(config)
+
+# Decode with lm
+decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+print 'Decoding with "turtle" language:', decoder.hyp().hypstr
+
+# Switch to JSGF grammar
 jsgf = Jsgf(path.join(DATADIR, 'goforward.gram'))
 rule = jsgf.get_rule('<goforward.move2>')
 fsg = jsgf.build_fsg(rule, decoder.get_logmath(), 7.5)
 fsg.write(stdout)
 fsg.writefile('goforward.fsg')
+
+# Call update to switch to fsg search mode first
+decoder.update_fsgset()
+
+fsg_set = decoder.get_fsgset()
+fsg_set.add("current", fsg)
+fsg_set.select("current")
+decoder.update_fsgset()
+
+decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+print 'Decoding with "goforward" grammar:', decoder.hyp().hypstr

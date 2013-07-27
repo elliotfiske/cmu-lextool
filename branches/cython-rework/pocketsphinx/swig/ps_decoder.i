@@ -149,6 +149,14 @@
             return NULL;
     }
 
+    FsgSet * get_fsgset() {
+        return ps_get_fsgset($self);
+    }
+
+    FsgSet * update_fsgset() {
+        ps_update_fsgset($self);
+    }
+
     LogMath * get_logmath() {
         return logmath_retain(ps_get_logmath($self));
     }
