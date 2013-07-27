@@ -1,5 +1,5 @@
 CFLAGS := -g -Wall -DPIC -fPIC
-CPPFLAGS := -I/home/shmyrev/local/jdk1.7.0_17/include -I/home/shmyrev/local/jdk1.7.0_17/include/linux `pkg-config --cflags sphinxbase pocketsphinx`
+CPPFLAGS := -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux `pkg-config --cflags sphinxbase pocketsphinx`
 
 all: libpocketsphinx_jni.so
 
@@ -19,7 +19,7 @@ sphinxbase_wrap.c: ../../../sphinxbase/swig/sphinxbase.i
 		-outdir edu/cmu/pocketsphinx -o $@ $<
 
 clean:
-	$(RM) *.so *_wrap.c *_wrap.o 
+	$(RM) *.so *_wrap.c *_wrap.o test/*.class
 	$(RM) -r edu
 
 run:
