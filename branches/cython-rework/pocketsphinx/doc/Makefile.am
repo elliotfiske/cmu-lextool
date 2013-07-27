@@ -22,7 +22,7 @@ if BUILD_SWIG
 SWIG_DOC = pydoc.i
 
 pydoc.i: html/index.html
-	$(PYTHON) $(srcdir)/doxy2swig.py -q -n xml/index.xml pydoc.i
+	$(PYTHON) $(srcdir)/doxy2swig.py -n xml/index.xml pydoc.i
 endif
 
 if BUILD_DOXYGEN
