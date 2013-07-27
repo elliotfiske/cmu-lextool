@@ -1,11 +1,5 @@
 SUBDIRS = unit regression
 
-examplesdatadir = $(datadir)/@PACKAGE@/examples/data
-dist_examplesdata_DATA = \
-	data/defective.dic \
-	data/goforward.gram \
-	data/goforward.raw
-
 EXTRA_DIST = \
 	compare_table.pl \
 	testfuncs_cygwin.sh \
@@ -26,7 +20,10 @@ EXTRA_DIST = \
 	data/cards/cards.gram \
 	data/cards/cards.hyp \
 	data/cards/cards.transcription \
+	data/defective.dic \
 	data/goforward.fsg \
+	data/goforward.gram \
+	data/goforward.raw \
 	data/mllr_matrices \
 	data/numbers.raw \
 	data/something.raw \

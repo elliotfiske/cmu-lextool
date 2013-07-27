@@ -35,19 +35,10 @@
  *
  */
 
-// TODO: implement proper Config constructors Config
-// TODO: docstrings have '_r' prefix
 %extend Config {
-    Config() {
-        //Config *c = cmd_ln_init(NULL, ps_args(), FALSE, NULL);
-        //return c;
-        return NULL;
-    }
 
-    Config(char const *path) {
-        //Config *c = cmd_ln_parse_file_r(NULL, ps_args(), path, FALSE);
-        //return c;
-        return NULL;
+    Config() {
+	return NULL;
     }
 
     ~Config() {

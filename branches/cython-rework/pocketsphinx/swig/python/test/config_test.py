@@ -1,4 +1,4 @@
-# -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
+#  *  c basic offset: 4; indent tabs mode: nil  *  */
 # ====================================================================
 # Copyright (c) 2013 Carnegie Mellon University.  All rights
 # reserved.
@@ -36,63 +36,42 @@
 
 from os import environ, path
 from itertools import izip
-from pocketsphinx import *
+
+from sphinxbase import Config
+from pocketsphinx import Decoder
 
 #some dumb test for checking during developent
 
-MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
-DATADIR = environ.get('DATADIR', path.join(cvar.DATADIR, 'examples/python'))
+MODELDIR = "../../../model"
 
-config = Config()
-config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/wsj0vp.5000.DMP'))
-config.set_string('-dict', path.join(DATADIR, 'defective.dic'))
-config.set_boolean('-dictcase', True)
-config.set_boolean('-bestpath', False)
-config.set_boolean('-fwdflat', False)
-config.set_string('-input_endian', 'little')
-config.set_int('-samprate', 16000)
+config = Decoder.default_config()
 
-intval = 512
+intval = 256
 floatval = 8000.0
 stringval = "~/pocketsphinx"
 boolval = True
 
 # Check values that was previously set.
+s = config.get_float("-samprate")
+print "Float: ",floatval ," ", s
 config.set_float("-samprate", floatval)
 s = config.get_float("-samprate")
-print "Float: ",floatval ,"--------", s
+print "Float: ",floatval ," ", s
 
+s = config.get_int("-nfft")
+print "Int:",intval, " ", s
 config.set_int("-nfft", intval)
 s = config.get_int("-nfft")
-print "Int:",intval, "-------", s
+print "Int:",intval, " ", s
 
+s = config.get_string("-rawlogdir")
+print "String:",stringval, " ", s
 config.set_string("-rawlogdir", stringval)
 s = config.get_string("-rawlogdir")
-print "String:",stringval, "--------", s
+print "String:",stringval, " ", s
 
+s = config.get_boolean("-backtrace")
+print "Boolean:", boolval, " ", s
 config.set_boolean("-backtrace", boolval);
 s = config.get_boolean("-backtrace")
-print "Boolean:", boolval, "-------", s
-
-# Check values of the Config instance obtained from Decoder
-decoder = Decoder(config)
-cn = decoder.get_config()
-
-s = cn.get_float("-samprate")
-print "Float: ",floatval ,"--------", s
-
-s = cn.get_int("-nfft")
-print "Int:",intval, "-------", s
-
-s = cn.get_string("-rawlogdir")
-print "String:",stringval, "--------", s
-
-s = cn.get_boolean("-backtrace")
-print "Boolean:", boolval, "-------", s
-
-# Check values read from file.
-config = Config('config.cfg')
-print config.get_int('-nfft')
-print config.get_float('-samprate')
-print config.get_string('-input_endian')
+print "Boolean:", boolval, " ", s

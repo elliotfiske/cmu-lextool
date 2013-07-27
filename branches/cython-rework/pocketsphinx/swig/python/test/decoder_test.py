@@ -36,32 +36,33 @@
 
 from os import environ, path
 from itertools import izip
+
 from pocketsphinx import *
+from sphinxbase import *
 
-MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
-DATADIR = environ.get('DATADIR', path.join(cvar.DATADIR, 'examples/python'))
+MODELDIR = "../../../model"
+DATADIR = "../../../test/data"
 
-config = Config()
+# Create a decoder with certain model
+config = Decoder.default_config()
 config.set_string('-hmm', path.join(MODELDIR, 'hmm/en_US/hub4wsj_sc_8k'))
-config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/wsj0vp.5000.DMP'))
-config.set_string('-dict', path.join(DATADIR, 'defective.dic'))
-config.set_boolean('-dictcase', True)
-config.set_boolean('-bestpath', False)
-config.set_boolean('-fwdflat', False)
-config.set_string('-input_endian', 'little')
-config.set_int('-samprate', 16000)
+config.set_string('-lm', path.join(MODELDIR, 'lm/en_US/hub4.5000.DMP'))
+config.set_string('-dict', path.join(MODELDIR, 'lm/en_US/hub4.5000.dic'))
+decoder = Decoder(config)
 
 # Decode static file.
-decoder = Decoder(config)
 decoder.decode_raw(open(path.join(DATADIR, 'goforward.raw'), 'rb'))
+
 # Retrieve hypothesis.
 hypothesis = decoder.hyp()
 print 'Best hypothesis: ', hypothesis.best_score, hypothesis.hypstr
 print 'Best hypothesis segments: ', [seg.word for seg in decoder.seg()]
+
 # Access N best decodings.
 print 'Best 10 hypothesis: '
 for best, i in izip(decoder.nbest(), range(10)):
 	print best.hyp().best_score, best.hyp().hypstr
+
 # Decode streaming data.
 decoder = Decoder(config)
 decoder.start_utt('goforward')

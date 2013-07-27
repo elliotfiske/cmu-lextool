@@ -86,6 +86,10 @@
         return cmd_ln_retain(ps_get_config($self));
     }
 
+    static Config *default_config() {
+        return cmd_ln_parse_r(NULL, ps_args(), 0, NULL, FALSE);
+    }
+
     void start_utt(char const *uttid, int *errcode) {
         *errcode = ps_start_utt($self, uttid);
     }

@@ -140,6 +140,14 @@ typedef struct {} Lattice;
     }
 }
 
+%exception NBest::next() {
+    $action
+    if (!arg1->ptr) {
+        PyErr_SetString(PyExc_StopIteration, "");
+        SWIG_fail;
+    }
+}
+
 %extend NBest {
     NBest(ps_nbest_t *ptr) {
         if (!ptr)
@@ -163,7 +171,7 @@ typedef struct {} Lattice;
 
     NBest * next() {
         $self->ptr = ps_nbest_next($self->ptr);
-        return $self;
+    	return $self;
     }
 #endif
   
@@ -178,6 +186,14 @@ typedef struct {} Lattice;
         int32 score;
         // TODO: refactor; use 'score' value
         return new_Segment(ps_nbest_seg($self->ptr, &score));
+    }
+}
+
+%exception Segment::next() {
+    $action
+    if (!arg1->ptr) {
+        PyErr_SetString(PyExc_StopIteration, "");
+        SWIG_fail;
     }
 }
 
@@ -200,22 +216,20 @@ typedef struct {} Lattice;
     }
 
 #ifdef SWIGPYTHON
-    Segment * __iter__() {
+    Segment* __iter__() {
         return $self;
     }  
 
-    Segment * next() {
+    Segment* next() {
         if (($self->ptr = ps_seg_next($self->ptr))) {
             $self->word = ckd_salloc(ps_seg_word($self->ptr));
             ps_seg_prob($self->ptr, &$self->ascr, &$self->lscr, &$self->lback);
             ps_seg_frames($self->ptr, &$self->start_frame, &$self->end_frame);
         }
-
         return $self;
     }
+    
 #endif
+
 }
 
-%inline {
-const char DATADIR[] = _DATADIR;
-}

@@ -38,7 +38,8 @@ from itertools import izip
 from os import environ, path
 from sys import stdout
 
-from pocketsphinx import *
+import pocketsphinx
+import sphinxbase
 
 MODELDIR = environ.get('MODELDIR', path.join(cvar.DATADIR, 'model'))
 DATADIR = environ.get('DATADIR', path.join(cvar.DATADIR, 'examples/python'))
