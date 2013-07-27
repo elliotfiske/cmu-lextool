@@ -8,7 +8,6 @@ EXTRA_DIST = \
 	m4/pkg.m4 \
 	pocketsphinx.pc.in \
 	pocketsphinx.sln \
-	swig/java/Android.mk \
 	win32/pocketsphinx/pocketsphinx.vcxproj \
 	win32/pocketsphinx/pocketsphinx.vcxproj.filters \
 	win32/pocketsphinx_batch/pocketsphinx_batch.vcxproj \
