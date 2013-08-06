@@ -1,12 +1,12 @@
 /*
- * 
- * Copyright 1999-2004 Carnegie Mellon University.  
- * Portions Copyright 2004 Sun Microsystems, Inc.  
+ *
+ * Copyright 1999-2004 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
  * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
  * All Rights Reserved.  Use is subject to license terms.
- * 
+ *
  * See the file "license.terms" for information on usage and
- * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
  */
@@ -23,15 +23,15 @@ import java.util.List;
 /** The primary decoder class */
 public class Decoder extends AbstractDecoder {
 
+    public Decoder() {
+        // Keep this or else XML configuration fails.
+    }
+
     /** The property for the number of features to recognize at once. */
     @S4Integer(defaultValue = 100000)
     public final static String PROP_FEATURE_BLOCK_SIZE = "featureBlockSize";
     private int featureBlockSize;
 
-    public Decoder() {
-
-    }
-    
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
@@ -50,7 +50,7 @@ public class Decoder extends AbstractDecoder {
         super( searchManager, fireNonFinalResults, autoAllocate, resultListeners);
         this.featureBlockSize = featureBlockSize;
     }
-    
+
     /**
      * Decode frames until recognition is complete.
      *

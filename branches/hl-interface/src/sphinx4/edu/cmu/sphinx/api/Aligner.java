@@ -12,13 +12,12 @@
 
 package edu.cmu.sphinx.api;
 
-import java.util.ArrayList;
+import java.util.List;
 import javax.sound.sampled.AudioInputStream;
 
 import edu.cmu.sphinx.result.WordResult;
 
 public interface Aligner {
 	
-	public ArrayList<WordResult> align(AudioInputStream audio, String text);
-
+	public List<WordResult> align(AudioInputStream audio, String text);
 }

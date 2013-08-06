@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.ArrayList;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -30,11 +31,11 @@ import edu.cmu.sphinx.result.WordResult;
 /**
  * This is a simple tool to align audio to text and dump a database
  * for the training/evaluation.
- * 
- * You need to provide a model, dictionary, audio and the text to align. 
+ *
+ * You need to provide a model, dictionary, audio and the text to align.
  */
 public class Aligner {
-    
+
     static int diff = 200;
 
     public static void main(String args[]) throws Exception {
@@ -44,42 +45,40 @@ public class Aligner {
         GrammarAligner aligner = new GrammarAligner(acousticModel, dictionary,
                 null);
 
-        AudioInputStream stream = AudioSystem.getAudioInputStream(new File(
-                args[2]));
+        AudioInputStream stream = AudioSystem.getAudioInputStream(new File(args[2]));
         String text = readFileText(args[3]);
 
-        ArrayList<WordResult> results = aligner.align(stream, text);
-//        for (WordResult result : results) {
-//          System.out.println(result);
-//        }
+        List<WordResult> results = aligner.align(stream, text);
+        //        for (WordResult result : results) {
+        //          System.out.println(result);
+        //        }
         dumpDatabase(args[2], results);
-    } 
-    
-    public static void copyAudio(String sourceFileName,
-            String destinationFileName, int startMs, int endMs) throws UnsupportedAudioFileException, IOException {
+    }
+
+    public static void copyAudio(String sourceFileName, String destinationFileName, int startMs, int endMs)
+        throws UnsupportedAudioFileException, IOException
+    {
         AudioInputStream inputStream = null;
         AudioInputStream cutStream = null;
         File file = new File(sourceFileName);
         AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(file);
         AudioFormat format = fileFormat.getFormat();
         inputStream = AudioSystem.getAudioInputStream(file);
-        int bytesPerMsSecond = format.getFrameSize()
-                * (int) format.getFrameRate() / 1000;
+        int bytesPerMsSecond = format.getFrameSize() * (int) format.getFrameRate() / 1000;
         inputStream.skip(startMs * bytesPerMsSecond);
         long framesOfAudioToCopy = endMs * (int) format.getFrameRate() / 1000;
-        cutStream = new AudioInputStream(inputStream, format,
-                framesOfAudioToCopy);
+        cutStream = new AudioInputStream(inputStream, format, framesOfAudioToCopy);
         File destinationFile = new File(destinationFileName);
-        AudioSystem.write(cutStream, fileFormat.getType(),
-                destinationFile);
+        AudioSystem.write(cutStream, fileFormat.getType(), destinationFile);
         inputStream.close();
         cutStream.close();
     }
 
-    private static void dumpDatabase(String input,
-            ArrayList<WordResult> results) throws UnsupportedAudioFileException, IOException {        
-        ArrayList<ArrayList<WordResult>> utts = new ArrayList<ArrayList<WordResult>>();
-        ArrayList<WordResult> currentUtt = null;
+    private static void dumpDatabase(String input, List<WordResult> results)
+        throws UnsupportedAudioFileException, IOException
+    {
+        List<List<WordResult>> utts = new ArrayList<List<WordResult>>();
+        List<WordResult> currentUtt = null;
         int fillerLength = 0;
         for (WordResult result : results) {
             if (!result.isFiller()) {
@@ -97,13 +96,13 @@ public class Aligner {
                 }
             }
         }
-        
+
         int count = 0;
-        for (ArrayList<WordResult> utt : utts) {
+        for (List<WordResult> utt : utts) {
             String uttId = String.format("%03d", count) + "0";
             String outFile = input.substring(0, input.length() - 4) + "-" + uttId + ".wav";
             int startMs = utt.get(0).getStartFrame() - diff;
-            int lengthMs = utt.get(utt.size() - 1).getEndFrame() - startMs + diff;            
+            int lengthMs = utt.get(utt.size() - 1).getEndFrame() - startMs + diff;
             for (WordResult result : utt) {
                 System.out.print(result.getPronunciation().getWord());
                 System.out.print(' ');

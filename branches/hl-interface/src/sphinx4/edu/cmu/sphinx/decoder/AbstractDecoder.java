@@ -11,7 +11,9 @@ import java.util.logging.Logger;
 /** An abstract decoder which implements all functionality which is independent of the used decoding-paradigm (pull/push). */
 public abstract class AbstractDecoder implements ResultProducer, Configurable {
 
-    /** The property that defines the name of the search manager to use */
+    /**
+     * The property that defines the name of the search manager to use
+     * */
     @S4Component(type = SearchManager.class)
     public final static String PROP_SEARCH_MANAGER = "searchManager";
     protected SearchManager searchManager;
@@ -20,14 +22,18 @@ public abstract class AbstractDecoder implements ResultProducer, Configurable {
     public static final String PROP_RESULT_LISTENERS = "resultListeners";
     protected final List<ResultListener> resultListeners = new ArrayList<ResultListener>();
 
-    /** If set to true the used search-manager will be automatically allocated in <code>newProperties()</code>. */
+    /**
+     * If set to true the used search-manager will be automatically allocated
+     * in <code>newProperties()</code>.
+     * */
     @S4Boolean(defaultValue = false)
     public static final String AUTO_ALLOCATE = "autoAllocate";
 
     /**
-     * If set to <code>false</code> the used search-manager all registered result listeners will be notified only for
-     * final results. Per default non-final results don't trigger notification, because in most application the
-     * utterance final result will be sufficient.
+     * If set to <code>false</code> the used search-manager all registered
+     * result listeners will be notified only for final results. Per default
+     * non-final results don't trigger notification, because in most
+     * application the utterance final result will be sufficient.
      */
     @S4Boolean(defaultValue = false)
     public static final String FIRE_NON_FINAL_RESULTS = "fireNonFinalResults";

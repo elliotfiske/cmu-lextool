@@ -26,11 +26,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 
-/** A simple Lattice demo showing a simple speech application that generates a Lattice from a recognition result. */
+/**
+ * A simple Lattice demo showing a simple speech application that generates a
+ * Lattice from a recognition result.
+ */
 public class LatticeDemo {
 
 
-    /** Main method for running the Lattice demo. */
+    /**
+     * Main method for running the Lattice demo.
+     */
     public static void main(String[] args) throws IOException, UnsupportedAudioFileException {
         URL audioURL, url;
         if (args.length > 0) {
@@ -50,16 +55,14 @@ public class LatticeDemo {
         Recognizer recognizer = (Recognizer) cm.lookup("recognizer");
         recognizer.allocate();
 
-        // configure the audio input for the recognizer
+        // Configure the audio input for the recognizer
         AudioFileDataSource dataSource = (AudioFileDataSource) cm.lookup("audioFileDataSource");
         dataSource.setAudioFile(audioURL, null);
 
         boolean done = false;
         while (!done) {
-            /* This method will return when the end of speech
-            * is reached. Note that the endpointer will determine
-            * the end of speech.
-            */
+            // This method will return when the end of speech is reached. Note
+            // that the endpointer will determine the end of speech.
             Result result = recognizer.recognize();
 
             if (result != null) {

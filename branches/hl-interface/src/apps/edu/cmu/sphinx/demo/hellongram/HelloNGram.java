@@ -17,6 +17,7 @@ import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
+import edu.cmu.sphinx.frontend.FrontEnd;
 
 /**
  * A simple HelloNGram demo showing a simple speech application built using Sphinx-4. This application uses the Sphinx-4
@@ -32,6 +33,10 @@ public class HelloNGram {
         } else {
             cm = new ConfigurationManager(HelloNGram.class.getResource("hellongram.config.xml"));
         }
+
+        FrontEnd fe = (FrontEnd) cm.lookup("${frontend}");
+        cm.setGlobalProperty("frontend", "mfcFrontEnd");
+        // System.err.println(fe.getClass().getName());
 
         // allocate the recognizer
         System.out.println("Loading...");

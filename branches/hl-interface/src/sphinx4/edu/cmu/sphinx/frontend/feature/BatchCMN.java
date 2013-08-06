@@ -24,6 +24,7 @@ import java.util.*;
 
 /**
  * Applies cepstral mean normalization (CMN), sometimes called channel mean normalization, to incoming cepstral data.
+ *
  * Its goal is to reduce the distortion caused by the transmission channel.  The output is mean normalized cepstral
  * data.
  * <p/>

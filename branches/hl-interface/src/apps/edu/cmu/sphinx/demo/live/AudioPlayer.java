@@ -27,13 +27,6 @@ public class AudioPlayer {
 
     private SourceDataLine line;
 
-
-    /**
-     * Constructs a default AudioPlayer.
-     */
-    public AudioPlayer() {}
-
-
     /**
      * Plays the given byte array audio to the System's audio device.
      *

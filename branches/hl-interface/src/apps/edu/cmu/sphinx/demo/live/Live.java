@@ -458,6 +458,7 @@ public class Live {
      * A recognizer container, associates a recognizer name, config file
      * test file utterance, along with the statistics and microphone control
      */
+    // FIXME: refactor this out and use LiveSpeechRecognizer instead
     class LiveRecognizer {
         private String name;
         private String testFile;

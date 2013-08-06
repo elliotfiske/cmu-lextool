@@ -20,7 +20,9 @@ import edu.cmu.sphinx.util.props.S4Double;
 import edu.cmu.sphinx.util.props.S4Integer;
 
 /**
- * Subtracts the mean of all the input so far from the Data objects. Unlike the {@link BatchCMN}, it does not read in
+ * Subtracts the mean of all the input so far from the Data objects.
+ *
+ * Unlike the {@link BatchCMN}, it does not read in
  * the entire stream of Data objects before it calculates the mean. It estimates the mean from already seen data and
  * subtracts the mean from the Data objects on the fly. Therefore, there is no delay introduced by LiveCMN.
  * <p/>
