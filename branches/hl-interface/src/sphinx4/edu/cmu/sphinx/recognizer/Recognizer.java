@@ -32,7 +32,7 @@ import java.util.List;
  *      URL digitsConfig = new URL("file:./digits.xml");
  *      ConfigurationManager cm = new ConfigurationManager(digitsConfig);
  *      Recognizer sphinxDigitsRecognizer
- *          = (Recognizer) cm.lookup("digitsRecognizer&quot");
+ *          = (Recognizer) cm.lookup("digitsRecognizer");
  *      boolean done = false;
  *      Result result;
  * <p/>

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2004 Carnegie Mellon University.
+ * Copyright 1999-2013 Carnegie Mellon University.
  * Portions Copyright 2004 Sun Microsystems, Inc.
  * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
  * All Rights Reserved.  Use is subject to license terms.
@@ -23,25 +23,28 @@ import edu.cmu.sphinx.util.props.PropertyException;
 import com.sun.speech.engine.recognition.BaseRecognizer;
 import com.sun.speech.engine.recognition.BaseRuleGrammar;
 
-import javax.speech.recognition.GrammarException;
-import javax.speech.recognition.Rule;
-import javax.speech.recognition.RuleGrammar;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+import javax.speech.recognition.GrammarException;
+import javax.speech.recognition.Rule;
+import javax.speech.recognition.RuleGrammar;
 
 
 /**
- * A simple Dialog demo showing a simple speech application built using Sphinx-4 that uses the DialogManager.
- * <p/>
- * This demo uses a DialogManager to manage a set of dialog states. Each dialog state potentially has its own grammar.
+ * A simple Dialog demo showing a simple application built using Sphinx4.
+ *
+ * This demo uses a DialogManager to manage a set of dialog states. Each dialog
+ * state potentially has its own grammar.
  */
 public class Dialog {
 
-    /** Main method for running the Dialog demo. 
+    /**
+     * Main method for running the Dialog demo. 
+     *
      * @throws JSGFGrammarException 
      * @throws JSGFGrammarParseException 
-     **/
+     */
     public static void main(String[] args) throws JSGFGrammarParseException, JSGFGrammarException {
         try {
             URL url;
@@ -53,10 +56,10 @@ public class Dialog {
             ConfigurationManager cm = new ConfigurationManager(url);
 
             DialogManager dialogManager = (DialogManager)
-                    cm.lookup("dialogManager");
+                cm.lookup("dialogManager");
 
             Recognizer weatherRecognizer = (Recognizer)
-                    cm.lookup("weatherRecognizer");
+                cm.lookup("weatherRecognizer");
 
 
             System.out.println("\nWelcome to the Sphinx-4 Dialog Demo "
@@ -94,6 +97,7 @@ public class Dialog {
         } catch (PropertyException e) {
             System.err.println("Problem configuring Dialog: " + e);
         }
+
         System.exit(0);
     }
 }
@@ -161,7 +165,7 @@ class MyBehavior extends NewGrammarDialogNodeBehavior {
 
 
     /**
-     * execute the given command
+     * Execute the given command.
      *
      * @param cmd the command to execute
      */
@@ -198,7 +202,9 @@ class MyBehavior extends NewGrammarDialogNodeBehavior {
     }
 
 
-    /** Dumps out the set of sample utterances for this node */
+    /**
+     * Dumps out the set of sample utterances for this node
+     */
     private void dumpSampleUtterances() {
         if (sampleUtterances == null) {
             sampleUtterances = collectSampleUtterances();
@@ -210,23 +216,29 @@ class MyBehavior extends NewGrammarDialogNodeBehavior {
     }
 
 
-    /** Indicated that the grammar has changed and the collection of sample utterances should be regenerated. */
+    /**
+     * Indicated that the grammar has changed and the collection of sample utterances should be regenerated.
+     */
     protected void grammarChanged() {
         sampleUtterances = null;
     }
 }
 
 /**
- * An extension of the standard node behavior for music. This node will add rules to the grammar based upon the contents
- * of the music.txt file. This provides an example of how to extend a grammar directly from code as opposed to writing
- * out a JSGF file.
+ * An extension of the standard node behavior for music.
+ *
+ * This node will add rules to the grammar based upon the contents of the
+ * music.txt file. This provides an example of how to extend a grammar directly
+ * from code as opposed to writing out a JSGF file.
  */
 class MyMusicBehavior extends MyBehavior {
 
     private List<String> songList = new ArrayList<String>();
 
 
-    /** Creates a music behavior */
+    /**
+     * Creates a music behavior
+     */
     MyMusicBehavior() {
         try {
             InputStream is = Dialog.class.getResourceAsStream("playlist.txt");
@@ -245,13 +257,18 @@ class MyMusicBehavior extends MyBehavior {
     }
 
 
-    /** Executed when we enter this node. Displays the active grammar 
+    /**
+     * Executed when we enter this node.
+     *
+     * Displays the active grammar.
+     *
      * @throws JSGFGrammarException 
-     * @throws JSGFGrammarParseException */
+     * @throws JSGFGrammarParseException
+     */
     public void onEntry() throws IOException, JSGFGrammarParseException, JSGFGrammarException {
         super.onEntry();
 
-        // now lets add our custom songs from the play list
+        // Now lets add our custom songs from the play list
         // First, get the JSAPI RuleGrammar
         BaseRecognizer recognizer = new BaseRecognizer(getGrammar().getGrammarManager());
         try {
@@ -259,11 +276,10 @@ class MyMusicBehavior extends MyBehavior {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         RuleGrammar ruleGrammar = new BaseRuleGrammar (recognizer, getGrammar().getRuleGrammar());
 
-        // now lets add a rule for each song in the play list
-
+        // Now lets add a rule for each song in the play list.
         String ruleName = "song";
         int count = 1;
 
@@ -271,7 +287,7 @@ class MyMusicBehavior extends MyBehavior {
             for (String song : songList) {
                 String newRuleName = ruleName + count;
                 Rule newRule = ruleGrammar.ruleForJSGF("listen to " + song
-                    + " { " + newRuleName + " }");
+                        + " { " + newRuleName + " }");
                 ruleGrammar.setRule(newRuleName, newRule, true);
                 ruleGrammar.setEnabled(newRuleName, true);
                 count++;
@@ -280,19 +296,22 @@ class MyMusicBehavior extends MyBehavior {
             System.out.println("Trouble with the grammar " + ge);
             throw new IOException("Can't add rules for playlist " + ge);
         }
-        // now lets commit the changes
+        // Now lets commit the changes.
         getGrammar().commitChanges();
         grammarChanged();
     }
 }
 
 /**
- * Defines the behavior for a weather node. The weather node allows the user to dictate a weather forecast.  To do this
- * we can't use a JSGF grammar since JSGF grammars are not appropriate for dictation, so instead we have a special
- * weather node that will install a 'weather recognizer' as the current recognizer when this node is active.  The
- * weather recognizer is configured to use a language model suitable for weather forecasts.
+ * Defines the behavior for a weather node.
+ *
+ * The weather node allows the user to dictate a weather forecast.  To do this
+ * we can't use a JSGF grammar since JSGF grammars are not appropriate for
+ * dictation, so instead we have a special weather node that will install a
+ * 'weather recognizer' as the current recognizer when this node is active.
+ * The weather recognizer is configured to use a language model suitable for
+ * weather forecasts.
  */
-
 class WeatherNode extends DialogNodeBehavior {
 
     private Recognizer weatherRecognizer;
@@ -321,7 +340,9 @@ class WeatherNode extends DialogNodeBehavior {
     }
 
 
-    /** Called when this node becomes the active node */
+    /**
+     * Called when this node becomes the active node
+     */
     public void onEntry() throws IOException {
         savedRecognizer = dialogManager.getRecognizer();
         dialogManager.setRecognizer(weatherRecognizer);
@@ -333,19 +354,21 @@ class WeatherNode extends DialogNodeBehavior {
     }
 
 
-    /** Called when this node is ready to perform recognition */
+    /**
+     * Called when this node is ready to perform recognition
+     */
     public void onReady() {
         trace("Ready " + getName());
     }
 
 
     /*
-    * Called with the recognition results. Should return a string
-    * representing the name of the next node.
-    *
-    * @return a tag indicating where to go next. An empty string
-    * indicates that control should stay in this node.
-    */
+     * Called with the recognition results. Should return a string
+     * representing the name of the next node.
+     *
+     * @return a tag indicating where to go next. An empty string
+     * indicates that control should stay in this node.
+     */
     public String onRecognize(Result result) throws GrammarException {
         trace("Recognize result: " + result.getBestFinalResultNoFiller());
         String forecast = result.getBestFinalResultNoFiller();
@@ -359,7 +382,9 @@ class WeatherNode extends DialogNodeBehavior {
     }
 
 
-    /** Called when this node is no longer the active node */
+    /**
+     * Called when this node is no longer the active node
+     */
     public void onExit() {
         System.out.println();
         dialogManager.setRecognizer(savedRecognizer);

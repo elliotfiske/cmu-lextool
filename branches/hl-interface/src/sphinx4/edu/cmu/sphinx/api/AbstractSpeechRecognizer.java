@@ -1,3 +1,14 @@
+/*
+ * Copyright 2013 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ */
+
 package edu.cmu.sphinx.api;
 
 import java.net.MalformedURLException;
@@ -5,6 +16,7 @@ import java.net.URL;
 
 import java.util.List;
 
+import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
 import edu.cmu.sphinx.recognizer.Recognizer;
@@ -13,26 +25,26 @@ import edu.cmu.sphinx.result.WordResult;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.resourceToURL;
+import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.setProperty;
 
 
 /**
- * Base class for Sphinx4 high-level interface.
+ * Base class for Sphinx4 high-level interfaces.
  */
 public abstract class AbstractSpeechRecognizer {
 
-    private final ConfigurationManager configurationManager;
-    private final Recognizer recognizer;
-    private Result result;
+    protected final ConfigurationManager configurationManager;
 
-    protected AbstractSpeechRecognizer(ConfigurationManager cm) {
-        recognizer = (Recognizer) cm.lookup("recognizer");
-        configurationManager = cm;
+    protected final Recognizer recognizer;
+    protected final AudioFileDataSource dataSource;
 
-        recognizer.allocate();
+    public AbstractSpeechRecognizer() {
+        // FIXME: use default.config.xml
+        this("resource:/edu/cmu/sphinx/config/aligner.xml");
     }
 
-    private static ConfigurationManager getConfigurationManager() {
-        String path = "resource:/edu/cmu/sphinx/config/main.config.xml";
+    public AbstractSpeechRecognizer(String resourcePath) {
+        String path = resourcePath;
         URL url = null;
         try {
             url = resourceToURL(path);
@@ -40,38 +52,21 @@ public abstract class AbstractSpeechRecognizer {
             throw new IllegalStateException(path + " not found", e);
         }
 
-        return new ConfigurationManager(url);
+        configurationManager = new ConfigurationManager(url);
+        recognizer = (Recognizer) configurationManager.lookup("recognizer");
+        dataSource = configurationManager.lookup(AudioFileDataSource.class);
     }
 
-    public static AbstractSpeechRecognizer createLiveRecognizer() {
-        ConfigurationManager cm = getConfigurationManager();
-        AbstractSpeechRecognizer recognizer = new LiveSpeechRecognizer(cm);
-        return recognizer;
+    public void setAcousticModel(URL modelPath) {
+        // TODO: check other properties
+        setLocalProperty("wsjLoader->location", modelPath);
+        setLocalProperty("dictionary->fillerPath", modelPath + "/noisedict");
+        setGlobalProperty("g2p", "");
     }
 
-    public static AbstractSpeechRecognizer createResourceRecognizer(
-            URL resource)
-    {
-        ConfigurationManager cm = getConfigurationManager();
-        AbstractSpeechRecognizer recognizer =
-            new ResourceSpeechRecognizer(cm, resource);
-        return recognizer;
-    }
-
-    public String getBestResult() {
-        return result.getBestResultNoFiller();
-    }
-
-    public String getBestFinalResult() {
-        return result.getBestFinalResultNoFiller();
-    }
-
-    public List<WordResult> getWords() {
-        return result.getWords();
-    }
-
-    public void setAcousticModel(AcousticModel model) {
-        // FIXME: implement
+    public void setDictionary(URL dictionaryPath) {
+        // TODO: check other properties
+        setLocalProperty("dictionary->dictionaryPath", dictionaryPath);
     }
 
     /**
@@ -79,9 +74,10 @@ public abstract class AbstractSpeechRecognizer {
      *
      * This will enable fixed grammar and disable language model.
      */
-    public void setGrammarLocation(URL location) {
-        // FIXME: set grammar seach path.
-        configurationManager.setGlobalProperty("linguist", "flatLinguist");
+    public void setGrammar(URL grammarPath) {
+        // TODO: check other properties
+        setLocalProperty("jsgfGrammar->grammarLocation", grammarPath);
+        setGlobalProperty("linguist", "flatLinguist");
     }
 
     /**
@@ -89,12 +85,26 @@ public abstract class AbstractSpeechRecognizer {
      *
      * This will disable fixed grammar.
      */
-    public void setLanguageModel(LanguageModel model) {
-        // FIXME: set model
-        configurationManager.setGlobalProperty("linguist", "lexTreeLinguist");
+    public void setLanguageModel(URL modelPath) {
+        // TODO: check other properties
+        setLocalProperty("lexTreeLinguist->location", modelPath);
+        setGlobalProperty("linguist", "lexTreeLinguist");
     }
 
-    public abstract void startRecognition();
+    public void setMicrophoneInput() {
+        // FIXME: implement
+    }
 
-    public abstract void stopRecognition();
+    public void setInputSource(URL path) {
+        // FIXME: change FrontEnd
+        dataSource.setAudioFile(path, "input");
+    }
+
+    protected void setLocalProperty(String name, Object value) {
+        setProperty(configurationManager, name, value.toString());
+    }
+
+    protected void setGlobalProperty(String name, Object value) {
+        configurationManager.setGlobalProperty(name, value.toString());
+    }
 }

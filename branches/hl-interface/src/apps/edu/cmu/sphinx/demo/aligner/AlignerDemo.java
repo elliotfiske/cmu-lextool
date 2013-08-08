@@ -14,12 +14,8 @@ package edu.cmu.sphinx.demo.aligner;
 import java.io.File;
 import java.net.URL;
 
-import javax.sound.sampled.AudioInputStream;
-
-import edu.cmu.sphinx.api.GrammarAligner;
+import edu.cmu.sphinx.api.SpeechAligner;
 import edu.cmu.sphinx.result.WordResult;
-
-import static javax.sound.sampled.AudioSystem.getAudioInputStream;
 
 /**
  * This class demonstrates how to align audio to existing transcription and receive word timestamps.
@@ -36,17 +32,17 @@ import static javax.sound.sampled.AudioSystem.getAudioInputStream;
  */
 public class AlignerDemo {
 
+    private static final String TEXT =
+        "one zero zero zero one nine oh two one oh zero one eight zero three";
+    private static final String AUDIO_PATH =
+        "file:src/apps/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav";
+
     public static void main(String Args[]) throws Exception {
-        URL acousticModel = new URL("file:models/acoustic/wsj");
-        URL dictionary = new URL("file:models/acoustic/wsj/dict/cmudict.0.6d");
-        GrammarAligner aligner = new GrammarAligner(acousticModel, dictionary, null);
+        SpeechAligner aligner = new SpeechAligner();
+        aligner.setAcousticModel(new URL("file:models/acoustic/wsj"));
+        aligner.setDictionary(new URL("file:models/acoustic/wsj/dict/cmudict.0.6d"));
 
-        AudioInputStream stream = getAudioInputStream(
-                new File("src/apps/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav"));
-        String text =
-            "one zero zero zero one nine oh two one oh zero one eight zero three";
-
-        for (WordResult result : aligner.align(stream, text))
+        for (WordResult result : aligner.align(new URL(AUDIO_PATH), TEXT))
             System.out.println(result);
     }
 }
