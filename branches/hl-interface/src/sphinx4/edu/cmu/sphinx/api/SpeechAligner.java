@@ -23,6 +23,7 @@ public class SpeechAligner extends AbstractSpeechRecognizer {
     private final AlignerGrammar grammar;
 
     public SpeechAligner() {
+        setLocalProperty("flatLinguist->grammar", "alignerGrammar");
         grammar = configurationManager.lookup(AlignerGrammar.class);
     }
 

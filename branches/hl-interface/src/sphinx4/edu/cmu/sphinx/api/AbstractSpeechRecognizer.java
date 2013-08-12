@@ -27,7 +27,6 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
 import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.resourceToURL;
 import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.setProperty;
 
-
 /**
  * Base class for Sphinx4 high-level interfaces.
  */
@@ -39,8 +38,7 @@ public abstract class AbstractSpeechRecognizer {
     protected final AudioFileDataSource dataSource;
 
     public AbstractSpeechRecognizer() {
-        // FIXME: use default.config.xml
-        this("resource:/edu/cmu/sphinx/config/aligner.xml");
+        this("resource:/edu/cmu/sphinx/config/default.config.xml");
     }
 
     public AbstractSpeechRecognizer(String resourcePath) {
@@ -58,15 +56,15 @@ public abstract class AbstractSpeechRecognizer {
     }
 
     public void setAcousticModel(URL modelPath) {
-        // TODO: check other properties
         setLocalProperty("wsjLoader->location", modelPath);
-        setLocalProperty("dictionary->fillerPath", modelPath + "/noisedict");
-        setGlobalProperty("g2p", "");
     }
 
     public void setDictionary(URL dictionaryPath) {
-        // TODO: check other properties
         setLocalProperty("dictionary->dictionaryPath", dictionaryPath);
+    }
+
+    public void setFiller(URL fillerPath) {
+        setLocalProperty("dictionary->fillerPath", fillerPath);
     }
 
     /**
@@ -75,7 +73,6 @@ public abstract class AbstractSpeechRecognizer {
      * This will enable fixed grammar and disable language model.
      */
     public void setGrammar(URL grammarPath) {
-        // TODO: check other properties
         setLocalProperty("jsgfGrammar->grammarLocation", grammarPath);
         setGlobalProperty("linguist", "flatLinguist");
     }
@@ -86,7 +83,6 @@ public abstract class AbstractSpeechRecognizer {
      * This will disable fixed grammar.
      */
     public void setLanguageModel(URL modelPath) {
-        // TODO: check other properties
         setLocalProperty("lexTreeLinguist->location", modelPath);
         setGlobalProperty("linguist", "lexTreeLinguist");
     }
