@@ -28,7 +28,7 @@ import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.resourceToURL;
 import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.setProperty;
 
 /**
- * Base class for Sphinx4 high-level interfaces.
+ * Base class for Sphinx4 high-level interface implementations.
  */
 public abstract class AbstractSpeechRecognizer {
 
@@ -47,23 +47,23 @@ public abstract class AbstractSpeechRecognizer {
         try {
             url = resourceToURL(path);
         } catch (MalformedURLException e) {
-            throw new IllegalStateException(path + " not found", e);
+            throw new IllegalStateException(e);
         }
 
         configurationManager = new ConfigurationManager(url);
         recognizer = (Recognizer) configurationManager.lookup("recognizer");
-        dataSource = configurationManager.lookup(AudioFileDataSource.class);
+        dataSource = (AudioFileDataSource) configurationManager.lookup("audioFileDataSource");
     }
 
-    public void setAcousticModel(URL modelPath) {
+    public void setAcousticModel(String modelPath) {
         setLocalProperty("wsjLoader->location", modelPath);
     }
 
-    public void setDictionary(URL dictionaryPath) {
+    public void setDictionary(String dictionaryPath) {
         setLocalProperty("dictionary->dictionaryPath", dictionaryPath);
     }
 
-    public void setFiller(URL fillerPath) {
+    public void setFiller(String fillerPath) {
         setLocalProperty("dictionary->fillerPath", fillerPath);
     }
 
@@ -72,9 +72,10 @@ public abstract class AbstractSpeechRecognizer {
      *
      * This will enable fixed grammar and disable language model.
      */
-    public void setGrammar(URL grammarPath) {
+    public void setGrammar(String grammarPath, String name) {
         setLocalProperty("jsgfGrammar->grammarLocation", grammarPath);
-        setGlobalProperty("linguist", "flatLinguist");
+        setLocalProperty("jsgfGrammar->grammarName", name);
+        setGlobalProperty("decoder->searchManager", "simpleSearchManager");
     }
 
     /**
@@ -82,18 +83,18 @@ public abstract class AbstractSpeechRecognizer {
      *
      * This will disable fixed grammar.
      */
-    public void setLanguageModel(URL modelPath) {
-        setLocalProperty("lexTreeLinguist->location", modelPath);
-        setGlobalProperty("linguist", "lexTreeLinguist");
+    public void setLanguageModel(String modelPath) {
+        setLocalProperty("trigramModel->location", modelPath);
+        setGlobalProperty("decoder->searchManager", "wordPruningSearchManager");
     }
 
     public void setMicrophoneInput() {
-        // FIXME: implement
+        setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
     }
 
-    public void setInputSource(URL path) {
-        // FIXME: change FrontEnd
+    public void setResourceInput(URL path) {
         dataSource.setAudioFile(path, "input");
+        setLocalProperty("threadedScorer->frontend", "batchFrontEnd");
     }
 
     protected void setLocalProperty(String name, Object value) {

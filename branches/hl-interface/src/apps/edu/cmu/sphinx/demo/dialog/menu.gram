@@ -1,0 +1,8 @@
+#JSGF V1.0;
+
+grammar menu;
+
+public <command> =  [go to [the] bank] account { goto_bank }   |
+                    weather forecaster         { goto_weather} |
+                    [get] help                 { help }        |
+                    exit [[the] program]       { exit }        ;

@@ -1,0 +1,6 @@
+#JSGF V1.0;
+
+grammar commands;
+
+public <standard_commands> = [go to [the]] main menu    { goto_menu } |
+                             get help                   { help }      ;

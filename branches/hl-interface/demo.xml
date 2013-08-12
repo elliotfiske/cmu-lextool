@@ -80,7 +80,7 @@
     compile_sphinx_hellongram,
     compile_sphinx_lattice,
     compile_sphinx_confidence,
-    compile_jsapi_dialog,
+    compile_dialog,
     compile_jsapi_jsgf,
     compile_live,
     compile_sphinx_transcriber,
@@ -111,32 +111,30 @@
       compress="true"/>
   </target>
 
-  <target name="compile_jsapi_dialog" if="jsapi_jar_present">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/dialog"/>
+  <target name="compile_dialog">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/dialog"/>
     <javac debug="true"
       listfiles="true"
       deprecation="true"
       includeAntRuntime="false"
       srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/dialog/**"
+      includes="edu/cmu/sphinx/demo/dialog/**"
       destdir="${demo_classes_dir}">
       <classpath refid="libs"/>
     </javac>
 
-    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/dialog">
-      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/dialog">
+    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/dialog">
+      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/dialog">
         <include name="**/*.gram"/>
         <include name="**/playlist.txt"/>
         <include name="**/weather.lm"/>
       </fileset>
     </copy>
 
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/dialog/dialog.config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/dialog"/>
     <jar destfile="${bin_dir}/Dialog.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/dialog/dialog.Manifest"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/dialog/dialog.Manifest"
       basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/dialog/**"
+      includes="edu/cmu/sphinx/demo/dialog/**"
       compress="true"/>
   </target>
 

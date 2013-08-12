@@ -11,7 +11,6 @@
  */
 package edu.cmu.sphinx.demo.aligner;
 
-import java.io.File;
 import java.net.URL;
 
 import edu.cmu.sphinx.api.SpeechAligner;
@@ -35,13 +34,13 @@ public class AlignerDemo {
     private static final String TEXT =
         "one zero zero zero one nine oh two one oh zero one eight zero three";
     private static final String AUDIO_PATH =
-        "file:src/apps/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav";
+        "src/apps/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav";
 
     public static void main(String Args[]) throws Exception {
         SpeechAligner aligner = new SpeechAligner();
-        aligner.setAcousticModel(new URL("file:models/acoustic/wsj"));
-        aligner.setFiller(new URL("file:models/acoustic/wsj/noisedict"));
-        aligner.setDictionary(new URL("file:models/acoustic/wsj/dict/cmudict.0.6d"));
+        aligner.setAcousticModel("file:models/acoustic/wsj");
+        aligner.setFiller("file:models/acoustic/wsj/noisedict");
+        aligner.setDictionary("file:models/acoustic/wsj/dict/cmudict.0.6d");
 
         for (WordResult result : aligner.align(new URL(AUDIO_PATH), TEXT))
             System.out.println(result);

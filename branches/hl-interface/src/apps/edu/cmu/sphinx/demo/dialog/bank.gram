@@ -1,0 +1,20 @@
+#JSGF V1.0;
+
+grammar bank;
+
+<digit> =  one   |
+           two   |
+           three |
+           four  |
+           five  |
+           six   |
+           seven |
+           eight |
+           nine  ;
+
+<number> = <digit>+;
+
+public <command> = [check] balance              |
+                   deposit <number> { amount }  |
+                   withdraw <number> { amount } |
+                   [get] help                   ;

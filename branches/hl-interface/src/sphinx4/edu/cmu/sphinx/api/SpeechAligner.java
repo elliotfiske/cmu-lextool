@@ -30,7 +30,9 @@ public class SpeechAligner extends AbstractSpeechRecognizer {
     public List<WordResult> align(URL path, String text) {
         recognizer.allocate();
         grammar.setText(text);
-        setInputSource(path);
-        return recognizer.recognize().getWords();
+        setResourceInput(path);
+        List<WordResult> result = recognizer.recognize().getWords();
+        recognizer.deallocate();
+        return result;
     }
 }
