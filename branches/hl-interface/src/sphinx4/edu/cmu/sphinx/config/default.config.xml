@@ -14,8 +14,6 @@
   <property name="silenceInsertionProbability" value="0.9"/>
   <property name="languageWeight"     value="8"/>
 
-  <property name="recognizer" value="recognizer"/>
-
   <component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
     <property name="decoder" value="decoder"/>
   </component>
