@@ -1,0 +1,10 @@
+#JSGF V1.0;
+
+/**
+ * JSGF Grammar for standard commands
+ */
+
+grammar common;
+
+public <navigation_command> = get help |
+                              back     ;
