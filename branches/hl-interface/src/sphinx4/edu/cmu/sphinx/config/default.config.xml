@@ -102,17 +102,17 @@
     <property name="unigramWeight" value=".7"/>
   </component>
 
-  <component name="alignerGrammar"
-    type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
-    <property name="dictionary" value="dictionary"/>
-    <property name="logMath" value="logMath"/>
-    <property name="addSilenceWords" value="true"/>
-  </component>
-
   <component name="jsgfGrammar" type="edu.cmu.sphinx.jsgf.JSGFGrammar">
     <property name="dictionary" value="dictionary"/>
     <property name="grammarLocation" value=""/>
     <property name="grammarName" value="hello"/>
+    <property name="logMath" value="logMath"/>
+    <property name="addSilenceWords" value="true"/>
+  </component>
+
+  <component name="alignerGrammar"
+    type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
+    <property name="dictionary" value="dictionary"/>
     <property name="logMath" value="logMath"/>
     <property name="addSilenceWords" value="true"/>
   </component>
@@ -154,7 +154,7 @@
       <item>fft </item>
       <item>melFilterBank </item>
       <item>dct </item>
-      <item>batchCMN </item>
+      <item>liveCMN </item>
       <item>featureExtraction </item>
     </propertylist>
   </component>
@@ -176,21 +176,23 @@
     </propertylist>
   </component>
 
-  <component name="microphone"
-    type="edu.cmu.sphinx.frontend.util.Microphone">
-    <property name="closeBetweenUtterances" value="false"/>
+  <component name="speechClassifier"
+    type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier">
+    <property name="threshold" value="20"/>
   </component>
 
-  <component name="audioFileDataSource" type="edu.cmu.sphinx.frontend.util.AudioFileDataSource"/>
+  <component name="nonSpeechDataFilter"
+    type="edu.cmu.sphinx.frontend.endpoint.NonSpeechDataFilter"/>
+
+  <component name="speechMarker"
+    type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" >
+    <property name="speechTrailer" value="50"/>
+  </component>
+
+  <component name="audioFileDataSource"
+    type="edu.cmu.sphinx.frontend.util.AudioFileDataSource"/>
 
   <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
-
-  <component name="speechClassifier" type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier"/>
-
-  <component name="nonSpeechDataFilter"
-    type="edu.cmu.sphinx.frontend.endpoint.NonSpeechDataSingleUttFilter"/>
-
-  <component name="speechMarker" type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" />
 
   <component name="preemphasizer"
     type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
@@ -219,9 +221,41 @@
   <component name="featureExtraction"
     type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
 
+  <component name="microphone"
+    type="edu.cmu.sphinx.frontend.util.Microphone">
+    <property name="closeBetweenUtterances" value="false"/>
+  </component>
+
+
   <component name="logMath" type="edu.cmu.sphinx.util.LogMath">
     <property name="logBase" value="1.0001"/>
     <property name="useAddTable" value="true"/>
+  </component>
+
+  <component name="activeListManager"
+    type="edu.cmu.sphinx.decoder.search.SimpleActiveListManager">
+    <propertylist name="activeListFactories">
+      <item>standardActiveListFactory</item>
+      <item>wordActiveListFactory</item>
+      <item>wordActiveListFactory</item>
+      <item>standardActiveListFactory</item>
+      <item>standardActiveListFactory</item>
+      <item>standardActiveListFactory</item>
+    </propertylist>
+  </component>
+
+  <component name="standardActiveListFactory"
+    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+    <property name="logMath" value="logMath"/>
+    <property name="absoluteBeamWidth" value="500"/>
+    <property name="relativeBeamWidth" value="1E-80"/>
+  </component>
+
+  <component name="wordActiveListFactory"
+    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+    <property name="logMath" value="logMath"/>
+    <property name="absoluteBeamWidth" value="20"/>
+    <property name="relativeBeamWidth" value="1E-60"/>
   </component>
 
 </config>
