@@ -26,15 +26,27 @@ public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
         microphone = configurationManager.lookup(Microphone.class);
     }
 
-    public JSGFGrammar getGrammar() {
-        return grammar;
-    }
-
-    public void startRecognition() {
+    // FIXME: documentation
+    /**
+     * Starts recognition process.
+     *
+     * @param clear Should we continue the current session or start new
+     * recognition. 
+     */
+    public void startRecognition(boolean clear) {
         recognizer.allocate();
+        if (clear)
+            microphone.clear();
         microphone.startRecording();
     }
 
+    /**
+     * Stops recognition process.
+     *
+     * Recognition process is paused until the next call to startRecognition.
+     *
+     * @see startRecognition
+     */
     public void stopRecognition() {
         microphone.stopRecording();
         recognizer.deallocate();

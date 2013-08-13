@@ -73,9 +73,10 @@ public abstract class AbstractSpeechRecognizer {
      * This will enable fixed grammar and disable language model.
      */
     public void setGrammar(String grammarPath, String name) {
+        // FIXME: use a single param of type File, cache directory part
         setLocalProperty("jsgfGrammar->grammarLocation", grammarPath);
         setLocalProperty("jsgfGrammar->grammarName", name);
-        setGlobalProperty("decoder->searchManager", "simpleSearchManager");
+        setLocalProperty("decoder->searchManager", "simpleSearchManager");
     }
 
     /**
@@ -85,7 +86,7 @@ public abstract class AbstractSpeechRecognizer {
      */
     public void setLanguageModel(String modelPath) {
         setLocalProperty("trigramModel->location", modelPath);
-        setGlobalProperty("decoder->searchManager", "wordPruningSearchManager");
+        setLocalProperty("decoder->searchManager", "wordPruningSearchManager");
     }
 
     public void setMicrophoneInput() {

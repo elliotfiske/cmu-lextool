@@ -76,9 +76,7 @@
 
   <!-- Sphinx-4 (non-JSAPI) demos -->
   <target name="compile_sphinx_demos"
-    depends="compile_sphinx_helloworld,
-    compile_sphinx_hellongram,
-    compile_sphinx_lattice,
+    depends="compile_sphinx_lattice,
     compile_sphinx_confidence,
     compile_dialog,
     compile_jsapi_jsgf,
@@ -87,29 +85,6 @@
     compile_aligner,
     compile_tags"
     description="Compiles Sphinx-4 demos"/>
-
-  <target name="compile_sphinx_helloworld">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/helloworld"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      destdir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/helloworld/**">
-      <classpath refid="libs"/>
-    </javac>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/helloworld/hello.gram"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/helloworld"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/helloworld/helloworld.config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/helloworld"/>
-    <mkdir dir="${bin_dir}"/>
-    <jar destfile="${bin_dir}/HelloWorld.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/helloworld/helloworld.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/helloworld/**"
-      compress="true"/>
-  </target>
 
   <target name="compile_dialog">
     <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/dialog"/>
@@ -162,29 +137,6 @@
       manifest="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/jsgf/jsgf.Manifest"
       basedir="${demo_classes_dir}"
       includes="edu/cmu/sphinx/demo/jsapi/jsgf/**"
-      compress="true"/>
-  </target>
-
-  <target name="compile_sphinx_hellongram">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/hellongram"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/hellongram/**"
-      destdir="${demo_classes_dir}">
-      <classpath refid="libs"/>
-    </javac>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/hellongram/hellongram.trigram.lm"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/hellongram"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/hellongram/hellongram.config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/hellongram"/>
-    <mkdir dir="${bin_dir}"/>
-    <jar destfile="${bin_dir}/HelloNGram.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/hellongram/hellongram.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/hellongram/**"
       compress="true"/>
   </target>
 

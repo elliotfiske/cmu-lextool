@@ -2,19 +2,23 @@
 
 grammar bank;
 
-<digit> =  one   |
-           two   |
-           three |
-           four  |
-           five  |
-           six   |
-           seven |
-           eight |
-           nine  ;
+import <common.navigation_command>;
 
-<number> = <digit>+;
+<digit> = oh    |
+          zero  |
+          one   |
+          two   |
+          three |
+          four  |
+          five  |
+          six   |
+          seven |
+          eight |
+          nine  ;
 
-public <command> = [check] balance              |
-                   deposit <number> { amount }  |
-                   withdraw <number> { amount } |
-                   [get] help                   ;
+<number> = <digit>+ [point <digit>+];
+
+public <action_command> = <navigation_command>   |
+                          [show | check] balance |
+                          deposit <number>       |
+                          withdraw <number>      ;
