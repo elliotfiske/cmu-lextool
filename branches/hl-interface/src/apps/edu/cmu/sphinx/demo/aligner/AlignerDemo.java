@@ -34,7 +34,7 @@ public class AlignerDemo {
     private static final String TEXT =
         "one zero zero zero one nine oh two one oh zero one eight zero three";
     private static final String AUDIO_PATH =
-        "src/apps/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav";
+        "file:src/apps/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav";
 
     public static void main(String Args[]) throws Exception {
         SpeechAligner aligner = new SpeechAligner();
