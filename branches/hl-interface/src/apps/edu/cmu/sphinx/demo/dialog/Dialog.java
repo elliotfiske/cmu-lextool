@@ -66,7 +66,7 @@ abstract class DialogMenu {
                     break;
                 else
                     System.out.println("No such category: " +
-                            result.getBestResult());
+                            result.getBestFinalResult());
             }
         }
     }
@@ -218,7 +218,7 @@ class WeatherMenu extends DialogMenu {
         "resource:/edu/cmu/sphinx/demo/dialog/weather.lm";
 
     public WeatherMenu() {
-        super("Try some forecast. End with \"forecast over\"");
+        super("Try some forecast. End with \"the end\"");
     }
 
     @Override
@@ -229,7 +229,7 @@ class WeatherMenu extends DialogMenu {
     @Override
     protected boolean onCommand(RecognitionResult result) {
         String hypothesis = result.getBestResult();
-        while (!hypothesis.equals("forecast over")) {
+        while (!hypothesis.equals("the end")) {
             System.out.println(hypothesis);
             return true;
         }
