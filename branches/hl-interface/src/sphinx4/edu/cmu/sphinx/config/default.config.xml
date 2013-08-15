@@ -4,13 +4,9 @@
 
   <property name="logLevel" value="WARNING"/>
 
-  <property name="acousticModel" value=""/>
-  <property name="dictionary" value=""/>
-  <property name="filler" value=""/>
-
   <property name="absoluteBeamWidth"  value="-1"/>
   <property name="relativeBeamWidth"  value="1E-80"/>
-  <property name="wordInsertionProbability" value="1E-36"/>
+  <property name="wordInsertionProbability" value="0.1"/>
   <property name="silenceInsertionProbability" value="0.9"/>
   <property name="languageWeight"     value="8"/>
 
@@ -100,17 +96,17 @@
     <property name="unigramWeight" value=".7"/>
   </component>
 
-  <component name="jsgfGrammar" type="edu.cmu.sphinx.jsgf.JSGFGrammar">
+  <component name="alignerGrammar"
+    type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
     <property name="dictionary" value="dictionary"/>
-    <property name="grammarLocation" value=""/>
-    <property name="grammarName" value="hello"/>
     <property name="logMath" value="logMath"/>
     <property name="addSilenceWords" value="true"/>
   </component>
 
-  <component name="alignerGrammar"
-    type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
+  <component name="jsgfGrammar" type="edu.cmu.sphinx.jsgf.JSGFGrammar">
     <property name="dictionary" value="dictionary"/>
+    <property name="grammarLocation" value=""/>
+    <property name="grammarName" value=""/>
     <property name="logMath" value="logMath"/>
     <property name="addSilenceWords" value="true"/>
   </component>
@@ -174,9 +170,13 @@
     </propertylist>
   </component>
 
+  <component name="audioFileDataSource"
+    type="edu.cmu.sphinx.frontend.util.AudioFileDataSource"/>
+
+  <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
+
   <component name="speechClassifier"
     type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier">
-    <property name="threshold" value="20"/>
   </component>
 
   <component name="nonSpeechDataFilter"
@@ -186,11 +186,6 @@
     type="edu.cmu.sphinx.frontend.endpoint.SpeechMarker" >
     <property name="speechTrailer" value="50"/>
   </component>
-
-  <component name="audioFileDataSource"
-    type="edu.cmu.sphinx.frontend.util.AudioFileDataSource"/>
-
-  <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
 
   <component name="preemphasizer"
     type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
