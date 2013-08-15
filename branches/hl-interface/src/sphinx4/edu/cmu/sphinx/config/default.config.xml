@@ -169,7 +169,7 @@
       <item>fft </item>
       <item>melFilterBank </item>
       <item>dct </item>
-      <item>liveCMN </item>
+      <item>batchCMN </item>
       <item>featureExtraction </item>
     </propertylist>
   </component>
