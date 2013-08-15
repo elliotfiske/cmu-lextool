@@ -195,20 +195,16 @@ class BankMenu extends DialogMenu {
     }
 
     private static double parseNumber(String[] tokens) {
-        double value = .0;
-        int d = 0;
-        int step = 1;
+        StringBuilder sb = new StringBuilder();
+
         for (int i = 1; i < tokens.length; ++i) {
-            if (tokens[i].equals("point")) {
-                d = 0;
-                step = -1;
-            } else {
-                value += DIGITS.get(tokens[i]) * Math.pow(10, d);
-                d += step;
-            }
+            if (tokens[i].equals("point"))
+                sb.append(".");
+            else
+                sb.append(DIGITS.get(tokens[i]));
         }
 
-        return value;
+        return Double.parseDouble(sb.toString());
     }
 }
 
