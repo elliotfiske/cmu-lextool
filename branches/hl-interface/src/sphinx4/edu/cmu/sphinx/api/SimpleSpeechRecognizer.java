@@ -14,6 +14,7 @@ package edu.cmu.sphinx.api;
 
 import edu.cmu.sphinx.frontend.util.Microphone;
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
+import edu.cmu.sphinx.recognizer.Recognizer.State;
 import edu.cmu.sphinx.result.Result;
 
 public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
@@ -53,6 +54,9 @@ public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
     }
 
     public Result getResult() {
+        if (State.DEALLOCATED == recognizer.getState())
+            recognizer.allocate();
+
         return recognizer.recognize();
     }
 }
