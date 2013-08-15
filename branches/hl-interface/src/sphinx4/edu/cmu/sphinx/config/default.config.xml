@@ -88,8 +88,7 @@
 
   <component name="trigramModel"
     type="edu.cmu.sphinx.linguist.language.ngram.SimpleNGramModel">
-    <property name="location"
-      value="resource:/edu/cmu/sphinx/demo/jsapi/dialog/weather.lm"/>
+    <property name="location" value=""/>
     <property name="logMath" value="logMath"/>
     <property name="dictionary" value="dictionary"/>
     <property name="maxDepth" value="3"/>
@@ -176,8 +175,7 @@
   <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
 
   <component name="speechClassifier"
-    type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier">
-  </component>
+    type="edu.cmu.sphinx.frontend.endpoint.SpeechClassifier"/>
 
   <component name="nonSpeechDataFilter"
     type="edu.cmu.sphinx.frontend.endpoint.NonSpeechDataFilter"/>
