@@ -39,7 +39,6 @@ public class AlignerDemo {
     public static void main(String Args[]) throws Exception {
         SpeechAligner aligner = new SpeechAligner();
         aligner.setAcousticModel("file:models/acoustic/wsj");
-        aligner.setFiller("file:models/acoustic/wsj/noisedict");
         aligner.setDictionary("file:models/acoustic/wsj/dict/cmudict.0.6d");
 
         for (WordResult result : aligner.align(new URL(AUDIO_PATH), TEXT))

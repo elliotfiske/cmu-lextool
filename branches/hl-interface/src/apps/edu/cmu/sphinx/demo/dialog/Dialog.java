@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import edu.cmu.sphinx.api.SimpleSpeechRecognizer;
+import edu.cmu.sphinx.api.RecognitionResult;
 import edu.cmu.sphinx.jsgf.JSGFGrammarException;
 import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
-import edu.cmu.sphinx.result.Result;
 
 
 abstract class DialogMenu {
@@ -49,7 +49,7 @@ abstract class DialogMenu {
             show();
             onEnter(recognizer);
             recognizer.startRecognition(true);
-            Result result = recognizer.getResult();
+            RecognitionResult result = recognizer.getResult();
 
             if (children.isEmpty()) {
                 while (onCommand(result))
@@ -58,7 +58,7 @@ abstract class DialogMenu {
                 recognizer.stopRecognition();
                 break;
             } else {
-                String tag = result.getBestFinalResultNoFiller();
+                String tag = result.getBestFinalResult();
                 recognizer.stopRecognition();
                 if (tags.containsKey(tag))
                     tags.get(tag).enter(recognizer);
@@ -66,7 +66,7 @@ abstract class DialogMenu {
                     break;
                 else
                     System.out.println("No such category: " +
-                            result.getBestResultNoFiller());
+                            result.getBestResult());
             }
         }
     }
@@ -107,7 +107,7 @@ abstract class DialogMenu {
 
     protected abstract void onEnter(SimpleSpeechRecognizer recognizer);
 
-    protected abstract boolean onCommand(Result result);
+    protected abstract boolean onCommand(RecognitionResult result);
 }
 
 class MainMenu extends DialogMenu {
@@ -129,7 +129,7 @@ class MainMenu extends DialogMenu {
     }
 
     @Override
-    protected boolean onCommand(Result result) {
+    protected boolean onCommand(RecognitionResult result) {
         return false;
     }
 }
@@ -174,8 +174,8 @@ class BankMenu extends DialogMenu {
     }
 
     @Override
-    protected boolean onCommand(Result result) {
-        String hypothesis = result.getBestFinalResultNoFiller();
+    protected boolean onCommand(RecognitionResult result) {
+        String hypothesis = result.getBestFinalResult();
         if (hypothesis.equals("back")) {
             return false;
         } else if (hypothesis.endsWith("help")) {
@@ -227,8 +227,8 @@ class WeatherMenu extends DialogMenu {
     }
 
     @Override
-    protected boolean onCommand(Result result) {
-        String hypothesis = result.getBestResultNoFiller();
+    protected boolean onCommand(RecognitionResult result) {
+        String hypothesis = result.getBestResult();
         while (!hypothesis.equals("forecast over")) {
             System.out.println(hypothesis);
             return true;
@@ -244,8 +244,6 @@ public class Dialog {
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
     private static final String DICTIONARY_PATH =
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
-    private static final String FILLTER_PATH =
-        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/noisedict";
 
     public static void main(String[] args)
         throws IOException, MalformedURLException, JSGFGrammarException, JSGFGrammarParseException
@@ -253,7 +251,6 @@ public class Dialog {
         SimpleSpeechRecognizer recognizer = new SimpleSpeechRecognizer();
         recognizer.setAcousticModel(ACOUSTIC_MODEL);
         recognizer.setDictionary(DICTIONARY_PATH);
-        recognizer.setFiller(FILLTER_PATH);
 
         DialogMenu menu = new MainMenu();
         menu.append("bank account", new BankMenu());

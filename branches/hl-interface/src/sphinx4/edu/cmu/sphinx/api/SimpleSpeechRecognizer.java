@@ -11,11 +11,15 @@
 
 package edu.cmu.sphinx.api;
 
-
 import edu.cmu.sphinx.frontend.util.Microphone;
+
 import edu.cmu.sphinx.jsgf.JSGFGrammar;
-import edu.cmu.sphinx.recognizer.Recognizer.State;
+
+import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.Result;
+
+import edu.cmu.sphinx.recognizer.Recognizer.State;
+
 
 public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
 
@@ -36,6 +40,7 @@ public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
      */
     public void startRecognition(boolean clear) {
         recognizer.allocate();
+
         if (clear)
             microphone.clear();
         microphone.startRecording();
@@ -53,10 +58,16 @@ public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
         recognizer.deallocate();
     }
 
-    public Result getResult() {
+    public RecognitionResult getResult() {
         if (State.DEALLOCATED == recognizer.getState())
             recognizer.allocate();
 
-        return recognizer.recognize();
+        Result result = recognizer.recognize();
+        if (null == result)
+            return null;
+
+        ConfidenceScorer scorer =
+            (ConfidenceScorer) configurationManager.lookup("confidenceScorer");
+        return new RecognitionResult(scorer, result);
     }
 }

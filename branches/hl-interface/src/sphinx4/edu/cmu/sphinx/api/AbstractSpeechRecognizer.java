@@ -57,14 +57,11 @@ public abstract class AbstractSpeechRecognizer {
 
     public void setAcousticModel(String modelPath) {
         setLocalProperty("wsjLoader->location", modelPath);
+        setLocalProperty("dictionary->fillerPath", modelPath + "/noisedict");
     }
 
     public void setDictionary(String dictionaryPath) {
         setLocalProperty("dictionary->dictionaryPath", dictionaryPath);
-    }
-
-    public void setFiller(String fillerPath) {
-        setLocalProperty("dictionary->fillerPath", fillerPath);
     }
 
     /**

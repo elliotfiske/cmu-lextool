@@ -53,8 +53,9 @@ public class Result {
      * @param isFinal     if true, the result is a final result
      */
     public Result(AlternateHypothesisManager alternateHypothesisManager,
-                  ActiveList activeList, List<Token> resultList, int frameNumber,
-                  boolean isFinal, LogMath logMath) {
+            ActiveList activeList, List<Token> resultList, int frameNumber,
+            boolean isFinal, LogMath logMath)
+    {
         this(activeList, resultList, frameNumber, isFinal, logMath);
         this.alternateHypothesisManager = alternateHypothesisManager;
     }
@@ -70,7 +71,7 @@ public class Result {
      *                    has been decoded. 
      */
     public Result(ActiveList activeList, List<Token> resultList, int frameNumber,
-                  boolean isFinal, LogMath logMath) {
+            boolean isFinal, LogMath logMath) {
         this.activeList = activeList;
         this.resultList = resultList;
         this.currentFrameNumber = frameNumber;
@@ -90,7 +91,6 @@ public class Result {
         return isFinal;
     }
 
-
     /**
      * Returns the log math used for this Result.
      *
@@ -99,7 +99,6 @@ public class Result {
     public LogMath getLogMath() {
         return logMath;
     }
-
 
     /**
      * Returns a list of active tokens for this result. The list contains zero or active <code>Token</code> objects that
@@ -116,7 +115,6 @@ public class Result {
         return activeList;
     }
 
-
     /**
      * Returns a list of result tokens for this result. The list contains zero or more result <code>Token</code> objects
      * that represents the leaf nodes of all final branches in the result (sometimes referred to as the 'lattice').
@@ -132,7 +130,6 @@ public class Result {
         return resultList;
     }
 
-
     /**
      * Returns the AlternateHypothesisManager Used to construct a Lattice
      *
@@ -142,7 +139,6 @@ public class Result {
         return alternateHypothesisManager;
     }
 
-
     /**
      * Returns the current frame number
      *
@@ -151,7 +147,6 @@ public class Result {
     public int getFrameNumber() {
         return currentFrameNumber;
     }
-
 
     /**
      * Returns the best scoring final token in the result. A final token is a token that has reached a final state in
@@ -168,7 +163,6 @@ public class Result {
         }
         return bestToken;
     }
-
 
     /**
      * Returns the best scoring token in the result. First, the best final token is retrieved. A final token is one that
@@ -187,7 +181,6 @@ public class Result {
         return bestToken;
     }
 
-
     /**
      * Returns the best scoring token in the active set
      *
@@ -205,7 +198,6 @@ public class Result {
         return bestToken;
     }
 
-
     /**
      * Searches through the n-best list to find the the branch that matches the given string
      *
@@ -221,7 +213,6 @@ public class Result {
         }
         return null;
     }
-
 
     /**
      * Searches through the n-best list to find the the branch that matches the beginning of the given  string
@@ -240,7 +231,6 @@ public class Result {
         return list;
     }
 
-
     /**
      * Returns the best scoring token that matches the beginning of the given text.
      *
@@ -257,7 +247,6 @@ public class Result {
         return bestToken;
     }
 
-
     /**
      * Returns detailed frame statistics for this result
      *
@@ -267,7 +256,6 @@ public class Result {
     public FrameStatistics[] getFrameStatistics() {
         return null;    // [[[ TBD:  write me ]]]
     }
-
 
     /**
      * Gets the starting frame number for the result. Note that this method is currently not implemented, and always
@@ -279,7 +267,6 @@ public class Result {
         return 0;
     }
 
-
     /**
      * Gets the ending frame number for the result. Note that this method is currently not implemented, and always
      * returns zero.
@@ -289,7 +276,6 @@ public class Result {
     public int getEndFrame() {
         return 0;    // [[[ TBD: write me ]]]
     }
-
 
     /**
      * Gets the feature frames associated with this result
@@ -316,7 +302,6 @@ public class Result {
         return featureList;
     }
 
-
     /**
      * Returns the string of the best result, removing any filler words. This method first attempts to return the best
      * final result, that is, the result that has reached the final state of the search space. If there are no best
@@ -332,7 +317,6 @@ public class Result {
             return token.getWordPathNoFiller();
         }
     }
-
 
     /**
      * Returns the string of the best final result, removing any filler words. A final result is a path that has reached
@@ -375,7 +359,7 @@ public class Result {
      * @return the string of words
      */
     public String getTimedBestResult(boolean wantFiller,
-                                     boolean wordTokenFirst) {
+            boolean wordTokenFirst) {
         Token token = getBestToken();
         if (token == null) {
             return "";
@@ -478,7 +462,7 @@ public class Result {
      * @param endFeature   tne ending feature
      */
     private void addWord(StringBuilder sb, Word word,
-                         FloatData startFeature, FloatData endFeature) {
+            FloatData startFeature, FloatData endFeature) {
         float startTime = startFeature == null ? -1 : ((float) startFeature.getFirstSampleNumber() /
                 startFeature.getSampleRate());
         float endTime = endFeature == null ? -1 : ((float) endFeature.getFirstSampleNumber() /
@@ -487,7 +471,7 @@ public class Result {
             sb.insert(0, ' ');
         }
         sb.insert(0, (word.getSpelling() + '(' + startTime + ',' +
-                endTime + ')'));
+                    endTime + ')'));
     }
 
 
@@ -549,14 +533,14 @@ public class Result {
     }
 
 
-	public ArrayList<WordResult> getWords() {
-        
-		LinkedList<WordResult> words = new LinkedList<WordResult>();
-		
-		Token token = getBestToken();
+    public ArrayList<WordResult> getWords() {
+
+        LinkedList<WordResult> words = new LinkedList<WordResult>();
+
+        Token token = getBestToken();
         if (token == null) 
             return new ArrayList<WordResult>();
-		
+
         while (token != null) {
 
             Data lastWordFirstFeature = token.getData();
@@ -570,14 +554,14 @@ public class Result {
                     long ef;
 
                     if (lastFeature != null) {
-                    	sf = ((FloatData)lastFeature).getCollectTime();
+                        sf = ((FloatData)lastFeature).getCollectTime();
                     }
                     else
-                    	sf = 0;
+                        sf = 0;
                     if (lastWordFirstFeature != null)
-                    	ef = ((FloatData)lastWordFirstFeature).getCollectTime();
+                        ef = ((FloatData)lastWordFirstFeature).getCollectTime();
                     else
-                    	ef = -1;
+                        ef = -1;
 
                     WordResult wordResult = new SimpleWordResult(word, (int)sf, (int)ef, 0.0, 1.0, null);
                     words.addFirst(wordResult);
@@ -590,8 +574,8 @@ public class Result {
                 token = token.getPredecessor();
             }
         }
-        
+
         return new ArrayList<WordResult>(words);
-	}
+    }
 
 }

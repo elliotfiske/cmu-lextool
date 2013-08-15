@@ -11,7 +11,7 @@
  */
 package edu.cmu.sphinx.result;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 
 /**
@@ -51,12 +51,11 @@ public class Nbest {
         }
     }
 
-    public ArrayList<String> getNbest(int n) {
+    public Collection<String> getNbest(int n) {
         lattice.computeNodePosteriors(1.0f);
         HashSet<String> result = new HashSet<String>();
-
-        BoundedPriorityQueue<NBestPath> queue = new BoundedPriorityQueue<Nbest.NBestPath>(
-                n);
+        BoundedPriorityQueue<NBestPath> queue =
+            new BoundedPriorityQueue<Nbest.NBestPath>(n);
 
         queue.add(new NBestPath("<s>", lattice.getInitialNode(), 0, 0));
 
@@ -83,7 +82,8 @@ public class Nbest {
             }
             // printQueue(queue);
         }
-        return new ArrayList<String>(result);
+
+        return result;
     }
 
     private String getNewPathString(NBestPath path, Node newNode) {

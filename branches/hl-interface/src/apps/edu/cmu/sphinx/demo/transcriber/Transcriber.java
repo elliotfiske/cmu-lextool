@@ -16,8 +16,13 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import edu.cmu.sphinx.api.RecognitionResult;
 import edu.cmu.sphinx.api.SimpleSpeechRecognizer;
-import edu.cmu.sphinx.result.Result;
+
+import edu.cmu.sphinx.result.Path;
+
+
+// TODO: use digits.grxml
 
 /**
  * A simple example that shows how to transcribe a continuous audio file that
@@ -29,8 +34,6 @@ public class Transcriber {
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
     private static final String DICTIONARY_PATH =
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
-    private static final String FILLTER_PATH =
-        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/noisedict";
     private static final String GRAMMAR_PATH =
         "resource:/edu/cmu/sphinx/demo/transcriber/";
 
@@ -38,20 +41,25 @@ public class Transcriber {
     public static void main(String[] args) throws MalformedURLException {
         SimpleSpeechRecognizer recognizer = new SimpleSpeechRecognizer();
         recognizer.setGrammar(GRAMMAR_PATH, "digits");
+        // recognizer.setLanguageModel("./models/language/en-us.lm.dmp");
         recognizer.setAcousticModel(ACOUSTIC_MODEL);
         recognizer.setDictionary(DICTIONARY_PATH);
-        recognizer.setFiller(FILLTER_PATH);
 
-        if (args.length > 0)
-            recognizer.setResourceInput(new File(args[0]).toURI().toURL());
-        else
-            recognizer.setResourceInput(
-                    Transcriber.class.getResource("10001-90210-01803.wav"));
+        //if (args.length > 0)
+        //    recognizer.setResourceInput(new File(args[0]).toURI().toURL());
+        //else
+        //    recognizer.setResourceInput(
+        //            Transcriber.class.getResource("10001-90210-01803.wav"));
+        recognizer.setMicrophoneInput();
+        recognizer.startRecognition(true);
 
-        Result result;
+        RecognitionResult result;
         while ((result = recognizer.getResult()) != null) {
-            String hypothesis = result.getBestResultNoFiller();
-            System.out.println(hypothesis);
+            System.out.format("hypothesis: %s, confidence: %g\n",
+                    result.getBestResult(), result.getConfidence());
+            System.out.println("best 5 hypothesis:");
+            for (String s : result.getNbest(5))
+                System.out.println(s);
         }
     }
 }

@@ -83,7 +83,7 @@ public class LatticeDemo {
                 lattice.dumpSlf(new FileWriter(new File("lattice.slf")));
 
                 Nbest nbest = new Nbest(lattice);
-                for (String s : nbest.getNbest(5)) {
+                for (String s : nbest.getNbest(1)) {
                      System.out.println("N-Best Result: " + s);
                 }
 
