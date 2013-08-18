@@ -39,10 +39,6 @@ public class BaumWelchLearner implements Learner {
     public static final String FRONT_END = "frontend";
     private FrontEnd frontEnd;
 
-    @S4Component(type = LogMath.class)
-    public static final String LOG_MATH = "logMath";
-    private LogMath logMath;
-
     @S4Component(type = StreamCepstrumSource.class)
     public static final String DATA_SOURCE = "source";
     private StreamCepstrumSource dataSource;
@@ -66,12 +62,11 @@ public class BaumWelchLearner implements Learner {
 
 
     public void newProperties(PropertySheet ps) throws PropertyException {
+        logMath = LogMath.getInstance();
         dataSource = (StreamCepstrumSource) ps.getComponent(DATA_SOURCE);
 
         frontEnd = (FrontEnd) ps.getComponent(FRONT_END);
         frontEnd.setDataSource(dataSource);
-
-        logMath = (LogMath) ps.getComponent(LOG_MATH);
     }
 
 
@@ -188,7 +183,7 @@ public class BaumWelchLearner implements Learner {
         Node initialNode = graph.getInitialNode();
         int indexInitialNode = graph.indexOf(initialNode);
         for (int i = 0; i < numStates; i++) {
-            probCurrentFrame[i] = LogMath.getLogZero();
+            probCurrentFrame[i] = LogMath.LOG_ZERO;
         }
         // Overwrite in the right position
         probCurrentFrame[indexInitialNode] = 0.0f;
@@ -223,7 +218,7 @@ public class BaumWelchLearner implements Learner {
         logger.info("Feature frames read: " + lastFeatureIndex);
         // Prepare for beta computation
         for (int i = 0; i < probCurrentFrame.length; i++) {
-            probCurrentFrame[i] = LogMath.getLogZero();
+            probCurrentFrame[i] = LogMath.LOG_ZERO;
         }
         Node finalNode = graph.getFinalNode();
         int indexFinalNode = graph.indexOf(finalNode);
@@ -266,7 +261,7 @@ public class BaumWelchLearner implements Learner {
         }
         currentFeatureIndex--;
         if (currentFeatureIndex >= 0) {
-            float logScore = LogMath.getLogZero();
+            float logScore = LogMath.LOG_ZERO;
             score = scoreArray[currentFeatureIndex];
             assert score.length == betas.length;
             backwardPass(score);
@@ -357,7 +352,7 @@ public class BaumWelchLearner implements Learner {
                 continue;
             }
             // Initialize the current frame probability with 0.0f, log scale
-            probCurrentFrame[indexNode] = LogMath.getLogZero();
+            probCurrentFrame[indexNode] = LogMath.LOG_ZERO;
             for (node.startIncomingEdgeIterator();
                  node.hasMoreIncomingEdges();) {
                 // Finds out what the previous node and previous state are
@@ -416,12 +411,12 @@ public class BaumWelchLearner implements Learner {
                     continue;
                 }
             } else if (graph.isInitialNode(node)) {
-                score[indexNode].setAlpha(LogMath.getLogZero());
-                probCurrentFrame[indexNode] = LogMath.getLogZero();
+                score[indexNode].setAlpha(LogMath.LOG_ZERO);
+                probCurrentFrame[indexNode] = LogMath.LOG_ZERO;
                 continue;
             }
             // Initialize the current frame probability 0.0f, log scale
-            probCurrentFrame[indexNode] = LogMath.getLogZero();
+            probCurrentFrame[indexNode] = LogMath.LOG_ZERO;
             for (node.startIncomingEdgeIterator();
                  node.hasMoreIncomingEdges();) {
                 float logTransitionProbability;
@@ -499,7 +494,7 @@ public class BaumWelchLearner implements Learner {
             }
             // Initialize the current frame probability with log
             // probability of log(0f)
-            probCurrentFrame[indexNode] = LogMath.getLogZero();
+            probCurrentFrame[indexNode] = LogMath.LOG_ZERO;
             for (node.startOutgoingEdgeIterator();
                  node.hasMoreOutgoingEdges();) {
                 float logTransitionProbability;
@@ -550,12 +545,12 @@ public class BaumWelchLearner implements Learner {
                     continue;
                 }
             } else if (graph.isFinalNode(node)) {
-                score[indexNode].setBeta(LogMath.getLogZero());
-                probCurrentFrame[indexNode] = LogMath.getLogZero();
+                score[indexNode].setBeta(LogMath.LOG_ZERO);
+                probCurrentFrame[indexNode] = LogMath.LOG_ZERO;
                 continue;
             }
             // Initialize the current frame probability with log(0f)
-            probCurrentFrame[indexNode] = LogMath.getLogZero();
+            probCurrentFrame[indexNode] = LogMath.LOG_ZERO;
             for (node.startOutgoingEdgeIterator();
                  node.hasMoreOutgoingEdges();) {
                 float logTransitionProbability;

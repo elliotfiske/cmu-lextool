@@ -86,17 +86,16 @@ public class BinaryLoader {
      * @param location                  location of the model
      * @param format                    file format
      * @param applyLanguageWeightAndWip if true apply language weight and word insertion penalty
-     * @param logMath                   logmath to use
      * @param languageWeight            language weight
      * @param wip                       word insertion probability
      * @param unigramWeight             unigram weight
      * @throws IOException if an I/O error occurs
      */
     public BinaryLoader(File location, String format,
-                        boolean applyLanguageWeightAndWip, LogMath logMath,
+                        boolean applyLanguageWeightAndWip,
                         float languageWeight, double wip, float unigramWeight)
             throws IOException {
-        this(format, applyLanguageWeightAndWip, logMath, languageWeight, wip, unigramWeight);
+        this(format, applyLanguageWeightAndWip, languageWeight, wip, unigramWeight);
         loadModelLayout(new FileInputStream (location));
         file = new RandomAccessFile(location, "r");
     }
@@ -107,17 +106,17 @@ public class BinaryLoader {
      *
      * @param format                    file format
      * @param applyLanguageWeightAndWip if true apply language weight and word insertion penalty
-     * @param logMath                   logmath to sue
      * @param languageWeight            language weight
      * @param wip                       word insertion probability
      * @param unigramWeight             unigram weight
      */
-    public BinaryLoader(String format, boolean applyLanguageWeightAndWip, LogMath logMath, float languageWeight, double wip,
+    public BinaryLoader(String format, boolean applyLanguageWeightAndWip, float
+            languageWeight, double wip,
             float unigramWeight) {
         startWordID = -1;
         endWordID = -1;
         this.applyLanguageWeightAndWip = applyLanguageWeightAndWip;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.languageWeight = languageWeight;
         this.wip = wip;
         this.unigramWeight = unigramWeight;

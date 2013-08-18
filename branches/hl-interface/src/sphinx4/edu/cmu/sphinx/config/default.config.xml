@@ -20,7 +20,6 @@
 
   <component name="simpleSearchManager"
     type="edu.cmu.sphinx.decoder.search.SimpleBreadthFirstSearchManager">
-    <property name="logMath" value="logMath"/>
     <property name="linguist" value="flatLinguist"/>
     <property name="pruner" value="trivialPruner"/>
     <property name="scorer" value="threadedScorer"/>
@@ -29,7 +28,6 @@
 
   <component name="wordPruningSearchManager"
     type="edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstSearchManager">
-    <property name="logMath" value="logMath"/>
     <property name="linguist" value="lexTreeLinguist"/>
     <property name="pruner" value="trivialPruner"/>
     <property name="scorer" value="threadedScorer"/>
@@ -43,7 +41,6 @@
 
   <component name="activeList"
     type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
-    <property name="logMath" value="logMath"/>
     <property name="absoluteBeamWidth" value="${absoluteBeamWidth}"/>
     <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
   </component>
@@ -58,7 +55,6 @@
 
   <component name="flatLinguist"
     type="edu.cmu.sphinx.linguist.flat.FlatLinguist">
-    <property name="logMath" value="logMath"/>
     <property name="grammar" value="jsgfGrammar"/>
     <property name="acousticModel" value="wsj"/>
     <property name="wordInsertionProbability"
@@ -71,7 +67,6 @@
 
   <component name="lexTreeLinguist"
     type="edu.cmu.sphinx.linguist.lextree.LexTreeLinguist">
-    <property name="logMath" value="logMath"/>
     <property name="acousticModel" value="wsj"/>
     <property name="languageModel" value="trigramModel"/>
     <property name="dictionary" value="dictionary"/>
@@ -89,7 +84,6 @@
   <component name="trigramModel"
     type="edu.cmu.sphinx.linguist.language.ngram.SimpleNGramModel">
     <property name="location" value=""/>
-    <property name="logMath" value="logMath"/>
     <property name="dictionary" value="dictionary"/>
     <property name="maxDepth" value="3"/>
     <property name="unigramWeight" value=".7"/>
@@ -98,7 +92,6 @@
   <component name="alignerGrammar"
     type="edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar">
     <property name="dictionary" value="dictionary"/>
-    <property name="logMath" value="logMath"/>
     <property name="addSilenceWords" value="true"/>
   </component>
 
@@ -106,7 +99,6 @@
     <property name="dictionary" value="dictionary"/>
     <property name="grammarLocation" value=""/>
     <property name="grammarName" value=""/>
-    <property name="logMath" value="logMath"/>
     <property name="addSilenceWords" value="true"/>
   </component>
 
@@ -127,7 +119,6 @@
 
   <component name="wsjLoader"
     type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
-    <property name="logMath" value="logMath"/>
     <property name="unitManager" value="unitManager"/>
     <property name="location" value=""/>
   </component>
@@ -215,12 +206,6 @@
   <component name="microphone"
     type="edu.cmu.sphinx.frontend.util.Microphone">
     <property name="closeBetweenUtterances" value="false"/>
-  </component>
-
-
-  <component name="logMath" type="edu.cmu.sphinx.util.LogMath">
-    <property name="logBase" value="1.0001"/>
-    <property name="useAddTable" value="true"/>
   </component>
 
   <component name="confidenceScorer"

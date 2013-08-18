@@ -55,19 +55,17 @@ public class MixtureComponent implements Cloneable, Serializable {
     /**
      * Create a MixtureComponent with the given sub components.
      *
-     * @param logMath  the log math to use
      * @param mean     the mean vector for this PDF
      * @param variance the variance for this PDF
      */
-    public MixtureComponent(LogMath logMath, float[] mean, float[] variance) {
-        this(logMath, mean, null, null, variance, null, null, DEFAULT_DIST_FLOOR, DEFAULT_VAR_FLOOR);
+    public MixtureComponent(float[] mean, float[] variance) {
+        this(mean, null, null, variance, null, null, DEFAULT_DIST_FLOOR, DEFAULT_VAR_FLOOR);
     }
 
 
     /**
      * Create a MixtureComponent with the given sub components.
      *
-     * @param logMath                      the log math to use
      * @param mean                         the mean vector for this PDF
      * @param meanTransformationMatrix     transformation matrix for this pdf
      * @param meanTransformationVector     transform vector for this PDF
@@ -76,14 +74,13 @@ public class MixtureComponent implements Cloneable, Serializable {
      * @param varianceTransformationVector var. transform vector for this PDF
      */
     public MixtureComponent(
-            LogMath logMath,
             float[] mean,
             float[][] meanTransformationMatrix,
             float[] meanTransformationVector,
             float[] variance,
             float[][] varianceTransformationMatrix,
             float[] varianceTransformationVector) {
-        this(logMath, mean, meanTransformationMatrix, meanTransformationVector, variance,
+        this(mean, meanTransformationMatrix, meanTransformationVector, variance,
                 varianceTransformationMatrix, varianceTransformationVector, DEFAULT_DIST_FLOOR, DEFAULT_VAR_FLOOR);
     }
 
@@ -91,7 +88,6 @@ public class MixtureComponent implements Cloneable, Serializable {
     /**
      * Create a MixtureComponent with the given sub components.
      *
-     * @param logMath                      the log math to use
      * @param mean                         the mean vector for this PDF
      * @param meanTransformationMatrix     transformation matrix for this pdf
      * @param meanTransformationVector     transform vector for this PDF
@@ -102,7 +98,6 @@ public class MixtureComponent implements Cloneable, Serializable {
      * @param varianceFloor                the lowest value for the variance
      */
     public MixtureComponent(
-            LogMath logMath,
             float[] mean,
             float[][] meanTransformationMatrix,
             float[] meanTransformationVector,
@@ -114,7 +109,7 @@ public class MixtureComponent implements Cloneable, Serializable {
 
         assert variance.length == mean.length;
 
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.mean = mean;
         this.meanTransformationMatrix = meanTransformationMatrix;
         this.meanTransformationVector = meanTransformationVector;
@@ -212,7 +207,7 @@ public class MixtureComponent implements Cloneable, Serializable {
 
         if (Float.isNaN(logDval)) {
             System.out.println("gs is Nan, converting to 0");
-            logDval = LogMath.getLogZero();
+            logDval = LogMath.LOG_ZERO;
         }
 
         if (logDval < distFloor) {

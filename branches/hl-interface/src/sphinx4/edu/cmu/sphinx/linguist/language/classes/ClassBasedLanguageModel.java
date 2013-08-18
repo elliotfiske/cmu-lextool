@@ -1,12 +1,11 @@
-/*
-* Created on Jan 19, 2005
-*/
+/**
+ * Created on Jan 19, 2005
+ */
 package edu.cmu.sphinx.linguist.language.classes;
 
 import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
-import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 import edu.cmu.sphinx.util.props.S4Component;
@@ -23,12 +22,6 @@ import java.util.Set;
  * @author Tanel Alumae
  */
 public class ClassBasedLanguageModel implements LanguageModel {
-    /**
-     * The property that defines the logMath component.
-     */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /**
      * The property that defines the classLanguageModel component.
      */
@@ -51,7 +44,7 @@ public class ClassBasedLanguageModel implements LanguageModel {
 
     private ClassMap classMap;
 
-    public ClassBasedLanguageModel(ClassMap classMap, LanguageModel classLM, LogMath logMath ) {
+    public ClassBasedLanguageModel(ClassMap classMap, LanguageModel classLM) {
         this.classMap = classMap;
         this.classLM = classLM;
     }

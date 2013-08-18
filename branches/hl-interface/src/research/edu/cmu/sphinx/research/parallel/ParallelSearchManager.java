@@ -27,7 +27,6 @@ import edu.cmu.sphinx.linguist.flat.SentenceHMMState;
 import edu.cmu.sphinx.linguist.flat.SentenceHMMState.Color;
 import edu.cmu.sphinx.linguist.flat.SentenceHMMStateArc;
 import edu.cmu.sphinx.result.Result;
-import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.Timer;
 import edu.cmu.sphinx.util.TimerPool;
 import edu.cmu.sphinx.util.props.PropertyException;
@@ -66,17 +65,11 @@ public class ParallelSearchManager implements SearchManager {
     @S4Component(type = Linguist.class)
     public static final String PROP_LINGUIST = "linguist";
 
-    /** The property for the log math used. */
-    @S4Component(type = LogMath.class)
-    public static final String PROP_LOG_MATH = "logMath";
-
-
     private ParallelSimpleLinguist linguist;
     private AcousticScorer scorer;
     private Pruner featureScorePruner;
     private Pruner combinedScorePruner;
     //    private ScoreCombiner featureScoreCombiner;
-    private LogMath logMath;
 
     private int currentFrameNumber;           // the current frame number
     private ActiveListFactory activeListFactory;
@@ -100,17 +93,10 @@ public class ParallelSearchManager implements SearchManager {
      * @see edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.util.props.PropertySheet)
      */
     public void newProperties(PropertySheet ps) throws PropertyException {
-
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
-
         linguist = (ParallelSimpleLinguist) ps.getComponent(PROP_LINGUIST);
-
         scorer = (AcousticScorer) ps.getComponent(PROP_SCORER);
-
         activeListFactory = (ActiveListFactory) ps.getComponent(PROP_ACTIVE_LIST_FACTORY);
-
         this.doFeaturePruning = ps.getBoolean(PROP_DO_FEATURE_PRUNING);
-
         this.doCombinePruning = ps.getBoolean(PROP_DO_COMBINE_PRUNING);
 
         if (doFeaturePruning) {
@@ -231,7 +217,7 @@ public class ParallelSearchManager implements SearchManager {
             done = recognize();
         }
 
-        return new Result(combinedActiveList, resultList, currentFrameNumber, done, logMath);
+        return new Result(combinedActiveList, resultList, currentFrameNumber, done);
     }
 
 

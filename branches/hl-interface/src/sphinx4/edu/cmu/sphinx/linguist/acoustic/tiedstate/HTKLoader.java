@@ -78,10 +78,6 @@ import java.util.logging.Logger;
 
 public class HTKLoader implements Loader {
 
-    /** The log math component for the system. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /** The unit manager */
     @S4Component(type = UnitManager.class)
     public final static String PROP_UNIT_MANAGER = "unitManager";
@@ -159,7 +155,7 @@ public class HTKLoader implements Loader {
     private boolean loaded;
     private boolean tie1ph;
 
-    public HTKLoader(String propsFile, LogMath logMath,
+    public HTKLoader(String propsFile,
             UnitManager unitManager, boolean isBinary, int vectorLength,
             String model, boolean tie1ph, float distFloor,
             float mixtureWeightFloor, float varianceFloor) {
@@ -169,7 +165,7 @@ public class HTKLoader implements Loader {
         this.propsFile = propsFile;
         loadProperties();
 
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.unitManager = unitManager;
         this.model = model;
         this.tie1ph = tie1ph;
@@ -189,7 +185,6 @@ public class HTKLoader implements Loader {
         propsFile = ps.getString(PROP_PROPERTIES_FILE);
         loadProperties();
 
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         unitManager = (UnitManager) ps.getComponent(PROP_UNIT_MANAGER);
 
         String mdef = (String) properties.get(PROP_MODEL);
@@ -336,7 +331,7 @@ public class HTKLoader implements Loader {
         for (int i = 0; i < numSenones; i++) {
             MixtureComponent[] mixtureComponents = new MixtureComponent[numGaussiansPerSenone];
             for (int j = 0; j < numGaussiansPerSenone; j++) {
-                mixtureComponents[j] = new MixtureComponent(logMath,
+                mixtureComponents[j] = new MixtureComponent(
                         meansPool.get(whichGaussian), 
                         meansTransformationMatrix, 
                         meansTransformationVector,
@@ -349,7 +344,7 @@ public class HTKLoader implements Loader {
                 whichGaussian++;
             }
 
-            Senone senone = new GaussianMixture(logMath, mixtureWeightsPool
+            Senone senone = new GaussianMixture(mixtureWeightsPool
                     .get(i), mixtureComponents, i);
 
             pool.put(i, senone);

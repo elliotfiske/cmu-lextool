@@ -14,7 +14,6 @@ package edu.cmu.sphinx.decoder.search;
 
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
-import edu.cmu.sphinx.util.LogMath;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -28,10 +27,9 @@ public class PartitionActiveListFactory extends ActiveListFactory {
      * 
      * @param absoluteBeamWidth
      * @param relativeBeamWidth
-     * @param logMath
      */
-    public PartitionActiveListFactory(int absoluteBeamWidth, double relativeBeamWidth, LogMath logMath) {
-        super(absoluteBeamWidth, relativeBeamWidth, logMath);
+    public PartitionActiveListFactory(int absoluteBeamWidth, double relativeBeamWidth) {
+        super(absoluteBeamWidth, relativeBeamWidth);
     }
 
     public PartitionActiveListFactory() {

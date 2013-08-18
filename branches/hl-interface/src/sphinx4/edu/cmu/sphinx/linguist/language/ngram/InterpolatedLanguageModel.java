@@ -19,12 +19,6 @@ import java.util.Set;
  */
 public class InterpolatedLanguageModel implements LanguageModel {
     /**
-     * The property that defines the logMath component.
-     */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
-    /**
      * The property that defines the language models to be interpolated.
      */
     @S4ComponentList(type = LanguageModel.class)
@@ -46,7 +40,8 @@ public class InterpolatedLanguageModel implements LanguageModel {
 
     private static final double EPSILON = 0.001;
 
-    public InterpolatedLanguageModel(LogMath logMath, List<LanguageModel> languageModels, float [] floats ) {
+    public InterpolatedLanguageModel(List<LanguageModel> languageModels, float [] floats ) {
+        logMath = LogMath.getInstance();
         this.languageModels = languageModels;
         this.numberOfLanguageModels = languageModels.size();
 
@@ -73,7 +68,6 @@ public class InterpolatedLanguageModel implements LanguageModel {
         if (allocated) {
             throw new RuntimeException("Can't change properties after allocation");
         }
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         languageModels = ps.getComponentList(PROP_LANGUAGE_MODELS, LanguageModel.class);
         numberOfLanguageModels = languageModels.size();
 

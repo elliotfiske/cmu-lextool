@@ -33,15 +33,15 @@ import java.util.Map;
  */
 public class MixtureComponentTest {
 
-    private LogMath lm;
+    private LogMath logMath;
 
+    @BeforeClass setupOnce() {
+        LogMath.setUseTable(false);
+    }
 
     @Before
     public void setup() {
         Map<String, Object> props = new HashMap<String, Object>();
-        props.put(LogMath.PROP_USE_ADD_TABLE, false);
-
-        lm = ConfigurationManager.getInstance(LogMath.class, props);
     }
 
 
@@ -59,7 +59,7 @@ public class MixtureComponentTest {
         float mean = 20;
         float var = 3;
 
-        MixtureComponent gaussian = new MixtureComponent(lm, new float[]{mean}, new float[]{var});
+        MixtureComponent gaussian = new MixtureComponent(new float[]{mean}, new float[]{var});
 
         for (float curX = minX; curX <= maxX; curX += resolution) {
             double gauLogScore = gaussian.getScore(new FloatData(new float[]{curX}, 0, 0));
@@ -78,7 +78,7 @@ public class MixtureComponentTest {
         float mean = 20;
         float var = 0.001f;
 
-        MixtureComponent gaussian = new MixtureComponent(lm, new float[]{mean}, new float[][]{{2}}, new float[]{5}, new float[]{var}, null, null);
+        MixtureComponent gaussian = new MixtureComponent(new float[]{mean}, new float[][]{{2}}, new float[]{5}, new float[]{var}, null, null);
         assertTrue(lm.logToLinear(gaussian.getScore(new float[]{2 * mean + 5})) > 10);
     }
 

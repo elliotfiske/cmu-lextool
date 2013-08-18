@@ -36,7 +36,7 @@ public class CIPhoneLoop {
 
     public final AcousticModel model;
     private final float logPhoneInsertionProbability;
-    public final float logOne = LogMath.getLogOne();
+    public final float logOne = LogMath.LOG_ONE;
 
 
     /**

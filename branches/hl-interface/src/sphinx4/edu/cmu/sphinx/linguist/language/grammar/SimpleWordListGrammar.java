@@ -49,11 +49,6 @@ public class SimpleWordListGrammar extends Grammar implements Configurable {
     @S4Boolean(defaultValue = true)
     public final static String PROP_LOOP = "isLooping";
 
-    /** The property that defines the logMath component. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
-
     // ---------------------
     // Configurable data
     // ---------------------
@@ -61,11 +56,11 @@ public class SimpleWordListGrammar extends Grammar implements Configurable {
     private boolean isLooping;
     private LogMath logMath;
 
-    public SimpleWordListGrammar(String path, boolean isLooping, LogMath logMath, boolean showGrammar, boolean optimizeGrammar, boolean addSilenceWords, boolean addFillerWords, edu.cmu.sphinx.linguist.dictionary.Dictionary dictionary) {
+    public SimpleWordListGrammar(String path, boolean isLooping, boolean showGrammar, boolean optimizeGrammar, boolean addSilenceWords, boolean addFillerWords, edu.cmu.sphinx.linguist.dictionary.Dictionary dictionary) {
         super(showGrammar,optimizeGrammar,addSilenceWords,addFillerWords,dictionary);
         this.path = path;
         this.isLooping = isLooping;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
     public SimpleWordListGrammar() {
@@ -83,7 +78,6 @@ public class SimpleWordListGrammar extends Grammar implements Configurable {
         
         path = ps.getString(PROP_PATH);
         isLooping = ps.getBoolean(PROP_LOOP);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
     }
 
 
@@ -118,14 +112,14 @@ public class SimpleWordListGrammar extends Grammar implements Configurable {
             }
         }
         // now connect all the GrammarNodes together
-        initialNode.add(branchNode, LogMath.getLogOne());
+        initialNode.add(branchNode, LogMath.LOG_ONE);
         float branchScore = logMath.linearToLog(
                 1.0 / wordGrammarNodes.size());
         for (GrammarNode wordNode : wordGrammarNodes) {
             branchNode.add(wordNode, branchScore);
-            wordNode.add(finalNode, LogMath.getLogOne());
+            wordNode.add(finalNode, LogMath.LOG_ONE);
             if (isLooping) {
-                wordNode.add(branchNode, LogMath.getLogOne());
+                wordNode.add(branchNode, LogMath.LOG_ONE);
             }
         }
 

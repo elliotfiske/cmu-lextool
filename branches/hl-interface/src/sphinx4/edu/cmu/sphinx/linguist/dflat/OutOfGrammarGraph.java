@@ -217,7 +217,7 @@ public class OutOfGrammarGraph {
             hmm = acousticModel.lookupNearestHMM(unit, HMMPosition.UNDEFINED, false);
             successors = new SearchStateArc[1];
             successors[0] = new OogHMMState(hmm.getInitialState(),
-                    LogMath.getLogOne());
+                    LogMath.LOG_ONE);
         }
 
 
@@ -620,7 +620,7 @@ public class OutOfGrammarGraph {
          */
         @Override
         public float getLanguageProbability() {
-            return LogMath.getLogOne();
+            return LogMath.LOG_ONE;
         }
 
 
@@ -631,7 +631,7 @@ public class OutOfGrammarGraph {
          */
         @Override
         public float getInsertionProbability() {
-            return LogMath.getLogOne();
+            return LogMath.LOG_ONE;
         }
     }
 }

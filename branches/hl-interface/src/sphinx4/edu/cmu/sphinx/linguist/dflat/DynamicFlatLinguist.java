@@ -71,11 +71,6 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
     @S4Component(type = AcousticModel.class)
     public final static String PHONE_LOOP_ACOUSTIC_MODEL = "phoneLoopAcousticModel";
 
-    /** The property that defines the name of the logmath to be used by this search manager. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-    private final static float logOne = LogMath.getLogOne();
-
     // ----------------------------------
     // Subcomponents that are configured
     // by the property sheet
@@ -123,14 +118,14 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
     // an empty arc (just waiting for Noah, I guess)
     private final SearchStateArc[] EMPTY_ARCS = new SearchStateArc[0];
 
-    public DynamicFlatLinguist(AcousticModel acousticModel, Grammar grammar, UnitManager unitManager, LogMath logMath,
+    public DynamicFlatLinguist(AcousticModel acousticModel, Grammar grammar, UnitManager unitManager,
             double wordInsertionProbability, double silenceInsertionProbability, double unitInsertionProbability,
             double fillerInsertionProbability, float languageWeight, boolean addOutOfGrammarBranch,
             double outOfGrammarBranchProbability, double phoneInsertionProbability, AcousticModel phoneLoopAcousticModel) {
 
         this.logger = Logger.getLogger(getClass().getName());
         this.acousticModel = acousticModel;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.grammar = grammar;
         this.unitManager = unitManager;
 
@@ -162,7 +157,6 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
         logger = ps.getLogger();
         acousticModel = (AcousticModel) ps.getComponent(ACOUSTIC_MODEL);
 
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         grammar = (Grammar) ps.getComponent(GRAMMAR);
         unitManager = (UnitManager) ps.getComponent(UNIT_MANAGER);
 
@@ -257,16 +251,6 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
     /** Called after a recognition */
     @Override
     public void stopRecognition() {
-    }
-
-
-    /**
-     * Returns the LogMath used.
-     *
-     * @return the logMath used
-     */
-    public LogMath getLogMath() {
-        return logMath;
     }
 
 
@@ -505,7 +489,7 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
          */
         @Override
         public float getLanguageProbability() {
-            return logOne;
+            return LogMath.LOG_ONE;
         }
         
 
@@ -516,7 +500,7 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
          */
         @Override
         public float getInsertionProbability() {
-            return logOne;
+            return LogMath.LOG_ONE;
         }
 
 
@@ -558,7 +542,7 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
          * @param node the grammar node
          */
         GrammarState(GrammarNode node) {
-            this(node, logOne, UnitManager.SILENCE.getBaseID());
+            this(node, LogMath.LOG_ONE, UnitManager.SILENCE.getBaseID());
         }
 
 
@@ -928,7 +912,7 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
         @Override
         public float getInsertionProbability() {
             if (pronunciation.getWord().isFiller()) {
-                return logOne;
+                return LogMath.LOG_ONE;
             } else {
                 return logWordInsertionProbability;
             }
@@ -1352,7 +1336,7 @@ public class DynamicFlatLinguist implements Linguist, Configurable {
          * @param hmmState which hmm state
          */
         HMMStateSearchState(FullHMMSearchState hss, HMMState hmmState) {
-            this(hss, hmmState, logOne);
+            this(hss, hmmState, LogMath.LOG_ONE);
         }
 
 

@@ -256,7 +256,7 @@ public class BuildTranscriptHMM {
             for (int j = 0; j <= i; j++) {
                 // System.out.println("TMAT: " + j + " " + i + " " +
                 // tmat[j][i]);
-                if (tmat[j][i] != LogMath.getLogZero()) {
+                if (tmat[j][i] != LogMath.LOG_ZERO) {
                     // 'j + 1' to account for the initial dummy node
                     graph.linkNodes(graph.getNode(j + 1), stateNode);
                 }

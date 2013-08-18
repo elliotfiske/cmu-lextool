@@ -67,24 +67,6 @@ public class WordResultPath implements Path {
         return confidence;
     }
 
-
-    /**
-     * Returns the LogMath of the scores.
-     *
-     * @return the LogMath of the scores
-     */
-    @Override
-    public LogMath getLogMath() {
-        Iterator<WordResult> i = path.iterator();
-        if (i.hasNext()) {
-            WordResult wr = i.next();
-            return wr.getLogMath();
-        } else {
-            return null;
-        }
-    }
-
-
     /** @see edu.cmu.sphinx.result.Path#getWords() */
     @Override
     public WordResult[] getWords() {

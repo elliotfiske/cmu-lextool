@@ -202,7 +202,7 @@ public class BushderbySearchManager extends SimpleBreadthFirstSearchManager {
             boolean firstToken = (getBestToken(nextState) == null);
             boolean greenToken = isGreenState(nextState);
 
-            float logWorkingScore = firstToken ? LogMath.getLogZero() :
+            float logWorkingScore = firstToken ? LogMath.LOG_ZERO :
                 getBestToken(nextState).getWorkingScore();
 
             Token predecessor = getResultListPredecessor(token);

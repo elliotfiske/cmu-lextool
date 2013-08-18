@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import edu.cmu.sphinx.util.LogMath;
-
 /**
  * Language model that reads whole model into memory. Useful
  * for loading language models from resources or external locations.
@@ -32,10 +30,13 @@ public class BinaryStreamLoader extends BinaryLoader {
 
     byte[] modelData;
     
-    public BinaryStreamLoader(URL location, String format, boolean applyLanguageWeightAndWip,
-            LogMath logMath, float languageWeight, double wip,
-            float unigramWeight) throws IOException {
-        super(format, applyLanguageWeightAndWip, logMath, languageWeight, wip,
+    public BinaryStreamLoader(URL location, String format, boolean
+            applyLanguageWeightAndWip,
+            float languageWeight, double wip,
+            float unigramWeight)
+        throws IOException
+    {
+        super(format, applyLanguageWeightAndWip, languageWeight, wip,
                 unigramWeight);
         
         InputStream stream = location.openStream();

@@ -35,10 +35,6 @@ public class GDLDumper extends LinguistDumper {
     @S4Boolean(defaultValue = true)
     public static final String PROP_DUMP_ARC_LABELS = "dumpArcLabels";
 
-    /** The property to specify the log math */
-    @S4Component(type = LogMath.class)
-    public static final String PROP_LOG_MATH = "logMath";
-
     // -------------------------------
     // Configuration data
     // --------------------------------
@@ -48,15 +44,15 @@ public class GDLDumper extends LinguistDumper {
     private LogMath logMath;
 
     public GDLDumper( String filename, Linguist linguist,
-                      boolean verticalLayout, boolean skipHMMs, boolean dumpArcLabels,
-                      LogMath logMath ) {
+                      boolean verticalLayout, boolean skipHMMs, boolean dumpArcLabels)
+    {
         super( filename, linguist );
 
         this.verticalLayout = verticalLayout;
         this.skipHMMs = skipHMMs;
         this.dumpArcLabels = dumpArcLabels;
         setDepthFirst(false); // breadth first traversal
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
     public GDLDumper() {
@@ -77,7 +73,6 @@ public class GDLDumper extends LinguistDumper {
         dumpArcLabels = ps.getBoolean(
                 PROP_DUMP_ARC_LABELS);
         setDepthFirst(false); // breadth first traversal
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
     }
 
 

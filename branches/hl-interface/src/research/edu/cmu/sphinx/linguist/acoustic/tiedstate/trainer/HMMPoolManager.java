@@ -78,7 +78,7 @@ class HMMPoolManager {
 
         createBuffers();
         logLikelihood = 0.0f;
-        logMath = new LogMath();
+        logMath = LogMath.getInstance();
     }
 
     /** Recreates the buffers. */
@@ -289,7 +289,7 @@ class HMMPoolManager {
 
         for (int i = 0; i < vector.length; i++) {
             // Make sure this is a valid transition
-            if (vector[i] != LogMath.getLogZero()) {
+            if (vector[i] != LogMath.LOG_ZERO) {
 
                 // We're assuming that if the states have position "a"
                 // and "b" in the HMM, they'll have positions "k+a"
@@ -352,7 +352,7 @@ class HMMPoolManager {
         for (int i = 0; i < stateVector.length; i++) {
             // Make sure we're not trying to accumulate in an invalid
             // transition.
-            if (stateVector[i] != LogMath.getLogZero()) {
+            if (stateVector[i] != LogMath.LOG_ZERO) {
                 bufferArray[indexState].logAccumulate(value, i, logMath);
             }
         }
@@ -540,8 +540,8 @@ class HMMPoolManager {
                 if (buffer.wasUsed()) {
                     for (int k = 0; k < matrix[j].length; k++) {
                         float bufferValue = buffer.getValue(k);
-                        if (bufferValue != LogMath.getLogZero()) {
-                            assert matrix[j][k] != LogMath.getLogZero();
+                        if (bufferValue != LogMath.LOG_ZERO) {
+                            assert matrix[j][k] != LogMath.LOG_ZERO;
                             if (bufferValue < logTransitionProbabilityFloor) {
                                 buffer.setValue(k, logTransitionProbabilityFloor);
                             }

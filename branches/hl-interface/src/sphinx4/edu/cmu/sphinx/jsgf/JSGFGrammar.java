@@ -175,10 +175,6 @@ public class JSGFGrammar extends Grammar {
     @S4String(defaultValue = "default.gram")
     public final static String PROP_GRAMMAR_NAME = "grammarName";
 
-    /** The property that defines the logMath component. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     // ---------------------
     // Configurable data
     // ---------------------
@@ -193,24 +189,24 @@ public class JSGFGrammar extends Grammar {
     protected GrammarNode firstNode;
     protected Logger logger;
 
-    public JSGFGrammar(String location, LogMath logMath, String grammarName,
+    public JSGFGrammar(String location, String grammarName,
             boolean showGrammar, boolean optimizeGrammar,
             boolean addSilenceWords, boolean addFillerWords,
             Dictionary dictionary) throws MalformedURLException,
             ClassNotFoundException {
-        this(ConfigurationManagerUtils.resourceToURL(location), logMath,
+        this(ConfigurationManagerUtils.resourceToURL(location),
                 grammarName, showGrammar, optimizeGrammar, addSilenceWords,
                 addFillerWords, dictionary);
     }
 
-    public JSGFGrammar(URL baseURL, LogMath logMath, String grammarName,
+    public JSGFGrammar(URL baseURL, String grammarName,
             boolean showGrammar, boolean optimizeGrammar,
             boolean addSilenceWords, boolean addFillerWords,
             Dictionary dictionary) {
         super(showGrammar, optimizeGrammar, addSilenceWords, addFillerWords,
                 dictionary);
+        logMath = LogMath.getInstance();
         this.baseURL = baseURL;
-        this.logMath = logMath;
         this.grammarName = grammarName;
         loadGrammar = true;
         logger = Logger.getLogger(getClass().getName());
@@ -231,7 +227,6 @@ public class JSGFGrammar extends Grammar {
         super.newProperties(ps);
         baseURL = ConfigurationManagerUtils.getResource(PROP_BASE_GRAMMAR_URL,
                 ps);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         logger = ps.getLogger();
         grammarName = ps.getString(PROP_GRAMMAR_NAME);
         loadGrammar = true;
@@ -488,7 +483,7 @@ public class JSGFGrammar extends Grammar {
 
         for (int i = 0; i < weights.size(); i++) {
             if (sum == 0.0f) {
-                normalized.set(i, LogMath.getLogZero());
+                normalized.set(i, LogMath.LOG_ZERO);
             } else {
                 normalized.set(i, logMath.linearToLog(weights.get(i) / sum));
             }

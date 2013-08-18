@@ -382,7 +382,7 @@ class InitialWordNode extends WordNode {
      * @param parent        the parent node
      */
     InitialWordNode(Pronunciation pronunciation, HMMNode parent) {
-        super(pronunciation, LogMath.getLogOne());
+        super(pronunciation, LogMath.LOG_ONE);
         this.parent = parent;
     }
 
@@ -749,7 +749,7 @@ class HMMTree {
                 HMM hmm = hmmPool.getHMM(baseUnit, lc, rc, HMMPosition.END);
                 HMMNode hmmNode = resultMap.get(hmm);
                 if (hmmNode == null) {
-                    hmmNode = new HMMNode(hmm, LogMath.getLogOne());
+                    hmmNode = new HMMNode(hmm, LogMath.LOG_ONE);
                     resultMap.put(hmm, hmmNode);
                 }
                 hmmNode.addRC(rc);
@@ -938,7 +938,7 @@ class HMMTree {
      * @return the unigram probability for the word.
      */
     private float getWordUnigramProbability(Word word) {
-        float prob = LogMath.getLogOne();
+        float prob = LogMath.LOG_ONE;
         if (!word.isFiller()) {
             Word[] wordArray = new Word[1];
             wordArray[0] = word;
@@ -1059,10 +1059,10 @@ class HMMTree {
          */
         EntryPoint(Unit baseUnit) {
             this.baseUnit = baseUnit;
-            this.baseNode = new Node(LogMath.getLogZero());
+            this.baseNode = new Node(LogMath.LOG_ZERO);
             this.unitToEntryPointMap = new HashMap<Unit, Node>();
             this.singleUnitWords = new ArrayList<Pronunciation>();
-            this.totalProbability = LogMath.getLogZero();
+            this.totalProbability = LogMath.LOG_ZERO;
         }
 
 
@@ -1154,7 +1154,7 @@ class HMMTree {
             HashMap<HMM, HMMNode> singleUnitMap = new HashMap<HMM, HMMNode>();
 
             for (Unit lc : exitPoints) {
-                Node epNode = new Node(LogMath.getLogZero());
+                Node epNode = new Node(LogMath.LOG_ZERO);
                 for (Unit rc : getEntryPointRC()) {
                     HMM hmm = hmmPool.getHMM(baseUnit, lc, rc, HMMPosition.BEGIN);
                     Node addedNode;

@@ -21,6 +21,8 @@ import edu.cmu.sphinx.result.Path;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.result.WordResult;
 
+import edu.cmu.sphinx.util.LogMath;
+
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 import java.io.File;
@@ -54,6 +56,7 @@ public class MAPConfidenceTest {
 				audioFileURL.getFile());
 
 		Result result = recognizer.recognize();
+        LogMath logMath = LogMath.getInstance();
 
 		if (result != null) {
 			ConfidenceScorer cs = (ConfidenceScorer) cm
@@ -66,18 +69,16 @@ public class MAPConfidenceTest {
 			for (WordResult wr : words) {
 				System.out.println(wr.getPronunciation().getWord()
 						.getSpelling());
-				System.out.println("   (confidence: "
-						+ wr.getLogMath().logToLinear(
-								(float) wr.getConfidence()) + ')');
+				System.out.println("   (confidence: " +
+						logMath.logToLinear((float) wr.getConfidence()) + ')');
 			}
 
 			System.out.println();
 
 			/* confidence of the best path */
 			System.out.println(best.getTranscription());
-			System.out.println("   (confidence: "
-					+ best.getLogMath().logToLinear(
-							(float) best.getConfidence()) + ')');
+			System.out.println("   (confidence: " +
+                    logMath.logToLinear((float) best.getConfidence()) + ')');
 		}
 	}
 }

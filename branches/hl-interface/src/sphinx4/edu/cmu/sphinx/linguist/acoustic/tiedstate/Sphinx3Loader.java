@@ -102,12 +102,6 @@ import java.util.logging.Logger;
 public class Sphinx3Loader implements Loader {
 
     /**
-     * The log math component for the system.
-     */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
-    /**
      * The unit manager
      */
     @S4Component(type = UnitManager.class)
@@ -203,29 +197,29 @@ public class Sphinx3Loader implements Loader {
     private boolean loaded;
     
     public Sphinx3Loader(URL location, String model, String dataLocation,
-                         LogMath logMath, UnitManager unitManager,
+                         UnitManager unitManager,
                          float distFloor,
                          float mixtureWeightFloor, float varianceFloor, boolean useCDUnits) {
 
-        init(location, model, dataLocation, logMath, unitManager, distFloor, mixtureWeightFloor, varianceFloor, useCDUnits, Logger.getLogger(getClass().getName()));
+        init(location, model, dataLocation, unitManager, distFloor, mixtureWeightFloor, varianceFloor, useCDUnits, Logger.getLogger(getClass().getName()));
     }
 
     public Sphinx3Loader(String location, String model, String dataLocation,
-                         LogMath logMath, UnitManager unitManager,
+                         UnitManager unitManager,
                          float distFloor,
                          float mixtureWeightFloor, float varianceFloor, boolean useCDUnits) throws MalformedURLException, ClassNotFoundException {
 
-        init(ConfigurationManagerUtils.resourceToURL(location), model, dataLocation, logMath, unitManager, distFloor, mixtureWeightFloor, varianceFloor, useCDUnits, Logger.getLogger(getClass().getName()));
+        init(ConfigurationManagerUtils.resourceToURL(location), model, dataLocation, unitManager, distFloor, mixtureWeightFloor, varianceFloor, useCDUnits, Logger.getLogger(getClass().getName()));
     }
 
-    protected void init(URL location, String model, String dataLocatoin, LogMath logMath, UnitManager unitManager,
+    protected void init(URL location, String model, String dataLocatoin, UnitManager unitManager,
             float distFloor, float mixtureWeightFloor, float varianceFloor,
             boolean useCDUnits, Logger logger) {
+        logMath = LogMath.getInstance();
         this.location = location;
         this.logger = logger;
         this.model = model;
         this.dataLocation = dataLocatoin;
-        this.logMath = logMath;
         this.unitManager = unitManager;
         this.distFloor = distFloor;
         this.mixtureWeightFloor = mixtureWeightFloor;
@@ -243,7 +237,6 @@ public class Sphinx3Loader implements Loader {
         init(ConfigurationManagerUtils.getResource(PROP_LOCATION,ps),
                 ps.getString(PROP_MODEL),
                 ps.getString(PROP_DATA_LOCATION),
-                (LogMath) ps.getComponent(PROP_LOG_MATH),
                 (UnitManager) ps.getComponent(PROP_UNIT_MANAGER),
                 ps.getFloat(PROP_MC_FLOOR),
                 ps.getFloat(PROP_MW_FLOOR),
@@ -400,7 +393,7 @@ public class Sphinx3Loader implements Loader {
         for (int i = 0; i < numSenones; i++) {
             MixtureComponent[] mixtureComponents = new MixtureComponent[numGaussiansPerSenone * numStreams];
             for (int j = 0; j < numGaussiansPerSenone; j++) {
-                mixtureComponents[j] = new MixtureComponent(logMath, 
+                mixtureComponents[j] = new MixtureComponent(
                         meansPool.get(whichGaussian), 
                         meansTransformationMatrix, 
                         meansTransformationVector,
@@ -413,9 +406,8 @@ public class Sphinx3Loader implements Loader {
                 whichGaussian++;
             }
 
-            Senone senone = new GaussianMixture(logMath, mixtureWeightsPool
-                    .get(i), mixtureComponents, i);
-
+            Senone senone = new GaussianMixture(mixtureWeightsPool.get(i),
+                    mixtureComponents, i);
             pool.put(i, senone);
         }
         return pool;

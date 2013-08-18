@@ -19,10 +19,6 @@ import edu.cmu.sphinx.util.props.*;
 public abstract class ActiveListFactory implements Configurable {
 
 
-    /** The property that defines the name of the logmath to be used by this search manager. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /**
      * property that sets the desired (or target) size for this active list.  This is sometimes referred to as the beam
      * size
@@ -46,6 +42,7 @@ public abstract class ActiveListFactory implements Configurable {
     @S4Boolean(defaultValue = true)
     public final static String PROP_STRICT_PRUNING = "strictPruning";
 
+    protected LogMath logMath;
     protected int absoluteBeamWidth;
     protected float logRelativeBeamWidth;
 
@@ -53,9 +50,9 @@ public abstract class ActiveListFactory implements Configurable {
      * 
      * @param absoluteBeamWidth
      * @param relativeBeamWidth
-     * @param logMath
      */
-    public ActiveListFactory( int absoluteBeamWidth,double relativeBeamWidth, LogMath logMath ){
+    public ActiveListFactory(int absoluteBeamWidth,double relativeBeamWidth){
+        logMath = LogMath.getInstance();
         this.absoluteBeamWidth = absoluteBeamWidth;
         this.logRelativeBeamWidth = logMath.linearToLog(relativeBeamWidth);      
     }
@@ -69,7 +66,6 @@ public abstract class ActiveListFactory implements Configurable {
         absoluteBeamWidth = ps.getInt(PROP_ABSOLUTE_BEAM_WIDTH);
         double relativeBeamWidth = ps.getDouble(PROP_RELATIVE_BEAM_WIDTH);
 
-        LogMath logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         logRelativeBeamWidth = logMath.linearToLog(relativeBeamWidth);
     }
 

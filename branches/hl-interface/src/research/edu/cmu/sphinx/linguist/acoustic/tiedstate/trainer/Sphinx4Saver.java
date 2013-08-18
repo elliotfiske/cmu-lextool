@@ -13,7 +13,6 @@
 package edu.cmu.sphinx.linguist.acoustic.tiedstate.trainer;
 
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Pool;
-import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.StreamFactory;
 
 import java.io.*;
@@ -39,8 +38,6 @@ class Sphinx4Saver extends Sphinx3Saver {
             throw new IOException("Error trying to write file " + location + path);
         }
         PrintWriter pw = new PrintWriter(outputStream, true);
-
-        LogMath logMath = super.getLogMath();
 
         logger.info("Saving transition matrices to: ");
         logger.info(path);

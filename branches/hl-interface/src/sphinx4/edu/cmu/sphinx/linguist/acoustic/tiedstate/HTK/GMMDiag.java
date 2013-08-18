@@ -354,7 +354,7 @@ public class GMMDiag {
 	}
 
 	private void allocateWeights() {
-		logMath = new LogMath();
+		logMath = LogMath.getInstance();
 		weights = new float[ngauss];
 		for (int i = 0; i < ngauss; i++) {
 			setWeight(i, 1f / (float) ngauss);
@@ -402,7 +402,7 @@ public class GMMDiag {
 				System.err.println("gs2 is Nan, converting to 0 debug " + gidx
 						+ ' ' + logPreComputedGaussianFactor[gidx] + ' '
 						+ means[gidx][0] + ' ' + covar[gidx][0]);
-				logDval1gauss = LogMath.getLogZero();
+				logDval1gauss = LogMath.LOG_ZERO;
 			}
 			if (logDval1gauss < distFloor) {
 				logDval1gauss = distFloor;

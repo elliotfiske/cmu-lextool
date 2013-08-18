@@ -92,9 +92,9 @@ public class Node {
                         ") later than end time (" + endTime + ')');
             }
         }
-        this.forwardScore = LogMath.getLogZero();
-        this.backwardScore = LogMath.getLogZero();
-        this.posterior = LogMath.getLogZero();
+        this.forwardScore = LogMath.LOG_ZERO;
+        this.backwardScore = LogMath.LOG_ZERO;
+        this.posterior = LogMath.LOG_ZERO;
     }
 
 
@@ -374,7 +374,7 @@ public class Node {
      */
     void dumpAISee(FileWriter f) throws IOException {
         String posterior = String.valueOf(getPosterior());
-        if (getPosterior() == LogMath.getLogZero()) {
+        if (getPosterior() == LogMath.LOG_ZERO) {
             posterior = "log zero";
         }
         f.write("node: { title: \"" + id + "\" label: \""
@@ -390,7 +390,7 @@ public class Node {
      */
     public void dumpDot(FileWriter f) throws IOException {
         String posterior = String.valueOf(getPosterior());
-        if (getPosterior() == LogMath.getLogZero()) {
+        if (getPosterior() == LogMath.LOG_ZERO) {
             posterior = "log zero";
         }
         String label = getWord().toString() + '[' + getBeginTime() + ',' + getEndTime() + " p:" + posterior + ']';

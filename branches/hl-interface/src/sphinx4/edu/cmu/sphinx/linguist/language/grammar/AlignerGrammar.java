@@ -23,9 +23,8 @@ import edu.cmu.sphinx.util.props.PropertySheet;
 import edu.cmu.sphinx.util.props.S4Component;
 
 public class AlignerGrammar extends Grammar {
-	@S4Component(type = LogMath.class)
-	public final static String PROP_LOG_MATH = "logMath";
-	private LogMath logMath;
+
+    private final LogMath logMath;
 
 	private boolean modelRepeats = false;
 	private boolean modelSkips = false;
@@ -37,22 +36,16 @@ public class AlignerGrammar extends Grammar {
 	protected GrammarNode finalNode;
 	private final List<String> tokens = new ArrayList<String>();
 
-	public AlignerGrammar(final LogMath logMath,
-			final boolean showGrammar, final boolean optimizeGrammar,
+	public AlignerGrammar(final boolean showGrammar, final boolean optimizeGrammar,
 			final boolean addSilenceWords, final boolean addFillerWords,
 			final Dictionary dictionary) {
 		super(showGrammar, optimizeGrammar, addSilenceWords, addFillerWords,
 				dictionary);
-		this.logMath = logMath;
+		logMath = LogMath.getInstance();
 	}
 
 	public AlignerGrammar() {
-	}
-
-	@Override
-	public void newProperties(PropertySheet ps) throws PropertyException {
-		super.newProperties(ps);
-		logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
+		logMath = LogMath.getInstance();
 	}
 
 	/*
@@ -89,7 +82,7 @@ public class AlignerGrammar extends Grammar {
 		logger.info("Done creating grammar node");
 
 		// now connect all the GrammarNodes together
-		initialNode.add(branchNode, LogMath.getLogOne());
+		initialNode.add(branchNode, LogMath.LOG_ONE);
 
 		createBaseGrammar(wordGrammarNodes, branchNode, finalNode);
 
@@ -151,10 +144,10 @@ public class AlignerGrammar extends Grammar {
 		ListIterator<GrammarNode> iter = wordGrammarNodes.listIterator();
 		while (iter.hasNext()) {
 			GrammarNode nextNode = iter.next();
-			currNode.add(nextNode, LogMath.getLogOne());
+			currNode.add(nextNode, LogMath.LOG_ONE);
 			currNode = nextNode;
 		}
-		currNode.add(finalNode, LogMath.getLogOne());
+		currNode.add(finalNode, LogMath.LOG_ONE);
 	}
 
 }

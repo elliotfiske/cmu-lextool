@@ -36,10 +36,6 @@ public abstract class TokenScorePruner implements Pruner {
     @S4Integer(defaultValue = 0)
     public static final String PROP_RELATIVE_BEAM_WIDTH = "relativeBeamWidth";
 
-    /** The property that defines the name of the logmath to be used by this search manager. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /** The property that defines the name of the active list factory to be used by this search manager. */
     public final static String PROP_ACTIVE_LIST_FACTORY = "activeListFactory";
 
@@ -57,7 +53,7 @@ public abstract class TokenScorePruner implements Pruner {
      * @see edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.util.props.PropertySheet)
      */
     public void newProperties(PropertySheet ps) throws PropertyException {
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
+        logMath = LogMath.getInstance();
         setAbsoluteBeamWidth(ps.getInt(PROP_ABSOLUTE_BEAM_WIDTH
         ));
         double linearRelativeBeamWidth = ps.getDouble(PROP_RELATIVE_BEAM_WIDTH);

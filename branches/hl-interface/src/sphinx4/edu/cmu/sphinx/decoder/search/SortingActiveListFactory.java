@@ -30,8 +30,10 @@ public class SortingActiveListFactory extends ActiveListFactory {
      * @param relativeBeamWidth
      * @param logMath
      */
-    public SortingActiveListFactory(int absoluteBeamWidth, double relativeBeamWidth, LogMath logMath) {
-        super(absoluteBeamWidth, relativeBeamWidth, logMath);
+    public SortingActiveListFactory(int absoluteBeamWidth,
+            double relativeBeamWidth)
+    {
+        super(absoluteBeamWidth, relativeBeamWidth);
     }
 
     public SortingActiveListFactory() {

@@ -152,10 +152,6 @@ public class LexTreeLinguist implements Linguist {
     @S4Component(type = UnitManager.class, defaultClass = UnitManager.class)
     public final static String PROP_UNIT_MANAGER = "unitManager";
 
-    /** The property that defines the name of the logmath to be used by this search manager. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /**
      * The property that determines whether or not full word histories are used to 
      * determine when two states are equal.
@@ -258,7 +254,7 @@ public class LexTreeLinguist implements Linguist {
     private int cacheTrys;
     private int cacheHits;
 
-    public LexTreeLinguist(AcousticModel acousticModel, LogMath logMath, UnitManager unitManager,
+    public LexTreeLinguist(AcousticModel acousticModel, UnitManager unitManager,
             BackoffLanguageModel languageModel, Dictionary dictionary, boolean fullWordHistories, boolean wantUnigramSmear,
             double wordInsertionProbability, double silenceInsertionProbability, double fillerInsertionProbability,
             double unitInsertionProbability, float languageWeight, boolean addFillerWords, boolean generateUnitStates,
@@ -267,7 +263,7 @@ public class LexTreeLinguist implements Linguist {
         logger = Logger.getLogger(getClass().getName());
 
         this.acousticModel = acousticModel;
-        this.logMath = logMath;
+        this.logMath = LogMath.getInstance();
         this.unitManager = unitManager;
         this.languageModel = languageModel;
         this.dictionary = dictionary;
@@ -303,7 +299,7 @@ public class LexTreeLinguist implements Linguist {
     public void newProperties(PropertySheet ps) throws PropertyException {
         logger = ps.getLogger();
         acousticModel = (AcousticModel) ps.getComponent(PROP_ACOUSTIC_MODEL);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
+        logMath = LogMath.getInstance();
         unitManager = (UnitManager) ps.getComponent(PROP_UNIT_MANAGER);
         languageModel = (BackoffLanguageModel) ps.getComponent(PROP_LANGUAGE_MODEL);
         dictionary = (Dictionary) ps.getComponent(PROP_DICTIONARY);

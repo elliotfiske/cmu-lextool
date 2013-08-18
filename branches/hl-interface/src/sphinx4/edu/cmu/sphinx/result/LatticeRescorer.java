@@ -50,7 +50,7 @@ public class LatticeRescorer {
 
             List<String> paths = allPathsTo("", edge, depth);
 
-            float minProb = LogMath.getLogZero();
+            float minProb = LogMath.LOG_ZERO;
             for (String path : paths) {
                 List<Word> wordList = new LinkedList<Word>();
                 for (String pathWord : path.split(" ")) {

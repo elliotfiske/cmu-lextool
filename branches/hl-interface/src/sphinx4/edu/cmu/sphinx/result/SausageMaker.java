@@ -199,9 +199,10 @@ public class SausageMaker extends AbstractSausageMaker {
         if (areClustersInRelation(c1, c2)) {
             return Double.NEGATIVE_INFINITY;
         }
-        float totalSim = LogMath.getLogZero();
+        float totalSim = LogMath.LOG_ZERO;
         float wordPairCount = (float) 0.0;
         HashSet<String> wordsSeen1 = new HashSet<String>();
+        LogMath logMath = LogMath.getInstance();
 
         for (Node node1 : c1.getElements()) {
             String word1 = node1.getWord().getSpelling();
@@ -217,14 +218,14 @@ public class SausageMaker extends AbstractSausageMaker {
                 }
                 wordsSeen2.add(word2);
                 float sim = (float) computePhoneticSimilarity(node1, node2);
-                sim = lattice.getLogMath().linearToLog(sim);
+                sim = logMath.linearToLog(sim);
                 sim += wordSubClusterProbability(c1, word1);
                 sim += wordSubClusterProbability(c2, word2);
-                totalSim = lattice.getLogMath().addAsLinear(totalSim, sim);
+                totalSim = logMath.addAsLinear(totalSim, sim);
                 wordPairCount++;
             }
         }
-        return totalSim - lattice.getLogMath().logToLinear(wordPairCount);
+        return totalSim - logMath.logToLinear(wordPairCount);
     }
 
 
@@ -258,18 +259,21 @@ public class SausageMaker extends AbstractSausageMaker {
      *         together.
      */
     protected double intraClusterDistance(Cluster cluster1, Cluster cluster2) {
+        LogMath logMath = LogMath.getInstance();
         double maxSim = Double.NEGATIVE_INFINITY;
+
         for (Node node1 : cluster1.getElements()) {
             for (Node node2 : cluster2.getElements()) {
-                if (!node1.getWord().getSpelling().equals(node2.getWord().getSpelling())) {
+                if (!node1.getWord().getSpelling().equals(
+                            node2.getWord().getSpelling()))
                     return Double.NEGATIVE_INFINITY;
-                }
-                if (node1.hasAncestralRelationship(node2)) {
+
+                if (node1.hasAncestralRelationship(node2))
                     return Double.NEGATIVE_INFINITY;
-                }
+
                 double overlap = getOverlap(node1, node2);
                 if (overlap > 0.0) {
-                    overlap = lattice.getLogMath().logToLinear((float) overlap);
+                    overlap = logMath.logToLinear((float) overlap);
                     overlap += node1.getPosterior() + node2.getPosterior();
                     if (overlap > maxSim) {
                         maxSim = overlap;

@@ -18,12 +18,6 @@ import java.util.logging.Logger;
  * @author Tanel Alumae
  */
 public class ClassMap implements Configurable {
-    /**
-     * The property that defines the logMath component.
-     */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     @S4String
     public final static String PROP_CLASS_DEFS_LOCATION = "classDefsLocation";
 
@@ -47,10 +41,10 @@ public class ClassMap implements Configurable {
      */
     private final HashMap<String, Set<String>> classToWord = new HashMap<String, Set<String>>();
 
-    public ClassMap(URL classDefsLocation, LogMath logMath) {
+    public ClassMap(URL classDefsLocation) {
         this.logger = Logger.getLogger(getClass().getName());
         this.classDefsLocation = classDefsLocation;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
     public ClassMap() {
@@ -68,7 +62,6 @@ public class ClassMap implements Configurable {
             throw new RuntimeException("Can't change properties after allocation");
 
         classDefsLocation = ConfigurationManagerUtils.getResource(PROP_CLASS_DEFS_LOCATION, ps);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
     }
 
     /*

@@ -113,7 +113,7 @@ public class Sphinx3Saver implements Saver {
 
         sparseForm = ps.getBoolean(PROP_SPARSE_FORM);
         useCDUnits = ps.getBoolean(PROP_USE_CD_UNITS);
-        logMath = ConfigurationManager.getInstance(LogMath.class);
+        logMath = LogMath.getInstance();
 
         // extract the feature vector length
         vectorLength = ps.getInt(PROP_VECTOR_LENGTH);
@@ -149,15 +149,6 @@ public class Sphinx3Saver implements Saver {
      */
     protected boolean getDoCheckSum() {
         return doCheckSum;
-    }
-
-    /**
-     * Return the LogMath.
-     *
-     * @return the logMath
-     */
-    protected LogMath getLogMath() {
-        return logMath;
     }
 
     /**

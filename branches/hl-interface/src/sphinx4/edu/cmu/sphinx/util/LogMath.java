@@ -7,88 +7,37 @@
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL 
  * WARRANTIES.
- *
  */
+
 package edu.cmu.sphinx.util;
 
-import edu.cmu.sphinx.util.props.*;
-
-import java.io.Serializable;
-import java.util.logging.Logger;
-
 /**
- * Provides a set of methods for performing simple math in the log domain. The logarithmic base can be set by the
- * property: <br> <code> edu.cmu.sphinx.util.LogMath.logBase </code><br>
+ * Provides a set of methods for performing simple math in the log domain.
+ *
+ * The logarithmic base can be set by the
+ * property: <code>edu.cmu.sphinx.util.LogMath.logBase</code>
  */
-public final class LogMath implements Configurable, Serializable {
-   
-    /**
-     * The property to get the Log base. According to forum discussions a value 
-     * between 1.00001 and 1.0004 should be used for speech recognition. Going 
-     * above 1.0005 will probably hurt.
-     */
-    @S4Double(defaultValue = 1.0001)
-    public final static String PROP_LOG_BASE = "logBase";
+public final class LogMath {
 
-    /**
-     * The property that controls whether we use the old, slow (but correct) method of performing the LogMath.add by
-     * doing the actual computation.
-     */
-    @S4Boolean(defaultValue = true)
-    public final static String PROP_USE_ADD_TABLE = "useAddTable";
+    public static final float LOG_ZERO = -Float.MAX_VALUE;
+    public static final float LOG_ONE = 0.f;
 
+    private static final String IMMUTABLE_INSTANCE_ERROR =
+        "Parameters must be set before the class instance is obtained";
 
-    private static final float logZero = -Float.MAX_VALUE;
-    private static float logOne;
+    // Singeleton instance.
+    private static LogMath instance;
+    private static float logBase = 1.0001f;
+    private static boolean useTable = true;
 
-    // -------------------------------
-    // Configuration data
-    // ------------------------------
-    private float logBase;
-    private boolean useAddTable;
+    private float naturalLogBase;
+    private float inverseNaturalLogBase;
 
-    private transient Logger logger;
+    private float theAddTable[];
+    private float maxLogValue;
+    private float minLogValue;
 
-    private transient float naturalLogBase;
-    private transient float inverseNaturalLogBase;
-    private transient float theAddTable[];
-    private transient float maxLogValue;
-    private transient float minLogValue;
-
-    public LogMath(float logBase, boolean useAddTable) {
-        this.logger = Logger.getLogger(getClass().getName());
-
-        this.logBase = logBase;
-        this.useAddTable = useAddTable;
-
-        init();
-    }
-
-    public LogMath() {
-        
-    }
-
-    @Override
-    public void newProperties(PropertySheet ps) throws PropertyException {
-        logger = ps.getLogger();
-
-        logBase = ps.getFloat(PROP_LOG_BASE);
-        useAddTable = ps.getBoolean(PROP_USE_ADD_TABLE);
-
-        init();
-    }
-
-
-    /** Initializes this log math */
-    private void init() {
-        if (logger != null) {
-            logger.config("Log base is " + logBase);
-            if (useAddTable) {
-                logger.config("Using AddTable when adding logs");
-            } else {
-                logger.config("Performing actual computation when adding logs");
-            }
-        }
+    private LogMath() {
         naturalLogBase = (float) Math.log(logBase);
         inverseNaturalLogBase = 1.0f / naturalLogBase;
         // When converting a number from/to linear, we need to make
@@ -100,7 +49,7 @@ public final class LogMath implements Configurable, Serializable {
         // We compute the min value by computing the log of the min
         // (absolute) value that a float can hold.
         minLogValue = linearToLog(Double.MIN_VALUE);
-        if (useAddTable) {
+        if (useTable) {
             // Now create the addTable table.
             // summation needed in the loop
             float innerSummation;
@@ -130,7 +79,7 @@ public final class LogMath implements Configurable, Serializable {
             // integer. Added the negation to match the preceding
             // documentation
             entriesInTheAddTable = (int) -Math
-                    .rint(linearToLog(logToLinear(0.5f) - 1));
+                .rint(linearToLog(logToLinear(0.5f) - 1));
             // We reach this max if the log base is 1.00007. The
             // closer you get to 1, the higher the number of entries
             // in the table.
@@ -145,11 +94,8 @@ public final class LogMath implements Configurable, Serializable {
             }
             // PBL added this just to see how many entries really are
             // in the table
-            if (logger != null)
-                logger.config("LogAdd table has " + entriesInTheAddTable + " entries.");
-
             theAddTable = new float[entriesInTheAddTable];
-            for (int index = 0; index < entriesInTheAddTable; index++) {
+            for (int index = 0; index < entriesInTheAddTable; ++index) {
                 // This loop implements the expression:
                 //
                 // log( 1.0 + power(base, index))
@@ -162,6 +108,48 @@ public final class LogMath implements Configurable, Serializable {
         }
     }
 
+    public static LogMath getInstance() {
+        if (null == instance) {
+            synchronized(instance) {
+                if (null == instance)
+                    instance = new LogMath();
+            }
+        }
+
+        return instance;
+    }
+
+    /**
+     * Sets log base.
+     *
+     * According to forum discussions a value between 1.00001 and 1.0004 should
+     * be used for speech recognition. Going above 1.0005 will probably hurt.
+     *
+     * @param logbase Log base
+     *
+     * @throws IllegalStateException if LogMath instance has been already got
+     */
+    public static void setLogBase(float logBase) {
+        synchronized(instance) {
+            if (null != instance)
+                throw new IllegalStateException(IMMUTABLE_INSTANCE_ERROR);
+            LogMath.logBase = logBase;
+        }
+    }
+
+    /**
+     * The property that controls whether we use the old, slow (but correct)
+     * method of performing the LogMath.add by doing the actual computation.
+     *
+     * @throws IllegalStateException if LogMath instance has been already got
+     */
+    public static void setUseTable(boolean useTable) {
+        synchronized(instance) {
+            if (null != instance)
+                throw new IllegalStateException(IMMUTABLE_INSTANCE_ERROR);
+            LogMath.useTable = useTable;
+        }
+    }
 
     /**
      * Returns the summation of two numbers when the arguments and the result are in log. <p/> <p/> That is, it returns
@@ -192,7 +180,6 @@ public final class LogMath implements Configurable, Serializable {
         return logHighestValue + addTable(logDifference);
     }
 
-
     /**
      * Method used by add() internally. It returns the difference between the highest number and the total summation of
      * two numbers. <p/> Considering the expression (in which we assume natural log) <p/> <p/> <b>log(a + b) = log(a) +
@@ -215,7 +202,6 @@ public final class LogMath implements Configurable, Serializable {
         return linearToLog(logInnerSummation);
     }
 
-
     /**
      * Method used by add() internally. It returns the difference between the highest number and the total summation of
      * two numbers. <p/> Considering the expression (in which we assume natural log) <p/> <p/> <b>log(a + b) = log(a) +
@@ -229,7 +215,7 @@ public final class LogMath implements Configurable, Serializable {
      * @throws IllegalArgumentException
      */
     private float addTable(float index) throws IllegalArgumentException {
-        if (useAddTable) {
+        if (useTable) {
             // int intIndex = (int) Math.rint(index);
             int intIndex = (int) (index + 0.5);
             // When adding two numbers, the highest one should be
@@ -249,7 +235,6 @@ public final class LogMath implements Configurable, Serializable {
             return addTableActualComputation(index);
         }
     }
-
 
     /**
      * Returns the difference between two numbers when the arguments and the result are in log. <p/> <p/> That is, it
@@ -278,7 +263,6 @@ public final class LogMath implements Configurable, Serializable {
         return logMinuend + linearToLog(logInnerSummation);
     }
 
-
     /**
      * Converts the source, which is assumed to be a log value whose base is sourceBase, to a log value whose base is
      * resultBase. Possible values for both the source and result bases include Math.E, 10.0, LogMath.getLogBase(). If a
@@ -305,14 +289,13 @@ public final class LogMath implements Configurable, Serializable {
                     + " non-positive number: " + sourceBase + " or "
                     + resultBase);
         }
-        if (logSource == logZero) {
-            return logZero;
+        if (logSource == LOG_ZERO) {
+            return LOG_ZERO;
         }
         float lnSourceBase = (float) Math.log(sourceBase);
         float lnResultBase = (float) Math.log(resultBase);
         return (logSource * lnSourceBase / lnResultBase);
     }
-
 
     /**
      * Converts the source, which is a number in base Math.E, to a log value which base is the LogBase of this LogMath.
@@ -320,12 +303,11 @@ public final class LogMath implements Configurable, Serializable {
      * @param logSource the number in base Math.E to convert
      */
     public final float lnToLog(float logSource) {
-        if (logSource == logZero) {
-            return logZero;
+        if (logSource == LOG_ZERO) {
+            return LOG_ZERO;
         }
         return (logSource * inverseNaturalLogBase);
     }
-
 
     /**
      * Converts the source, which is a number in base 10, to a log value which base is the LogBase of this LogMath.
@@ -333,12 +315,11 @@ public final class LogMath implements Configurable, Serializable {
      * @param logSource the number in base Math.E to convert
      */
     public final float log10ToLog(float logSource) {
-        if (logSource == logZero) {
-            return logZero;
+        if (logSource == LOG_ZERO) {
+            return LOG_ZERO;
         }
         return logToLog(logSource, 10.0f, logBase);
     }
-
 
     /**
      * Converts the source, whose base is the LogBase of this LogMath, to a log value which is a number in base Math.E.
@@ -346,12 +327,11 @@ public final class LogMath implements Configurable, Serializable {
      * @param logSource the number to convert to base Math.E
      */
     public final float logToLn(float logSource) {
-        if (logSource == logZero) {
-            return logZero;
+        if (logSource == LOG_ZERO) {
+            return LOG_ZERO;
         }
         return logSource * naturalLogBase;
     }
-
 
     /**
      * Converts the value from linear scale to log scale. The log scale numbers are limited by the range of the type
@@ -370,7 +350,7 @@ public final class LogMath implements Configurable, Serializable {
         } else if (linearValue == 0.0) {
             // [EBG] Shouldn't the comparison above be something like
             // linearValue < "epsilon"? Is it ever going to be 0.0?
-            return getLogZero();
+            return LOG_ZERO;
         } else {
             returnValue = Math.log(linearValue) * inverseNaturalLogBase;
             if (returnValue > Float.MAX_VALUE) {
@@ -384,7 +364,6 @@ public final class LogMath implements Configurable, Serializable {
             }
         }
     }
-
 
     /**
      * Converts the value from log scale to linear scale.
@@ -405,37 +384,14 @@ public final class LogMath implements Configurable, Serializable {
         return returnValue;
     }
 
-
-    /**
-     * Returns the zero value in the log domain
-     *
-     * @return zero value in the log domain
-     */
-    public static float getLogZero() {
-        return logZero;
-    }
-
-
-    /**
-     * Returns the one value in the log domain
-     *
-     * @return one value in the log domain
-     */
-    public static float getLogOne() {
-        return logOne;
-    }
-
-
     /** Returns the actual log base. */
     public final float getLogBase() {
         return logBase;
     }
 
-
-    public boolean isUseAddTable() {
-        return useAddTable;
+    public boolean isUseTable() {
+        return useTable;
     }
-
 
     /**
      * Returns the log (base 10) of value
@@ -450,7 +406,6 @@ public final class LogMath implements Configurable, Serializable {
         // If you want to get rid of the constant:
         // return ((1.0f / Math.log(10.0f)) * Math.log(value));
     }
-
 
     /** Converts a vector from linear domain to log domain using a given <code>LogMath</code>-instance for conversion. */
     public void linearToLog(float[] vector) {

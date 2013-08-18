@@ -56,10 +56,6 @@ public class SimpleBreadthFirstSearchManager extends TokenSearchManager {
     @S4Component(type = AcousticScorer.class)
     public final static String PROP_SCORER = "scorer";
 
-    /** The property that defines the name of the logmath to be used by this search manager. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /** The property that defines the name of the active list factory to be used by this search manager. */
     @S4Component(type = ActiveListFactory.class)
     public final static String PROP_ACTIVE_LIST_FACTORY = "activeListFactory";
@@ -142,7 +138,6 @@ public class SimpleBreadthFirstSearchManager extends TokenSearchManager {
 
     /**
      * 
-     * @param logMath
      * @param linguist
      * @param pruner
      * @param scorer
@@ -152,13 +147,13 @@ public class SimpleBreadthFirstSearchManager extends TokenSearchManager {
      * @param growSkipInterval
      * @param wantEntryPruning
      */
-    public SimpleBreadthFirstSearchManager(LogMath logMath, Linguist linguist, Pruner pruner,
+    public SimpleBreadthFirstSearchManager(Linguist linguist, Pruner pruner,
                                            AcousticScorer scorer, ActiveListFactory activeListFactory,
                                            boolean showTokenCount, double relativeWordBeamWidth,
                                            int growSkipInterval, boolean wantEntryPruning) {
         this.name = getClass().getName();
         this.logger = Logger.getLogger(name);
-        this.logMath = logMath;
+        this.logMath = LogMath.getInstance();
         this.linguist = linguist;
         this.pruner = pruner;
         this.scorer = scorer;
@@ -176,8 +171,6 @@ public class SimpleBreadthFirstSearchManager extends TokenSearchManager {
         
         logger = ps.getLogger();
         name = ps.getInstanceName();
-
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
 
         linguist = (Linguist) ps.getComponent(PROP_LINGUIST);
         pruner = (Pruner) ps.getComponent(PROP_PRUNER);
@@ -231,10 +224,10 @@ public class SimpleBreadthFirstSearchManager extends TokenSearchManager {
             // to make the current result as correct as possible we undo the last search graph expansion here
             ActiveList fixedList = undoLastGrowStep();
             	
-            if (!streamEnd) {
-           		// now create the result using the fixed active-list
-           		result = new Result(fixedList, resultList, currentFrameNumber, done, logMath);
-            }
+            // Now create the result using the fixed active-list.
+            if (!streamEnd)
+           		result =
+                    new Result(fixedList, resultList, currentFrameNumber, done);
         }
 
         if (showTokenCount) {

@@ -100,15 +100,8 @@ public class Lattice {
     protected Lattice() {
         edges = new HashSet<Edge>();
         nodes = new HashMap<String, Node>();
+        logMath = LogMath.getInstance();
     }
-
-
-    /** Create an empty Lattice. */
-    public Lattice(LogMath logMath) {
-        this();
-        this.logMath = logMath;
-    }
-
 
     /**
      * Create a Lattice from a Result.
@@ -119,7 +112,7 @@ public class Lattice {
      * @param result the result to convert into a lattice
      */
     public Lattice(Result result) {
-        this(result.getLogMath());
+        this();
         visitedWordTokens = new HashSet<Token>();
         loserManager = result.getAlternateHypothesisManager();
         if (loserManager != null) {
@@ -759,33 +752,6 @@ public class Lattice {
         terminalNode = p_terminalNode;
     }
 
-
-    /**
-     * Edge scores are usually log-likelihood.  Get the log base.
-     *
-     * @return the log base
-     */
-    public double getLogBase() {
-        return logMath.getLogBase();
-    }
-
-
-    /** @return Returns the logMath object used in this lattice. */
-    public LogMath getLogMath() {
-        return logMath;
-    }
-
-
-    /**
-     * Sets the LogMath to use.
-     *
-     * @param logMath the LogMath to use
-     */
-    public void setLogMath(LogMath logMath) {
-        this.logMath = logMath;
-    }
-
-
     /** Dump all paths through this Lattice.  Used for debugging. */
     public void dumpAllPaths() {
         for (String path : allPaths()) {
@@ -917,8 +883,8 @@ public class Lattice {
         if (initialNode == null)
                 return;
         //forward
-        initialNode.setForwardScore(LogMath.getLogOne());
-        initialNode.setViterbiScore(LogMath.getLogOne());
+        initialNode.setForwardScore(LogMath.LOG_ONE);
+        initialNode.setViterbiScore(LogMath.LOG_ONE);
         List<Node> sortedNodes = sortNodes();
         assert sortedNodes.get(0) == initialNode;
         for (Node currentNode : sortedNodes) {
@@ -942,7 +908,7 @@ public class Lattice {
         }
 
         //backward
-        terminalNode.setBackwardScore(LogMath.getLogOne());
+        terminalNode.setBackwardScore(LogMath.LOG_ONE);
         assert sortedNodes.get(sortedNodes.size() - 1) == terminalNode;
         ListIterator<Node> n = sortedNodes.listIterator(sortedNodes.size() - 1);
         while (n.hasPrevious()) {

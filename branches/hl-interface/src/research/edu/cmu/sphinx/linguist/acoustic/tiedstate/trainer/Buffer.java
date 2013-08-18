@@ -30,7 +30,7 @@ class Buffer {
 
     /**
      * Creates a new buffer. If the values will be in log, the buffer is initialized to all
-     * <code>LogMath.getLogZero()</code>.
+     * <code>LogMath.LOG_ZERO</code>.
      *
      * @param size  the number of elements in this buffer
      * @param isLog if true, the values in the buffer will be in log
@@ -41,9 +41,9 @@ class Buffer {
         wasUsed = false;
         numerator = new double[size];
         if (isLog) {
-            denominator = LogMath.getLogZero();
+            denominator = LogMath.LOG_ZERO;
             for (int i = 0; i < size; i++) {
-                numerator[i] = LogMath.getLogZero();
+                numerator[i] = LogMath.LOG_ZERO;
             }
         }
     }
@@ -169,7 +169,7 @@ class Buffer {
         assert isLog;
         assert mask.length == numerator.length;
         for (int i = 0; i < numerator.length; i++) {
-            if (mask[i] != LogMath.getLogZero()) {
+            if (mask[i] != LogMath.LOG_ZERO) {
                 numerator[i] -= denominator;
             }
         }
@@ -200,7 +200,7 @@ class Buffer {
      */
     void logNormalizeToSum(LogMath logMath) {
         assert isLog;
-        float logZero = LogMath.getLogZero();
+        float logZero = LogMath.LOG_ZERO;
         float den = logZero;
         for (double val : numerator) {
             if (val != logZero) {

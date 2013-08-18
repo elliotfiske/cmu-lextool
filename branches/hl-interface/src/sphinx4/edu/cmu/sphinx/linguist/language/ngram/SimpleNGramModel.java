@@ -37,9 +37,6 @@ import java.util.*;
 
 public class SimpleNGramModel implements LanguageModel, BackoffLanguageModel {
 
-    /** The property that defines the logMath component. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
     // ----------------------------
     // Configuration data
     // ----------------------------
@@ -58,16 +55,20 @@ public class SimpleNGramModel implements LanguageModel, BackoffLanguageModel {
     private boolean allocated;
     private LinkedList<WordSequence> tokens;
 
-    public SimpleNGramModel(String location, Dictionary dictionary, float unigramWeight, LogMath logMath,
-                             int desiredMaxDepth ) throws MalformedURLException, ClassNotFoundException {
-        this(ConfigurationManagerUtils.resourceToURL(location), dictionary, unigramWeight, logMath, desiredMaxDepth );
+    public SimpleNGramModel(String location, Dictionary dictionary,
+            float unigramWeight, int desiredMaxDepth )
+        throws MalformedURLException, ClassNotFoundException
+    {
+        this(ConfigurationManagerUtils.resourceToURL(location), dictionary,
+                unigramWeight, desiredMaxDepth);
     }    
 
-    public SimpleNGramModel(URL urlLocation, Dictionary dictionary, float unigramWeight, LogMath logMath, 
-                             int desiredMaxDepth ) {
+    public SimpleNGramModel(URL urlLocation, Dictionary dictionary,
+            float unigramWeight, int desiredMaxDepth)
+    {
         this.urlLocation = urlLocation;
         this.unigramWeight = unigramWeight;
-        this.logMath = logMath;
+        this.logMath = LogMath.getInstance();
         this.desiredMaxDepth = desiredMaxDepth;
         this.dictionary = dictionary;
         this.map = new HashMap<WordSequence, Probability>();
@@ -94,7 +95,6 @@ public class SimpleNGramModel implements LanguageModel, BackoffLanguageModel {
 
         urlLocation = ConfigurationManagerUtils.getResource(PROP_LOCATION, ps);
         unigramWeight = ps.getFloat(PROP_UNIGRAM_WEIGHT);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         desiredMaxDepth = ps.getInt(PROP_MAX_DEPTH);
         dictionary = (Dictionary) ps.getComponent(PROP_DICTIONARY);
         map = new HashMap<WordSequence, Probability>();
@@ -168,7 +168,7 @@ public class SimpleNGramModel implements LanguageModel, BackoffLanguageModel {
                         + getProbability(wordSequence.getNewest());
             } else { // if the single word is not in the model at all
                 // then its zero likelihood that we'll use it
-                logProbability = LogMath.getLogZero();
+                logProbability = LogMath.LOG_ZERO;
             }
         } else {
             logProbability = prob.logProbability;

@@ -76,10 +76,6 @@ public class ModelInitializerLoader implements Loader {
     @S4String(defaultValue = "model.props")
     public static final String PROP_FILE = "propsFile";
 
-    @S4Component(type = LogMath.class)
-    public static final String LOG_MATH = "logMath";
-    private LogMath logMath;
-    
     @S4Component(type = UnitManager.class)
     public final static String PROP_UNIT_MANAGER = "unitManager";
     private UnitManager unitManager;
@@ -103,9 +99,9 @@ public class ModelInitializerLoader implements Loader {
 
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
+        logMath = LogMath.getInstance();
         logger = ps.getLogger();
 
-        logMath = (LogMath) ps.getComponent(LOG_MATH);
         unitManager = (UnitManager) ps.getComponent(PROP_UNIT_MANAGER);
 
         hmmManager = new HMMManager();
@@ -204,7 +200,6 @@ public class ModelInitializerLoader implements Loader {
             for (int j = 0; j < numGaussiansPerSenone; j++) {
                 int whichGaussian = state * numGaussiansPerSenone + j;
                 mixtureComponents[j] = new MixtureComponent(
-                    logMath,
                     meansPool.get(whichGaussian),
                     meanTransformationMatrixPool.get(0),
                     meanTransformationVectorPool.get(0),
@@ -215,7 +210,7 @@ public class ModelInitializerLoader implements Loader {
                     varianceFloor);
             }
 
-            Senone senone = new GaussianMixture(logMath, mixtureWeightsPool.get(state), mixtureComponents, state);
+            Senone senone = new GaussianMixture(mixtureWeightsPool.get(state), mixtureComponents, state);
 
             pool.put(state, senone);
         }
@@ -375,7 +370,7 @@ public class ModelInitializerLoader implements Loader {
             }
 
             Unit unit = unitManager.getUnit(phone,  phone.equals(SILENCE_CIPHONE));
-            
+
             contextIndependentUnits.put(unit.getName(), unit);
 
             if (logger.isLoggable(Level.FINE)) {

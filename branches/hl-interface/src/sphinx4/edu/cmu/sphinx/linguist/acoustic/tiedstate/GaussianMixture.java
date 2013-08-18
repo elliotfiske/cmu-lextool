@@ -38,16 +38,15 @@ public class GaussianMixture extends ScoreCachingSenone {
     /**
      * Creates a new senone from the given components.
      *
-     * @param logMath           the log math
      * @param logMixtureWeights the mixture weights for this senone in LogMath log base
      * @param mixtureComponents the mixture components for this senone
      */
-    public GaussianMixture(LogMath logMath, float[] logMixtureWeights,
+    public GaussianMixture(float[] logMixtureWeights,
                            MixtureComponent[] mixtureComponents, long id) {
 
         assert mixtureComponents.length == logMixtureWeights.length;
 
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.mixtureComponents = mixtureComponents;
         this.logMixtureWeights = logMixtureWeights;
         this.id = id;
@@ -122,7 +121,7 @@ public class GaussianMixture extends ScoreCachingSenone {
 
         float[] featureVector = FloatData.toFloatData(feature).getValues();
 
-        float logTotal = LogMath.getLogZero();
+        float logTotal = LogMath.LOG_ZERO;
         for (int i = 0; i < mixtureComponents.length; i++) {
             // In linear form, this would be:
             //
@@ -191,16 +190,10 @@ public class GaussianMixture extends ScoreCachingSenone {
         return mixWeights;
     }
 
-
-    public LogMath getLogMath() {
-        return logMath;
-    }
-
-
-
-    /** @return the (log-scaled) mixture weight of the component density <code>index</code> */
+    /**
+     * @return the (log-scaled) mixture weight of the component density
+     * <code>index</code> */
     public float getLogComponentWeight(int index) {
         return logMixtureWeights[index];
     }
-
 }

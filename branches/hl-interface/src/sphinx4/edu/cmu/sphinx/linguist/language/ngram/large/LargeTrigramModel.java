@@ -18,7 +18,6 @@ import java.net.URL;
 
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
-import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.*;
 
 /**
@@ -40,7 +39,6 @@ public class LargeTrigramModel extends LargeNGramModel {
      * @param maxBigramCacheSize
      * @param clearCacheAfterUtterance
      * @param maxDepth
-     * @param logMath
      * @param dictionary
      * @param applyLanguageWeightAndWip
      * @param languageWeight
@@ -51,14 +49,14 @@ public class LargeTrigramModel extends LargeNGramModel {
     public LargeTrigramModel(String format, URL urlLocation,
             String ngramLogFile, int maxTrigramCacheSize,
             int maxBigramCacheSize, boolean clearCacheAfterUtterance,
-            int maxDepth, LogMath logMath, Dictionary dictionary,
+            int maxDepth, Dictionary dictionary,
             boolean applyLanguageWeightAndWip, float languageWeight,
             double wip, float unigramWeight, boolean fullSmear) {
         // Inline conditional statement to prevent maxDepth being > to 3
         // We are in a Trigram wrapper, after all
         super(format, urlLocation, ngramLogFile, maxTrigramCacheSize,
                 clearCacheAfterUtterance, (maxDepth > 3 ? 3
-                        : maxDepth), logMath, dictionary,
+                        : maxDepth), dictionary,
                 applyLanguageWeightAndWip, languageWeight, wip, unigramWeight,
                 fullSmear);
     }
@@ -85,7 +83,6 @@ public class LargeTrigramModel extends LargeNGramModel {
                 .getBoolean(PROP_CLEAR_CACHES_AFTER_UTTERANCE);
         maxDepth = ps.getInt(LanguageModel.PROP_MAX_DEPTH);
         ngramCacheSize = ps.getInt(PROP_TRIGRAM_CACHE_SIZE);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         dictionary = (Dictionary) ps.getComponent(PROP_DICTIONARY);
         applyLanguageWeightAndWip = ps
                 .getBoolean(PROP_APPLY_LANGUAGE_WEIGHT_AND_WIP);

@@ -52,10 +52,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     @S4Component(type = AcousticScorer.class)
     public final static String PROP_SCORER = "scorer";
 
-    /** The property that defines the name of the logmath to be used by this search manager. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /**
      * The property than, when set to <code>true</code> will cause the recognizer to count up all the tokens in the
      * active list after every frame.
@@ -146,7 +142,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
 
     /**
      * 
-     * @param logMath
      * @param linguist
      * @param pruner
      * @param scorer
@@ -160,7 +155,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      * @param acousticLookaheadFrames
      * @param keepAllTokens
      */
-    public WordPruningBreadthFirstSearchManager(LogMath logMath, Linguist linguist, Pruner pruner,
+    public WordPruningBreadthFirstSearchManager(Linguist linguist, Pruner pruner,
                                            AcousticScorer scorer, ActiveListManager activeListManager,
                                            boolean showTokenCount, double relativeWordBeamWidth,
                                            int growSkipInterval,
@@ -169,7 +164,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
                                            boolean keepAllTokens) {
 
         this.logger = Logger.getLogger(getClass().getName());
-        this.logMath = logMath;
+        this.logMath = LogMath.getInstance();
         this.linguist = linguist;
         this.pruner = pruner;
         this.scorer = scorer;
@@ -198,7 +193,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         logger = ps.getLogger();
 
         linguist = (Linguist) ps.getComponent(PROP_LINGUIST);
@@ -289,7 +283,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         
         if (!streamEnd) {
         	result = new Result(loserManager, activeList, resultList,
-        					    currentFrameNumber, done, logMath);
+        					    currentFrameNumber, done);
         }
 
         // tokenTypeTracker.show();
@@ -769,16 +763,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         }
 
         System.out.println("Result Lattice size: " + tokenSet.size());
-    }
-
-
-    /**
-     * Returns the LogMath used.
-     *
-     * @return the LogMath used
-     */
-    public LogMath getLogMath() {
-        return logMath;
     }
 
     /**

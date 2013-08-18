@@ -57,20 +57,19 @@ public class Sausage implements ConfidenceResult {
 
     /**
      * Adds skip elements for each word slot in which the word posteriors do not add up to linear 1.
-     *
-     * @param logMath the log math object to use for probability computations
      */
-    public void fillInBlanks(LogMath logMath) {
+    public void fillInBlanks() {
+        LogMath logMath = LogMath.getInstance();
         int index = 0;
         for (ConfusionSet set : confusionSets) {
-            float sum = LogMath.getLogZero();
+            float sum = LogMath.LOG_ZERO;
             for (Double val : set.keySet()) {
                 sum = logMath.addAsLinear(sum, val.floatValue());
             }
-            if (sum < LogMath.getLogOne() - 10) {
+            if (sum < LogMath.LOG_ONE - 10) {
                 float remainder = logMath.subtractAsLinear
-                    (LogMath.getLogOne(), sum);
-                addWordHypothesis(index, "<skip>", remainder, logMath);
+                    (LogMath.LOG_ONE, sum);
+                addWordHypothesis(index, "<skip>", remainder);
             } else {
                 ConfusionSet newSet = new ConfusionSet();
                 for (Map.Entry<Double, Set<WordResult>> entry : set.entrySet()) {
@@ -96,9 +95,9 @@ public class Sausage implements ConfidenceResult {
     }
 
 
-    public void addWordHypothesis(int position, String word,
-                                  double confidence, LogMath logMath) {
-        WordResult wr = new SimpleWordResult(word, confidence, logMath);
+    public void addWordHypothesis(int position, String word, double confidence)
+    {
+        WordResult wr = new WordResult(word, confidence);
         addWordHypothesis(position, wr);
     }
 

@@ -58,10 +58,6 @@ public class LargeNGramModel implements LanguageModel, BackoffLanguageModel {
     @S4Double(defaultValue = 1.0f)
     public final static String PROP_LANGUAGE_WEIGHT = "languageWeight";
 
-    /** The property that defines the logMath component. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /**
      * The property that controls whether or not the language model will apply the language weight and word insertion
      * probability
@@ -137,7 +133,7 @@ public class LargeNGramModel implements LanguageModel, BackoffLanguageModel {
     
     public LargeNGramModel( String format, URL location, String ngramLogFile,
                               int maxNGramCacheSize, boolean clearCacheAfterUtterance, 
-                              int maxDepth,  LogMath logMath, Dictionary dictionary,
+                              int maxDepth,  Dictionary dictionary,
                               boolean applyLanguageWeightAndWip, float languageWeight,
                               double wip, float unigramWeight, boolean fullSmear          
                               ) {
@@ -148,7 +144,7 @@ public class LargeNGramModel implements LanguageModel, BackoffLanguageModel {
         this.ngramCacheSize = maxNGramCacheSize;
         this.clearCacheAfterUtterance = clearCacheAfterUtterance;
         this.maxDepth = maxDepth;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.dictionary = dictionary;
         this.applyLanguageWeightAndWip = applyLanguageWeightAndWip;
         this.languageWeight = languageWeight;
@@ -175,7 +171,6 @@ public class LargeNGramModel implements LanguageModel, BackoffLanguageModel {
         ngramCacheSize = ps.getInt(PROP_NGRAM_CACHE_SIZE);
         clearCacheAfterUtterance = ps.getBoolean(PROP_CLEAR_CACHES_AFTER_UTTERANCE);
         maxDepth = ps.getInt(LanguageModel.PROP_MAX_DEPTH);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         dictionary = (Dictionary) ps.getComponent(PROP_DICTIONARY);
         applyLanguageWeightAndWip = ps.getBoolean(PROP_APPLY_LANGUAGE_WEIGHT_AND_WIP);
         languageWeight = ps.getFloat(PROP_LANGUAGE_WEIGHT);
@@ -202,10 +197,10 @@ public class LargeNGramModel implements LanguageModel, BackoffLanguageModel {
         
         if (location.getProtocol() == null || location.getProtocol().equals("file")) {
             loader = new BinaryLoader(new File(location.getFile()), format, applyLanguageWeightAndWip,
-                                      logMath, languageWeight, wip, unigramWeight);
+                                      languageWeight, wip, unigramWeight);
         } else {
             loader = new BinaryStreamLoader(location, format, applyLanguageWeightAndWip,
-                    logMath, languageWeight, wip, unigramWeight);            
+                    languageWeight, wip, unigramWeight);            
         }
                 
         unigramIDMap = new HashMap<Word, UnigramProbability>();
@@ -835,7 +830,7 @@ public class LargeNGramModel implements LanguageModel, BackoffLanguageModel {
             NGramBuffer bigram = getBigramBuffer(i);
             
             if (bigram == null) {
-                unigramSmearTerm[i] = LogMath.getLogOne();
+                unigramSmearTerm[i] = LogMath.LOG_ONE;
                 continue;
             }
 

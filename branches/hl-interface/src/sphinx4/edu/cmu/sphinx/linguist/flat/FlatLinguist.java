@@ -68,12 +68,6 @@ public class FlatLinguist implements Linguist, Configurable {
     public final static String PROP_ACOUSTIC_MODEL = "acousticModel";
     
     /**
-     * The property that defines the name of the logmath to be used by this search manager.
-     */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
-    /**
      * The property used to determine whether or not the gstates are dumped.
      */
     @S4Boolean(defaultValue = false)
@@ -118,7 +112,7 @@ public class FlatLinguist implements Linguist, Configurable {
     public final static String PROP_SPREAD_WORD_PROBABILITIES_ACROSS_PRONUNCIATIONS =
             "spreadWordProbabilitiesAcrossPronunciations";
 
-    protected final static float logOne = LogMath.getLogOne();
+    protected final static float logOne = LogMath.LOG_ONE;
 
     // note: some fields are protected to allow to override FlatLinguist.compileGrammar()
 
@@ -184,14 +178,14 @@ public class FlatLinguist implements Linguist, Configurable {
         return searchGraph;
     }
 
-    public FlatLinguist(AcousticModel acousticModel, LogMath logMath, Grammar grammar, UnitManager unitManager,
+    public FlatLinguist(AcousticModel acousticModel, Grammar grammar, UnitManager unitManager,
             double wordInsertionProbability, double silenceInsertionProbability, double fillerInsertionProbability,
             double unitInsertionProbability, float languageWeight, boolean dumpGStates, boolean showCompilationProgress,
             boolean spreadWordProbabilitiesAcrossPronunciations, boolean addOutOfGrammarBranch,
             double outOfGrammarBranchProbability, double phoneInsertionProbability, AcousticModel phoneLoopAcousticModel    ) {
 
         this.acousticModel = acousticModel;
-        this.logMath = logMath;
+        this.logMath = LogMath.getInstance();
         this.grammar = grammar;
         this.unitManager = unitManager;
 
@@ -229,7 +223,6 @@ public class FlatLinguist implements Linguist, Configurable {
     public void newProperties(PropertySheet ps) throws PropertyException {
         // hookup to all of the components
         setupAcousticModel(ps);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         grammar = (Grammar) ps.getComponent(PROP_GRAMMAR);
         unitManager = (UnitManager) ps.getComponent(PROP_UNIT_MANAGER);
 
@@ -337,17 +330,6 @@ public class FlatLinguist implements Linguist, Configurable {
     @Override
     public void stopRecognition() {
     }
-
-
-    /**
-     * Returns the LogMath used.
-     *
-     * @return the logMath used
-     */
-    public LogMath getLogMath() {
-        return logMath;
-    }
-
 
     /**
      * Returns the log silence insertion probability.

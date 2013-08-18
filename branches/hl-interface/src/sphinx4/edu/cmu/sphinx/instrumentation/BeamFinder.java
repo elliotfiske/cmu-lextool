@@ -40,10 +40,6 @@ public class BeamFinder implements ResultListener,
     @S4Component(type = Recognizer.class)
     public final static String PROP_RECOGNIZER = "recognizer";
 
-    /** The property that defines which recognizer to monitor */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /** The property that defines whether summary accuracy information is displayed */
     @S4Boolean(defaultValue = true)
     public final static String PROP_SHOW_SUMMARY = "showSummary";
@@ -80,9 +76,9 @@ public class BeamFinder implements ResultListener,
     private final static DecimalFormat logFormatter = new DecimalFormat("0.#E0");
     public final String TOKEN_RANK = "TOKENRANK";
     
-    public BeamFinder( Recognizer recognizer, LogMath logMath, boolean showSummary, boolean showDetails, boolean enabled) {
+    public BeamFinder( Recognizer recognizer, boolean showSummary, boolean showDetails, boolean enabled) {
         initRecognizer(recognizer);
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
         this.showSummary = showSummary;
         this.showDetails = showDetails;
         this.enabled = enabled;
@@ -100,7 +96,6 @@ public class BeamFinder implements ResultListener,
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         initRecognizer((Recognizer) ps.getComponent(PROP_RECOGNIZER));
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
         showSummary = ps.getBoolean(PROP_SHOW_SUMMARY);
         showDetails = ps.getBoolean(PROP_SHOW_DETAILS);
         enabled = ps.getBoolean(PROP_ENABLED);

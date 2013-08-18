@@ -210,10 +210,12 @@ public abstract class AbstractSausageMaker implements ConfidenceScorer, Configur
      * @return the probability sum
      */
     protected double clusterProbability(List<Node> cluster) {
-        float p = LogMath.getLogZero();
-        for (Node node : cluster) {
-            p = lattice.getLogMath().addAsLinear(p, (float)node.getPosterior());
-        }
+        float p = LogMath.LOG_ZERO;
+        LogMath logMath = LogMath.getInstance();
+
+        for (Node node : cluster)
+            p = logMath.addAsLinear(p, (float)node.getPosterior());
+
         return p;
     }
 
@@ -294,15 +296,16 @@ public abstract class AbstractSausageMaker implements ConfidenceScorer, Configur
                     continue;
                 }
                 seenWords.add(word.getSpelling());
-                SimpleWordResult swr = new SimpleWordResult
-                    (node,
-                        wordSubClusterProbability(cluster, word.getSpelling()),
-                        lattice.getLogMath());
+                WordResult swr =
+                    new WordResult(
+                            node,
+                            wordSubClusterProbability(
+                                cluster, word.getSpelling()));
                 sausage.addWordHypothesis(index, swr);
             }
             index++;
         }
-        sausage.fillInBlanks(lattice.getLogMath());
+        sausage.fillInBlanks();
         return sausage;
     }
 }

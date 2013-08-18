@@ -30,18 +30,22 @@ import java.util.logging.Logger;
 
 public class SphinxAsciiLoader extends Sphinx3Loader {
 
-    public SphinxAsciiLoader(URL location, String model, String dataLocation, LogMath logMath, UnitManager unitManager,
-            float distFloor, float mixtureWeightFloor, float varianceFloor, boolean useCDUnits) {
-
-        init(location, model, dataLocation, logMath, unitManager, distFloor, mixtureWeightFloor, varianceFloor, useCDUnits,
+    public SphinxAsciiLoader(URL location, String model, String dataLocation,
+            UnitManager unitManager, float distFloor, float mixtureWeightFloor,
+            float varianceFloor, boolean useCDUnits)
+    {
+        init(location, model, dataLocation, unitManager, distFloor, mixtureWeightFloor, varianceFloor, useCDUnits,
                 Logger.getLogger(getClass().getName()));
     }
 
-    public SphinxAsciiLoader(String location, String model, String dataLocation, LogMath logMath, UnitManager unitManager,
-            float distFloor, float mixtureWeightFloor, float varianceFloor, boolean useCDUnits) throws MalformedURLException,
-            ClassNotFoundException {
-
-        init(ConfigurationManagerUtils.resourceToURL(location), model, dataLocation, logMath, unitManager, distFloor,
+    public SphinxAsciiLoader(String location, String model,
+            String dataLocation, UnitManager unitManager,
+            float distFloor, float mixtureWeightFloor, float varianceFloor,
+            boolean useCDUnits)
+        throws MalformedURLException, ClassNotFoundException
+    {
+        init(ConfigurationManagerUtils.resourceToURL(location), model,
+                dataLocation, unitManager, distFloor,
                 mixtureWeightFloor, varianceFloor, useCDUnits, Logger.getLogger(getClass().getName()));
     }
 
@@ -168,7 +172,7 @@ public class SphinxAsciiLoader extends Sphinx3Loader {
                 }
                 logMixtureWeight[j] = val;
             }
-            logMath.linearToLog(logMixtureWeight);
+            LogMath.getInstance().linearToLog(logMixtureWeight);
             pool.put(i, logMixtureWeight);
         }
         est.close();
@@ -195,7 +199,9 @@ public class SphinxAsciiLoader extends Sphinx3Loader {
         }
 
         Pool<float[][]> pool = new Pool<float[][]>(path);
-        ExtendedStreamTokenizer est = new ExtendedStreamTokenizer(inputStream, '#', false);
+        ExtendedStreamTokenizer est =
+            new ExtendedStreamTokenizer(inputStream, '#', false);
+        LogMath logMath = LogMath.getInstance();
         est.expectString("tmat");
         int numMatrices = est.getInt("numMatrices");
         int numStates = est.getInt("numStates");

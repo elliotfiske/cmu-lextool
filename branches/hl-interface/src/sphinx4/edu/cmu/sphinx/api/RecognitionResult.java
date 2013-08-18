@@ -21,6 +21,8 @@ import edu.cmu.sphinx.result.Nbest;
 import edu.cmu.sphinx.result.Path;
 import edu.cmu.sphinx.result.Result;
 
+import edu.cmu.sphinx.util.LogMath;
+
 
 /**
  * High-level wrapper for {@link Result} instance.
@@ -44,7 +46,7 @@ public class RecognitionResult {
     }
 
     public double getConfidence() {
-        return hypothesis.getLogMath().logToLinear(
+        return LogMath.getInstance().logToLinear(
                 (float) hypothesis.getConfidence());
     }
 

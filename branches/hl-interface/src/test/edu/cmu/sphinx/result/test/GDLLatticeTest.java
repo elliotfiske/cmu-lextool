@@ -17,7 +17,6 @@ import edu.cmu.sphinx.result.GDLLatticeFactory;
 import edu.cmu.sphinx.result.Lattice;
 import edu.cmu.sphinx.result.SausageMaker;
 import edu.cmu.sphinx.result.Sausage;
-import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +35,10 @@ public class GDLLatticeTest {
 		URL configURL = new File("src/test/edu/cmu/sphinx/result/test/config.xml")
 				.toURI().toURL();
 		ConfigurationManager cm = new ConfigurationManager(configURL);
-		LogMath logMath = (LogMath) cm.lookup("logMath");
 		Dictionary dictionary = (Dictionary) cm.lookup("dictionary");
 		dictionary.allocate();
 
 		Lattice lattice = GDLLatticeFactory.getLattice(latticeGDL, dictionary);
-		lattice.setLogMath(logMath);
 		lattice.dumpAISee("logs/newLattice.gdl", "New Lattice");
 
 		SausageMaker sm = new SausageMaker(lattice);

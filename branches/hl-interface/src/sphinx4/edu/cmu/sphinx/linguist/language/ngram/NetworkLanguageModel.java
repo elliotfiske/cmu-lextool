@@ -26,10 +26,6 @@ import edu.cmu.sphinx.util.props.S4Component;
  */
 public class NetworkLanguageModel implements LanguageModel {
 
-    /** The property that defines the logMath component. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     /** The property specifying the host of the language model server. */
     @S4String(defaultValue = "localhost")
     public final static String PROP_HOST = "host";
@@ -67,12 +63,12 @@ public class NetworkLanguageModel implements LanguageModel {
      * @param logMath
      *            logMath
      */
-    public NetworkLanguageModel(String host, int port, URL location, int maxDepth, LogMath logMath) {
+    public NetworkLanguageModel(String host, int port, URL location, int maxDepth) {
         this.host = host;
         this.port = port;
         this.maxDepth = maxDepth;
         this.location = location;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
     public NetworkLanguageModel() {
@@ -94,7 +90,6 @@ public class NetworkLanguageModel implements LanguageModel {
         host = ps.getString(PROP_HOST);
         port = ps.getInt(PROP_PORT);
         location = ConfigurationManagerUtils.getResource(PROP_LOCATION, ps);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
 
         maxDepth = ps.getInt(PROP_MAX_DEPTH);
         if (maxDepth == -1)
@@ -159,7 +154,7 @@ public class NetworkLanguageModel implements LanguageModel {
         if (!result.equals("-inf"))
             probability = logMath.log10ToLog(Float.parseFloat(result));
         else
-            probability = LogMath.getLogZero();
+            probability = LogMath.LOG_ZERO;
 
         cache.put(wordSequence, probability);
         return probability.floatValue();

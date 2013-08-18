@@ -12,8 +12,6 @@
 
 package edu.cmu.sphinx.result;
 
-import edu.cmu.sphinx.util.LogMath;
-
 
 /**
  * Represents a path of words through the recognition result lattice.
@@ -37,15 +35,6 @@ public interface Path {
      * @return a log confidence score which linear value is between 0.0 and 1.0 (inclusive)
      */
     public double getConfidence();
-
-
-    /**
-     * Returns the log math for the scores of this path.
-     *
-     * @return the log math
-     */
-    public LogMath getLogMath();
-
 
     /**
      * Gets the ordered set of words for this path

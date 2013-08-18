@@ -31,8 +31,10 @@ public class SimpleActiveListFactory extends ActiveListFactory {
      * @param relativeBeamWidth
      * @param logMath
      */
-    public SimpleActiveListFactory(int absoluteBeamWidth, double relativeBeamWidth, LogMath logMath) {
-        super(absoluteBeamWidth, relativeBeamWidth, logMath);
+    public SimpleActiveListFactory(int absoluteBeamWidth,
+            double relativeBeamWidth)
+    {
+        super(absoluteBeamWidth, relativeBeamWidth);
     }
 
     public SimpleActiveListFactory() {

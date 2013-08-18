@@ -103,10 +103,6 @@ public class FSTGrammar extends Grammar {
     @S4String(defaultValue = "default.arpa_gram")
     public final static String PROP_PATH = "path";
 
-    /** The property that defines the logMath component. */
-    @S4Component(type = LogMath.class)
-    public final static String PROP_LOG_MATH = "logMath";
-
     // TODO: If this property turns out to be worthwhile, turn this
     // into a full fledged property
     private boolean addInitialSilenceNode;
@@ -140,10 +136,10 @@ public class FSTGrammar extends Grammar {
     }
 
 
-    public FSTGrammar(String path, LogMath logMath, boolean showGrammar, boolean optimizeGrammar, boolean addSilenceWords, boolean addFillerWords, Dictionary dictionary) {
+    public FSTGrammar(String path, boolean showGrammar, boolean optimizeGrammar, boolean addSilenceWords, boolean addFillerWords, Dictionary dictionary) {
         super(showGrammar,optimizeGrammar,addSilenceWords,addFillerWords,dictionary);
         this.path = path;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
     public FSTGrammar() {
@@ -161,7 +157,6 @@ public class FSTGrammar extends Grammar {
         super.newProperties(ps);
         
         path = ps.getString(PROP_PATH);
-        logMath = (LogMath) ps.getComponent(PROP_LOG_MATH);
     }
 
 
@@ -223,8 +218,8 @@ public class FSTGrammar extends Grammar {
                     GrammarNode silenceNode =
                             createGrammarNode(++maxNodeId,
                                     Dictionary.SILENCE_SPELLING);
-                    initialNode.add(silenceNode, LogMath.getLogOne());
-                    silenceNode.add(initialNode, LogMath.getLogOne());
+                    initialNode.add(silenceNode, LogMath.LOG_ONE);
+                    silenceNode.add(initialNode, LogMath.LOG_ONE);
                 }
 
             } else if (token.equals("T")) {
@@ -364,13 +359,13 @@ public class FSTGrammar extends Grammar {
             // if it has at least one word, then expand the node
             if (node.getNumAlternatives() > 0) {
                 GrammarNode endNode = createGrammarNode(++maxNodeID, false);
-                node.add(endNode, LogMath.getLogOne());
+                node.add(endNode, LogMath.LOG_ONE);
                 // add an optional silence
                 if (addOptionalSilence) {
                     GrammarNode silenceNode = createGrammarNode(++maxNodeID,
                             silence);
-                    node.add(silenceNode, LogMath.getLogOne());
-                    silenceNode.add(endNode, LogMath.getLogOne());
+                    node.add(silenceNode, LogMath.LOG_ONE);
+                    silenceNode.add(endNode, LogMath.LOG_ONE);
                 }
                 expandedNodes.add(node);
             }
