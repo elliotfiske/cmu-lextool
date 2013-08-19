@@ -297,7 +297,7 @@ public abstract class AbstractSausageMaker implements ConfidenceScorer, Configur
                 }
                 seenWords.add(word.getSpelling());
                 WordResult swr =
-                    new SimpleWordResult(
+                    new WordResult(
                             node,
                             wordSubClusterProbability(
                                 cluster, word.getSpelling()));

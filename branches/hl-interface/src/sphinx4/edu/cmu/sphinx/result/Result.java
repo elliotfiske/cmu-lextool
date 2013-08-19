@@ -15,10 +15,14 @@ package edu.cmu.sphinx.result;
 import edu.cmu.sphinx.decoder.search.ActiveList;
 import edu.cmu.sphinx.decoder.search.AlternateHypothesisManager;
 import edu.cmu.sphinx.decoder.search.Token;
+
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.FloatData;
+
 import edu.cmu.sphinx.linguist.dictionary.Word;
+
 import edu.cmu.sphinx.util.LogMath;
+import edu.cmu.sphinx.util.TimeFrame;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -563,7 +567,8 @@ public class Result {
                     else
                         ef = -1;
 
-                    WordResult wordResult = new SimpleWordResult(word, (int)sf, (int)ef, 0.0, 1.0, null);
+                    WordResult wordResult =
+                        new WordResult(word, new TimeFrame(sf, ef), 0.0, 1.0);
                     words.addFirst(wordResult);
                     lastWordFirstFeature = lastFeature;
                 }

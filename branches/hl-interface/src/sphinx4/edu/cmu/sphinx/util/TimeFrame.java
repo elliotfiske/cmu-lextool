@@ -14,6 +14,8 @@ package edu.cmu.sphinx.util;
 
 public class TimeFrame {
 
+    public static final TimeFrame NULL = new TimeFrame(0);
+
     private final long start;
     private final long end;
 

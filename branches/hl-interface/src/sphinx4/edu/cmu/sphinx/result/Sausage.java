@@ -97,7 +97,7 @@ public class Sausage implements ConfidenceResult {
 
     public void addWordHypothesis(int position, String word, double confidence)
     {
-        WordResult wr = new SimpleWordResult(word, confidence);
+        WordResult wr = new WordResult(word, confidence);
         addWordHypothesis(position, wr);
     }
 
