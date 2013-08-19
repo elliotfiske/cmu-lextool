@@ -40,12 +40,12 @@ public class SimpleWordResult implements WordResult {
      * @param w          the word
      * @param confidence the confidence for this word
      */
-    public SimpleWordResult(String w, double confidence, LogMath logMath) {
+    public SimpleWordResult(String w, double confidence) {
         Pronunciation[] pros = {Pronunciation.UNKNOWN};
         this.word = new Word(w, pros, false);
         this.confidence = confidence;
-        this.score = LogMath.getLogZero();
-        this.logMath = logMath;
+        this.score = LogMath.LOG_ZERO;
+        logMath = LogMath.getInstance();
     }
 
 
@@ -59,13 +59,13 @@ public class SimpleWordResult implements WordResult {
      * @param confidence confidence (posterior) of the word
      */
     public SimpleWordResult(Word w, int sf, int ef, double score,
-                            double confidence, LogMath logMath) {
+                            double confidence) {
         this.word = w;
         this.startFrame = sf;
         this.endFrame = ef;
         this.score = score;
         this.confidence = confidence;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
 
@@ -76,9 +76,9 @@ public class SimpleWordResult implements WordResult {
      * @param node       the node to extract information from
      * @param confidence the confidence (posterior) to assign
      */
-    public SimpleWordResult(Node node, double confidence, LogMath logMath) {
+    public SimpleWordResult(Node node, double confidence) {
         this(node.getWord(), node.getBeginTime(), node.getEndTime(),
-                LogMath.getLogZero(), confidence, logMath);
+                LogMath.LOG_ZERO, confidence);
     }
 
 
@@ -92,20 +92,12 @@ public class SimpleWordResult implements WordResult {
     /** @see edu.cmu.sphinx.result.WordResult#getConfidence() */
     @Override
     public double getConfidence() {
-        if (confidence > LogMath.getLogOne()) {
-            return LogMath.getLogOne();
+        if (confidence > LogMath.LOG_ONE) {
+            return LogMath.LOG_ONE;
         } else {
             return confidence;
         }
     }
-
-
-    /** @see edu.cmu.sphinx.result.WordResult#getLogMath() */
-    @Override
-    public LogMath getLogMath() {
-        return logMath;
-    }
-
 
     /** @see edu.cmu.sphinx.result.WordResult#getPronunciation() */
     @Override

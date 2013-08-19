@@ -221,6 +221,7 @@ public class FlatLinguist implements Linguist, Configurable {
     */
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
+        logMath = LogMath.getInstance();
         // hookup to all of the components
         setupAcousticModel(ps);
         grammar = (Grammar) ps.getComponent(PROP_GRAMMAR);

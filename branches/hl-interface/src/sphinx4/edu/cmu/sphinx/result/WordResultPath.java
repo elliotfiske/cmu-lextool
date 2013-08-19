@@ -49,7 +49,7 @@ public class WordResultPath implements Path {
     /** @see edu.cmu.sphinx.result.Path#getScore() */
     @Override
     public double getScore() {
-        double score = LogMath.getLogOne();
+        double score = LogMath.LOG_ONE;
         for (WordResult wr : path) {
             score += wr.getScore();
         }
@@ -60,7 +60,7 @@ public class WordResultPath implements Path {
     /** @see edu.cmu.sphinx.result.Path#getConfidence() */
     @Override
     public double getConfidence() {
-        double confidence = LogMath.getLogOne();
+        double confidence = LogMath.LOG_ONE;
         for (WordResult wr : path) {
             confidence += wr.getConfidence();
         }

@@ -169,6 +169,7 @@ public class SimpleBreadthFirstSearchManager extends TokenSearchManager {
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         
+        logMath = LogMath.getInstance();
         logger = ps.getLogger();
         name = ps.getInstanceName();
 

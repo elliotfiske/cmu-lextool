@@ -17,6 +17,8 @@ import edu.cmu.sphinx.result.*;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 import edu.cmu.sphinx.util.props.PropertyException;
 
+import edu.cmu.sphinx.util.LogMath;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -71,7 +73,7 @@ public class Confidence {
                         System.out.println(best.getTranscription());
                         System.out.println
                                 ("     (confidence: " +
-                                        format.format(best.getLogMath().logToLinear
+                                        format.format(LogMath.getInstance().logToLinear
                                                 ((float) best.getConfidence()))
                                         + ')');
                         System.out.println();
@@ -137,6 +139,6 @@ public class Confidence {
         System.out.println
                 (" (confidence: " +
                         format.format
-                                (wr.getLogMath().logToLinear((float) wr.getConfidence())) + ')');
+                                (LogMath.getInstance().logToLinear((float) wr.getConfidence())) + ')');
     }
 }

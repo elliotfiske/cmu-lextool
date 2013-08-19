@@ -41,14 +41,6 @@ public interface WordResult {
 
 
     /**
-     * Returns the log math of the scores.
-     *
-     * @return the log math of the scores
-     */
-    public LogMath getLogMath();
-
-
-    /**
      * Gets the pronunciation for this word.
      *
      * @return the pronunciation for the word

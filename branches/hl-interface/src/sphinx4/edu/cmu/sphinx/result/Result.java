@@ -54,9 +54,9 @@ public class Result {
      */
     public Result(AlternateHypothesisManager alternateHypothesisManager,
             ActiveList activeList, List<Token> resultList, int frameNumber,
-            boolean isFinal, LogMath logMath)
+            boolean isFinal)
     {
-        this(activeList, resultList, frameNumber, isFinal, logMath);
+        this(activeList, resultList, frameNumber, isFinal);
         this.alternateHypothesisManager = alternateHypothesisManager;
     }
 
@@ -71,12 +71,12 @@ public class Result {
      *                    has been decoded. 
      */
     public Result(ActiveList activeList, List<Token> resultList, int frameNumber,
-            boolean isFinal, LogMath logMath) {
+            boolean isFinal) {
         this.activeList = activeList;
         this.resultList = resultList;
         this.currentFrameNumber = frameNumber;
         this.isFinal = isFinal;
-        this.logMath = logMath;
+        logMath = LogMath.getInstance();
     }
 
 
@@ -533,7 +533,7 @@ public class Result {
     }
 
 
-    public ArrayList<WordResult> getWords() {
+    public List<WordResult> getWords() {
 
         LinkedList<WordResult> words = new LinkedList<WordResult>();
 
