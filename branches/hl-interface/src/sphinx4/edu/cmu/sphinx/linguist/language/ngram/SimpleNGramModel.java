@@ -87,7 +87,7 @@ public class SimpleNGramModel implements LanguageModel, BackoffLanguageModel {
     */
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
-
+        logMath = LogMath.getInstance();
 
         if (allocated) {
             throw new RuntimeException("Can't change properties after allocation");

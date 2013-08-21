@@ -193,6 +193,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         
+        logMath = LogMath.getInstance();
         logger = ps.getLogger();
 
         linguist = (Linguist) ps.getComponent(PROP_LINGUIST);
@@ -282,8 +283,8 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         }
         
         if (!streamEnd) {
-        	result = new Result(loserManager, activeList, resultList,
-        					    currentFrameNumber, done);
+        	result = new Result(loserManager, activeList,
+                                resultList, currentFrameNumber);
         }
 
         // tokenTypeTracker.show();
