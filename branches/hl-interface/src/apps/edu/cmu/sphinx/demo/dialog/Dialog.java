@@ -119,7 +119,6 @@ class MainMenu extends DialogMenu {
         super("Main menu");
         captions.add("Bank account");
         captions.add("Weather forecast");
-        captions.add("Help");
         captions.add("Exit");
     }
 
@@ -163,7 +162,6 @@ class BankMenu extends DialogMenu {
         captions.add("Balance");
         captions.add("Deposit");
         captions.add("Withdraw");
-        captions.add("Help");
         captions.add("Back");
     }
 
