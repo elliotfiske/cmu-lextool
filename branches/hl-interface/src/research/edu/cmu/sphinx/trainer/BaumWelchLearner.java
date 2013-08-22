@@ -43,6 +43,8 @@ public class BaumWelchLearner implements Learner {
     public static final String DATA_SOURCE = "source";
     private StreamCepstrumSource dataSource;
 
+    private LogMath logMath;
+
     /*
      * The logger for this class
      */

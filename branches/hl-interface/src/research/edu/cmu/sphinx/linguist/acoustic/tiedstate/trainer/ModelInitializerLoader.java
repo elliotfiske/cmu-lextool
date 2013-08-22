@@ -94,6 +94,8 @@ public class ModelInitializerLoader implements Loader {
     @S4Double(defaultValue = 1e-7f)
     public final static String PROP_MW_FLOOR = "mixtureWeightFloor";
 
+    private LogMath logMath;
+
     /** The logger for this class */
     private Logger logger;
 
