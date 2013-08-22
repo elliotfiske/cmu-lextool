@@ -75,6 +75,16 @@ public final class RecognitionResult {
         return sb.toString();
     }
 
+    /**
+     * Returns score for the whole utterance.
+     *
+     * @return total score of the path of words
+     */
+    public double getScore() {
+        return LogMath.getInstance().logToLinear(
+                (float) hypothesis.getScore());
+    }
+
     public double getConfidence() {
         return LogMath.getInstance().logToLinear(
                 (float) hypothesis.getConfidence());
