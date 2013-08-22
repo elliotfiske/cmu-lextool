@@ -12,6 +12,8 @@
 package edu.cmu.sphinx.demo.transcriber;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.Writer;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,28 +40,38 @@ public class Transcriber {
         "resource:/edu/cmu/sphinx/demo/transcriber/";
 
 
-    public static void main(String[] args) throws MalformedURLException {
+    public static void main(String[] args) throws Exception {
+        System.out.println("Loading models...");
+
         SpeechRecognizer recognizer = new SpeechRecognizer();
-        recognizer.setGrammar(GRAMMAR_PATH, "digits");
-        // recognizer.setLanguageModel("./models/language/en-us.lm.dmp");
         recognizer.setAcousticModel(ACOUSTIC_MODEL);
         recognizer.setDictionary(DICTIONARY_PATH);
+        recognizer.setLanguageModel("./models/language/en-us.lm.dmp");
 
-        //if (args.length > 0)
-        //    recognizer.setResourceInput(new File(args[0]).toURI().toURL());
-        //else
-        //    recognizer.setResourceInput(
-        //            Transcriber.class.getResource("10001-90210-01803.wav"));
         recognizer.setMicrophoneInput();
         recognizer.startRecognition(true);
 
+        System.out.println("Say something (\"the end\" to exit):");
+        Writer writer = new PrintWriter(System.out);
         RecognitionResult result;
+
         while ((result = recognizer.getResult()) != null) {
+            String utterance = result.getUtterance(false);
+            if (utterance.equals("the end"))
+                break;
+
             System.out.format("hypothesis: %s, confidence: %g\n",
-                    result.getBestResult(), result.getConfidence());
-            System.out.println("best 5 hypothesis:");
-            for (String s : result.getNbest(5))
+                              utterance, result.getConfidence());
+
+            System.out.println("best 3 hypothesis:");
+            for (String s : result.getNbest(3))
                 System.out.println(s);
+
+            result.writeLattice(writer);
+            writer.flush();
         }
+
+        writer.close();
+        recognizer.stopRecognition();
     }
 }
