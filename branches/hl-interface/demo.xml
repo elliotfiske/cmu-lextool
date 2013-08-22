@@ -76,14 +76,9 @@
 
   <!-- Sphinx-4 (non-JSAPI) demos -->
   <target name="compile_sphinx_demos"
-    depends="compile_sphinx_lattice,
-    compile_sphinx_confidence,
-    compile_dialog,
-    compile_jsapi_jsgf,
-    compile_live,
+    depends="compile_dialog,
     compile_sphinx_transcriber,
-    compile_aligner,
-    compile_tags"
+    compile_aligner"
     description="Compiles Sphinx-4 demos"/>
 
   <target name="compile_dialog">
@@ -110,56 +105,6 @@
       manifest="${demo_src_dir}/edu/cmu/sphinx/demo/dialog/dialog.Manifest"
       basedir="${demo_classes_dir}"
       includes="edu/cmu/sphinx/demo/dialog/**"
-      compress="true"/>
-  </target>
-
-  <target name="compile_jsapi_jsgf" if="jsapi_jar_present">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/jsgf"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/jsgf/**"
-      destdir="${demo_classes_dir}">
-      <classpath refid="libs"/>
-    </javac>
-
-    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/jsgf">
-      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/jsgf">
-        <include name="**/*.gram"/>
-      </fileset>
-    </copy>
-
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/jsgf/jsgf.config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/jsgf"/>
-    <jar destfile="${bin_dir}/JSGFDemo.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/jsgf/jsgf.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/jsgf/**"
-      compress="true"/>
-  </target>
-
-  <target name="compile_sphinx_lattice">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/lattice"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/lattice/**"
-      destdir="${demo_classes_dir}">
-      <classpath refid="libs"/>
-    </javac>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/lattice/10001-90210-01803.wav"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/lattice"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/lattice/config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/lattice"/>
-    <mkdir dir="${bin_dir}"/>
-    <jar destfile="${bin_dir}/LatticeDemo.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/lattice/latticedemo.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/lattice/**"
       compress="true"/>
   </target>
 
@@ -210,76 +155,4 @@
     <genkey alias="zipcity" storepass="public" keystore="tempKeystore"
       dname="CN=Sphinx-4, OU=Sphinx, o=Carnegie Mellon University, c=us"/>
   </target>
-
-  <target name="compile_tags" if="jsapi_jar_present">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/tags"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/tags/**"
-      destdir="${demo_classes_dir}">
-      <classpath refid="libs"/>
-    </javac>
-
-    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/jsapi/tags">
-      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/tags">
-        <include name="**/*.gram"/>
-      </fileset>
-    </copy>
-
-    <jar destfile="${bin_dir}/FeatureValueDemo.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/tags/fvd.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/tags/**"
-      excludes="demo/jsapi/tags/LiveConnectDemo**"
-      compress="true"/>
-
-    <jar destfile="${bin_dir}/LiveConnectDemo.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/jsapi/tags/lcd.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/jsapi/tags/**"
-      excludes="demo/jsapi/tags/FeatureValueDemo**"
-      compress="true"/>
-  </target>
-
-  <target name="compile_sphinx_confidence">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/confidence"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      destdir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/confidence/**">
-      <classpath refid="libs"/>
-    </javac>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/confidence/config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/confidence"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/confidence/confidence.trigram.lm"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/confidence"/>
-    <mkdir dir="${bin_dir}"/>
-    <jar destfile="${bin_dir}/Confidence.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/confidence/confidence.Manifest"
-      basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/confidence/**"
-      compress="true"/>
-  </target>
-
-  <target name="compile_live">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/live"/>
-    <javac debug="true"
-      listfiles="true"
-      deprecation="true"
-      includeAntRuntime="false"
-      srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/live/**"
-      destdir="${demo_classes_dir}">
-      <classpath refid="libs"/>
-    </javac>
-    <mkdir dir="${bin_dir}"/>
-  </target>
-
-
 </project>
