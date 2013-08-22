@@ -83,4 +83,8 @@ public final class RecognitionResult {
     public Collection<String> getNbest(int n) {
         return new Nbest(lattice).getNbest(n);
     }
+
+    public void writeLattice(Writer writer) throws IOException {
+        lattice.dumpSlf(writer);
+    }
 }
