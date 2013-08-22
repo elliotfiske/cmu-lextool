@@ -11,6 +11,10 @@
 
 package edu.cmu.sphinx.api;
 
+import java.io.IOException;
+import java.io.Writer;
+
+import java.util.ArrayList;
 import java.util.Collection;
 
 import edu.cmu.sphinx.result.ConfidenceResult;
@@ -20,6 +24,7 @@ import edu.cmu.sphinx.result.LatticeOptimizer;
 import edu.cmu.sphinx.result.Nbest;
 import edu.cmu.sphinx.result.Path;
 import edu.cmu.sphinx.result.Result;
+import edu.cmu.sphinx.result.WordResult;
 
 import edu.cmu.sphinx.util.LogMath;
 
@@ -27,22 +32,47 @@ import edu.cmu.sphinx.util.LogMath;
 /**
  * High-level wrapper for {@link Result} instance.
  */
-public class RecognitionResult {
+public final class RecognitionResult {
 
     private final Result result;
     private final Path hypothesis;
+    private final Lattice lattice;
 
     public RecognitionResult(ConfidenceScorer scorer, Result result) {
         this.result = result;
+        lattice = new Lattice(result);
+        new LatticeOptimizer(lattice).optimize();
         hypothesis = scorer.score(result).getBestHypothesis();
     }
 
-    public String getBestResult() {
-        return result.getBestResultNoFiller();
+    public Collection<WordResult> getWords() {
+        return result.getWords();
     }
 
-    public String getBestFinalResult() {
-        return result.getBestFinalResultNoFiller();
+    /**
+     * Returns string representaion of the result.
+     *
+     * @param withFillers should the filler parts be included
+     */
+    public String getUtterance(boolean withFillers) {
+        // TODO: use com.google.common.base.Joiner
+        Collection<String> words = new ArrayList<String>();
+
+        for (WordResult word : getWords()) {
+            if (!word.isFiller() || withFillers)
+                words.add(word.getPronunciation().getWord().toString());
+        }
+
+
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (String word : words) {
+            sb.append(word);
+            if (++count < words.size())
+                sb.append(" ");
+        }
+
+        return sb.toString();
     }
 
     public double getConfidence() {
@@ -51,8 +81,6 @@ public class RecognitionResult {
     }
 
     public Collection<String> getNbest(int n) {
-        Lattice lattice = new Lattice(result);
-        new LatticeOptimizer(lattice).optimize();
         return new Nbest(lattice).getNbest(n);
     }
 }
