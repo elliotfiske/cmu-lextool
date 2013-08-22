@@ -58,7 +58,7 @@ abstract class DialogMenu {
                 recognizer.stopRecognition();
                 break;
             } else {
-                String tag = result.getBestFinalResult();
+                String tag = result.getUtterance(false);
                 recognizer.stopRecognition();
                 if (tags.containsKey(tag))
                     tags.get(tag).enter(recognizer);
@@ -66,7 +66,7 @@ abstract class DialogMenu {
                     break;
                 else
                     System.out.println("No such category: " +
-                            result.getBestFinalResult());
+                            result.getUtterance(false));
             }
         }
     }
@@ -173,7 +173,7 @@ class BankMenu extends DialogMenu {
 
     @Override
     protected boolean onCommand(RecognitionResult result) {
-        String hypothesis = result.getBestFinalResult();
+        String hypothesis = result.getUtterance(false);
         if (hypothesis.equals("back")) {
             return false;
         } else if (hypothesis.endsWith("help")) {
@@ -222,7 +222,7 @@ class WeatherMenu extends DialogMenu {
 
     @Override
     protected boolean onCommand(RecognitionResult result) {
-        String hypothesis = result.getBestResult();
+        String hypothesis = result.getUtterance(false);
         while (!hypothesis.equals("the end")) {
             System.out.println(hypothesis);
             return true;
