@@ -21,12 +21,12 @@ import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.recognizer.Recognizer.State;
 
 
-public class SimpleSpeechRecognizer extends AbstractSpeechRecognizer {
+public class SpeechRecognizer extends AbstractSpeechRecognizer {
 
     private final JSGFGrammar grammar;
     private final Microphone microphone;
 
-    public SimpleSpeechRecognizer() {
+    public SpeechRecognizer() {
         grammar = configurationManager.lookup(JSGFGrammar.class);
         microphone = configurationManager.lookup(Microphone.class);
     }

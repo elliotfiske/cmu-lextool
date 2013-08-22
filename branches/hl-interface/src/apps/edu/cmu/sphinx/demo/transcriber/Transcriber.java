@@ -17,7 +17,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import edu.cmu.sphinx.api.RecognitionResult;
-import edu.cmu.sphinx.api.SimpleSpeechRecognizer;
+import edu.cmu.sphinx.api.SpeechRecognizer;
 
 import edu.cmu.sphinx.result.Path;
 
@@ -39,7 +39,7 @@ public class Transcriber {
 
 
     public static void main(String[] args) throws MalformedURLException {
-        SimpleSpeechRecognizer recognizer = new SimpleSpeechRecognizer();
+        SpeechRecognizer recognizer = new SpeechRecognizer();
         recognizer.setGrammar(GRAMMAR_PATH, "digits");
         // recognizer.setLanguageModel("./models/language/en-us.lm.dmp");
         recognizer.setAcousticModel(ACOUSTIC_MODEL);

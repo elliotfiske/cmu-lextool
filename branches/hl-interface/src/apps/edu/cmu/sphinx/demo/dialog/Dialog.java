@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.cmu.sphinx.api.SimpleSpeechRecognizer;
+import edu.cmu.sphinx.api.SpeechRecognizer;
 import edu.cmu.sphinx.api.RecognitionResult;
 import edu.cmu.sphinx.jsgf.JSGFGrammarException;
 import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
@@ -44,7 +44,7 @@ abstract class DialogMenu {
         tags.put(tag, menu);
     }
 
-    public void enter(SimpleSpeechRecognizer recognizer) {
+    public void enter(SpeechRecognizer recognizer) {
         while (true) {
             show();
             onEnter(recognizer);
@@ -105,7 +105,7 @@ abstract class DialogMenu {
             System.out.println("+" + hrule + "+");
     }
 
-    protected abstract void onEnter(SimpleSpeechRecognizer recognizer);
+    protected abstract void onEnter(SpeechRecognizer recognizer);
 
     protected abstract boolean onCommand(RecognitionResult result);
 }
@@ -123,7 +123,7 @@ class MainMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(SimpleSpeechRecognizer recognizer) {
+    protected void onEnter(SpeechRecognizer recognizer) {
         recognizer.setGrammar(GRAMMAR_PATH, "menu");
     }
 
@@ -166,7 +166,7 @@ class BankMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(SimpleSpeechRecognizer recognizer) {
+    protected void onEnter(SpeechRecognizer recognizer) {
         recognizer.setGrammar(GRAMMAR_PATH, "bank");
         savings = .0;
     }
@@ -216,7 +216,7 @@ class WeatherMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(SimpleSpeechRecognizer recognizer) {
+    protected void onEnter(SpeechRecognizer recognizer) {
         recognizer.setLanguageModel(LANGUAGE_MODEL);
     }
 
@@ -242,7 +242,7 @@ public class Dialog {
     public static void main(String[] args)
         throws IOException, MalformedURLException, JSGFGrammarException, JSGFGrammarParseException
     {
-        SimpleSpeechRecognizer recognizer = new SimpleSpeechRecognizer();
+        SpeechRecognizer recognizer = new SpeechRecognizer();
         recognizer.setAcousticModel(ACOUSTIC_MODEL);
         recognizer.setDictionary(DICTIONARY_PATH);
 
