@@ -7,17 +7,18 @@
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
- *
  */
+
 package edu.cmu.sphinx.tools.aligner;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+
 import java.net.URL;
-import java.util.List;
+
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
@@ -25,7 +26,10 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import edu.cmu.sphinx.api.GrammarAligner;
+import edu.cmu.sphinx.api.SpeechAligner;
+
+import edu.cmu.sphinx.util.TimeFrame;
+
 import edu.cmu.sphinx.result.WordResult;
 
 /**
@@ -36,93 +40,89 @@ import edu.cmu.sphinx.result.WordResult;
  */
 public class Aligner {
 
-    static int diff = 200;
+    private static int MIN_FILLER_LENGTH = 200;
 
+    /**
+     * @param args acoustic model, dictionary, audio file, text
+     */
     public static void main(String args[]) throws Exception {
+        SpeechAligner aligner = new SpeechAligner();
+        aligner.setAcousticModel(args[0]);
+        aligner.setDictionary(args[1]);
 
-        URL acousticModel = new URL(args[0]);
-        URL dictionary = new URL(args[1]);
-        GrammarAligner aligner = new GrammarAligner(acousticModel, dictionary,
-                null);
-
-        AudioInputStream stream = AudioSystem.getAudioInputStream(new File(args[2]));
-        String text = readFileText(args[3]);
-
-        List<WordResult> results = aligner.align(stream, text);
-        //        for (WordResult result : results) {
-        //          System.out.println(result);
-        //        }
-        dumpDatabase(args[2], results);
+        File file = new File(args[2]);
+        splitStream(file, aligner.align(file.toURI().toURL(), args[3]));
     }
 
-    public static void copyAudio(String sourceFileName, String destinationFileName, int startMs, int endMs)
+    private static void splitStream(File inFile, List<WordResult> results)
         throws UnsupportedAudioFileException, IOException
     {
-        AudioInputStream inputStream = null;
-        AudioInputStream cutStream = null;
-        File file = new File(sourceFileName);
-        AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(file);
-        AudioFormat format = fileFormat.getFormat();
-        inputStream = AudioSystem.getAudioInputStream(file);
-        int bytesPerMsSecond = format.getFrameSize() * (int) format.getFrameRate() / 1000;
-        inputStream.skip(startMs * bytesPerMsSecond);
-        long framesOfAudioToCopy = endMs * (int) format.getFrameRate() / 1000;
-        cutStream = new AudioInputStream(inputStream, format, framesOfAudioToCopy);
-        File destinationFile = new File(destinationFileName);
-        AudioSystem.write(cutStream, fileFormat.getType(), destinationFile);
-        inputStream.close();
-        cutStream.close();
-    }
+        System.err.println(results.size());
 
-    private static void dumpDatabase(String input, List<WordResult> results)
-        throws UnsupportedAudioFileException, IOException
-    {
         List<List<WordResult>> utts = new ArrayList<List<WordResult>>();
         List<WordResult> currentUtt = null;
         int fillerLength = 0;
+
         for (WordResult result : results) {
-            if (!result.isFiller()) {
-                fillerLength = 0;
-                if (currentUtt == null) {
-                    currentUtt = new ArrayList<WordResult>(1);
-                }
-                currentUtt.add(result);
-            } else {
-                fillerLength += result.getEndFrame() - result.getStartFrame();
-                if (fillerLength > diff) {
+            if (result.isFiller()) {
+                fillerLength += result.getTimeFrame().length(); 
+                if (fillerLength > MIN_FILLER_LENGTH) {
                     if (currentUtt != null)
                         utts.add(currentUtt);
+
                     currentUtt = null;
                 }
+            } else {
+                fillerLength = 0;
+                if (currentUtt == null)
+                    currentUtt = new ArrayList<WordResult>();
+
+                currentUtt.add(result);
             }
         }
+
+        if (null != currentUtt)
+            utts.add(currentUtt);
 
         int count = 0;
         for (List<WordResult> utt : utts) {
-            String uttId = String.format("%03d", count) + "0";
-            String outFile = input.substring(0, input.length() - 4) + "-" + uttId + ".wav";
-            int startMs = utt.get(0).getStartFrame() - diff;
-            int lengthMs = utt.get(utt.size() - 1).getEndFrame() - startMs + diff;
+            long startFrame = Long.MAX_VALUE;
+            long endFrame = Long.MIN_VALUE;
+
             for (WordResult result : utt) {
+                TimeFrame frame = result.getTimeFrame();
+                startFrame = Math.min(startFrame, frame.getStart());
+                endFrame = Math.max(endFrame, frame.getEnd());
                 System.out.print(result.getPronunciation().getWord());
                 System.out.print(' ');
             }
-            copyAudio(input, outFile, startMs, lengthMs);
+
+            String[] basename = inFile.getName().split("\\.wav$");
+            String uttId = String.format("%03d0", count);
+            String outPath = String.format("%s-%s.wav", basename[0], uttId); 
             System.out.println("(" + uttId + ")");
             count++;
+
+            dumpStreamChunk(inFile, outPath, startFrame - MIN_FILLER_LENGTH,
+                            endFrame - startFrame + MIN_FILLER_LENGTH);
         }
     }
 
-    private static String readFileText(String file) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        StringBuilder sb = new StringBuilder();
-        String line = br.readLine();
-        while (line != null) {
-            sb.append(line.trim());
-            sb.append(" ");
-            line = br.readLine();
-        }
-        br.close();
-        return sb.toString();
+    private static void dumpStreamChunk(File file, String dstPath,
+                                        long offset, long length)
+        throws UnsupportedAudioFileException, IOException
+    {
+        AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(file);
+        AudioInputStream inputStream = AudioSystem.getAudioInputStream(file);
+        AudioFormat audioFormat = fileFormat.getFormat();
+        int bitrate = Math.round(audioFormat.getFrameSize() *
+                audioFormat.getFrameRate() / 1000);
+
+        inputStream.skip(offset * bitrate);
+        AudioInputStream chunkStream =
+            new AudioInputStream(inputStream, audioFormat, length * bitrate);
+        AudioSystem.write(chunkStream, fileFormat.getType(), new File(dstPath));
+        inputStream.close();
+        chunkStream.close();
     }
 }

@@ -35,4 +35,8 @@ public class TimeFrame {
     public long getEnd() {
         return end;
     }
+
+    public long length() {
+        return end - start;
+    }
 }
