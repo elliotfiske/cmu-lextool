@@ -111,6 +111,13 @@
     <property name="addSilenceWords" value="true"/>
   </component>
 
+  <component name="grXmlGrammar" type="edu.cmu.sphinx.jsgf.GrXMLGrammar">
+    <property name="dictionary" value="dictionary"/>
+    <property name="grammarLocation" value=""/>
+    <property name="grammarName" value=""/>
+    <property name="addSilenceWords" value="true"/>
+  </component>
+
   <component name="dictionary"
     type="edu.cmu.sphinx.linguist.dictionary.FastDictionary">
     <property name="dictionaryPath" value=""/>

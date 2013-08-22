@@ -101,7 +101,7 @@
     <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/dialog">
       <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/dialog">
         <include name="**/*.gram"/>
-        <include name="**/playlist.txt"/>
+        <include name="**/*.grxml"/>
         <include name="**/weather.lm"/>
       </fileset>
     </copy>
@@ -174,14 +174,6 @@
       destdir="${demo_classes_dir}">
       <classpath refid="libs"/>
     </javac>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/transcriber/config.xml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/transcriber"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/transcriber/10001-90210-01803.wav"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/transcriber"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/transcriber/digits.gram"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/transcriber"/>
-    <copy file="${demo_src_dir}/edu/cmu/sphinx/demo/transcriber/digits.grxml"
-      todir="${demo_classes_dir}/edu/cmu/sphinx/demo/transcriber"/>
     <mkdir dir="${bin_dir}"/>
     <jar destfile="${bin_dir}/Transcriber.jar"
       manifest="${demo_src_dir}/edu/cmu/sphinx/demo/transcriber/transcriber.Manifest"

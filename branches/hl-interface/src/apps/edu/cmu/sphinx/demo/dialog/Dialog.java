@@ -117,6 +117,7 @@ class MainMenu extends DialogMenu {
 
     public MainMenu() {
         super("Main menu");
+        captions.add("Digits");
         captions.add("Bank account");
         captions.add("Weather forecast");
         captions.add("Exit");
@@ -130,6 +131,32 @@ class MainMenu extends DialogMenu {
     @Override
     protected boolean onCommand(RecognitionResult result) {
         return false;
+    }
+}
+
+class DigitsMenu extends DialogMenu {
+
+    private static final String GRAMMAR_PATH =
+        "resource:/edu/cmu/sphinx/demo/dialog/";
+
+    public DigitsMenu() {
+        super("Digits (using GrXML)");
+        captions.add("Say \"101\" to exit");
+    }
+
+    @Override
+    protected void onEnter(SpeechRecognizer recognizer) {
+        recognizer.setGrammar(GRAMMAR_PATH, "digits.grxml");
+    }
+
+    @Override
+    protected boolean onCommand(RecognitionResult result) {
+        String utt = result.getUtterance(false);
+        if (utt.equals("one oh one") || utt.equals("one zero one"))
+            return false;
+
+        System.out.println(utt);
+        return true;
     }
 }
 
@@ -247,6 +274,7 @@ public class Dialog {
         recognizer.setDictionary(DICTIONARY_PATH);
 
         DialogMenu menu = new MainMenu();
+        menu.append("digits", new DigitsMenu());
         menu.append("bank account", new BankMenu());
         menu.append("weather forecast", new WeatherMenu());
         menu.enter(recognizer);

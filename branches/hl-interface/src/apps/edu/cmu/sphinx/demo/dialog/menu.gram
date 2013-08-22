@@ -2,6 +2,7 @@
 
 grammar menu;
 
-public <action_command> =  [go to [the]] bank account |
+public <action_command> =  digits                     |
+                           [go to [the]] bank account |
                            weather forecast           |
                            exit [[the] program]       ;

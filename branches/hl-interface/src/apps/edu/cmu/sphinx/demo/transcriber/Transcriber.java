@@ -24,8 +24,6 @@ import edu.cmu.sphinx.api.SpeechRecognizer;
 import edu.cmu.sphinx.result.Path;
 
 
-// TODO: use digits.grxml
-
 /**
  * A simple example that shows how to transcribe a continuous audio file that
  * has multiple utterances in it.
