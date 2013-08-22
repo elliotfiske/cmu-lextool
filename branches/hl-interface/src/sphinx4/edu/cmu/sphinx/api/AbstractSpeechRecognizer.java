@@ -82,7 +82,19 @@ public abstract class AbstractSpeechRecognizer {
      * This will disable fixed grammar.
      */
     public void setLanguageModel(String modelPath) {
-        setLocalProperty("trigramModel->location", modelPath);
+        if (modelPath.endsWith(".lm")) {
+            setLocalProperty("simpleNGramModel->location", modelPath);
+            setLocalProperty(
+                "lexTreeLinguist->languageModel", "simpleNGramModel");
+        } else if (modelPath.endsWith(".dmp")) {
+            setLocalProperty("largeTrigramModel->location", modelPath);
+            setLocalProperty(
+                "lexTreeLinguist->languageModel", "largeTrigramModel");
+        } else {
+            throw new IllegalArgumentException(
+                "Unknown format extension: " + modelPath);
+        }
+
         setLocalProperty("decoder->searchManager", "wordPruningSearchManager");
     }
 
