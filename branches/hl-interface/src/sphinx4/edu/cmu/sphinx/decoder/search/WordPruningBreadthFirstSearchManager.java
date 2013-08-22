@@ -284,7 +284,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         
         if (!streamEnd) {
         	result = new Result(loserManager, activeList,
-                                resultList, currentFrameNumber);
+                                resultList, currentFrameNumber, done);
         }
 
         // tokenTypeTracker.show();
