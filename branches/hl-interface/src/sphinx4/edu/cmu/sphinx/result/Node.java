@@ -42,6 +42,7 @@ public class Node {
 
     private String id;
     private Word word;
+    // TODO: use TimeFrame
     private int beginTime = -1;
     private int endTime = -1;
     private List<Edge> enteringEdges;
