@@ -15,7 +15,7 @@
   </component>
 
   <component name="decoder" type="edu.cmu.sphinx.decoder.Decoder">
-    <property name="searchManager" value="simpleSearchManager"/>
+    <property name="searchManager" value="wordPruningSearchManager"/>
   </component>
 
   <component name="simpleSearchManager"
@@ -68,7 +68,7 @@
   <component name="lexTreeLinguist"
     type="edu.cmu.sphinx.linguist.lextree.LexTreeLinguist">
     <property name="acousticModel" value="wsj"/>
-    <property name="languageModel" value="trigramModel"/>
+    <property name="languageModel" value="simpleNGramModel"/>
     <property name="dictionary" value="dictionary"/>
     <property name="addFillerWords" value="false"/>
     <property name="fillerInsertionProbability" value="1E-10"/>
@@ -81,12 +81,21 @@
     <property name="unitManager" value="unitManager"/>
   </component>
 
-  <component name="trigramModel"
+  <component name="simpleNGramModel"
     type="edu.cmu.sphinx.linguist.language.ngram.SimpleNGramModel">
     <property name="location" value=""/>
     <property name="dictionary" value="dictionary"/>
     <property name="maxDepth" value="3"/>
     <property name="unigramWeight" value=".7"/>
+  </component>
+
+  <component name="largeTrigramModel" 
+    type="edu.cmu.sphinx.linguist.language.ngram.large.LargeTrigramModel">
+    <property name="location" value=""/>
+    <property name="unigramWeight" value=".5"/>
+    <property name="maxDepth" value="3"/>
+    <property name="logMath" value="logMath"/>
+    <property name="dictionary" value="dictionary"/>
   </component>
 
   <component name="alignerGrammar"
@@ -238,5 +247,4 @@
     <property name="absoluteBeamWidth" value="20"/>
     <property name="relativeBeamWidth" value="1E-60"/>
   </component>
-
 </config>
