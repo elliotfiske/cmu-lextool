@@ -38,6 +38,12 @@ public final class RecognitionResult {
     private final Path hypothesis;
     private final Lattice lattice;
 
+    /**
+     * Construct recognition result based on {@link Result} object.
+     *
+     * @param scorer confidence scorer
+     * @param result recognition result returned by {@link Recognizer}
+     */
     public RecognitionResult(ConfidenceScorer scorer, Result result) {
         this.result = result;
         lattice = new Lattice(result);
@@ -45,6 +51,11 @@ public final class RecognitionResult {
         hypothesis = scorer.score(result).getBestHypothesis();
     }
 
+    /**
+     * Returns {@link Collection} of words of the recognition result.
+     *
+     * Within collection words are ordered by time frame.
+     */
     public Collection<WordResult> getWords() {
         return result.getWords();
     }
@@ -76,7 +87,7 @@ public final class RecognitionResult {
     }
 
     /**
-     * Returns score for the whole utterance.
+     * Returns total score for the whole utterance.
      *
      * @return total score of the path of words
      */
@@ -85,15 +96,28 @@ public final class RecognitionResult {
                 (float) hypothesis.getScore());
     }
 
+    /**
+     * Returns confidence score for the whole utterance.
+     *
+     * @return confidence score of the path of words
+     */
     public double getConfidence() {
         return LogMath.getInstance().logToLinear(
                 (float) hypothesis.getConfidence());
     }
 
+    /**
+     * Return N best hypothesis.
+     *
+     * @param n number of hypothesis to return
+     */
     public Collection<String> getNbest(int n) {
         return new Nbest(lattice).getNbest(n);
     }
 
+    /**
+     * Dump recognition lattice to a character stream.
+     */
     public void writeLattice(Writer writer) throws IOException {
         lattice.dumpSlf(writer);
     }
