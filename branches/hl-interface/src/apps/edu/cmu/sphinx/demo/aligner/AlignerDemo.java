@@ -13,7 +13,9 @@ package edu.cmu.sphinx.demo.aligner;
 
 import java.net.URL;
 
+import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechAligner;
+
 import edu.cmu.sphinx.result.WordResult;
 
 /**
@@ -37,9 +39,10 @@ public class AlignerDemo {
         "file:src/apps/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav";
 
     public static void main(String Args[]) throws Exception {
-        SpeechAligner aligner = new SpeechAligner();
-        aligner.setAcousticModel("file:models/acoustic/wsj");
-        aligner.setDictionary("file:models/acoustic/wsj/dict/cmudict.0.6d");
+        Configuration config = new Configuration();
+        config.setAcousticModel("file:models/acoustic/wsj");
+        config.setDictionary("file:models/acoustic/wsj/dict/cmudict.0.6d");
+        SpeechAligner aligner = new SpeechAligner(config);
 
         for (WordResult result : aligner.align(new URL(AUDIO_PATH), TEXT))
             System.out.println(result);

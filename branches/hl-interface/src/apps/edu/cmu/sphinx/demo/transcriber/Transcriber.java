@@ -18,6 +18,7 @@ import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.RecognitionResult;
 import edu.cmu.sphinx.api.SpeechRecognizer;
 
@@ -41,12 +42,13 @@ public class Transcriber {
     public static void main(String[] args) throws Exception {
         System.out.println("Loading models...");
 
-        SpeechRecognizer recognizer = new SpeechRecognizer();
-        recognizer.setAcousticModel(ACOUSTIC_MODEL);
-        recognizer.setDictionary(DICTIONARY_PATH);
-        recognizer.setLanguageModel("./models/language/en-us.lm.dmp");
+        Configuration config = new Configuration();
+        config.useMicrophone();
+        config.setAcousticModel(ACOUSTIC_MODEL);
+        config.setDictionary(DICTIONARY_PATH);
+        config.setLanguageModel("./models/language/en-us.lm.dmp");
 
-        recognizer.setMicrophoneInput();
+        SpeechRecognizer recognizer = new SpeechRecognizer(config);
         recognizer.startRecognition(true);
 
         System.out.println("Say something (\"the end\" to exit):");

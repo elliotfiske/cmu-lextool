@@ -16,23 +16,40 @@ import java.net.URL;
 import java.util.List;
 
 import edu.cmu.sphinx.linguist.language.grammar.AlignerGrammar;
+
+import edu.cmu.sphinx.recognizer.Recognizer;
+
 import edu.cmu.sphinx.result.WordResult;
 
-public class SpeechAligner extends AbstractSpeechRecognizer {
+import edu.cmu.sphinx.util.props.ConfigurationManager;
 
+
+public class SpeechAligner {
+
+    private final Configuration config;
+
+    private final Recognizer recognizer;
     private final AlignerGrammar grammar;
 
-    public SpeechAligner() {
-        setLocalProperty("flatLinguist->grammar", "alignerGrammar");
-        grammar = configurationManager.lookup(AlignerGrammar.class);
+    public SpeechAligner(final Configuration config) {
+        this.config = config;
+        config.setLocalProperty("flatLinguist->grammar", "alignerGrammar");
+        config.setLocalProperty("decoder->searchManager",
+                                "simpleSearchManager");
+
+        ConfigurationManager cm = config.getConfigurationManager();
+        recognizer = (Recognizer) cm.lookup("recognizer");
+        grammar = (AlignerGrammar) cm.lookup("alignerGrammar");
     }
 
     public List<WordResult> align(URL path, String text) {
         recognizer.allocate();
         grammar.setText(text);
-        setResourceInput(path);
+        config.setSpeechSource(path);
+
         List<WordResult> result = recognizer.recognize().getWords();
         recognizer.deallocate();
+
         return result;
     }
 }

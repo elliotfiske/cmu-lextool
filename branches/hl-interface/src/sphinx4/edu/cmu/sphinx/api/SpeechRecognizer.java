@@ -13,34 +13,37 @@ package edu.cmu.sphinx.api;
 
 import edu.cmu.sphinx.frontend.util.Microphone;
 
-import edu.cmu.sphinx.jsgf.JSGFGrammar;
-
 import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.Result;
 
+import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.recognizer.Recognizer.State;
 
+import edu.cmu.sphinx.util.props.ConfigurationManager;
 
-public class SpeechRecognizer extends AbstractSpeechRecognizer {
 
-    private final JSGFGrammar grammar;
+public class SpeechRecognizer {
+
+    private final Recognizer recognizer;
+
     private final Microphone microphone;
+    private final ConfidenceScorer scorer;
 
-    public SpeechRecognizer() {
-        grammar = configurationManager.lookup(JSGFGrammar.class);
-        microphone = configurationManager.lookup(Microphone.class);
+    public SpeechRecognizer(Configuration config) {
+        ConfigurationManager cm = config.getConfigurationManager();
+        recognizer = (Recognizer) cm.lookup("recognizer");
+        microphone = (Microphone) cm.lookup("microphone");
+        scorer = (ConfidenceScorer) cm.lookup("confidenceScorer");
     }
 
-    // FIXME: documentation
     /**
      * Starts recognition process.
      *
-     * @param clear Should we continue the current session or start new
-     * recognition. 
+     * @param clear should we continue the current session or start new
+     *              recognition. 
      */
     public void startRecognition(boolean clear) {
         recognizer.allocate();
-
         if (clear)
             microphone.clear();
         microphone.startRecording();
@@ -66,8 +69,6 @@ public class SpeechRecognizer extends AbstractSpeechRecognizer {
         if (null == result)
             return null;
 
-        ConfidenceScorer scorer =
-            (ConfidenceScorer) configurationManager.lookup("confidenceScorer");
         return new RecognitionResult(scorer, result);
     }
 }

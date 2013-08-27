@@ -11,9 +11,6 @@
 
 package edu.cmu.sphinx.demo.dialog;
 
-import java.io.IOException;
-
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import java.util.ArrayList;
@@ -21,10 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.cmu.sphinx.api.SpeechRecognizer;
+import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.RecognitionResult;
-import edu.cmu.sphinx.jsgf.JSGFGrammarException;
-import edu.cmu.sphinx.jsgf.JSGFGrammarParseException;
+import edu.cmu.sphinx.api.SpeechRecognizer;
 
 
 abstract class DialogMenu {
@@ -44,10 +40,10 @@ abstract class DialogMenu {
         tags.put(tag, menu);
     }
 
-    public void enter(SpeechRecognizer recognizer) {
+    public void enter(Configuration config, SpeechRecognizer recognizer) {
         while (true) {
             show();
-            onEnter(recognizer);
+            onEnter(config);
             recognizer.startRecognition(true);
             RecognitionResult result = recognizer.getResult();
 
@@ -61,7 +57,7 @@ abstract class DialogMenu {
                 String tag = result.getUtterance(false);
                 recognizer.stopRecognition();
                 if (tags.containsKey(tag))
-                    tags.get(tag).enter(recognizer);
+                    tags.get(tag).enter(config, recognizer);
                 else if (tag.startsWith("exit"))
                     break;
                 else
@@ -105,7 +101,7 @@ abstract class DialogMenu {
             System.out.println("+" + hrule + "+");
     }
 
-    protected abstract void onEnter(SpeechRecognizer recognizer);
+    protected abstract void onEnter(Configuration config);
 
     protected abstract boolean onCommand(RecognitionResult result);
 }
@@ -124,8 +120,8 @@ class MainMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(SpeechRecognizer recognizer) {
-        recognizer.setGrammar(GRAMMAR_PATH, "menu");
+    protected void onEnter(Configuration config) {
+        config.setGrammar(GRAMMAR_PATH, "menu");
     }
 
     @Override
@@ -141,12 +137,13 @@ class DigitsMenu extends DialogMenu {
 
     public DigitsMenu() {
         super("Digits (using GrXML)");
+        captions.add("Example: one two three");
         captions.add("Say \"101\" to exit");
     }
 
     @Override
-    protected void onEnter(SpeechRecognizer recognizer) {
-        recognizer.setGrammar(GRAMMAR_PATH, "digits.grxml");
+    protected void onEnter(Configuration config) {
+        config.setGrammar(GRAMMAR_PATH, "digits.grxml");
     }
 
     @Override
@@ -193,8 +190,8 @@ class BankMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(SpeechRecognizer recognizer) {
-        recognizer.setGrammar(GRAMMAR_PATH, "bank");
+    protected void onEnter(Configuration config) {
+        config.setGrammar(GRAMMAR_PATH, "bank");
         savings = .0;
     }
 
@@ -243,8 +240,8 @@ class WeatherMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(SpeechRecognizer recognizer) {
-        recognizer.setLanguageModel(LANGUAGE_MODEL);
+    protected void onEnter(Configuration config) {
+        config.setLanguageModel(LANGUAGE_MODEL);
     }
 
     @Override
@@ -266,17 +263,16 @@ public class Dialog {
     private static final String DICTIONARY_PATH =
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
 
-    public static void main(String[] args)
-        throws IOException, MalformedURLException, JSGFGrammarException, JSGFGrammarParseException
-    {
-        SpeechRecognizer recognizer = new SpeechRecognizer();
-        recognizer.setAcousticModel(ACOUSTIC_MODEL);
-        recognizer.setDictionary(DICTIONARY_PATH);
+    public static void main(String[] args) throws Exception {
+        Configuration config = new Configuration();
+        config.setAcousticModel(ACOUSTIC_MODEL);
+        config.setDictionary(DICTIONARY_PATH);
+        SpeechRecognizer recognizer = new SpeechRecognizer(config);
 
         DialogMenu menu = new MainMenu();
         menu.append("digits", new DigitsMenu());
         menu.append("bank account", new BankMenu());
         menu.append("weather forecast", new WeatherMenu());
-        menu.enter(recognizer);
+        menu.enter(config, recognizer);
     }
 }

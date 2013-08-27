@@ -26,6 +26,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechAligner;
 
 import edu.cmu.sphinx.util.TimeFrame;
@@ -46,11 +47,12 @@ public class Aligner {
      * @param args acoustic model, dictionary, audio file, text
      */
     public static void main(String args[]) throws Exception {
-        SpeechAligner aligner = new SpeechAligner();
-        aligner.setAcousticModel(args[0]);
-        aligner.setDictionary(args[1]);
+        Configuration config = new Configuration();
+        config.setAcousticModel(args[0]);
+        config.setDictionary(args[1]);
 
         File file = new File(args[2]);
+        SpeechAligner aligner = new SpeechAligner(config);
         splitStream(file, aligner.align(file.toURI().toURL(), args[3]));
     }
 
