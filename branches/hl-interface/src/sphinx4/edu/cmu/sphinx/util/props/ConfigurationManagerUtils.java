@@ -493,10 +493,8 @@ public final class ConfigurationManagerUtils {
      * @return <code>true</code> if <code>aClass</code> is either equal to <code>poosibleParent</code>, a subclass of
      *         it, or implements it if <code>possibleParent</code> is an interface.
      */
-    public static boolean isDerivedClass(Class<?> aClass, Class<?> possibleParent) {
-        return aClass.equals(possibleParent)
-                || (possibleParent.isInterface() && ConfigurationManagerUtils.isImplementingInterface(aClass, possibleParent))
-                || ConfigurationManagerUtils.isSubClass(aClass, possibleParent);
+    public static boolean isDerivedClass(Class<?> derived, Class<?> parent) {
+        return parent.isAssignableFrom(derived);
     }
 
 
