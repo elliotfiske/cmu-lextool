@@ -116,7 +116,7 @@ class MainMenu extends DialogMenu {
         "resource:/edu/cmu/sphinx/demo/dialog/";
 
     public MainMenu() {
-        super("Main menu");
+        super("Voice menu");
         captions.add("Digits");
         captions.add("Bank account");
         captions.add("Weather forecast");
@@ -186,10 +186,10 @@ class BankMenu extends DialogMenu {
 
     public BankMenu() {
         super("Bank account");
-        captions.add("Balance");
-        captions.add("Deposit");
-        captions.add("Withdraw");
-        captions.add("Back");
+        captions.add("Example: balance                 ");
+        captions.add("Example: withdraw zero point five");
+        captions.add("Example: deposit one two three   ");
+        captions.add("Example: back                    ");
     }
 
     @Override
@@ -203,8 +203,6 @@ class BankMenu extends DialogMenu {
         String hypothesis = result.getUtterance(false);
         if (hypothesis.equals("back")) {
             return false;
-        } else if (hypothesis.endsWith("help")) {
-            // FIXME: implement
         } else if (hypothesis.startsWith("deposit")) {
             double deposit = parseNumber(hypothesis.split("\\s"));
             savings += deposit;
@@ -240,6 +238,8 @@ class WeatherMenu extends DialogMenu {
 
     public WeatherMenu() {
         super("Try some forecast. End with \"the end\"");
+        captions.add("Example: mostly dry some fog patches tonight");
+        captions.add("Example: sunny spells on wednesday          ");
     }
 
     @Override
