@@ -11,8 +11,15 @@
 
 package edu.cmu.sphinx.api;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 
@@ -57,12 +64,38 @@ public class Configuration {
     /**
      * Sets acoustic model location.
      *
+     * It also reads feat.params which should be located at the root of
+     * acoustic model and sets corresponding parameters of
+     * {@link MelFrequencyFilterBank} instance.
+     *
      * @param  path path to directory with acoustic model files
      * @return      the same instance of {@link Configuration}
+     *
+     * @throws IOException if failed to read feat.params
      */
-    public Configuration setAcousticModel(String path) {
+    public Configuration setAcousticModel(String path) throws IOException {
         setLocalProperty("wsjLoader->location", path);
         setLocalProperty("dictionary->fillerPath", path + "/noisedict");
+
+        Map<String, String> props = new HashMap<String, String>();
+        InputStreamReader reader = new InputStreamReader(
+                resourceToURL(path + "/feat.params").openStream());
+        BufferedReader br = new BufferedReader(reader);
+
+        String s;
+        while (null != (s = br.readLine())) {
+            String[] f = s.split("\\s+");
+            props.put(f[0], f[1]);
+        }
+        br.close();
+
+        setLocalProperty("melFilterBank->numberFilters",
+                         props.get("-nfilt"));
+        setLocalProperty("melFilterBank->minimumFrequency",
+                         props.get("-lowerf"));
+        setLocalProperty("melFilterBank->maximumFrequency",
+                         props.get("-upperf"));
+
         return this;
     }
 
@@ -154,18 +187,6 @@ public class Configuration {
     public Configuration useMicrophone() {
         setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
         return this;
-    }
-
-    public Configuration presetTelephoneInput() {
-        setLocalProperty("melFilterBank->numberFilters", "31");
-        setLocalProperty("melFilterBank->minimumFrequency", "200");
-        setLocalProperty("melFilterBank->maximumFrequency", "3500");
-    }
-
-    public Configuration 16Khz() {
-        setLocalProperty("melFilterBank->numberFilters", "40");
-        setLocalProperty("melFilterBank->minimumFrequency", "1");
-        setLocalProperty("melFilterBank->maximumFrequency", "8000");
     }
 
     /**
