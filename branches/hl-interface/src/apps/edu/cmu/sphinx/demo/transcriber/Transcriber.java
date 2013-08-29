@@ -67,7 +67,7 @@ public class Transcriber {
             for (String s : result.getNbest(3))
                 System.out.println(s);
 
-            result.writeLattice(writer);
+            result.getLattice().dumpSlf(writer);
             writer.flush();
         }
 

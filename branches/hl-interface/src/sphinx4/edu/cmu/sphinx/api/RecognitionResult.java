@@ -119,9 +119,11 @@ public final class RecognitionResult {
     }
 
     /**
-     * Dump recognition lattice to a character stream.
+     * Returns lattice for the recognition result.
+     *
+     * @return lattice object
      */
-    public void writeLattice(Writer writer) throws IOException {
-        lattice.dumpSlf(writer);
+    public Lattice getLattice() {
+        return lattice;
     }
 }
