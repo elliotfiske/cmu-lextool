@@ -39,7 +39,7 @@ public final class RecognitionResult {
     private final Lattice lattice;
 
     /**
-     * Construct recognition result based on {@link Result} object.
+     * Constructs recognition result based on {@link Result} object.
      *
      * @param scorer confidence scorer
      * @param result recognition result returned by {@link Recognizer}
@@ -55,6 +55,8 @@ public final class RecognitionResult {
      * Returns {@link Collection} of words of the recognition result.
      *
      * Within collection words are ordered by time frame.
+     *
+     * @return words that form the result
      */
     public Collection<WordResult> getWords() {
         return result.getWords();
@@ -109,7 +111,8 @@ public final class RecognitionResult {
     /**
      * Return N best hypothesis.
      *
-     * @param n number of hypothesis to return
+     * @param  n number of hypothesis to return
+     * @return   collection of several best hypothesis
      */
     public Collection<String> getNbest(int n) {
         return new Nbest(lattice).getNbest(n);

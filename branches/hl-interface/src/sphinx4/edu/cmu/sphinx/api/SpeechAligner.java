@@ -26,12 +26,18 @@ import edu.cmu.sphinx.result.WordResult;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 
+/**
+ * Aligns text data and audio speech.
+ */
 public class SpeechAligner {
 
     private final Configurer configurer;
     private final Recognizer recognizer;
     private final AlignerGrammar grammar;
 
+    /**
+     * Constructs new aligner object.
+     */
     public SpeechAligner(Configuration configuration) {
         try {
             configurer = new Configurer(configuration);
@@ -46,6 +52,13 @@ public class SpeechAligner {
         }
     }
 
+    /**
+     * Returns time-aligned list of words.
+     *
+     * @param path path to the speech source
+     * @param text text to align
+     * @return     list of recognized words with timestamp
+     */
     public List<WordResult> align(URL path, String text) {
         recognizer.allocate();
         grammar.setText(text);

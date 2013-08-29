@@ -16,10 +16,20 @@ import java.net.URL;
 import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
 
 
+/**
+ * Speech recognizer that works with audio resources.
+ *
+ * @see LiveSpeechRecognizer live speech recognizer
+ */
 public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
 
     private final AudioFileDataSource fileDataSource;
 
+    /**
+     * Constructs new batch recognizer object.
+     *
+     * @param configuraiton basic recognizer configuration
+     */
     public BatchSpeechRecognizer(Configuration configuration) {
         super(configuration);
         fileDataSource = configurer.getInstance(AudioFileDataSource.class);
@@ -27,6 +37,8 @@ public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
 
     /**
      * Starts recognition process.
+     *
+     * Starts recognition process and optionally clears previous data.
      *
      * @param clear clear cached microphone data
      * @see         BatchSpeechRecognizer#stopRecognition()

@@ -20,12 +20,18 @@ import edu.cmu.sphinx.recognizer.Recognizer;
 import edu.cmu.sphinx.recognizer.Recognizer.State;
 
 
+/**
+ * Base class for high-level speech recognizers.
+ */
 public class AbstractSpeechRecognizer {
 
     protected final Configurer configurer;
     protected final Recognizer recognizer;
     protected final ConfidenceScorer scorer;
 
+    /**
+     * Constructs recognizer object using provided configuration.
+     */
     public AbstractSpeechRecognizer(Configuration configuration) {
         try {
             configurer = new Configurer(configuration);
@@ -36,6 +42,9 @@ public class AbstractSpeechRecognizer {
         }
     }
 
+    /**
+     * Returns result of the recognition.
+     */
     public RecognitionResult getResult() {
         Result result = recognizer.recognize();
         return null == result ? null : new RecognitionResult(scorer, result);

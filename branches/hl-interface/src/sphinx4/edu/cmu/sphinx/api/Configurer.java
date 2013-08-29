@@ -230,7 +230,10 @@ public class Configurer {
     }
 
     /**
+     * Returns instance of the XML configuration by its class.
      *
+     * @param  clazz class to look up
+     * @return       instance of the specified class or null
      */
     public <C extends Configurable> C getInstance(Class<C> clazz) {
         return configurationManager.lookup(clazz);

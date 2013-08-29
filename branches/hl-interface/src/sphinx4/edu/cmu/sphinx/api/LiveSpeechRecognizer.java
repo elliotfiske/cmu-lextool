@@ -14,10 +14,18 @@ package edu.cmu.sphinx.api;
 import edu.cmu.sphinx.frontend.util.Microphone;
 
 
+/**
+ * High-level class for live speech recognition.
+ */
 public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
 
     private final Microphone microphone;
 
+    /**
+     * Constructs new live recognition object.
+     *
+     * @param configuration common configuration
+     */
     public LiveSpeechRecognizer(Configuration configuration) {
         super(configuration);
         configurer.useMicrophone();
