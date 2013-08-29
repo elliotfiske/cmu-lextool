@@ -96,7 +96,6 @@
     <property name="location" value=""/>
     <property name="unigramWeight" value=".5"/>
     <property name="maxDepth" value="3"/>
-    <property name="logMath" value="logMath"/>
     <property name="dictionary" value="dictionary"/>
   </component>
 
@@ -244,14 +243,12 @@
 
   <component name="standardActiveListFactory"
     type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
-    <property name="logMath" value="logMath"/>
     <property name="absoluteBeamWidth" value="500"/>
     <property name="relativeBeamWidth" value="1E-80"/>
   </component>
 
   <component name="wordActiveListFactory"
     type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
-    <property name="logMath" value="logMath"/>
     <property name="absoluteBeamWidth" value="20"/>
     <property name="relativeBeamWidth" value="1E-60"/>
   </component>
