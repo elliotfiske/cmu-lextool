@@ -130,7 +130,7 @@ public final class LogMath {
      * @throws IllegalStateException if LogMath instance has been already got
      */
     public static void setLogBase(float logBase) {
-        synchronized(instance) {
+        synchronized(LogMath.class) {
             if (null != instance)
                 throw new IllegalStateException(IMMUTABLE_INSTANCE_ERROR);
             LogMath.logBase = logBase;
@@ -144,7 +144,7 @@ public final class LogMath {
      * @throws IllegalStateException if LogMath instance has been already got
      */
     public static void setUseTable(boolean useTable) {
-        synchronized(instance) {
+        synchronized(LogMath.class) {
             if (null != instance)
                 throw new IllegalStateException(IMMUTABLE_INSTANCE_ERROR);
             LogMath.useTable = useTable;
