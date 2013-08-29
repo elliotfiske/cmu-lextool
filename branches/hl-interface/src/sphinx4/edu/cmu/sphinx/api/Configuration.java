@@ -11,222 +11,119 @@
 
 package edu.cmu.sphinx.api;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
-
-import edu.cmu.sphinx.util.props.ConfigurationManager;
-
-import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.resourceToURL;
-import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.setProperty;
-
-
-/**
- * Helps to tweak configuration without touching XML-file directly.
- */
 public class Configuration {
 
-    private final AudioFileDataSource dataSource;
-    private final ConfigurationManager configurationManager;
+    private String logLevel = "WARNING";
+    private int absoluteBeamWidth = -1;
+    private float relativeBeamWidth = 1e-45f;
+    private float wordInsertionProbability = .1f;
+    private float silenceInsertionProbability = .9f;
+    private float languageWeight = 8.f;
 
-    /**
-     * Constructs builder that uses default configuration.
-     *
-     * @throws MalformedURLException if failed to load configuration file
-     */
-    public Configuration() throws MalformedURLException {
-        this("resource:/edu/cmu/sphinx/config/default.config.xml");
+    private String acousticModelPath;
+    private String dictionaryPath;
+    private String languageModelPath;
+    private String grammarPath;
+    private String grammarName;
+
+    private boolean useGrammar = false;
+
+    public String getLogLevel() {
+       return logLevel;
     }
 
-    /**
-     * Constructs builder using user-supplied configuration.
-     *
-     * @param  path path to XML-resource with configuration
-     * @return      the same instance of {@link Configuration}
-     *
-     * @throws MalformedURLException if failed to load configuration file
-     */
-    public Configuration(String path) throws MalformedURLException {
-        URL url = resourceToURL(path);
-        configurationManager = new ConfigurationManager(url);
-        dataSource = (AudioFileDataSource)
-                     configurationManager.lookup("audioFileDataSource");
+    public void setLogLevel(String logLevel) {
+        this.logLevel = logLevel;
     }
 
-    /**
-     * Sets acoustic model location.
-     *
-     * It also reads feat.params which should be located at the root of
-     * acoustic model and sets corresponding parameters of
-     * {@link MelFrequencyFilterBank} instance.
-     *
-     * @param  path path to directory with acoustic model files
-     * @return      the same instance of {@link Configuration}
-     *
-     * @throws IOException if failed to read feat.params
-     */
-    public Configuration setAcousticModel(String path) throws IOException {
-        setLocalProperty("wsjLoader->location", path);
-        setLocalProperty("dictionary->fillerPath", path + "/noisedict");
-
-        Map<String, String> props = new HashMap<String, String>();
-        InputStreamReader reader = new InputStreamReader(
-                resourceToURL(path + "/feat.params").openStream());
-        BufferedReader br = new BufferedReader(reader);
-
-        String s;
-        while (null != (s = br.readLine())) {
-            String[] f = s.split("\\s+");
-            props.put(f[0], f[1]);
-        }
-        br.close();
-
-        setLocalProperty("melFilterBank->numberFilters",
-                         props.get("-nfilt"));
-        setLocalProperty("melFilterBank->minimumFrequency",
-                         props.get("-lowerf"));
-        setLocalProperty("melFilterBank->maximumFrequency",
-                         props.get("-upperf"));
-
-        return this;
+    public int getAbsoluteBeamWidth() {
+       return absoluteBeamWidth;
     }
 
-    /**
-     * Sets dictionary.
-     *
-     * @param path path to directory with dictionary files
-     */
-    public Configuration setDictionary(String path) {
-        setLocalProperty("dictionary->dictionaryPath", path);
-        return this;
+    public void setAbsoluteBeamWidth(int absoluteBeamWidth) {
+        this.absoluteBeamWidth = absoluteBeamWidth;
     }
 
-    /**
-     * Sets path to the grammar files.
-     *
-     * Enables static grammar and disables probabilistic language model.
-     * JSGF and GrXML formats are supported.
-     *
-     * @param path path to the grammar files
-     * @param name name of the main grammar to use
-     * @return     the same instance of {@link Configuration}
-     * @see        Configuration#setLanguageModel(String)
-     */
-    public Configuration setGrammar(String path, String name) {
-        // TODO: use a single param of type File, cache directory part
-        if (name.endsWith(".grxml")) {
-            setLocalProperty("grXmlGrammar->grammarLocation", path + name);
-            setLocalProperty("flatLinguist->grammar", "grXmlGrammar");
-        } else {
-            setLocalProperty("jsgfGrammar->grammarLocation", path);
-            setLocalProperty("jsgfGrammar->grammarName", name);
-            setLocalProperty("flatLinguist->grammar", "jsgfGrammar");
-            setLocalProperty("decoder->searchManager", "simpleSearchManager");
-        }
-
-        return this;
+    public float getRelativeBeamWidth() {
+       return relativeBeamWidth;
     }
 
-    /**
-     * Sets path to the language model.
-     *
-     * Enables probabilistic language model and distables static grammar.
-     * Currently it supports ".lm" and ".dmp" file formats.
-     *
-     * @param  path path to the language model file
-     * @return      the same instance of {@link Configuration}
-     * @see         Configuration#setGrammar(String)
-     *
-     * @throws IllegalArgumentException if path ends with unsupported extension
-     */
-    public Configuration setLanguageModel(String path) {
-        if (path.endsWith(".lm")) {
-            setLocalProperty("simpleNGramModel->location", path);
-            setLocalProperty(
-                "lexTreeLinguist->languageModel", "simpleNGramModel");
-        } else if (path.endsWith(".dmp")) {
-            setLocalProperty("largeTrigramModel->location", path);
-            setLocalProperty(
-                "lexTreeLinguist->languageModel", "largeTrigramModel");
-        } else {
-            throw new IllegalArgumentException(
-                "Unknown format extension: " + path);
-        }
-        setLocalProperty("decoder->searchManager", "wordPruningSearchManager");
-
-        return this;
+    public void setRelativeBeamWidth(float relativeBeamWidth) {
+        this.relativeBeamWidth = relativeBeamWidth;
     }
 
-    /**
-     * Sets file or classpath resource as the speech source.
-     *
-     * @param  url URL of the audio resource
-     * @return     the same instance of {@link Configuration}
-     * @see        Configuration#useMicrophone()
-     */
-    public Configuration setSpeechSource(URL url) {
-        dataSource.setAudioFile(url, "input");
-        setLocalProperty("threadedScorer->frontend", "batchFrontEnd");
-        return this;
+    public float getWordInsertionProbability() {
+       return wordInsertionProbability;
     }
 
-    /**
-     * Sets microphone as the speech source.
-     *
-     * @return the same instance of {@link Configuration}
-     * @see    Configuration#setSpeechSource(URL)
-     */
-    public Configuration useMicrophone() {
-        setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
-        return this;
+    public void setWordInsertionProbability(float wordInsertionProbability) {
+        this.wordInsertionProbability = wordInsertionProbability;
     }
 
-    /**
-     * Sets property within a "component" tag in configuration.
-     *
-     * Use this method to alter "value" property of a "property" tag inside a
-     * "component" tag of the XML configuration.
-     *
-     * @param  name  property name
-     * @param  value property value
-     * @return       the same instance of {@link Configuration}
-     * @see          Configuration#setGlobalProperty(String, Object)
-     */
-    public Configuration setLocalProperty(String name, Object value) {
-        setProperty(configurationManager, name, value.toString());
-        return this;
+    public float getSilenceInsertionProbability() {
+       return silenceInsertionProbability;
     }
 
-    /**
-     * Sets property of a top-level "property" tag.
-     *
-     * Use this method to alter "value" property of a "property" tag whose
-     * parent is the root tag "config" of the XML configuration.
-     *
-     * @param  name  property name
-     * @param  value property value
-     * @return       the same instance of {@link Configuration}
-     * @see          ConfigurationManager#setLocalProperty(String, Object) 
-     */
-    public Configuration setGlobalProperty(String name, Object value) {
-        configurationManager.setGlobalProperty(name, value.toString());
-        return this;
+    public void setSilenceInsertionProbability(
+            float silenceInsertionProbability)
+    {
+        this.silenceInsertionProbability = silenceInsertionProbability;
     }
 
-    /**
-     * Returns instance of {@link ConfigurationManager}.
-     *
-     * @see AbstractSpeechRecognizer
-     */
-    public ConfigurationManager getConfigurationManager() {
-        return configurationManager;
+    public float getLanguageWeight() {
+       return languageWeight;
+    }
+
+    public void setLanguageWeight(float languageWeight) {
+        this.languageWeight = languageWeight;
+    }
+
+    public String getAcousticModelPath() {
+        return acousticModelPath;
+    }
+
+    public void setAcousticModelPath(String acousticModelPath) {
+        this.acousticModelPath = acousticModelPath;
+    }
+
+    public String getDictionaryPath() {
+        return dictionaryPath;
+    }
+
+    public void setDictionaryPath(String dictionaryPath) {
+        this.dictionaryPath = dictionaryPath;
+    }
+
+    public String getLanguageModelPath() {
+        return languageModelPath;
+    }
+
+    public void setLanguageModelPath(String languageModelPath) {
+        this.languageModelPath = languageModelPath;
+    }
+
+    public String getGrammarPath() {
+        return grammarPath;
+    }
+
+    public void setGrammarPath(String grammarPath) {
+        this.grammarPath = grammarPath;
+    }
+
+    public String getGrammarName() {
+        return grammarName;
+    }
+
+    public void setGrammarName(String grammarName) {
+        this.grammarName = grammarName;
+    }
+
+    public boolean getUseGrammar() {
+        return useGrammar;
+    }
+
+    public void setUseGrammar(boolean useGrammar) {
+        this.useGrammar = useGrammar;
     }
 }

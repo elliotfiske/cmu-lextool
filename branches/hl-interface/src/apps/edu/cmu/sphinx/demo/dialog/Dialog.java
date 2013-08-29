@@ -20,30 +20,31 @@ import java.util.Map;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.RecognitionResult;
-import edu.cmu.sphinx.api.SpeechRecognizer;
+import edu.cmu.sphinx.api.LiveSpeechRecognizer;
 
 
-abstract class DialogMenu {
+abstract class Menu {
 
     private final String name;
-    private final List<DialogMenu> children = new ArrayList<DialogMenu>();
-    private final Map<String, DialogMenu> tags = new HashMap<String, DialogMenu>();
-
+    private final List<Menu> children = new ArrayList<Menu>();
+    private final Map<String, Menu> tags = new HashMap<String, Menu>();
     protected final List<String> captions = new ArrayList<String>();
 
-    public DialogMenu(String name) {
+    protected final LiveSpeechRecognizer recognizer;
+
+    public Menu(String name, Configuration configuration) {
         this.name = name;
+        recognizer = new LiveSpeechRecognizer(configuration);
     }
 
-    public void append(String tag, DialogMenu menu) {
+    public void append(String tag, Menu menu) {
         children.add(menu);
         tags.put(tag, menu);
     }
 
-    public void enter(Configuration config, SpeechRecognizer recognizer) {
+    public void enter() {
         while (true) {
             show();
-            onEnter(config);
             recognizer.startRecognition(true);
             RecognitionResult result = recognizer.getResult();
 
@@ -57,7 +58,7 @@ abstract class DialogMenu {
                 String tag = result.getUtterance(false);
                 recognizer.stopRecognition();
                 if (tags.containsKey(tag))
-                    tags.get(tag).enter(config, recognizer);
+                    tags.get(tag).enter();
                 else if (tag.startsWith("exit"))
                     break;
                 else
@@ -101,27 +102,17 @@ abstract class DialogMenu {
             System.out.println("+" + hrule + "+");
     }
 
-    protected abstract void onEnter(Configuration config);
-
     protected abstract boolean onCommand(RecognitionResult result);
 }
 
-class MainMenu extends DialogMenu {
+class MainMenu extends Menu {
 
-    private static final String GRAMMAR_PATH =
-        "resource:/edu/cmu/sphinx/demo/dialog/";
-
-    public MainMenu() {
-        super("Voice menu");
+    public MainMenu(Configuration configuration) {
+        super("Voice menu", configuration);
         captions.add("Digits");
         captions.add("Bank account");
         captions.add("Weather forecast");
         captions.add("Exit");
-    }
-
-    @Override
-    protected void onEnter(Configuration config) {
-        config.setGrammar(GRAMMAR_PATH, "menu");
     }
 
     @Override
@@ -130,20 +121,15 @@ class MainMenu extends DialogMenu {
     }
 }
 
-class DigitsMenu extends DialogMenu {
+class DigitsMenu extends Menu {
 
     private static final String GRAMMAR_PATH =
         "resource:/edu/cmu/sphinx/demo/dialog/";
 
-    public DigitsMenu() {
-        super("Digits (using GrXML)");
+    public DigitsMenu(Configuration configuration) {
+        super("Digits (using GrXML)", configuration);
         captions.add("Example: one two three");
         captions.add("Say \"101\" to exit");
-    }
-
-    @Override
-    protected void onEnter(Configuration config) {
-        config.setGrammar(GRAMMAR_PATH, "digits.grxml");
     }
 
     @Override
@@ -157,7 +143,7 @@ class DigitsMenu extends DialogMenu {
     }
 }
 
-class BankMenu extends DialogMenu {
+class BankMenu extends Menu {
 
     private static final String GRAMMAR_PATH =
         "resource:/edu/cmu/sphinx/demo/dialog/";
@@ -181,8 +167,8 @@ class BankMenu extends DialogMenu {
 
     private double savings;
 
-    public BankMenu() {
-        super("Bank account");
+    public BankMenu(Configuration configuration) {
+        super("Bank account", configuration);
         captions.add("Example: balance                 ");
         captions.add("Example: withdraw zero point five");
         captions.add("Example: deposit one two three   ");
@@ -190,9 +176,9 @@ class BankMenu extends DialogMenu {
     }
 
     @Override
-    protected void onEnter(Configuration config) {
-        config.setGrammar(GRAMMAR_PATH, "bank");
+    public void enter() {
         savings = .0;
+        super.enter();
     }
 
     @Override
@@ -228,20 +214,13 @@ class BankMenu extends DialogMenu {
     }
 }
 
-class WeatherMenu extends DialogMenu {
+class WeatherMenu extends Menu {
 
-    private static final String LANGUAGE_MODEL =
-        "resource:/edu/cmu/sphinx/demo/dialog/weather.lm";
 
-    public WeatherMenu() {
-        super("Try some forecast. End with \"the end\"");
+    public WeatherMenu(Configuration configuration) {
+        super("Try some forecast. End with \"the end\"", configuration);
         captions.add("Example: mostly dry some fog patches tonight");
         captions.add("Example: sunny spells on wednesday          ");
-    }
-
-    @Override
-    protected void onEnter(Configuration config) {
-        config.setLanguageModel(LANGUAGE_MODEL);
     }
 
     @Override
@@ -262,17 +241,32 @@ public class Dialog {
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
     private static final String DICTIONARY_PATH =
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
+    private static final String GRAMMAR_PATH =
+        "resource:/edu/cmu/sphinx/demo/dialog/";
+    private static final String LANGUAGE_MODEL =
+        "resource:/edu/cmu/sphinx/demo/dialog/weather.lm";
+
 
     public static void main(String[] args) throws Exception {
-        Configuration config = new Configuration();
-        config.setAcousticModel(ACOUSTIC_MODEL);
-        config.setDictionary(DICTIONARY_PATH);
-        SpeechRecognizer recognizer = new SpeechRecognizer(config);
+        Configuration configuration = new Configuration();
+        configuration.setAcousticModelPath(ACOUSTIC_MODEL);
+        configuration.setDictionaryPath(DICTIONARY_PATH);
+        configuration.setGrammarPath(GRAMMAR_PATH);
+        configuration.setUseGrammar(true);
 
-        DialogMenu menu = new MainMenu();
-        menu.append("digits", new DigitsMenu());
-        menu.append("bank account", new BankMenu());
-        menu.append("weather forecast", new WeatherMenu());
-        menu.enter(config, recognizer);
+        configuration.setGrammarName("menu");
+        Menu menu = new MainMenu(configuration);
+
+        configuration.setGrammarName("digits.grxml");
+        menu.append("digits", new DigitsMenu(configuration));
+
+        configuration.setGrammarName("bank");
+        menu.append("bank account", new BankMenu(configuration));
+
+        configuration.setUseGrammar(false);
+        configuration.setLanguageModelPath(LANGUAGE_MODEL);
+        menu.append("weather forecast", new WeatherMenu(configuration));
+
+        menu.enter();
     }
 }

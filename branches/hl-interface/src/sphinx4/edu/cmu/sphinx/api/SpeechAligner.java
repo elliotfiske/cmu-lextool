@@ -11,6 +11,8 @@
 
 package edu.cmu.sphinx.api;
 
+import java.io.IOException;
+
 import java.net.URL;
 
 import java.util.List;
@@ -26,26 +28,28 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
 
 public class SpeechAligner {
 
-    private final Configuration config;
-
+    private final Configurer configurer;
     private final Recognizer recognizer;
     private final AlignerGrammar grammar;
 
-    public SpeechAligner(final Configuration config) {
-        this.config = config;
-        config.setLocalProperty("flatLinguist->grammar", "alignerGrammar");
-        config.setLocalProperty("decoder->searchManager",
-                                "simpleSearchManager");
+    public SpeechAligner(Configuration configuration) {
+        try {
+            configurer = new Configurer(configuration);
+            configurer.setLocalProperty("decoder->searchManager",
+                                        "simpleSearchManager");
+            configurer.setLocalProperty("flatLinguist->grammar", "alignerGrammar");
 
-        ConfigurationManager cm = config.getConfigurationManager();
-        recognizer = (Recognizer) cm.lookup("recognizer");
-        grammar = (AlignerGrammar) cm.lookup("alignerGrammar");
+            recognizer = configurer.getInstance(Recognizer.class);
+            grammar = configurer.getInstance(AlignerGrammar.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<WordResult> align(URL path, String text) {
         recognizer.allocate();
         grammar.setText(text);
-        config.setSpeechSource(path);
+        configurer.setSpeechSource(path);
 
         List<WordResult> result = recognizer.recognize().getWords();
         recognizer.deallocate();

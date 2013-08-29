@@ -20,7 +20,7 @@ import java.net.URL;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.RecognitionResult;
-import edu.cmu.sphinx.api.SpeechRecognizer;
+import edu.cmu.sphinx.api.LiveSpeechRecognizer;
 
 import edu.cmu.sphinx.result.Path;
 
@@ -42,13 +42,13 @@ public class Transcriber {
     public static void main(String[] args) throws Exception {
         System.out.println("Loading models...");
 
-        Configuration config = new Configuration();
-        config.useMicrophone();
-        config.setAcousticModel(ACOUSTIC_MODEL);
-        config.setDictionary(DICTIONARY_PATH);
-        config.setLanguageModel("./models/language/en-us.lm.dmp");
+        Configuration configuration = new Configuration();
+        configuration.setAcousticModelPath(ACOUSTIC_MODEL);
+        configuration.setDictionaryPath(DICTIONARY_PATH);
+        configuration.setLanguageModelPath("./models/language/en-us.lm.dmp");
 
-        SpeechRecognizer recognizer = new SpeechRecognizer(config);
+        LiveSpeechRecognizer recognizer = 
+            new LiveSpeechRecognizer(configuration);
         recognizer.startRecognition(true);
 
         System.out.println("Say something (\"the end\" to exit):");

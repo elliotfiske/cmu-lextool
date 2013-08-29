@@ -47,12 +47,12 @@ public class Aligner {
      * @param args acoustic model, dictionary, audio file, text
      */
     public static void main(String args[]) throws Exception {
-        Configuration config = new Configuration();
-        config.setAcousticModel(args[0]);
-        config.setDictionary(args[1]);
+        Configuration configuration = new Configuration();
+        configuration.setAcousticModelPath(args[0]);
+        configuration.setDictionaryPath(args[1]);
 
         File file = new File(args[2]);
-        SpeechAligner aligner = new SpeechAligner(config);
+        SpeechAligner aligner = new SpeechAligner(configuration);
         splitStream(file, aligner.align(file.toURI().toURL(), args[3]));
     }
 

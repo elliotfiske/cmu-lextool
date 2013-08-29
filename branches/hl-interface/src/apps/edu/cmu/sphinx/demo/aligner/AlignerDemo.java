@@ -19,17 +19,21 @@ import edu.cmu.sphinx.api.SpeechAligner;
 import edu.cmu.sphinx.result.WordResult;
 
 /**
- * This class demonstrates how to align audio to existing transcription and receive word timestamps.
+ * This class demonstrates how to align audio to existing transcription and
+ * receive word timestamps.
+ *
  * <br/>
- * In order to initialize the aligner you need to specify several data files which might be downloaded
- * from the CMUSphinx website. There should be an acoustic model for your lanaguage, a dictionary an optional
- * G2P model to convert word strings to pronunciation.
+ * In order to initialize the aligner you need to specify several data files
+ * which might be downloaded from the CMUSphinx website. There should be an
+ * acoustic model for your lanaguage, a dictionary an optional G2P model to
+ * convert word strings to pronunciation.
  * <br/>
- * Currently the audio must have specific format (16khz, 16bit, mono), but in the future other formats
- * will be supported.
+ * Currently the audio must have specific format (16khz, 16bit, mono), but in
+ * the future other formats will be supported.
  * <br/>
- * Text should be a clean text in lower case. It should be cleaned from punctuation marks, numbers and other
- * non-speakable things. In the future automatic cleanup will be supported.
+ * Text should be a clean text in lower case. It should be cleaned from
+ * punctuation marks, numbers and other non-speakable things. In the future
+ * automatic cleanup will be supported.
  */
 public class AlignerDemo {
 
@@ -40,8 +44,8 @@ public class AlignerDemo {
 
     public static void main(String Args[]) throws Exception {
         Configuration config = new Configuration();
-        config.setAcousticModel("file:models/acoustic/wsj");
-        config.setDictionary("file:models/acoustic/wsj/dict/cmudict.0.6d");
+        config.setAcousticModelPath("file:models/acoustic/wsj");
+        config.setDictionaryPath("file:models/acoustic/wsj/dict/cmudict.0.6d");
         SpeechAligner aligner = new SpeechAligner(config);
 
         for (WordResult result : aligner.align(new URL(AUDIO_PATH), TEXT))

@@ -1,0 +1,43 @@
+/*
+ * Copyright 2013 Carnegie Mellon University.
+ * Portions Copyright 2004 Sun Microsystems, Inc.
+ * Portions Copyright 2004 Mitsubishi Electric Research Laboratories.
+ * All Rights Reserved.  Use is subject to license terms.
+ *
+ * See the file "license.terms" for information on usage and
+ * redistribution of this file, and for a DISCLAIMER OF ALL
+ * WARRANTIES.
+ */
+
+package edu.cmu.sphinx.api;
+
+import java.io.IOException;
+
+import edu.cmu.sphinx.result.ConfidenceScorer;
+import edu.cmu.sphinx.result.Result;
+
+import edu.cmu.sphinx.recognizer.Recognizer;
+import edu.cmu.sphinx.recognizer.Recognizer.State;
+
+
+public class AbstractSpeechRecognizer {
+
+    protected final Configurer configurer;
+    protected final Recognizer recognizer;
+    protected final ConfidenceScorer scorer;
+
+    public AbstractSpeechRecognizer(Configuration configuration) {
+        try {
+            configurer = new Configurer(configuration);
+            recognizer = configurer.getInstance(Recognizer.class);
+            scorer = configurer.getInstance(ConfidenceScorer.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public RecognitionResult getResult() {
+        Result result = recognizer.recognize();
+        return null == result ? null : new RecognitionResult(scorer, result);
+    }
+}
