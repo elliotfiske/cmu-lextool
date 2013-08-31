@@ -45,7 +45,7 @@ public class Configurer {
     public Configurer(Configuration config)
         throws IOException, MalformedURLException
     {
-        this("resource:/edu/cmu/sphinx/config/default.config.xml", config);
+        this("resource:/edu/cmu/sphinx/api/default.config.xml", config);
     }
 
     /**

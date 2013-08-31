@@ -247,8 +247,8 @@
             <patternset refid="${patternset_to_compile}"/>
             <classpath refid="libs"/>
         </javac>
-	<copy todir="${classes_dir}/edu/cmu/sphinx/config">
-            <fileset dir="${src_dir}/sphinx4/edu/cmu/sphinx/config">
+	<copy todir="${classes_dir}/edu/cmu/sphinx/api">
+            <fileset dir="${src_dir}/sphinx4/edu/cmu/sphinx/api">
                 <include name="**/*.xml"/>
             </fileset>
         </copy>
