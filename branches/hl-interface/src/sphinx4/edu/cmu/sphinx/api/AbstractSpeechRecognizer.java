@@ -45,8 +45,8 @@ public class AbstractSpeechRecognizer {
     /**
      * Returns result of the recognition.
      */
-    public RecognitionResult getResult() {
+    public SpeechResult getResult() {
         Result result = recognizer.recognize();
-        return null == result ? null : new RecognitionResult(scorer, result);
+        return null == result ? null : new SpeechResult(scorer, result);
     }
 }

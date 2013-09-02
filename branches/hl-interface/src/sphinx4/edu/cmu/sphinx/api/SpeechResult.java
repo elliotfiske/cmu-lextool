@@ -32,7 +32,7 @@ import edu.cmu.sphinx.util.LogMath;
 /**
  * High-level wrapper for {@link Result} instance.
  */
-public final class RecognitionResult {
+public final class SpeechResult {
 
     private final Result result;
     private final Path hypothesis;
@@ -44,7 +44,7 @@ public final class RecognitionResult {
      * @param scorer confidence scorer
      * @param result recognition result returned by {@link Recognizer}
      */
-    public RecognitionResult(ConfidenceScorer scorer, Result result) {
+    public SpeechResult(ConfidenceScorer scorer, Result result) {
         this.result = result;
         lattice = new Lattice(result);
         new LatticeOptimizer(lattice).optimize();

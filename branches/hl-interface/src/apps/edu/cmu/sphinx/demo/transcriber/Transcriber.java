@@ -19,7 +19,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import edu.cmu.sphinx.api.Configuration;
-import edu.cmu.sphinx.api.RecognitionResult;
+import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.LiveSpeechRecognizer;
 
 import edu.cmu.sphinx.result.Path;
@@ -53,7 +53,7 @@ public class Transcriber {
 
         System.out.println("Say something (\"the end\" to exit):");
         Writer writer = new PrintWriter(System.out);
-        RecognitionResult result;
+        SpeechResult result;
 
         while ((result = recognizer.getResult()) != null) {
             String utterance = result.getUtterance(false);

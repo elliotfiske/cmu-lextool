@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.cmu.sphinx.api.Configuration;
-import edu.cmu.sphinx.api.RecognitionResult;
+import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.LiveSpeechRecognizer;
 
 
@@ -46,7 +46,7 @@ abstract class Menu {
         while (true) {
             show();
             recognizer.startRecognition(true);
-            RecognitionResult result = recognizer.getResult();
+            SpeechResult result = recognizer.getResult();
 
             if (children.isEmpty()) {
                 while (onCommand(result))
@@ -102,7 +102,7 @@ abstract class Menu {
             System.out.println("+" + hrule + "+");
     }
 
-    protected abstract boolean onCommand(RecognitionResult result);
+    protected abstract boolean onCommand(SpeechResult result);
 }
 
 class MainMenu extends Menu {
@@ -116,7 +116,7 @@ class MainMenu extends Menu {
     }
 
     @Override
-    protected boolean onCommand(RecognitionResult result) {
+    protected boolean onCommand(SpeechResult result) {
         return false;
     }
 }
@@ -133,7 +133,7 @@ class DigitsMenu extends Menu {
     }
 
     @Override
-    protected boolean onCommand(RecognitionResult result) {
+    protected boolean onCommand(SpeechResult result) {
         String utt = result.getUtterance(false);
         if (utt.equals("one oh one") || utt.equals("one zero one"))
             return false;
@@ -182,7 +182,7 @@ class BankMenu extends Menu {
     }
 
     @Override
-    protected boolean onCommand(RecognitionResult result) {
+    protected boolean onCommand(SpeechResult result) {
         String hypothesis = result.getUtterance(false);
         if (hypothesis.equals("back")) {
             return false;
@@ -224,7 +224,7 @@ class WeatherMenu extends Menu {
     }
 
     @Override
-    protected boolean onCommand(RecognitionResult result) {
+    protected boolean onCommand(SpeechResult result) {
         String hypothesis = result.getUtterance(false);
         while (!hypothesis.equals("the end")) {
             System.out.println(hypothesis);
