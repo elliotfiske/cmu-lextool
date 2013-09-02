@@ -25,7 +25,7 @@ import edu.cmu.sphinx.recognizer.Recognizer.State;
  */
 public class AbstractSpeechRecognizer {
 
-    protected final Configurer configurer;
+    protected final Context context;
     protected final Recognizer recognizer;
     protected final ConfidenceScorer scorer;
 
@@ -34,9 +34,9 @@ public class AbstractSpeechRecognizer {
      */
     public AbstractSpeechRecognizer(Configuration configuration) {
         try {
-            configurer = new Configurer(configuration);
-            recognizer = configurer.getInstance(Recognizer.class);
-            scorer = configurer.getInstance(ConfidenceScorer.class);
+            context = new Context(configuration);
+            recognizer = context.getInstance(Recognizer.class);
+            scorer = context.getInstance(ConfidenceScorer.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -33,7 +33,7 @@ import static edu.cmu.sphinx.util.props.ConfigurationManagerUtils.setProperty;
 /**
  * Helps to tweak configuration without touching XML-file directly.
  */
-public class Configurer {
+public class Context {
 
     private final ConfigurationManager configurationManager;
 
@@ -42,7 +42,7 @@ public class Configurer {
      *
      * @throws MalformedURLException if failed to load configuration file
      */
-    public Configurer(Configuration config)
+    public Context(Configuration config)
         throws IOException, MalformedURLException
     {
         this("resource:/edu/cmu/sphinx/api/default.config.xml", config);
@@ -57,7 +57,7 @@ public class Configurer {
      * @throws MalformedURLException if failed to load configuration file
      * @throws IOException           if failed to load configuration file
      */
-    public Configurer(String path, Configuration config)
+    public Context(String path, Configuration config)
         throws IOException, MalformedURLException
     {
         URL url = resourceToURL(path);
@@ -139,7 +139,7 @@ public class Configurer {
      *
      * @param path path to the grammar files
      * @param name name of the main grammar to use
-     * @see        Configurer#setLanguageModel(String)
+     * @see        Context#setLanguageModel(String)
      */
     public void setGrammar(String path, String name) {
         // TODO: use a single param of type File, cache directory part
@@ -161,7 +161,7 @@ public class Configurer {
      * Currently it supports ".lm" and ".dmp" file formats.
      *
      * @param  path path to the language model file
-     * @see         Configurer#setGrammar(String)
+     * @see         Context#setGrammar(String)
      *
      * @throws IllegalArgumentException if path ends with unsupported extension
      */
@@ -185,7 +185,7 @@ public class Configurer {
      * Sets file or classpath resource as the speech source.
      *
      * @param  url URL of the audio resource
-     * @see        Configurer#useMicrophone()
+     * @see        Context#useMicrophone()
      */
     public void setSpeechSource(URL url) {
         getInstance(AudioFileDataSource.class).setAudioFile(url, "input");
@@ -195,7 +195,7 @@ public class Configurer {
     /**
      * Sets microphone as the speech source.
      *
-     * @see    Configurer#setSpeechSource(URL)
+     * @see    Context#setSpeechSource(URL)
      */
     public void useMicrophone() {
         setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
@@ -209,7 +209,7 @@ public class Configurer {
      *
      * @param  name  property name
      * @param  value property value
-     * @see          Configurer#setGlobalProperty(String, Object)
+     * @see          Context#setGlobalProperty(String, Object)
      */
     public void setLocalProperty(String name, Object value) {
         setProperty(configurationManager, name, value.toString());
@@ -223,7 +223,7 @@ public class Configurer {
      *
      * @param  name  property name
      * @param  value property value
-     * @see          Configurer#setLocalProperty(String, Object) 
+     * @see          Context#setLocalProperty(String, Object) 
      */
     public void setGlobalProperty(String name, Object value) {
         configurationManager.setGlobalProperty(name, value.toString());

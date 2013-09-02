@@ -31,7 +31,7 @@ import edu.cmu.sphinx.util.props.ConfigurationManager;
  */
 public class SpeechAligner {
 
-    private final Configurer configurer;
+    private final Context context;
     private final Recognizer recognizer;
     private final AlignerGrammar grammar;
 
@@ -40,13 +40,13 @@ public class SpeechAligner {
      */
     public SpeechAligner(Configuration configuration) {
         try {
-            configurer = new Configurer(configuration);
-            configurer.setLocalProperty("decoder->searchManager",
+            context = new Context(configuration);
+            context.setLocalProperty("decoder->searchManager",
                                         "simpleSearchManager");
-            configurer.setLocalProperty("flatLinguist->grammar", "alignerGrammar");
+            context.setLocalProperty("flatLinguist->grammar", "alignerGrammar");
 
-            recognizer = configurer.getInstance(Recognizer.class);
-            grammar = configurer.getInstance(AlignerGrammar.class);
+            recognizer = context.getInstance(Recognizer.class);
+            grammar = context.getInstance(AlignerGrammar.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -62,7 +62,7 @@ public class SpeechAligner {
     public List<WordResult> align(URL path, String text) {
         recognizer.allocate();
         grammar.setText(text);
-        configurer.setSpeechSource(path);
+        context.setSpeechSource(path);
 
         List<WordResult> result = recognizer.recognize().getWords();
         recognizer.deallocate();

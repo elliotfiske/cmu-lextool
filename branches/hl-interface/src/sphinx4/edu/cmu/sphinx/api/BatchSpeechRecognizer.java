@@ -32,7 +32,7 @@ public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
      */
     public BatchSpeechRecognizer(Configuration configuration) {
         super(configuration);
-        fileDataSource = configurer.getInstance(AudioFileDataSource.class);
+        fileDataSource = context.getInstance(AudioFileDataSource.class);
     }
 
     /**
@@ -45,7 +45,7 @@ public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
      */
     public void startRecognition(URL resourceUrl) {
         recognizer.allocate();
-        configurer.setSpeechSource(resourceUrl);
+        context.setSpeechSource(resourceUrl);
     }
 
     /**

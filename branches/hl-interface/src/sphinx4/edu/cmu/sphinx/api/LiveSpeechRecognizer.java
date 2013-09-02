@@ -28,8 +28,8 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
      */
     public LiveSpeechRecognizer(Configuration configuration) {
         super(configuration);
-        configurer.useMicrophone();
-        microphone = configurer.getInstance(Microphone.class);
+        context.useMicrophone();
+        microphone = context.getInstance(Microphone.class);
     }
 
     /**
