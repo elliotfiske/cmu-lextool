@@ -23,13 +23,6 @@ package edu.cmu.sphinx.api;
  */
 public class Configuration {
 
-    private String logLevel = "WARNING";
-    private int absoluteBeamWidth = -1;
-    private float relativeBeamWidth = 1e-45f;
-    private float wordInsertionProbability = .1f;
-    private float silenceInsertionProbability = .9f;
-    private float languageWeight = 8.f;
-
     private String acousticModelPath;
     private String dictionaryPath;
     private String languageModelPath;
@@ -37,92 +30,6 @@ public class Configuration {
     private String grammarName;
 
     private boolean useGrammar = false;
-
-    /**
-     * Returns log level.
-     */
-    public String getLogLevel() {
-       return logLevel;
-    }
-
-    /**
-     * Sets log level.
-     */
-    public void setLogLevel(String logLevel) {
-        this.logLevel = logLevel;
-    }
-
-    /**
-     * Returns absolute beam width.
-     */
-    public int getAbsoluteBeamWidth() {
-       return absoluteBeamWidth;
-    }
-
-    /**
-     * Sets absolute beam width.
-     */
-    public void setAbsoluteBeamWidth(int absoluteBeamWidth) {
-        this.absoluteBeamWidth = absoluteBeamWidth;
-    }
-
-    /**
-     * Returns relative beam width.
-     */
-    public float getRelativeBeamWidth() {
-       return relativeBeamWidth;
-    }
-
-    /**
-     * Sets relative beam width.
-     */
-    public void setRelativeBeamWidth(float relativeBeamWidth) {
-        this.relativeBeamWidth = relativeBeamWidth;
-    }
-
-    /**
-     * Retruns word insertion probability.
-     */
-    public float getWordInsertionProbability() {
-       return wordInsertionProbability;
-    }
-
-    /**
-     * Sets word insertion probability.
-     */
-    public void setWordInsertionProbability(float wordInsertionProbability) {
-        this.wordInsertionProbability = wordInsertionProbability;
-    }
-
-    /**
-     * Returns silence insertion probability.
-     */
-    public float getSilenceInsertionProbability() {
-       return silenceInsertionProbability;
-    }
-
-    /**
-     * Sets silence insertion probability.
-     */
-    public void setSilenceInsertionProbability(
-            float silenceInsertionProbability)
-    {
-        this.silenceInsertionProbability = silenceInsertionProbability;
-    }
-
-    /**
-     * Returns language weight.
-     */
-    public float getLanguageWeight() {
-       return languageWeight;
-    }
-
-    /**
-     * Sets language weight.
-     */
-    public void setLanguageWeight(float languageWeight) {
-        this.languageWeight = languageWeight;
-    }
 
     /**
      * Returns path to acoustic model.

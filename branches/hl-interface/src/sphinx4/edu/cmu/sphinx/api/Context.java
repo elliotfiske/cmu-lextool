@@ -63,17 +63,6 @@ public class Context {
         URL url = resourceToURL(path);
         configurationManager = new ConfigurationManager(url);
 
-        setGlobalProperty("logLevel", config.getLogLevel());
-        setGlobalProperty("absoluteBeamWidth",
-                          String.valueOf(config.getAbsoluteBeamWidth()));
-        setGlobalProperty("relativeBeamWidth",
-                          String.valueOf(config.getRelativeBeamWidth()));
-        setGlobalProperty("wordInsertionProbability",
-                          String.valueOf(config.getWordInsertionProbability()));
-        setGlobalProperty("silenceInsertionProbability",
-                          String.valueOf(config.getSilenceInsertionProbability()));
-        setGlobalProperty("languageWeight", config.getLanguageWeight());
-
         setAcousticModel(config.getAcousticModelPath());
         setDictionary(config.getDictionaryPath());
 

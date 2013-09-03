@@ -4,13 +4,13 @@
 
   <property name="logLevel" value="WARNING"/>
 
-  <property name="absoluteBeamWidth"  value=""/>
-  <property name="relativeBeamWidth"  value=""/>
+  <property name="absoluteBeamWidth"  value="-1"/>
+  <property name="relativeBeamWidth"  value="1e-45"/>
 
-  <property name="wordInsertionProbability" value=""/>
-  <property name="silenceInsertionProbability" value=""/>
+  <property name="wordInsertionProbability" value="0.1"/>
+  <property name="silenceInsertionProbability" value="0.9"/>
 
-  <property name="languageWeight" value=""/>
+  <property name="languageWeight" value="8.0"/>
 
   <component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
     <property name="decoder" value="decoder"/>
