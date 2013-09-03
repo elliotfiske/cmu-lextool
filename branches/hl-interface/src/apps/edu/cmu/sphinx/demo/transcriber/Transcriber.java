@@ -35,9 +35,6 @@ public class Transcriber {
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
     private static final String DICTIONARY_PATH =
         "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
-    private static final String GRAMMAR_PATH =
-        "resource:/edu/cmu/sphinx/demo/transcriber/";
-
 
     public static void main(String[] args) throws Exception {
         System.out.println("Loading models...");
