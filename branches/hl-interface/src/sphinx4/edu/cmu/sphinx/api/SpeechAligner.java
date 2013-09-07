@@ -58,11 +58,13 @@ public class SpeechAligner {
      * @param path path to the speech source
      * @param text text to align
      * @return     list of recognized words with timestamp
+     *
+     * @throws IOException if failed to open URL stream
      */
-    public List<WordResult> align(URL path, String text) {
+    public List<WordResult> align(URL path, String text) throws IOException {
         recognizer.allocate();
         grammar.setText(text);
-        context.setSpeechSource(path);
+        context.setSpeechSource(path.openStream());
 
         List<WordResult> result = recognizer.recognize().getWords();
         recognizer.deallocate();

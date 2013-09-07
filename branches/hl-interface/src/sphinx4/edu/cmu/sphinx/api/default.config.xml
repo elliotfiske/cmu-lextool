@@ -162,20 +162,20 @@
 
   <component name="batchFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
     <propertylist name="pipeline">
-      <item>audioFileDataSource </item>
-      <item>dataBlocker </item>
-      <item>preemphasizer </item>
-      <item>windower </item>
-      <item>fft </item>
-      <item>melFilterBank </item>
-      <item>dct </item>
-      <item>batchCMN </item>
-      <item>featureExtraction </item>
+      <item>dataSource</item>
+      <item>dataBlocker</item>
+      <item>preemphasizer</item>
+      <item>windower</item>
+      <item>fft</item>
+      <item>melFilterBank</item>
+      <item>dct</item>
+      <item>batchCMN</item>
+      <item>featureExtraction</item>
     </propertylist>
   </component>
 
-  <component name="audioFileDataSource"
-    type="edu.cmu.sphinx.frontend.util.AudioFileDataSource"/>
+  <component name="dataSource"
+    type="edu.cmu.sphinx.frontend.util.StreamDataSource"/>
 
   <component name="dataBlocker" type="edu.cmu.sphinx.frontend.DataBlocker"/>
 

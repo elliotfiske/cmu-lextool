@@ -87,7 +87,7 @@ public class CepstrumPanel extends JPanel {
     protected void computeCepstrum() {
         try {
             AudioDataInputStream is = new AudioDataInputStream(audio);
-            dataSource.setInputStream(is, "live audio");
+            dataSource.setInputStream(is);
 
             /* Run through all the spectra one at a time and convert
              * them to an log intensity value.

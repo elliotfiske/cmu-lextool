@@ -13,6 +13,7 @@ package edu.cmu.sphinx.api;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import java.net.MalformedURLException;
@@ -21,7 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
+import edu.cmu.sphinx.frontend.util.StreamDataSource;
 
 import edu.cmu.sphinx.util.props.Configurable;
 import edu.cmu.sphinx.util.props.ConfigurationManager;
@@ -171,13 +172,14 @@ public class Context {
     }
 
     /**
-     * Sets file or classpath resource as the speech source.
+     * Sets byte stream as the speech source.
      *
-     * @param  url URL of the audio resource
-     * @see        Context#useMicrophone()
+     * @param  stream stream
+     * @see           Context#useMicrophone()
      */
-    public void setSpeechSource(URL url) {
-        getInstance(AudioFileDataSource.class).setAudioFile(url, "input");
+    public void setSpeechSource(InputStream stream) {
+        // TODO: setup stream sample rate and other parameters
+        getInstance(StreamDataSource.class).setInputStream(stream);
         setLocalProperty("threadedScorer->frontend", "batchFrontEnd");
     }
 

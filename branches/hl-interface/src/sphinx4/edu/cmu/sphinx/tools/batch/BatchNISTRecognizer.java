@@ -308,7 +308,8 @@ public class BatchNISTRecognizer extends BatchModeRecognizer {
     protected void setInputStream(CTLUtterance utt) throws IOException {
         for (DataProcessor dataSource : inputDataProcessors) {
             if (dataSource instanceof StreamDataSource) {
-                ((StreamDataSource) dataSource).setInputStream(utt.getInputStream(), utt.getName());
+                ((StreamDataSource)
+                 dataSource).setInputStream(utt.getInputStream());
             } else if (dataSource instanceof StreamCepstrumSource) {
                 boolean isBigEndian = Utilities
                         .isCepstraFileBigEndian(utt.getName());

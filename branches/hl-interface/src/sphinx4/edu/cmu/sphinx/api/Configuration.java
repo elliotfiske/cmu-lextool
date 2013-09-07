@@ -19,7 +19,7 @@ package edu.cmu.sphinx.api;
  *
  * @see SpeechAligner
  * @see LiveSpeechRecognizer
- * @see BatchSpeechRecognizer
+ * @see StreamSpeechRecognizer
  */
 public class Configuration {
 

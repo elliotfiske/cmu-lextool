@@ -254,7 +254,7 @@ public class BatchModeRecognizer implements Configurable {
 		}
             }
             if (dataSource instanceof StreamDataSource) {
-                ((StreamDataSource) dataSource).setInputStream(is, filename);
+                ((StreamDataSource) dataSource).setInputStream(is);
             } else if (dataSource instanceof StreamCepstrumSource) {
                 boolean isBigEndian = Utilities
                         .isCepstraFileBigEndian(filename);

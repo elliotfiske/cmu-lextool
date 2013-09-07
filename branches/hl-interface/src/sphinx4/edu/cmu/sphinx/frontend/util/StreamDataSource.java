@@ -88,7 +88,12 @@ public class StreamDataSource extends BaseDataProcessor {
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
-        init(ps.getInt(PROP_SAMPLE_RATE), ps.getInt(PROP_BYTES_PER_READ), ps.getInt(PROP_BITS_PER_SAMPLE), ps.getBoolean(PROP_BIG_ENDIAN_DATA), ps.getBoolean(PROP_SIGNED_DATA) );
+        init(
+             ps.getInt(PROP_SAMPLE_RATE),
+             ps.getInt(PROP_BYTES_PER_READ),
+             ps.getInt(PROP_BITS_PER_SAMPLE),
+             ps.getBoolean(PROP_BIG_ENDIAN_DATA),
+             ps.getBoolean(PROP_SIGNED_DATA));
     }
 
     private void init(int sampleRate, int bytesPerRead, int bitsPerSample, boolean bigEndian, boolean signedData ) {
@@ -96,19 +101,15 @@ public class StreamDataSource extends BaseDataProcessor {
         this.bytesPerRead = bytesPerRead;
         this.bitsPerSample = bitsPerSample;
 
-        if (this.bitsPerSample % 8 != 0) {
-            throw new Error("StreamDataSource: bits per sample must be a " +
-                    "multiple of 8.");
-        }
+        if (this.bitsPerSample % 8 != 0)
+            throw new IllegalArgumentException(
+                    "bits per sample must be a multiple of 8");
         
         this.bytesPerValue = bitsPerSample / 8;
         this.bigEndian = bigEndian;
         this.signedData = signedData;
-        if (this.bytesPerRead % 2 == 1) {
-            this.bytesPerRead++;
-        }
+        this.bytesPerRead += bytesPerRead % 2;
     }
-
 
     /*
     * (non-Javadoc)
@@ -125,9 +126,8 @@ public class StreamDataSource extends BaseDataProcessor {
      * Sets the InputStream from which this StreamDataSource reads.
      *
      * @param inputStream the InputStream from which audio data comes
-     * @param streamName  the name of the InputStream
      */
-    public void setInputStream(InputStream inputStream, String streamName) {
+    public void setInputStream(InputStream inputStream) {
         dataStream = inputStream;
         streamEndReached = false;
         utteranceEndSent = false;

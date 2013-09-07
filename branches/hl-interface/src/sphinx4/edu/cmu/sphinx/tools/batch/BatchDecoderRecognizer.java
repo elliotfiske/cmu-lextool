@@ -93,7 +93,7 @@ public class BatchDecoderRecognizer {
     
     private void processFile(String utteranceId, String inputFile) throws IOException {
         FileInputStream stream = new FileInputStream(inputFile);
-        source.setInputStream(stream, null);
+        source.setInputStream(stream);
         Result result = recognizer.recognize();
         writer.println (result.getBestFinalResultNoFiller() + " (" + utteranceId + ")");
     }

@@ -84,7 +84,7 @@ public class SpectrogramPanel extends JPanel {
     protected void computeSpectrogram() {
         try {
             AudioDataInputStream is = new AudioDataInputStream(audio);
-            dataSource.setInputStream(is, "live audio");
+            dataSource.setInputStream(is);
 
             /* Run through all the spectra one at a time and convert
              * them to an log intensity value.

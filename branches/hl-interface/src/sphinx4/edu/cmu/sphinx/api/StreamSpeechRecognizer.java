@@ -11,9 +11,9 @@
 
 package edu.cmu.sphinx.api;
 
-import java.net.URL;
+import java.io.InputStream;
 
-import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
+import java.net.URL;
 
 
 /**
@@ -21,18 +21,15 @@ import edu.cmu.sphinx.frontend.util.AudioFileDataSource;
  *
  * @see LiveSpeechRecognizer live speech recognizer
  */
-public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
-
-    private final AudioFileDataSource fileDataSource;
+public class StreamSpeechRecognizer extends AbstractSpeechRecognizer {
 
     /**
-     * Constructs new batch recognizer object.
+     * Constructs new stream recognizer.
      *
-     * @param configuraiton basic recognizer configuration
+     * @param configuration configuration
      */
-    public BatchSpeechRecognizer(Configuration configuration) {
+    public StreamSpeechRecognizer(Configuration configuration) {
         super(configuration);
-        fileDataSource = context.getInstance(AudioFileDataSource.class);
     }
 
     /**
@@ -41,11 +38,11 @@ public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
      * Starts recognition process and optionally clears previous data.
      *
      * @param clear clear cached microphone data
-     * @see         BatchSpeechRecognizer#stopRecognition()
+     * @see         StreamSpeechRecognizer#stopRecognition()
      */
-    public void startRecognition(URL resourceUrl) {
+    public void startRecognition(InputStream stream) {
         recognizer.allocate();
-        context.setSpeechSource(resourceUrl);
+        context.setSpeechSource(stream);
     }
 
     /**
@@ -53,7 +50,7 @@ public class BatchSpeechRecognizer extends AbstractSpeechRecognizer {
      *
      * Recognition process is paused until the next call to startRecognition.
      *
-     * @see BatchSpeechRecognizer#startRecognition(boolean)
+     * @see StreamSpeechRecognizer#startRecognition(boolean)
      */
     public void stopRecognition() {
         recognizer.deallocate();

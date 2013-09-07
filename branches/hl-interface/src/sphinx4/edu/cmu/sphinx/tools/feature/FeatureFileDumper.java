@@ -78,8 +78,7 @@ public class FeatureFileDumper {
      * @throws FileNotFoundException
      */
     public void processFile(String inputAudioFile) throws FileNotFoundException {
-        audioSource
-                .setInputStream(new FileInputStream(inputAudioFile), "audio");
+        audioSource .setInputStream(new FileInputStream(inputAudioFile));
         allFeatures = new LinkedList<float[]>();
         getAllFeatures();
         logger.info("Frames: " + allFeatures.size());
