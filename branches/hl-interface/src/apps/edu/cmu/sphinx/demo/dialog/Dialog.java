@@ -23,130 +23,16 @@ import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.LiveSpeechRecognizer;
 
 
-abstract class Menu {
+public class Dialog {
 
-    private final String name;
-    private final List<Menu> children = new ArrayList<Menu>();
-    private final Map<String, Menu> tags = new HashMap<String, Menu>();
-    protected final List<String> captions = new ArrayList<String>();
-
-    protected final LiveSpeechRecognizer recognizer;
-
-    public Menu(String name, Configuration configuration) {
-        this.name = name;
-        recognizer = new LiveSpeechRecognizer(configuration);
-    }
-
-    public void append(String tag, Menu menu) {
-        children.add(menu);
-        tags.put(tag, menu);
-    }
-
-    public void enter() {
-        while (true) {
-            show();
-            recognizer.startRecognition(true);
-            SpeechResult result = recognizer.getResult();
-
-            if (children.isEmpty()) {
-                while (onCommand(result))
-                    result = recognizer.getResult();
-
-                recognizer.stopRecognition();
-                break;
-            } else {
-                String tag = result.getUtterance(false);
-                recognizer.stopRecognition();
-                if (tags.containsKey(tag))
-                    tags.get(tag).enter();
-                else if (tag.startsWith("exit"))
-                    break;
-                else
-                    System.out.println("No such category: " +
-                            result.getUtterance(false));
-            }
-        }
-    }
-
-    public void show() {
-        int maxlen = name.length() + 2;
-        for (String s : captions)
-            maxlen = Math.max(maxlen, s.length() + 2);
-
-        String hrule = "";
-        String hspace = "";
-        for (int i = 0; i < maxlen; ++i) {
-            hrule += "-";
-            hspace += " ";
-        }
-
-        StringBuffer sb = new StringBuffer(hspace);
-        sb.replace((maxlen - name.length()) / 2,
-                (maxlen + name.length()) / 2, name);
-        sb.insert(0, '|');
-        sb.append('|');
-        System.out.println("+" + hrule + "+");
-        System.out.println(sb.toString());
-        System.out.println("+" + hrule + "+");
-
-        for (String s : captions) {
-            sb = new StringBuffer(hspace);
-            sb.replace((maxlen - s.length()) / 2,
-                    (maxlen + s.length()) / 2, s);
-            sb.insert(0, '|');
-            sb.append('|');
-            System.out.println(sb.toString());
-        }
-
-        if (!captions.isEmpty())
-            System.out.println("+" + hrule + "+");
-    }
-
-    protected abstract boolean onCommand(SpeechResult result);
-}
-
-class MainMenu extends Menu {
-
-    public MainMenu(Configuration configuration) {
-        super("Voice menu", configuration);
-        captions.add("Digits");
-        captions.add("Bank account");
-        captions.add("Weather forecast");
-        captions.add("Exit");
-    }
-
-    @Override
-    protected boolean onCommand(SpeechResult result) {
-        return false;
-    }
-}
-
-class DigitsMenu extends Menu {
-
+    private static final String ACOUSTIC_MODEL =
+        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
+    private static final String DICTIONARY_PATH =
+        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
     private static final String GRAMMAR_PATH =
         "resource:/edu/cmu/sphinx/demo/dialog/";
-
-    public DigitsMenu(Configuration configuration) {
-        super("Digits (using GrXML)", configuration);
-        captions.add("Example: one two three");
-        captions.add("Say \"101\" to exit");
-    }
-
-    @Override
-    protected boolean onCommand(SpeechResult result) {
-        String utt = result.getUtterance(false);
-        if (utt.equals("one oh one") || utt.equals("one zero one"))
-            return false;
-
-        System.out.println(utt);
-        return true;
-    }
-}
-
-class BankMenu extends Menu {
-
-    private static final String GRAMMAR_PATH =
-        "resource:/edu/cmu/sphinx/demo/dialog/";
+    private static final String LANGUAGE_MODEL =
+        "resource:/edu/cmu/sphinx/demo/dialog/weather.lm";
 
     private static final Map<String, Integer> DIGITS =
         new HashMap<String, Integer>();
@@ -165,41 +51,6 @@ class BankMenu extends Menu {
         DIGITS.put("nine", 9);
     }
 
-    private double savings;
-
-    public BankMenu(Configuration configuration) {
-        super("Bank account", configuration);
-        captions.add("Example: balance                 ");
-        captions.add("Example: withdraw zero point five");
-        captions.add("Example: deposit one two three   ");
-        captions.add("Example: back                    ");
-    }
-
-    @Override
-    public void enter() {
-        savings = .0;
-        super.enter();
-    }
-
-    @Override
-    protected boolean onCommand(SpeechResult result) {
-        String hypothesis = result.getUtterance(false);
-        if (hypothesis.equals("back")) {
-            return false;
-        } else if (hypothesis.startsWith("deposit")) {
-            double deposit = parseNumber(hypothesis.split("\\s"));
-            savings += deposit;
-            System.out.format("Deposited: $%.2f\n", deposit);
-        } else if (hypothesis.startsWith("withdraw")) {
-            double withdraw = parseNumber(hypothesis.split("\\s"));
-            savings -= withdraw;
-            System.out.format("Withdrawn: $%.2f\n", withdraw);
-        }
-
-        System.out.format("Your savings: $%.2f\n", savings);
-        return true;
-    }
-
     private static double parseNumber(String[] tokens) {
         StringBuilder sb = new StringBuilder();
 
@@ -212,40 +63,76 @@ class BankMenu extends Menu {
 
         return Double.parseDouble(sb.toString());
     }
-}
+    private static void recognizeDigits(LiveSpeechRecognizer recognizer) {
+        System.out.println("Digits recognition (using GrXML)");
+        System.out.println("--------------------------------");
+        System.out.println("Example: one two three");
+        System.out.println("Say \"101\" to exit");
+        System.out.println("--------------------------------");
 
-class WeatherMenu extends Menu {
-
-
-    public WeatherMenu(Configuration configuration) {
-        super("Try some forecast. End with \"the end\"", configuration);
-        captions.add("Example: mostly dry some fog patches tonight");
-        captions.add("Example: sunny spells on wednesday          ");
+        recognizer.startRecognition(true);
+        while (true) {
+            String utterance = recognizer.getResult().getUtterance(false);
+            if (utterance.equals("one zero one")
+                | utterance.equals("one oh one"))
+                break;
+            else
+                System.out.println(utterance);
+        }
+        recognizer.stopRecognition();
     }
 
-    @Override
-    protected boolean onCommand(SpeechResult result) {
-        String hypothesis = result.getUtterance(false);
-        while (!hypothesis.equals("the end")) {
-            System.out.println(hypothesis);
-            return true;
+    private static void recognizerBankAccount(LiveSpeechRecognizer recognizer) {
+        System.out.println("This is bank account voice menu");
+        System.out.println("-------------------------------");
+        System.out.println("Example: balance");
+        System.out.println("Example: withdraw zero point five");
+        System.out.println("Example: deposit one two three");
+        System.out.println("Example: back");
+        System.out.println("-------------------------------");
+
+        double savings = .0;
+        recognizer.startRecognition(true);
+
+        while (true) {
+            String utterance = recognizer.getResult().getUtterance(false);
+            if (utterance.endsWith("back")) {
+                break;
+            } else if (utterance.startsWith("deposit")) {
+                double deposit = parseNumber(utterance.split("\\s"));
+                savings += deposit;
+                System.out.format("Deposited: $%.2f\n", deposit);
+            } else if (utterance.startsWith("withdraw")) {
+                double withdraw = parseNumber(utterance.split("\\s"));
+                savings -= withdraw;
+                System.out.format("Withdrawn: $%.2f\n", withdraw);
+            } else if (!utterance.endsWith("balance")) {
+                System.out.println("Unrecognized command: " + utterance);
+            }
+
+            System.out.format("Your savings: $%.2f\n", savings);
         }
 
-        return false;
+        recognizer.stopRecognition();
     }
-}
 
-public class Dialog {
+    private static void recognizeWeather(LiveSpeechRecognizer recognizer) {
+        System.out.println("Try some forecast. End with \"the end\"");
+        System.out.println("-------------------------------------");
+        System.out.println("Example: mostly dry some fog patches tonight");
+        System.out.println("Example: sunny spells on wednesday");
+        System.out.println("-------------------------------------");
 
-    private static final String ACOUSTIC_MODEL =
-        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
-    private static final String DICTIONARY_PATH =
-        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
-    private static final String GRAMMAR_PATH =
-        "resource:/edu/cmu/sphinx/demo/dialog/";
-    private static final String LANGUAGE_MODEL =
-        "resource:/edu/cmu/sphinx/demo/dialog/weather.lm";
-
+        recognizer.startRecognition(true);
+        while (true) {
+            String utterance = recognizer.getResult().getUtterance(false);
+            if (utterance.equals("the end"))
+                break;
+            else
+                System.out.println(utterance);
+        }
+        recognizer.stopRecognition();
+    }
 
     public static void main(String[] args) throws Exception {
         Configuration configuration = new Configuration();
@@ -254,19 +141,51 @@ public class Dialog {
         configuration.setGrammarPath(GRAMMAR_PATH);
         configuration.setUseGrammar(true);
 
-        configuration.setGrammarName("menu");
-        Menu menu = new MainMenu(configuration);
+        configuration.setGrammarName("dialog");
+        LiveSpeechRecognizer jsgfRecognizer =
+            new LiveSpeechRecognizer(configuration);
 
         configuration.setGrammarName("digits.grxml");
-        menu.append("digits", new DigitsMenu(configuration));
-
-        configuration.setGrammarName("bank");
-        menu.append("bank account", new BankMenu(configuration));
+        LiveSpeechRecognizer grxmlRecognizer =
+            new LiveSpeechRecognizer(configuration);
 
         configuration.setUseGrammar(false);
         configuration.setLanguageModelPath(LANGUAGE_MODEL);
-        menu.append("weather forecast", new WeatherMenu(configuration));
+        LiveSpeechRecognizer lmRecognizer =
+            new LiveSpeechRecognizer(configuration);
 
-        menu.enter();
+        jsgfRecognizer.startRecognition(true);
+        while (true) {
+            System.out.println("Choose menu item:");
+            System.out.println("Example: go to the bank account");
+            System.out.println("Example: exit the program");
+            System.out.println("Example: weather forecast");
+            System.out.println("Example: digits\n");
+
+            String utterance = jsgfRecognizer.getResult().getUtterance(false);
+
+            if (utterance.startsWith("exit"))
+                break;
+
+            if (utterance.equals("digits")) {
+                jsgfRecognizer.stopRecognition();
+                recognizeDigits(grxmlRecognizer);
+                jsgfRecognizer.startRecognition(true);
+            }
+
+            if (utterance.equals("bank account")) {
+                jsgfRecognizer.stopRecognition();
+                recognizerBankAccount(jsgfRecognizer);
+                jsgfRecognizer.startRecognition(true);
+            }
+
+            if (utterance.endsWith("weather forecast")) {
+                jsgfRecognizer.stopRecognition();
+                recognizeWeather(lmRecognizer);
+                jsgfRecognizer.startRecognition(true);
+            }
+        }
+
+        jsgfRecognizer.stopRecognition();
     }
 }

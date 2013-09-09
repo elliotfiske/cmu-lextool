@@ -1,8 +1,0 @@
-#JSGF V1.0;
-
-grammar menu;
-
-public <action_command> =  digits                     |
-                           [go to [the]] bank account |
-                           weather forecast           |
-                           exit [[the] program]       ;
