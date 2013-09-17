@@ -23,6 +23,7 @@ grammar dialog;
 
 <bank_command> = [show | check] balance |
                  deposit <number>       |
-                 withdraw <number>      ;
+                 withdraw <number>      |
+                 back                   ;
 
 public <command> = <menu_command> | <bank_command>;
