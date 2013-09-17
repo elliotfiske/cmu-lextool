@@ -11,7 +11,7 @@
 
 package edu.cmu.sphinx.api;
 
-import edu.cmu.sphinx.frontend.util.Microphone;
+import edu.cmu.sphinx.frontend.util.StreamDataSource;
 
 
 /**
@@ -29,7 +29,9 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
     public LiveSpeechRecognizer(Configuration configuration) {
         super(configuration);
         context.useMicrophone();
-        microphone = context.getInstance(Microphone.class);
+        microphone = speechSourceProvider.getMicrophone();
+        context.getInstance(StreamDataSource.class)
+            .setInputStream(microphone.getStream());
     }
 
     /**
@@ -40,8 +42,6 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
      */
     public void startRecognition(boolean clear) {
         recognizer.allocate();
-        if (clear)
-            microphone.clear();
         microphone.startRecording();
     }
 

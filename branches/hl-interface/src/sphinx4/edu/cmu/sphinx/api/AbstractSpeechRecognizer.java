@@ -29,6 +29,8 @@ public class AbstractSpeechRecognizer {
     protected final Recognizer recognizer;
     protected final ConfidenceScorer scorer;
 
+    protected final SpeechSourceProvider speechSourceProvider;
+
     /**
      * Constructs recognizer object using provided configuration.
      */
@@ -40,6 +42,8 @@ public class AbstractSpeechRecognizer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        speechSourceProvider = new SpeechSourceProvider();
     }
 
     /**

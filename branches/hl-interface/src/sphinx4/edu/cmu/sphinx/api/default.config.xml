@@ -145,7 +145,7 @@
 
   <component name="liveFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
     <propertylist name="pipeline">
-      <item>microphone </item>
+      <item>dataSource </item>
       <item>dataBlocker </item>
       <item>speechClassifier </item>
       <item>speechMarker </item>
@@ -218,11 +218,6 @@
 
   <component name="featureExtraction"
     type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
-
-  <component name="microphone"
-    type="edu.cmu.sphinx.frontend.util.Microphone">
-    <property name="closeBetweenUtterances" value="false"/>
-  </component>
 
   <component name="confidenceScorer"
     type="edu.cmu.sphinx.result.MAPConfidenceScorer">
