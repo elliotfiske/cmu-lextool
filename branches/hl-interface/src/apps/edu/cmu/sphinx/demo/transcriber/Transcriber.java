@@ -54,12 +54,9 @@ public class Transcriber {
         SpeechResult result;
 
         while ((result = recognizer.getResult()) != null) {
-            String utterance = result.getUtterance(false);
-            if (utterance.equals("the end"))
-                break;
-
             System.out.format("hypothesis: %s, confidence: %g\n",
-                              utterance, result.getConfidence());
+                              result.getUtterance(false),
+                              result.getConfidence());
 
             System.out.println("best 3 hypothesis:");
             for (String s : result.getNbest(3))
