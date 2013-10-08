@@ -1059,6 +1059,12 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
     *out_nwall = ps->perf.t_tot_elapsed;
 }
 
+uint8 
+ps_get_vad_state(ps_decoder_t *ps)
+{
+	return fe_get_vad_state(ps->acmod->fe);
+}
+
 void
 ps_search_init(ps_search_t *search, ps_searchfuncs_t *vt,
                cmd_ln_t *config, acmod_t *acmod, dict_t *dict,

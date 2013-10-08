@@ -240,6 +240,74 @@ sleep_msec(int32 ms)
 /*
  * Main utterance processing loop:
  *     for (;;) {
+ * 	   start utterance and wait for speech to process
+ *     decoding till end-of-utterance silence will be detected
+ * 	   print utterance result;
+ *     }
+ */
+static void
+recognize_from_microphone_new()
+{
+	ad_rec_t *ad;
+    int16 adbuf[4096];
+    uint8 is_speech;
+    int32 k;
+    char const *hyp;
+    char const *uttid;
+    
+    if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),
+                          (int) cmd_ln_float32_r(config,
+                                                 "-samprate"))) == NULL)
+        E_FATAL("Failed to open audio device\n");
+    if (ad_start_rec(ad) < 0)
+        E_FATAL("Failed to start recording\n");
+    
+    for (;;) {
+        /* Indicate listening for next utterance */
+        printf("READY....\n");
+        fflush(stdout);
+        fflush(stderr);
+        if (ps_start_utt(ps, NULL) < 0)
+            E_FATAL("Failed to start utterance\n");
+        is_speech = 0;
+        
+        //skipping silence cycle
+        while (!is_speech) {
+			sleep_msec(100);
+			if ((k = ad_read(ad, adbuf, 4096)) < 0)
+				E_FATAL("Failed to read audio\n");
+			ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+			is_speech = ps_get_vad_state(ps);
+		}
+		
+		printf("Listening...\n");
+        fflush(stdout);
+		//speech processing cycle
+		while (is_speech) {
+			if ((k = ad_read(ad, adbuf, 4096)) < 0)
+				E_FATAL("Failed to read audio\n");
+			ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+			is_speech = ps_get_vad_state(ps);
+		}
+        
+        //utterance finished, obtain and print result */
+        ps_end_utt(ps);
+        hyp = ps_get_hyp(ps, NULL, &uttid);
+        printf("%s: %s\n", uttid, hyp);
+        fflush(stdout);
+
+        /* Exit if the first word spoken was GOODBYE */
+        if (hyp) {
+            if (strcmp(hyp, "good bye") == 0)
+                break;
+        }
+	}
+    ad_close(ad);
+}
+
+/*
+ * Main utterance processing loop:
+ *     for (;;) {
  * 	   wait for start of next utterance;
  * 	   decode utterance until silence of at least 1 sec observed;
  * 	   print utterance result;
@@ -398,7 +466,7 @@ main(int argc, char *argv[])
 #endif
 
         if (setjmp(jbuf) == 0) {
-            recognize_from_microphone();
+            recognize_from_microphone_new();
         }
     }
 
