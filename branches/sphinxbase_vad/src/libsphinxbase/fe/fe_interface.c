@@ -230,6 +230,7 @@ fe_init_auto_r(cmd_ln_t *config)
     fe->frame_size = (int32) (fe->window_length * fe->sampling_rate + 0.5);
     fe->prior = 0;
     fe->frame_counter = 0;
+	fe->is_speech = 1;
 
     assert (fe->frame_shift > 1);
 
@@ -320,6 +321,7 @@ fe_start_utt(fe_t * fe)
     memset(fe->overflow_samps, 0, fe->frame_size * sizeof(int16));
     fe->start_flag = 1;
     fe->prior = 0;
+	fe->is_speech = 1;
 
     if (fe->remove_noise)
 	fe_reset_noisestats(fe->noise_stats);
@@ -341,6 +343,12 @@ fe_get_input_size(fe_t *fe, int *out_frame_shift,
         *out_frame_shift = fe->frame_shift;
     if (out_frame_size)
         *out_frame_size = fe->frame_size;
+}
+
+uint8
+fe_get_vad_state(fe_t *fe)
+{
+	return fe->is_speech;
 }
 
 int32

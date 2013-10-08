@@ -51,8 +51,11 @@
 #include <config.h>
 #endif
 
+#include <math.h>
+
 #include "sphinxbase/prim_type.h"
 #include "sphinxbase/ckd_alloc.h"
+#include "sphinxbase/err.h"
 
 #include "fe_noise.h"
 
@@ -65,6 +68,9 @@ struct noise_stats_s {
     powspec_t *floor;
     /* Peak for temporal masking */
     powspec_t *peak;
+
+	/* vad decision value */
+	float64 vad;
 
     /* Initialize it next time */
     uint8 undefined;
@@ -85,6 +91,13 @@ struct noise_stats_s {
 #define MAX_GAIN 20
 
 #define EPS 1e-10
+
+/* VAD constants */
+#define A01 0.3 //prob of silence -> speech
+#define A10 0.01 //prob of speech -> silence
+#define A00 0.7 //prob of staying in silence state
+#define A11 0.99 //prob of staying in speech state
+#define VAD_THRESHOLD 400
 
 static void
 fe_low_envelope(powspec_t * buf, powspec_t * floor_buf, int32 num_filt)
@@ -128,7 +141,7 @@ fe_weight_smooth(powspec_t * buf, powspec_t * coefs, int32 num_filt)
 {
     int i, j;
     int l1, l2;
-    float32 coef;
+    float64 coef;
 
     for (i = 0; i < num_filt; i++) {
         l1 = ((i - SMOOTH_WINDOW) > 0) ? (i - SMOOTH_WINDOW) : 0;
@@ -160,6 +173,7 @@ fe_init_noisestats(int num_filters)
         (powspec_t *) ckd_calloc(num_filters, sizeof(powspec_t));
 
     noise_stats->undefined = TRUE;
+    noise_stats->vad = 1.0;
     noise_stats->num_filters = num_filters;
 
     return noise_stats;
@@ -169,6 +183,7 @@ void
 fe_reset_noisestats(noise_stats_t * noise_stats)
 {
     noise_stats->undefined = TRUE;
+    noise_stats->vad = 1.0;
 }
 
 void
@@ -181,12 +196,14 @@ fe_free_noisestats(noise_stats_t * noise_stats)
     ckd_free(noise_stats);
 }
 
-void
+uint8
 fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 {
     powspec_t *signal;
     powspec_t *gain;
     int32 i, num_filts;
+    uint8 is_speech;
+    float64 snr, lrt;
 
     num_filts = noise_stats->num_filters;
 
@@ -211,14 +228,20 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
             mfspec[i];
     }
 
-    /* Noise estimation */
+    /* Noise estimation & vad desicion */
     fe_low_envelope(noise_stats->power, noise_stats->noise, num_filts);
 
+    lrt = 0.0;
     for (i = 0; i < num_filts; i++) {
         signal[i] = noise_stats->power[i] - noise_stats->noise[i];
         if (signal[i] < 0)
             signal[i] = 0;
+	 snr = signal[i]*signal[i] / (noise_stats->noise[i]*noise_stats->noise[i]);
+	 lrt += log(1.0/(1+snr)) + snr;
     }
+    lrt /= num_filts;
+    noise_stats->vad = lrt * (A01+A11*noise_stats->vad)/(A00+A10*noise_stats->vad);
+    is_speech = noise_stats->vad > VAD_THRESHOLD;
 
     fe_low_envelope(signal, noise_stats->floor, num_filts);
 
@@ -246,4 +269,6 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 
     ckd_free(signal);
     ckd_free(gain);
+	
+    return is_speech;
 }

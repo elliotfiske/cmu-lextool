@@ -353,6 +353,14 @@ void fe_get_input_size(fe_t *fe, int *out_frame_shift,
                        int *out_frame_size);
 
 /**
+ * Get vad state for the last processed frame
+ *
+ * @return 1 if speech, 0 if silence
+ */
+SPHINXBASE_EXPORT
+uint8 fe_get_vad_state(fe_t *fe);
+
+/**
  * Finish processing an utterance.
  *
  * This function also collects any remaining samples and calculates a

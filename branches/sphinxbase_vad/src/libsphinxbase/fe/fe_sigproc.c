@@ -1115,11 +1115,11 @@ fe_write_frame(fe_t * fe, mfcc_t * fea)
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
     if (fe->remove_noise)
-        fe_remove_noise(fe->noise_stats, fe->mfspec);
+		fe->is_speech = fe_remove_noise(fe->noise_stats, fe->mfspec);
     fe_mel_cep(fe, fea);
     fe_lifter(fe, fea);
-
-    return 1;
+	
+    return fe->is_speech;
 }
 
 void *
