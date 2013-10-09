@@ -323,8 +323,6 @@ acmod_free(acmod_t *acmod)
 
     if (acmod->mfcfh)
         fclose(acmod->mfcfh);
-    if (acmod->rawfh)
-        fclose(acmod->rawfh);
     if (acmod->senfh)
         fclose(acmod->senfh);
 
@@ -393,15 +391,6 @@ acmod_set_mfcfh(acmod_t *acmod, FILE *logfh)
     return rv;
 }
 
-int
-acmod_set_rawfh(acmod_t *acmod, FILE *logfh)
-{
-    if (acmod->rawfh)
-        fclose(acmod->rawfh);
-    acmod->rawfh = logfh;
-    return 0;
-}
-
 void
 acmod_grow_feat_buf(acmod_t *acmod, int nfr)
 {
@@ -429,9 +418,9 @@ acmod_set_grow(acmod_t *acmod, int grow_feat)
 }
 
 int
-acmod_start_utt(acmod_t *acmod)
+acmod_start_utt(acmod_t *acmod, const char* uttid)
 {
-    fe_start_utt(acmod->fe);
+    fe_start_utt(acmod->fe, uttid);
     acmod->state = ACMOD_STARTED;
     acmod->n_mfc_frame = 0;
     acmod->n_feat_frame = 0;
@@ -473,11 +462,6 @@ acmod_end_utt(acmod_t *acmod)
         fclose(acmod->mfcfh);
         acmod->mfcfh = NULL;
     }
-    if (acmod->rawfh) {
-        fclose(acmod->rawfh);
-        acmod->rawfh = NULL;
-    }
-
     if (acmod->senfh) {
         fclose(acmod->senfh);
         acmod->senfh = NULL;
@@ -551,15 +535,13 @@ acmod_process_full_cep(acmod_t *acmod,
 static int
 acmod_process_full_raw(acmod_t *acmod,
                        int16 const **inout_raw,
-                       size_t *inout_n_samps)
+                       size_t *inout_n_samps,
+                       const char* uttid)
 {
     int32 nfr, ntail;
     mfcc_t **cepptr;
-
-    /* Write to logging file if any. */
-    if (acmod->rawfh)
-        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
-    /* Resize mfc_buf to fit. */
+	
+	/* Resize mfc_buf to fit. */
     if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
         return -1;
     if (acmod->n_mfc_alloc < nfr + 1) {
@@ -570,7 +552,7 @@ acmod_process_full_raw(acmod_t *acmod,
     }
     acmod->n_mfc_frame = 0;
     acmod->mfc_outidx = 0;
-    fe_start_utt(acmod->fe);
+    fe_start_utt(acmod->fe, uttid);
     if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                           acmod->mfc_buf, &nfr) < 0)
         return -1;
@@ -623,18 +605,18 @@ int
 acmod_process_raw(acmod_t *acmod,
 		  int16 const **inout_raw,
 		  size_t *inout_n_samps,
-		  int full_utt)
+		  int full_utt,
+		  const char* uttid)
 {
     int32 ncep;
 
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
-        return acmod_process_full_raw(acmod, inout_raw, inout_n_samps);
+        return acmod_process_full_raw(acmod, inout_raw, inout_n_samps, uttid);
 
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
-        int16 const *prev_audio_inptr = *inout_raw;
         int inptr;
 
         /* Total number of frames available. */
@@ -648,13 +630,7 @@ acmod_process_raw(acmod_t *acmod,
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + inptr, &ncep1) < 0)
                 return -1;
-            /* Write to logging file if any. */
-            if (acmod->rawfh) {
-                fwrite(prev_audio_inptr, 2,
-                       *inout_raw - prev_audio_inptr,
-                       acmod->rawfh);
-                prev_audio_inptr = *inout_raw;
-            }
+            
             /* ncep1 now contains the number of frames actually
              * processed.  This is a good thing, but it means we
              * actually still might have some room left at the end of
@@ -673,12 +649,7 @@ acmod_process_raw(acmod_t *acmod,
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                               acmod->mfc_buf + inptr, &ncep) < 0)
             return -1;
-        /* Write to logging file if any. */
-        if (acmod->rawfh) {
-            fwrite(prev_audio_inptr, 2,
-                   *inout_raw - prev_audio_inptr, acmod->rawfh);
-            prev_audio_inptr = *inout_raw;
-        }
+        
         acmod->n_mfc_frame += ncep;
     alldone:
         ;

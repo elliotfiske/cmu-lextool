@@ -172,7 +172,6 @@ struct acmod_s {
     /* Utterance processing: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
-    FILE *rawfh;        /**< File for writing raw audio data. */
     FILE *mfcfh;        /**< File for writing acoustic feature data. */
     FILE *senfh;        /**< File for writing senone score data. */
     FILE *insenfh;	/**< Input senone score file. */
@@ -244,15 +243,6 @@ int acmod_set_senfh(acmod_t *acmod, FILE *senfh);
 int acmod_set_mfcfh(acmod_t *acmod, FILE *logfh);
 
 /**
- * Start logging raw audio to a filehandle.
- *
- * @param acmod Acoustic model object.
- * @param logfh Filehandle to log to.
- * @return 0 for success, <0 on error.
- */
-int acmod_set_rawfh(acmod_t *acmod, FILE *logfh);
-
-/**
  * Finalize an acoustic model.
  */
 void acmod_free(acmod_t *acmod);
@@ -260,7 +250,7 @@ void acmod_free(acmod_t *acmod);
 /**
  * Mark the start of an utterance.
  */
-int acmod_start_utt(acmod_t *acmod);
+int acmod_start_utt(acmod_t *acmod, const char* uttid);
 
 /**
  * Mark the end of an utterance.
@@ -323,7 +313,8 @@ int acmod_set_grow(acmod_t *acmod, int grow_feat);
 int acmod_process_raw(acmod_t *acmod,
                       int16 const **inout_raw,
                       size_t *inout_n_samps,
-                      int full_utt);
+                      int full_utt,
+                      const char* uttid);
 
 /**
  * Feed acoustic feature data into the acoustic model for scoring.
