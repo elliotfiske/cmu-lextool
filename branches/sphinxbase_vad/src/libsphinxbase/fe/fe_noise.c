@@ -93,11 +93,11 @@ struct noise_stats_s {
 #define EPS 1e-10
 
 /* VAD constants */
-#define A01 0.3 //prob of silence -> speech
-#define A10 0.01 //prob of speech -> silence
-#define A00 0.7 //prob of staying in silence state
-#define A11 0.99 //prob of staying in speech state
-#define VAD_THRESHOLD 400
+#define A01 0.5 //prob of silence -> speech
+#define A10 0.05 //prob of speech -> silence
+#define A00 0.5 //prob of staying in silence state
+#define A11 0.95 //prob of staying in speech state
+#define VAD_THRESHOLD 75
 
 static void
 fe_low_envelope(powspec_t * buf, powspec_t * floor_buf, int32 num_filt)
@@ -271,4 +271,5 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     ckd_free(gain);
 	
     return is_speech;
+    //return 1;
 }

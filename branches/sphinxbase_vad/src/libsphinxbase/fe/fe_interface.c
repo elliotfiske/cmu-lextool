@@ -56,6 +56,7 @@
 #include "sphinxbase/err.h"
 #include "sphinxbase/cmd_ln.h"
 #include "sphinxbase/ckd_alloc.h"
+#include "sphinxbase/strfuncs.h"
 
 #include "fe_internal.h"
 #include "fe_warp.h"
@@ -124,7 +125,8 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
         E_ERROR("Invalid transform type (values are 'dct', 'legacy', 'htk')\n");
         return -1;
     }
-
+    
+	fe->rawlogdir = cmd_ln_str_r(config, "-rawlogdir");
     if (cmd_ln_boolean_r(config, "-logspec"))
         fe->log_spec = RAW_LOG_SPEC;
     if (cmd_ln_boolean_r(config, "-smoothspec"))
@@ -262,7 +264,9 @@ fe_init_auto_r(cmd_ln_t *config)
     fe_compute_melcosine(fe->mel_fb);
     if (fe->remove_noise)
 	fe->noise_stats = fe_init_noisestats(fe->mel_fb->num_filters);
-
+	
+	fe->rawfh = NULL;
+	
     /* Create temporary FFT, spectrum and mel-spectrum buffers. */
     /* FIXME: Gosh there are a lot of these. */
     fe->spch = ckd_calloc(fe->frame_size, sizeof(*fe->spch));
@@ -281,7 +285,7 @@ fe_init_auto_r(cmd_ln_t *config)
 
     /*** Z.A.B. ***/
     /*** Initialize the overflow buffers ***/
-    fe_start_utt(fe);
+    fe_start_utt(fe, NULL);
     return fe;
 }
 
@@ -315,7 +319,7 @@ fe_init_dither(int32 seed)
 }
 
 int32
-fe_start_utt(fe_t * fe)
+fe_start_utt(fe_t * fe, const char* uttid)
 {
     fe->num_overflow_samps = 0;
     memset(fe->overflow_samps, 0, fe->frame_size * sizeof(int16));
@@ -325,6 +329,22 @@ fe_start_utt(fe_t * fe)
 
     if (fe->remove_noise)
 	fe_reset_noisestats(fe->noise_stats);
+	
+	if (fe->rawlogdir && uttid) {
+        char *logfn = string_join(fe->rawlogdir, "/",
+                                  uttid, ".raw", NULL);
+        FILE *rawfh;
+        E_INFO("Writing raw audio log file: %s\n", logfn);
+        if ((rawfh = fopen(logfn, "wb")) == NULL) {
+            E_ERROR_SYSTEM("Failed to open raw audio log file %s", logfn);
+            ckd_free(logfn);
+            return -1;
+        }
+        ckd_free(logfn);
+        if (fe->rawfh)
+			fclose(fe->rawfh);
+		fe->rawfh = rawfh;
+    }
 
     return 0;
 }
@@ -544,7 +564,12 @@ fe_end_utt(fe_t * fe, mfcc_t * cepvector, int32 * nframes)
     /* reset overflow buffers... */
     fe->num_overflow_samps = 0;
     fe->start_flag = 0;
-
+	
+	if (fe->rawfh) {
+        fclose(fe->rawfh);
+        fe->rawfh = NULL;
+    }
+	
     return 0;
 }
 
@@ -585,6 +610,9 @@ fe_free(fe_t * fe)
 
     if (fe->remove_noise)
     	fe_free_noisestats(fe->noise_stats);
+    	
+    if (fe->rawfh)
+		fclose(fe->rawfh);
 
     cmd_ln_free_r(fe->config);
     ckd_free(fe);

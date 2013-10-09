@@ -1119,6 +1119,11 @@ fe_write_frame(fe_t * fe, mfcc_t * fea)
     fe_mel_cep(fe, fea);
     fe_lifter(fe, fea);
 	
+	//dump raw log audio if any
+	//TODO handle special case: last buffer in utt processing
+	if (fe->rawfh && fe->is_speech)
+		fwrite(fe->spch, sizeof(*(fe->spch)), fe->sampling_rate/fe->frame_rate, fe->rawfh);
+	
     return fe->is_speech;
 }
 

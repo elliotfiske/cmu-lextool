@@ -153,7 +153,12 @@ struct fe_s {
     window_t *hamming_window;
     /* Storage for noise removal  */
     noise_stats_t *noise_stats;
-
+	
+	/* Log directory for audio files */
+	const char* rawlogdir;
+	/* File for writing log raw audio data */
+	FILE *rawfh;
+	
     /* Temporary buffers for processing. */
     /* FIXME: too many of these. */
     int16 *spch;
