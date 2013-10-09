@@ -648,7 +648,7 @@ ps_start_utt(ps_decoder_t *ps, char const *uttid)
     ckd_free(ps->search->hyp_str);
     ps->search->hyp_str = NULL;
 
-    if ((rv = acmod_start_utt(ps->acmod, ps->uttid)) < 0)
+    if ((rv = acmod_start_utt(ps->acmod)) < 0)
         return rv;
 
     /* Start logging features and audio if requested. */
@@ -752,7 +752,7 @@ ps_process_raw(ps_decoder_t *ps,
 
         /* Process some data into features. */
         if ((nfr = acmod_process_raw(ps->acmod, &data,
-                                     &n_samples, full_utt, ps->uttid)) < 0)
+                                     &n_samples, full_utt)) < 0)
             return nfr;
 
         /* Score and search as much data as possible */

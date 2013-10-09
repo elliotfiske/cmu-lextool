@@ -418,9 +418,9 @@ acmod_set_grow(acmod_t *acmod, int grow_feat)
 }
 
 int
-acmod_start_utt(acmod_t *acmod, const char* uttid)
+acmod_start_utt(acmod_t *acmod)
 {
-    fe_start_utt(acmod->fe, uttid);
+    fe_start_utt(acmod->fe);
     acmod->state = ACMOD_STARTED;
     acmod->n_mfc_frame = 0;
     acmod->n_feat_frame = 0;
@@ -535,8 +535,7 @@ acmod_process_full_cep(acmod_t *acmod,
 static int
 acmod_process_full_raw(acmod_t *acmod,
                        int16 const **inout_raw,
-                       size_t *inout_n_samps,
-                       const char* uttid)
+                       size_t *inout_n_samps)
 {
     int32 nfr, ntail;
     mfcc_t **cepptr;
@@ -552,7 +551,7 @@ acmod_process_full_raw(acmod_t *acmod,
     }
     acmod->n_mfc_frame = 0;
     acmod->mfc_outidx = 0;
-    fe_start_utt(acmod->fe, uttid);
+    fe_start_utt(acmod->fe);
     if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                           acmod->mfc_buf, &nfr) < 0)
         return -1;
@@ -605,14 +604,13 @@ int
 acmod_process_raw(acmod_t *acmod,
 		  int16 const **inout_raw,
 		  size_t *inout_n_samps,
-		  int full_utt,
-		  const char* uttid)
+		  int full_utt)
 {
     int32 ncep;
 
     /* If this is a full utterance, process it all at once. */
     if (full_utt)
-        return acmod_process_full_raw(acmod, inout_raw, inout_n_samps, uttid);
+        return acmod_process_full_raw(acmod, inout_raw, inout_n_samps);
 
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */

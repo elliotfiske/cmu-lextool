@@ -250,7 +250,7 @@ void acmod_free(acmod_t *acmod);
 /**
  * Mark the start of an utterance.
  */
-int acmod_start_utt(acmod_t *acmod, const char* uttid);
+int acmod_start_utt(acmod_t *acmod);
 
 /**
  * Mark the end of an utterance.
@@ -313,8 +313,7 @@ int acmod_set_grow(acmod_t *acmod, int grow_feat);
 int acmod_process_raw(acmod_t *acmod,
                       int16 const **inout_raw,
                       size_t *inout_n_samps,
-                      int full_utt,
-                      const char* uttid);
+                      int full_utt);
 
 /**
  * Feed acoustic feature data into the acoustic model for scoring.
