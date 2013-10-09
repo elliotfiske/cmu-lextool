@@ -1124,7 +1124,8 @@ fe_write_frame(fe_t * fe, mfcc_t * fea)
 	if (fe->rawfh && fe->is_speech)
 		fwrite(fe->spch, sizeof(*(fe->spch)), fe->sampling_rate/fe->frame_rate, fe->rawfh);
 	
-    return fe->is_speech;
+   // return fe->is_speech;
+   return 1;
 }
 
 void *

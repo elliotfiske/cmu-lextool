@@ -61,6 +61,9 @@
 #include "fe_internal.h"
 #include "fe_warp.h"
 
+/* Log audio file name prefix */
+#define UTT_PREFIX "utterance-"
+
 static const arg_t fe_args[] = {
     waveform_to_cepstral_command_line_macro(),
     { NULL, 0, NULL, NULL }
@@ -232,6 +235,7 @@ fe_init_auto_r(cmd_ln_t *config)
     fe->frame_size = (int32) (fe->window_length * fe->sampling_rate + 0.5);
     fe->prior = 0;
     fe->frame_counter = 0;
+    fe->utt_counter = 0;
 	fe->is_speech = 1;
 
     assert (fe->frame_shift > 1);
@@ -285,7 +289,7 @@ fe_init_auto_r(cmd_ln_t *config)
 
     /*** Z.A.B. ***/
     /*** Initialize the overflow buffers ***/
-    fe_start_utt(fe, NULL);
+    fe_start_utt(fe);
     return fe;
 }
 
@@ -319,7 +323,7 @@ fe_init_dither(int32 seed)
 }
 
 int32
-fe_start_utt(fe_t * fe, const char* uttid)
+fe_start_utt(fe_t * fe)
 {
     fe->num_overflow_samps = 0;
     memset(fe->overflow_samps, 0, fe->frame_size * sizeof(int16));
@@ -330,9 +334,12 @@ fe_start_utt(fe_t * fe, const char* uttid)
     if (fe->remove_noise)
 	fe_reset_noisestats(fe->noise_stats);
 	
-	if (fe->rawlogdir && uttid) {
+	if (fe->rawlogdir) {
+		char utt_id[15];
+		
+		sprintf(utt_id, "%d", fe->utt_counter);
         char *logfn = string_join(fe->rawlogdir, "/",
-                                  uttid, ".raw", NULL);
+                                  UTT_PREFIX, utt_id, ".raw", NULL);
         FILE *rawfh;
         E_INFO("Writing raw audio log file: %s\n", logfn);
         if ((rawfh = fopen(logfn, "wb")) == NULL) {
@@ -564,6 +571,8 @@ fe_end_utt(fe_t * fe, mfcc_t * cepvector, int32 * nframes)
     /* reset overflow buffers... */
     fe->num_overflow_samps = 0;
     fe->start_flag = 0;
+    
+    fe->utt_counter++;
 	
 	if (fe->rawfh) {
         fclose(fe->rawfh);

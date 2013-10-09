@@ -142,6 +142,7 @@ struct fe_s {
     int32 seed;
 
     int16 frame_counter;
+    int16 utt_counter;
     uint8 start_flag;
     uint8 reserved;
 

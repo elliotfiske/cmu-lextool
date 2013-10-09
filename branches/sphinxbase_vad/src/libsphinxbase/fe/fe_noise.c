@@ -271,5 +271,4 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     ckd_free(gain);
 	
     return is_speech;
-    //return 1;
 }

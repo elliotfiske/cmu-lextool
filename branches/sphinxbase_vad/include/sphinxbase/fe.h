@@ -324,7 +324,7 @@ const cmd_ln_t *fe_get_config(fe_t *fe);
  * @return 0 for success, <0 for error (see enum fe_error_e)
  */
 SPHINXBASE_EXPORT
-int fe_start_utt(fe_t *fe, const char* uttid);
+int fe_start_utt(fe_t *fe);
 
 /**
  * Get the dimensionality of the output of this front-end object.
