@@ -1,0 +1,33 @@
+% vad_debug
+%   visualizes ps vad decisions from pocketsphinx_vad_debug
+%
+% Input arguments with typical values:   
+%   wav_file = 'speech.wav'  % Your speech file in WAV format
+%   vad_file = 'vad_values1.log';    % Output of ps with VAD_DEBUG enabled
+%   frate = 100;    % amount of frames per second
+%   threshold = 75; % vad threshold
+
+% Output:
+%   Plots audio data and aligns it to vad decisions  
+
+function vad_debug(wav_file, vad_file, frate, threshold)
+[audio,Fs] = wavread(wav_file);
+vad = load(vad_file);
+vad_aligned = zeros(length(audio),1);
+for i=0:(length(vad)-1)
+	for j=1:Fs/frate
+		vad_aligned(i*(Fs/frate) + j) = vad(i+1);
+	end;
+end;
+figure;
+subplot(2,1,1);
+plot(0:1/Fs:(length(audio)-1)/Fs, audio);
+grid on;
+xlabel('time, sec');
+axis([0 (length(audio)-1)/Fs -1 1]);
+subplot(2,1,2);
+area(0:1/Fs:(length(vad_aligned)-1)/Fs, vad_aligned);
+line('XData', [0 (length(vad_aligned)-1)/Fs], 'YData', [threshold threshold], 'LineStyle', '-.', 'Color', 'r');
+grid on;
+xlabel('time, sec');
+axis([0 (length(audio)-1)/Fs -1 (threshold*3)]);

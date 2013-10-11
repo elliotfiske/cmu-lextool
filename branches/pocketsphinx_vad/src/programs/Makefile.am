@@ -1,7 +1,8 @@
 bin_PROGRAMS = \
 	pocketsphinx_batch \
 	pocketsphinx_continuous \
-	pocketsphinx_mdef_convert
+	pocketsphinx_mdef_convert \
+	pocketsphinx_vad_debug
 
 pocketsphinx_mdef_convert_SOURCES = mdef_convert.c
 pocketsphinx_mdef_convert_LDADD = \
@@ -14,6 +15,10 @@ pocketsphinx_batch_LDADD = \
 pocketsphinx_continuous_SOURCES = continuous.c
 pocketsphinx_continuous_LDADD = \
 	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la -lsphinxad
+
+pocketsphinx_vad_debug_SOURCES = vad_debug.c
+pocketsphinx_vad_debug_LDADD = \
+	$(top_builddir)/src/libpocketsphinx/libpocketsphinx.la
 
 INCLUDES = -I$(top_srcdir)/include \
 	-I$(top_srcdir)/src/libpocketsphinx \
