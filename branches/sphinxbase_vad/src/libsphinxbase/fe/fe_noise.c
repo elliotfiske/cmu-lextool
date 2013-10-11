@@ -78,6 +78,8 @@ struct noise_stats_s {
     uint32 num_filters;
 };
 
+#define VAD_DEBUG 1
+
 /* Noise supression constants */
 #define SMOOTH_WINDOW 4
 
@@ -98,6 +100,11 @@ struct noise_stats_s {
 #define A00 0.5 //prob of staying in silence state
 #define A11 0.95 //prob of staying in speech state
 #define VAD_THRESHOLD 75
+
+#ifdef VAD_DEBUG
+static FILE *vad_logfn = NULL;
+static int name_sfx = -1;
+#endif /* VAD_DEBUG */
 
 static void
 fe_low_envelope(powspec_t * buf, powspec_t * floor_buf, int32 num_filt)
@@ -184,6 +191,19 @@ fe_reset_noisestats(noise_stats_t * noise_stats)
 {
     noise_stats->undefined = TRUE;
     noise_stats->vad = 1.0;
+    
+	#ifdef VAD_DEBUG
+	if (vad_logfn) {
+		fflush(vad_logfn);
+		fclose(vad_logfn);
+	}
+	name_sfx++;
+	char name_sfx_str[15];	
+	sprintf(name_sfx_str, "%d", name_sfx);
+	char *file_name = string_join("./vad_values", name_sfx_str, ".log", NULL);
+	if (name_sfx != 0) //skip first call
+		vad_logfn = fopen(file_name, "wb");
+	#endif /* VAD_DEBUG */
 }
 
 void
@@ -194,6 +214,13 @@ fe_free_noisestats(noise_stats_t * noise_stats)
     ckd_free(noise_stats->floor);
     ckd_free(noise_stats->peak);
     ckd_free(noise_stats);
+    
+    #ifdef VAD_DEBUG
+    if (vad_logfn) {
+		fflush(vad_logfn);
+		fclose(vad_logfn);
+	}
+    #endif /* VAD_DEBUG */
 }
 
 uint8
@@ -241,8 +268,14 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     }
     lrt /= num_filts;
     noise_stats->vad = lrt * (A01+A11*noise_stats->vad)/(A00+A10*noise_stats->vad);
-    is_speech = noise_stats->vad > VAD_THRESHOLD;
+    
+	#ifdef VAD_DEBUG
+	if (vad_logfn)
+		fprintf(vad_logfn, "%f\n", noise_stats->vad);
+	#endif /* VAD_DEBUG */
 
+    is_speech = noise_stats->vad > VAD_THRESHOLD;
+	
     fe_low_envelope(signal, noise_stats->floor, num_filts);
 
     fe_temp_masking(signal, noise_stats->peak, num_filts);
