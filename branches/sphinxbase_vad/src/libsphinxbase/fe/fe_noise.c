@@ -96,9 +96,9 @@ struct noise_stats_s {
 
 /* VAD constants */
 #define A01 0.5 //prob of silence -> speech
-#define A10 0.05 //prob of speech -> silence
+#define A10 0.000001 //prob of speech -> silence
 #define A00 0.5 //prob of staying in silence state
-#define A11 0.95 //prob of staying in speech state
+#define A11 0.999999 //prob of staying in speech state
 #define VAD_THRESHOLD 75
 
 #ifdef VAD_DEBUG
