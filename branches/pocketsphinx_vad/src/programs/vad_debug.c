@@ -62,8 +62,15 @@ static const arg_t cont_args_def[] = {
      ARG_STRING,
      NULL,
      "Audio file to transcribe."},
+     {"-split",
+     ARG_BOOLEAN,
+     "no",
+     "Split audio file for utterances."},
     CMDLN_EMPTY_OPTION
 };
+
+/* silence frames to finish utterance in split mode */
+#define MAX_N_SIL 50
 
 static ps_decoder_t *ps;
 static cmd_ln_t *config;
@@ -104,6 +111,70 @@ recognize_from_file()
 	fclose(rawfd);
 }
 
+static void
+recognize_from_file_split()
+{
+	int n, n_sil;
+	int init_buf_len, buf_len;
+	char const *hyp;
+	char const *uttid;
+	char buffer[1024];
+	int nbuf;
+	
+	int utt_found, to_start;
+	
+    if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
+        E_FATAL_SYSTEM("Failed to open file '%s' for reading",
+                       cmd_ln_str_r(config, "-infile"));
+    }
+    fread(buffer, 1, 44, rawfd); //skip wav header
+    
+    init_buf_len = cmd_ln_float32_r(config, "-samprate") * cmd_ln_float32_r(config, "-wlen");
+    buf_len = cmd_ln_float32_r(config, "-samprate")/cmd_ln_int_r(config, "-frate");
+    utt_found = 0;
+    n_sil = 0;
+    ps_start_utt(ps, NULL);
+    if (fread(buffer, sizeof(int16), init_buf_len, rawfd) < init_buf_len) {
+		ps_end_utt(ps);
+		fclose(rawfd);
+		E_INFO("File for recognition is too short\n");
+		return;
+	}
+	ps_process_raw(ps, buffer, init_buf_len, FALSE, FALSE);
+    while ((n = fread(buffer, sizeof(int16), buf_len, rawfd)) > 0) {
+		//process some data, to compose next frame inside ps
+		ps_process_raw(ps, buffer, n, FALSE, FALSE);
+		if (ps_get_vad_state(ps)) {
+			n_sil = 0;
+			if (!utt_found) {
+				//utterance found
+				utt_found = 1;
+			}
+		} else {
+			n_sil++;
+			if (utt_found && n_sil > MAX_N_SIL) {
+				ps_end_utt(ps);
+				utt_found = 0;
+				n_sil = 0;
+				hyp = ps_get_hyp(ps, NULL, &uttid);
+				E_INFO("Recognition result: [%s]\n", hyp);
+				ps_start_utt(ps, NULL);
+				if (fread(buffer, sizeof(int16), init_buf_len, rawfd) < init_buf_len) {
+					//can't start new utterance
+					break;
+				}
+				ps_process_raw(ps, buffer, init_buf_len, FALSE, FALSE);
+			}
+				
+		}
+	}
+	
+	ps_end_utt(ps);
+    hyp = ps_get_hyp(ps, NULL, &uttid);
+    E_INFO("Recognition result: [%s]\n", hyp);
+	fclose(rawfd);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -134,7 +205,12 @@ main(int argc, char *argv[])
 	}
 	
 	E_INFO("infile: [%s]\n", cmd_ln_str_r(config, "-infile"));
-	recognize_from_file();
+	
+	if (cmd_ln_boolean_r(config, "-split"))
+		recognize_from_file_split();
+	else
+		recognize_from_file();
+	
     ps_free(ps);
     return 0;
 }
