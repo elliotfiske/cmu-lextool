@@ -172,6 +172,7 @@ struct acmod_s {
     /* Utterance processing: */
     mfcc_t **mfc_buf;   /**< Temporary buffer of acoustic features. */
     mfcc_t ***feat_buf; /**< Temporary buffer of dynamic features. */
+	FILE *rawfh;        /**< File for writing raw audio data. */
     FILE *mfcfh;        /**< File for writing acoustic feature data. */
     FILE *senfh;        /**< File for writing senone score data. */
     FILE *insenfh;	/**< Input senone score file. */
@@ -241,6 +242,15 @@ int acmod_set_senfh(acmod_t *acmod, FILE *senfh);
  * @return 0 for success, <0 on error.
  */
 int acmod_set_mfcfh(acmod_t *acmod, FILE *logfh);
+
+/**
+ * Start logging raw audio to a filehandle.
+ *
+ * @param acmod Acoustic model object.
+ * @param logfh Filehandle to log to.
+ * @return 0 for success, <0 on error.
+ */
+int acmod_set_rawfh(acmod_t *acmod, FILE *logfh);
 
 /**
  * Finalize an acoustic model.

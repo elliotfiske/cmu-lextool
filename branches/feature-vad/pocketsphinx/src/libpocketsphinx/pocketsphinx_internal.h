@@ -204,6 +204,7 @@ struct ps_decoder_s {
     ptmr_t perf;        /**< Performance counter for all of decoding. */
     uint32 n_frame;     /**< Total number of frames processed. */
     char const *mfclogdir; /**< Log directory for MFCC files. */
+	char const *rawlogdir; /**< Log directory for audio files. */
     char const *senlogdir; /**< Log directory for senone score files. */
 };
 

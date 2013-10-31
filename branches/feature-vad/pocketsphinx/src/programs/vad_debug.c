@@ -70,7 +70,6 @@ static const arg_t cont_args_def[] = {
 };
 
 /* silence frames to finish utterance in split mode */
-#define MAX_N_SIL 50
 
 static ps_decoder_t *ps;
 static cmd_ln_t *config;
@@ -114,7 +113,7 @@ recognize_from_file()
 static void
 recognize_from_file_split()
 {
-	int n, n_sil;
+	int n;
 	int init_buf_len, buf_len;
 	char const *hyp;
 	char const *uttid;
@@ -132,7 +131,6 @@ recognize_from_file_split()
     init_buf_len = cmd_ln_float32_r(config, "-samprate") * cmd_ln_float32_r(config, "-wlen");
     buf_len = cmd_ln_float32_r(config, "-samprate")/cmd_ln_int_r(config, "-frate");
     utt_found = 0;
-    n_sil = 0;
     ps_start_utt(ps, NULL);
     if (fread(buffer, sizeof(int16), init_buf_len, rawfd) < init_buf_len) {
 		ps_end_utt(ps);
@@ -145,17 +143,14 @@ recognize_from_file_split()
 		//process some data, to compose next frame inside ps
 		ps_process_raw(ps, buffer, n, FALSE, FALSE);
 		if (ps_get_vad_state(ps)) {
-			n_sil = 0;
 			if (!utt_found) {
 				//utterance found
 				utt_found = 1;
 			}
 		} else {
-			n_sil++;
-			if (utt_found && n_sil > MAX_N_SIL) {
+			if (utt_found) {
 				ps_end_utt(ps);
 				utt_found = 0;
-				n_sil = 0;
 				hyp = ps_get_hyp(ps, NULL, &uttid);
 				E_INFO("Recognition result: [%s]\n", hyp);
 				ps_start_utt(ps, NULL);

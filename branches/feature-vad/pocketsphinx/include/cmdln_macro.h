@@ -73,6 +73,11 @@
              NULL,                                      \
              "Directory to log feature files to"        \
              },                                         \
+	{ "-rawlogdir",                                     \
+             ARG_STRING,                                \
+             NULL,                                      \
+             "Directory to log raw audio files to"      \
+			 },                                         \
      { "-senlogdir",                                    \
              ARG_STRING,                                \
              NULL,                                      \

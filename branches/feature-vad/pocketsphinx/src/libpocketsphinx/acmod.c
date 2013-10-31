@@ -323,6 +323,8 @@ acmod_free(acmod_t *acmod)
 
     if (acmod->mfcfh)
         fclose(acmod->mfcfh);
+	if (acmod->rawfh)
+        fclose(acmod->rawfh);
     if (acmod->senfh)
         fclose(acmod->senfh);
 
@@ -389,6 +391,15 @@ acmod_set_mfcfh(acmod_t *acmod, FILE *logfh)
     acmod->mfcfh = logfh;
     fwrite(&rv, 4, 1, acmod->mfcfh);
     return rv;
+}
+
+int
+acmod_set_rawfh(acmod_t *acmod, FILE *logfh)
+{
+    if (acmod->rawfh)
+        fclose(acmod->rawfh);
+    acmod->rawfh = logfh;
+    return 0;
 }
 
 void
@@ -462,6 +473,11 @@ acmod_end_utt(acmod_t *acmod)
         fclose(acmod->mfcfh);
         acmod->mfcfh = NULL;
     }
+	if (acmod->rawfh) {
+        fclose(acmod->rawfh);
+        acmod->rawfh = NULL;
+    }
+
     if (acmod->senfh) {
         fclose(acmod->senfh);
         acmod->senfh = NULL;
@@ -539,8 +555,11 @@ acmod_process_full_raw(acmod_t *acmod,
 {
     int32 nfr, ntail;
     mfcc_t **cepptr;
-	
-	/* Resize mfc_buf to fit. */
+
+    /* Write to logging file if any. */
+    if (acmod->rawfh)
+        fwrite(*inout_raw, 2, *inout_n_samps, acmod->rawfh);
+    /* Resize mfc_buf to fit. */
     if (fe_process_frames(acmod->fe, NULL, inout_n_samps, NULL, &nfr) < 0)
         return -1;
     if (acmod->n_mfc_alloc < nfr + 1) {
@@ -615,6 +634,7 @@ acmod_process_raw(acmod_t *acmod,
     /* Append MFCCs to the end of any that are previously in there
      * (in practice, there will probably be none) */
     if (inout_n_samps && *inout_n_samps) {
+		int16 const *prev_audio_inptr = *inout_raw;
         int inptr;
 
         /* Total number of frames available. */
@@ -628,6 +648,13 @@ acmod_process_raw(acmod_t *acmod,
             if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                                   acmod->mfc_buf + inptr, &ncep1) < 0)
                 return -1;
+			/* Write to logging file if any. */
+            if (acmod->rawfh) {
+                fwrite(prev_audio_inptr, 2,
+                       *inout_raw - prev_audio_inptr,
+                       acmod->rawfh);
+                prev_audio_inptr = *inout_raw;
+            }
             
             /* ncep1 now contains the number of frames actually
              * processed.  This is a good thing, but it means we
@@ -647,7 +674,12 @@ acmod_process_raw(acmod_t *acmod,
         if (fe_process_frames(acmod->fe, inout_raw, inout_n_samps,
                               acmod->mfc_buf + inptr, &ncep) < 0)
             return -1;
-        
+        /* Write to logging file if any. */
+        if (acmod->rawfh) {
+            fwrite(prev_audio_inptr, 2,
+                   *inout_raw - prev_audio_inptr, acmod->rawfh);
+            prev_audio_inptr = *inout_raw;
+        }
         acmod->n_mfc_frame += ncep;
     alldone:
         ;
