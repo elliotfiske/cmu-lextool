@@ -55,6 +55,7 @@
 
 #include "sphinxbase/prim_type.h"
 #include "sphinxbase/ckd_alloc.h"
+#include "sphinxbase/strfuncs.h"
 #include "sphinxbase/err.h"
 
 #include "fe_noise.h"
@@ -68,17 +69,14 @@ struct noise_stats_s {
     powspec_t *floor;
     /* Peak for temporal masking */
     powspec_t *peak;
-
-	/* vad decision value */
-	float64 vad;
-
+	
     /* Initialize it next time */
     uint8 undefined;
     /* Number of items to process */
     uint32 num_filters;
 };
 
-#define VAD_DEBUG 1
+#define VAD_DEBUG 0
 
 /* Noise supression constants */
 #define SMOOTH_WINDOW 4
@@ -95,11 +93,7 @@ struct noise_stats_s {
 #define EPS 1e-10
 
 /* VAD constants */
-#define A01 0.5 //prob of silence -> speech
-#define A10 0.000001 //prob of speech -> silence
-#define A00 0.5 //prob of staying in silence state
-#define A11 0.999999 //prob of staying in speech state
-#define VAD_THRESHOLD 75
+#define VAD_THRESHOLD 5
 
 #ifdef VAD_DEBUG
 static FILE *vad_logfn = NULL;
@@ -180,7 +174,6 @@ fe_init_noisestats(int num_filters)
         (powspec_t *) ckd_calloc(num_filters, sizeof(powspec_t));
 
     noise_stats->undefined = TRUE;
-    noise_stats->vad = 1.0;
     noise_stats->num_filters = num_filters;
 
     return noise_stats;
@@ -189,18 +182,20 @@ fe_init_noisestats(int num_filters)
 void
 fe_reset_noisestats(noise_stats_t * noise_stats)
 {
-    noise_stats->undefined = TRUE;
-    noise_stats->vad = 1.0;
+    char name_sfx_str[15];
+	char *file_name;
+	
+	noise_stats->undefined = TRUE;
     
 	#ifdef VAD_DEBUG
 	if (vad_logfn) {
 		fflush(vad_logfn);
 		fclose(vad_logfn);
 	}
-	name_sfx++;
-	char name_sfx_str[15];	
+	
+	name_sfx = name_sfx+1;
 	sprintf(name_sfx_str, "%d", name_sfx);
-	char *file_name = string_join("./vad_values", name_sfx_str, ".log", NULL);
+	file_name = string_join("./vad_values", name_sfx_str, ".log", NULL);
 	if (name_sfx != 0) //skip first call
 		vad_logfn = fopen(file_name, "wb");
 	#endif /* VAD_DEBUG */
@@ -263,18 +258,17 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
         signal[i] = noise_stats->power[i] - noise_stats->noise[i];
         if (signal[i] < 0)
             signal[i] = 0;
-	 snr = signal[i]*signal[i] / (noise_stats->noise[i]*noise_stats->noise[i]);
+	 snr = noise_stats->power[i] / noise_stats->noise[i];
 	 lrt += log(1.0/(1+snr)) + snr;
     }
     lrt /= num_filts;
-    noise_stats->vad = lrt * (A01+A11*noise_stats->vad)/(A00+A10*noise_stats->vad);
     
 	#ifdef VAD_DEBUG
 	if (vad_logfn)
-		fprintf(vad_logfn, "%f\n", noise_stats->vad);
+		fprintf(vad_logfn, "%f\n", lrt);
 	#endif /* VAD_DEBUG */
 
-    is_speech = noise_stats->vad > VAD_THRESHOLD;
+    is_speech = lrt > VAD_THRESHOLD;
 	
     fe_low_envelope(signal, noise_stats->floor, num_filts);
 

@@ -34,34 +34,82 @@
  * ====================================================================
  *
  */
-#ifndef FE_NOISE_H
-#define FE_NOISE_H
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
 
-#include "sphinxbase/fe.h"
-#include "sphinxbase/fixpoint.h"
+#include <stdio.h>
+#include <string.h>
+#include <assert.h>
 
-#include "fe_type.h"
+#include "sphinxbase/ckd_alloc.h"
+#include "sphinxbase/err.h"
 
-typedef struct noise_stats_s noise_stats_t;
+#include "fe_prespch_buf.h"
 
-/* Creates noisestats object */
-noise_stats_t *fe_init_noisestats(int num_filters);
+struct prespch_buf_s {
+	/* saved mfcc frames */
+    mfcc_t** buffer;
+	/* write pointer */
+	int16 write_ptr;
+	/* read pointer */
+	int16 read_ptr;
+	/* frames amount */
+	int16 num_frames;
+	/* filters amount */
+	int16 num_cepstra;
+};
 
-/* Resets collected noise statistics */
-void
- fe_reset_noisestats(noise_stats_t * noise_stats);
+prespch_buf_t *
+fe_init_prespch(int num_frames, int num_cepstra)
+{
+	prespch_buf_t *prespch_buf;
 
-/* Frees allocated data */
-void
- fe_free_noisestats(noise_stats_t * noise_stats);
+    prespch_buf = (prespch_buf_t *) ckd_calloc(1, sizeof(prespch_buf_t));
+	
+	prespch_buf->num_cepstra = num_cepstra;
+	prespch_buf->num_frames = num_frames;
+	prespch_buf->write_ptr = 0;
+	prespch_buf->read_ptr = 0;
+    
+	prespch_buf->buffer = (mfcc_t **)
+		ckd_calloc_2d(num_frames, num_cepstra, sizeof(**prespch_buf->buffer));
 
-/* Process frame, update noise statistics, 
-   remove noise components, makes and returns local vad decision*/
-uint8
- fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec);
+	return prespch_buf;
+}
 
-#endif                          /* FE_NOISE_H */
+int 
+fe_prespch_read(prespch_buf_t* prespch_buf, mfcc_t * fea)
+{
+	if (prespch_buf->read_ptr >= prespch_buf->num_frames)
+		return 0; //nothing to read
+	if (prespch_buf->read_ptr >= prespch_buf->write_ptr)
+		return 0; //nothing to read
+	memcpy(fea, prespch_buf->buffer[prespch_buf->read_ptr], sizeof(mfcc_t)*prespch_buf->num_cepstra);
+	prespch_buf->read_ptr++;
+	return 1;
+}
+
+void 
+fe_prespch_write(prespch_buf_t* prespch_buf, mfcc_t * fea)
+{
+	assert(prespch_buf->write_ptr < prespch_buf->num_frames);
+	memcpy(prespch_buf->buffer[prespch_buf->write_ptr], fea, sizeof(mfcc_t)*prespch_buf->num_cepstra);
+	prespch_buf->write_ptr++;
+}
+
+void 
+fe_prespch_reset(prespch_buf_t* prespch_buf)
+{
+	prespch_buf->read_ptr = 0;
+	prespch_buf->write_ptr = 0;
+}
+
+void 
+fe_free_prespch(prespch_buf_t* prespch_buf)
+{
+	if (prespch_buf->buffer)
+        ckd_free_2d((void **)prespch_buf->buffer);
+	ckd_free(prespch_buf);
+}

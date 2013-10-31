@@ -46,6 +46,7 @@
 #include "sphinxbase/fixpoint.h"
 
 #include "fe_noise.h"
+#include "fe_prespch_buf.h"
 #include "fe_type.h"
 
 #ifdef __cplusplus
@@ -68,6 +69,11 @@ enum {
 	DCT_II = 1,
         DCT_HTK = 2
 };
+
+
+/* vad hangover scheme constants */
+#define SPCH_FRAMES_NUM 25 //number of speech frames, that makes transition silence -> speech
+#define SIL_FRAMES_NUM 25  //number of silence frames, that makes transition speech -> silence
 
 typedef struct melfb_s melfb_t;
 /** Base Struct to hold all structure for MFCC computation. */
@@ -136,13 +142,15 @@ struct fe_s {
     uint8 dither;
     uint8 transform;
     uint8 remove_noise;
+
     uint8 is_speech;
+	int16 prespeech_num;
+	int16 postspeech_num;
 
     float32 pre_emphasis_alpha;
     int32 seed;
 
     int16 frame_counter;
-    int16 utt_counter;
     uint8 start_flag;
     uint8 reserved;
 
@@ -154,11 +162,8 @@ struct fe_s {
     window_t *hamming_window;
     /* Storage for noise removal  */
     noise_stats_t *noise_stats;
-	
-	/* Log directory for audio files */
-	const char* rawlogdir;
-	/* File for writing log raw audio data */
-	FILE *rawfh;
+	/* Prespeech buffer */
+	prespch_buf_t *prespch_buf;
 	
     /* Temporary buffers for processing. */
     /* FIXME: too many of these. */

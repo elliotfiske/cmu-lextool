@@ -108,11 +108,6 @@ extern "C" {
     "no", \
     "Write out logspectral files instead of cepstra" }, \
    \
-  { "-rawlogdir" , \
-    ARG_STRING, \
-    NULL, \
-    "Directory to log raw audio files to" } , \
-   \
   { "-smoothspec", \
     ARG_BOOLEAN, \
     "no", \

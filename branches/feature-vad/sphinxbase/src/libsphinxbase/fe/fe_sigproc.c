@@ -1109,23 +1109,55 @@ fe_dct3(fe_t * fe, const mfcc_t * mfcep, powspec_t * mflogspec)
     }
 }
 
+/* Returns current vad state */
+static int
+fe_vad_hangover(fe_t * fe, mfcc_t * fea, uint8 is_speech)
+{
+	if (is_speech) {
+		fe->postspeech_num = 0;
+		if (!fe->is_speech) {
+			fe->prespeech_num++;
+			fe_prespch_write(fe->prespch_buf, fea);
+			//check for transition sil->speech
+			if (fe->prespeech_num >= SPCH_FRAMES_NUM) {
+				fe->prespeech_num = 0;
+				fe->is_speech = 1;
+				//returns 'silence' because current
+				//buffer is queued to prespeech buffer
+				return 0;
+			}
+		}
+	} else {
+		fe->prespeech_num = 0;
+		fe_prespch_reset(fe->prespch_buf);
+		if (fe->is_speech) {
+			fe->postspeech_num++;
+			//check for transition speech->sil
+			if (fe->postspeech_num >= SIL_FRAMES_NUM) {
+				fe->postspeech_num = 0;
+				fe->is_speech = 0;
+			}
+		}
+	}
+	return fe->is_speech;
+}
+
+
 int32
 fe_write_frame(fe_t * fe, mfcc_t * fea)
 {
+	uint8 is_speech;
+	int32 num_frames_out;
+
+	is_speech = 1;
     fe_spec_magnitude(fe);
     fe_mel_spec(fe);
     if (fe->remove_noise)
-		fe->is_speech = fe_remove_noise(fe->noise_stats, fe->mfspec);
+		is_speech = fe_remove_noise(fe->noise_stats, fe->mfspec);
     fe_mel_cep(fe, fea);
     fe_lifter(fe, fea);
-	
-	//dump raw log audio if any
-	//TODO handle special case: last buffer in utt processing
-	if (fe->rawfh && fe->is_speech)
-		fwrite(fe->spch, sizeof(*(fe->spch)), fe->sampling_rate/fe->frame_rate, fe->rawfh);
-	
-   // return fe->is_speech;
-   return 1;
+	num_frames_out = fe_vad_hangover(fe, fea, is_speech);
+	return num_frames_out;
 }
 
 void *
