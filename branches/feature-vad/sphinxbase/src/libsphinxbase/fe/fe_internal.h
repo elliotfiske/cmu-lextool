@@ -70,11 +70,6 @@ enum {
         DCT_HTK = 2
 };
 
-
-/* vad hangover scheme constants */
-#define SPCH_FRAMES_NUM 25 //number of speech frames, that makes transition silence -> speech
-#define SIL_FRAMES_NUM 25  //number of silence frames, that makes transition speech -> silence
-
 typedef struct melfb_s melfb_t;
 /** Base Struct to hold all structure for MFCC computation. */
 struct melfb_s {
@@ -146,6 +141,8 @@ struct fe_s {
     uint8 is_speech;
 	int16 prespeech_num;
 	int16 postspeech_num;
+	int16 prespeech_max;
+	int16 postspeech_max;
 
     float32 pre_emphasis_alpha;
     int32 seed;

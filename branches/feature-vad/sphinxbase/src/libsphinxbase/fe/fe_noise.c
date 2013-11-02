@@ -76,7 +76,7 @@ struct noise_stats_s {
     uint32 num_filters;
 };
 
-#define VAD_DEBUG 0
+//#define VAD_DEBUG 1
 
 /* Noise supression constants */
 #define SMOOTH_WINDOW 4

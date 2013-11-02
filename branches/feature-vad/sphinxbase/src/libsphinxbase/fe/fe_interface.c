@@ -110,7 +110,10 @@ fe_parse_general_params(cmd_ln_t *config, fe_t * fe)
                 (int)(fe->window_length * fe->sampling_rate));
         return -1;
     }
-
+	
+	fe->prespeech_max = (int16)cmd_ln_int32_r(config, "-vad_prespeech");
+	fe->postspeech_max = (int16)cmd_ln_int32_r(config, "-vad_postspeech");
+	
     fe->remove_dc = cmd_ln_boolean_r(config, "-remove_dc");
     fe->remove_noise = cmd_ln_boolean_r(config, "-remove_noise");
 
@@ -264,7 +267,7 @@ fe_init_auto_r(cmd_ln_t *config)
     fe_compute_melcosine(fe->mel_fb);
     if (fe->remove_noise)
 		fe->noise_stats = fe_init_noisestats(fe->mel_fb->num_filters);
-	fe->prespch_buf = fe_init_prespch(SPCH_FRAMES_NUM + 1, fe->num_cepstra);
+	fe->prespch_buf = fe_init_prespch(fe->prespeech_max + 1, fe->num_cepstra);
 	
     /* Create temporary FFT, spectrum and mel-spectrum buffers. */
     /* FIXME: Gosh there are a lot of these. */

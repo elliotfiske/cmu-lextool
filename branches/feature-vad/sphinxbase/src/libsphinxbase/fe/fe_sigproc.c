@@ -1119,7 +1119,7 @@ fe_vad_hangover(fe_t * fe, mfcc_t * fea, uint8 is_speech)
 			fe->prespeech_num++;
 			fe_prespch_write(fe->prespch_buf, fea);
 			//check for transition sil->speech
-			if (fe->prespeech_num >= SPCH_FRAMES_NUM) {
+			if (fe->prespeech_num >= fe->prespeech_max) {
 				fe->prespeech_num = 0;
 				fe->is_speech = 1;
 				//returns 'silence' because current
@@ -1133,7 +1133,7 @@ fe_vad_hangover(fe_t * fe, mfcc_t * fea, uint8 is_speech)
 		if (fe->is_speech) {
 			fe->postspeech_num++;
 			//check for transition speech->sil
-			if (fe->postspeech_num >= SIL_FRAMES_NUM) {
+			if (fe->postspeech_num >= fe->postspeech_max) {
 				fe->postspeech_num = 0;
 				fe->is_speech = 0;
 			}

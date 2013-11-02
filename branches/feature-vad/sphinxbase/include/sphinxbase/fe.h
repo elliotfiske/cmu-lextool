@@ -91,6 +91,10 @@ extern "C" {
 #define DEFAULT_NUM_CEPSTRA 13
 /** Default number of filter bands used to generate MFCCs. */
 #define DEFAULT_NUM_FILTERS 40
+/** Default prespeech state length */
+#define DEFAULT_PRESPCH_STATE_LEN 25
+/** Default postspeech state length */
+#define DEFAULT_POSTSPCH_STATE_LEN 25
 /** Default lower edge of mel filter bank. */
 #define DEFAULT_LOWER_FILT_FREQ 133.33334
 /** Default upper edge of mel filter bank. */
@@ -182,6 +186,16 @@ extern "C" {
     ARG_INT32, \
     "0", \
     "Length of sin-curve for liftering, or 0 for no liftering." }, \
+   \
+  { "-vad_prespeech", \
+    ARG_INT32, \
+     ARG_STRINGIFY(DEFAULT_PRESPCH_STATE_LEN), \
+    "Num of speech frames to trigger vad from silence to speech." }, \
+   \
+  { "-vad_postspeech", \
+    ARG_INT32, \
+     ARG_STRINGIFY(DEFAULT_POSTSPCH_STATE_LEN), \
+    "Num of speech frames to trigger vad from speech to silence." }, \
    \
   { "-input_endian", \
     ARG_STRING, \
