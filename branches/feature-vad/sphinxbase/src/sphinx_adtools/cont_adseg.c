@@ -69,10 +69,11 @@ static const arg_t cont_args_def[] = {
      ARG_STRING,
      NULL,
      "Name of audio device to use for input."},
-    {"-utt_end_sil",
+    {"-end_sil_num",
      ARG_FLOAT32,
      "1.0",
-     "Length of silence to end utterance in seconds."}
+     "Length of silence to end utterance in seconds."},
+	{ NULL, 0, NULL, NULL }
 };
 
 static fe_t* fe;
@@ -96,6 +97,120 @@ sleep_msec(int32 ms)
 }
 
 /*
+ * @brief Buffer for prespeech audio storage.
+ *        VAD in fe triggers only after N speech frames,
+ *        which are processed from internal buffer as cepstral
+ *        coefs. To keep this audio, it should be stored 
+ *        externaly.
+ */
+typedef struct prespch_buf_s {
+    int16 **buf;
+	int write_ptr;
+	int frame_num;
+	int frame_len;
+} prespch_buf_t;
+
+prespch_buf_t*
+prespch_buf_init(int frame_num, int frame_len)
+{
+    prespch_buf_t *prespch_buf;
+	prespch_buf = (prespch_buf_t *) ckd_calloc(1, sizeof(prespch_buf_t));
+    prespch_buf->buf = (int16 **)ckd_calloc_2d(frame_num, frame_len, sizeof(int16));
+	prespch_buf->frame_num = frame_num;
+	prespch_buf->frame_len = frame_len;
+	prespch_buf->write_ptr = 0;
+	return prespch_buf;
+}
+
+void
+prespch_buf_free(prespch_buf_t* prespch_buf)
+{
+    if (prespch_buf->buf)
+	    ckd_free_2d((void **)prespch_buf->buf);
+	ckd_free(prespch_buf);
+	    
+}
+
+void
+prespch_buf_write(prespch_buf_t *prespch_buf, int16* in_buf, int len)
+{
+    memcpy(prespch_buf->buf[prespch_buf->write_ptr], in_buf, sizeof(int16)*len);
+	prespch_buf->write_ptr++;
+	if (prespch_buf->write_ptr >= prespch_buf->frame_num)
+	    //start writing from the beginning
+		prespch_buf->write_ptr = 0;
+}
+
+void
+prespch_buf_dump(prespch_buf_t *prespch_buf, FILE *fp)
+{
+    int i;
+	
+    for (i=prespch_buf->write_ptr; i<prespch_buf->frame_num; i++)
+	    fwrite(prespch_buf->buf[i], sizeof(int16), prespch_buf->frame_len, fp);
+	for (i=0; i<prespch_buf->write_ptr; i++)
+	    fwrite(prespch_buf->buf[i], sizeof(int16), prespch_buf->frame_len, fp);
+	prespch_buf->write_ptr = 0;
+}   /* end of prespch_buf declaration */
+
+/*
+ * @brief Buffer for frame accumulating
+ */
+typedef struct frame_buf_s {
+	int16 *buf;
+	int write_ptr;
+	int read_ptr;
+} frame_buf_t;
+
+frame_buf_t*
+frame_buf_init(int len) 
+{
+    frame_buf_t *frame_buf;
+	frame_buf = (frame_buf_t *) ckd_calloc(1, sizeof(frame_buf_t));
+    frame_buf->buf = (int16*)ckd_calloc(len, sizeof(int16));
+    frame_buf->write_ptr = 0;
+    frame_buf->read_ptr = 0;
+	return frame_buf;
+}
+
+void
+frame_buf_free(frame_buf_t *frame_buf)
+{
+    if (frame_buf->buf)
+        ckd_free(frame_buf->buf);
+	ckd_free(frame_buf);
+}
+
+void
+frame_buf_read(frame_buf_t *frame_buf, int16* out_buf, int len, int shift)
+{
+    memcpy(out_buf, &frame_buf->buf[frame_buf->read_ptr], sizeof(int16)*len);
+	frame_buf->read_ptr += shift;
+}
+
+void
+frame_buf_write(frame_buf_t *frame_buf, int16* in_buf, int len)
+{
+    memcpy(&frame_buf->buf[frame_buf->write_ptr], in_buf, sizeof(int16)*len);
+	frame_buf->write_ptr += len;
+}
+
+void
+frame_buf_reset(frame_buf_t *frame_buf)
+{
+    memmove(frame_buf->buf, &frame_buf->buf[frame_buf->read_ptr], 
+	        sizeof(int16)*(frame_buf->write_ptr-frame_buf->read_ptr));
+    frame_buf->write_ptr -= frame_buf->read_ptr;
+    frame_buf->read_ptr = 0;
+}
+
+int
+frame_buf_get_len(frame_buf_t *frame_buf)
+{
+    return (frame_buf->write_ptr - frame_buf->read_ptr);
+} /* end of frame_buf declaration */
+
+/*
  * Segment raw A/D input data into utterances whenever silence region of given
  * duration is encountered.
  * Utterances are written to files named 0001.raw, 0002.raw, 0003.raw, etc.
@@ -104,35 +219,29 @@ void
 record_segments()
 {
     ad_rec_t *ad;
-    int32 i, k, uttno, uttlen, sample_rate;
-	uint8 is_speech, vad_state, is_writing;
-    int16 ad_buf[2048];
-	int16 frame_buf[4096];
-	mfcc_t mfcc_buf[128];
+	frame_buf_t *frame_buf;
+	prespch_buf_t *prespch_buf;
+	FILE *fp;
 	int16 *frame;
-	int frame_read_ptr, frame_wrt_ptr;
-    FILE *fp;
+	
+	int i, k, uttno, uttlen, sample_rate;
+	int start_sil_num, end_sil_num, end_sil;
+	int frame_len, frame_overlap;
+	uint8 vad_state, vad_prev_state, is_writing;
+	
+    int16 ad_buf[2048];
+	mfcc_t mfcc_buf[128];
     char file[1024];
 	
-	int utt_start_sil, utt_end_sil;
-	int end_sil_num;
-	int frame_len, frame_overlap;
-	int16** prespch_buf;
-	int prespch_wrt_ptr;
-	
-    prespch_wrt_ptr = 0;
-	frame_read_ptr = 0;
-	frame_wrt_ptr = 0;
-	end_sil_num = 0;
-    utt_start_sil = cmd_ln_int_r(config, "-vad_prespeech");
-	utt_end_sil = (int)(cmd_ln_float_r(config, "-utt_end_sil") *
+    start_sil_num = cmd_ln_int_r(config, "-vad_prespeech");
+	end_sil_num = (int)(cmd_ln_float_r(config, "-end_sil_num") *
 	                            cmd_ln_int_r(config, "-frate"));
 	sample_rate = (int)cmd_ln_float32_r(config, "-samprate");
 	frame_len = cmd_ln_float32_r(config, "-wlen") * sample_rate;
 	frame_overlap = sample_rate/cmd_ln_int_r(config, "-frate");
-	prespch_buf = (int16 **)
-            ckd_calloc_2d(utt_start_sil, frame_overlap, sizeof(**prespch_buf));
 	frame = (int16*)ckd_calloc(frame_len, sizeof(*frame));
+	frame_buf = frame_buf_init(4096);
+	prespch_buf = prespch_buf_init(start_sil_num, frame_overlap);
 	
     /* Open raw A/D device */
     if ((ad = ad_open_dev(cmd_ln_str_r(config, "-adcdev"),sample_rate)) == NULL)
@@ -142,60 +251,60 @@ record_segments()
     fflush(stdout);
     if (ad_start_rec(ad) < 0)
         E_FATAL("Failed to start recording\n");
+	/* skip empty buffers */
 	for (i=0; i<5; i++) {
-		//skip zero silence that comes from audio device
-		sleep_msec(100);
-		ad_read(ad, ad_buf, 2048);
+		sleep_msec(200);
+		k=ad_read(ad, ad_buf, 2048);
 	}
     
     /* Forever listen for utterances */
-    printf("You may speak now\n");
-    fflush(stdout);
     uttno = 0;
-    if (fe_start_utt(fe) < 0)
-	    E_FATAL("Failed to start utterance\n");
-	is_speech = 0;
+	uttlen = 0;
 	vad_state = 0;
+	vad_prev_state = 0;
 	is_writing = 0;
+	end_sil = 0;
+	fp = NULL;
+	if (fe_start_utt(fe) < 0)
+	    E_FATAL("Failed to start utterance\n");
+	printf("You may speak now\n");
+    fflush(stdout);
     for (;;) {
 
-        //filling frame buffer, to produce at least one frame
-        while (frame_wrt_ptr < frame_len) {
+        /* filling frame buffer, to produce at least one frame */
+        while (frame_buf_get_len(frame_buf) < frame_len) {
 			if ((k = ad_read(ad, ad_buf, 2048)) < 0)
 				E_FATAL("Failed to read audio\n");
-			memcpy(&frame_buf[frame_wrt_ptr], ad_buf, sizeof(*ad_buf)*k);
-			frame_wrt_ptr += k;
+			frame_buf_write(frame_buf, ad_buf, k);
 		}
 		
-		//using obtained audio while more will be needed
-		while (frame_wrt_ptr - frame_read_ptr > frame_len) {
-		    memcpy(frame, &frame_buf[frame_read_ptr], sizeof(*frame)*frame_len);
-			frame_read_ptr += frame_overlap;
+		/* using obtained audio while there is at least frame */
+		while (frame_buf_get_len(frame_buf) > frame_len) {
+		    frame_buf_read(frame_buf, frame, frame_len, frame_overlap);
             fe_process_frame(fe, frame, frame_len, mfcc_buf);
-			is_speech = fe_get_vad_state(fe);
-			if (is_speech)
-				end_sil_num = 0;
-			if (is_writing && !is_speech) {
-				end_sil_num++;
-				is_speech = 1;
-				if (end_sil_num >= utt_end_sil) {
-				    end_sil_num = 0;
-					is_speech = 0;
+			vad_state = fe_get_vad_state(fe);
+			
+			/* Waiting for silence of length specified by user */
+			if (vad_state)
+				end_sil = 0;
+			if (is_writing && !vad_state) {
+				end_sil++;
+				vad_state = 1;
+				if (end_sil >= end_sil_num) {
+				    end_sil = 0;
+					vad_state = 0;
 				}
 			}
-			if (is_speech) {
-			    if (!vad_state) {
+			
+			if (vad_state) {
+			    if (!vad_prev_state) {
 				    //utterance detected. file should be created, prespeech dumped
 					uttno++;
                     sprintf(file, "%04d.raw", uttno);
                     if ((fp = fopen(file, "wb")) == NULL)
                         E_FATAL_SYSTEM("Failed to open '%s' for reading", file);
-					for (i=prespch_wrt_ptr; i<utt_start_sil; i++)
-					    fwrite(prespch_buf[i], sizeof(int16), frame_overlap, fp);
-					for (i=0; i<prespch_wrt_ptr; i++)
-					    fwrite(prespch_buf[i], sizeof(int16), frame_overlap, fp);
-					prespch_wrt_ptr = 0;
-					uttlen = utt_start_sil * frame_overlap;
+                    prespch_buf_dump(prespch_buf, fp);
+					uttlen = start_sil_num * frame_overlap;
 					printf("Utterance %04d, logging to %s\n", uttno, file);
 					is_writing = 1;
 				}
@@ -203,12 +312,7 @@ record_segments()
 				fwrite(frame, sizeof(*frame), frame_overlap, fp);
 				uttlen += frame_overlap;
 			} else {
-			    memcpy(prespch_buf[prespch_wrt_ptr], frame, sizeof(*frame)*frame_overlap);
-				prespch_wrt_ptr++;
-				if (prespch_wrt_ptr >= utt_start_sil) {
-				    //start writing from the beginning
-				    prespch_wrt_ptr = 0;
-			    }
+			    prespch_buf_write(prespch_buf, frame, frame_overlap);
 				if (is_writing) {
 				     //end of utterance detected. File should be closed
 					 fclose(fp);
@@ -217,14 +321,9 @@ record_segments()
 					is_writing = 0;
 				}
 			}
-			vad_state = is_speech;
+			vad_prev_state = vad_state;
 		}
-		
-		//move rest of frame_buf to the begin
-		memmove(frame_buf, &frame_buf[frame_read_ptr], sizeof(*frame_buf)*(frame_wrt_ptr-frame_read_ptr));
-		frame_wrt_ptr -= frame_read_ptr;
-		frame_read_ptr = 0;
-		
+		frame_buf_reset(frame_buf);		
     }
 	
 	if (is_writing) {
@@ -235,23 +334,24 @@ record_segments()
 	
     ad_stop_rec(ad);
     ad_close(ad);
-    if (prespch_buf)
-        ckd_free_2d((void **)prespch_buf);
 	if (frame)
 	    ckd_free((void*)frame);
+	if (frame_buf)
+	    frame_buf_free(frame_buf);
+    if (prespch_buf)
+        prespch_buf_free(prespch_buf);
 }
 
 int
 main(int argc, char *argv[])
 {
     char const *cfg;
-	
     if (argc == 2) {
         config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }
     else {
         config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, FALSE);
-    }
+	}
     /* Handle argument file as -argfile. */
     if (config && (cfg = cmd_ln_str_r(config, "-argfile")) != NULL) {
         config = cmd_ln_parse_file_r(config, cont_args_def, cfg, FALSE);
