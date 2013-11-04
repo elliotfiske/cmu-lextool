@@ -38,8 +38,56 @@
  * cont_fileseg.c -- Read and segment file with speech into utterances.
  * 
  * HISTORY
+ * 
+ * 03-Nov-13    Refactored to use new snr-based VAD 
  *
- * 03-Nov-13    Refactored to use new snr-based VAD
+ * $Log: cont_fileseg.c,v $
+ * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
+ * re-importation
+ *
+ * Revision 1.13  2005/06/30 00:28:46  rkm
+ * Kept within-utterance silences in rawmode
+ *
+ * 
+ * 28-Jun-2005	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
+ * 		Modified to use new state variables in cont_ad_t.
+ * 
+ * Revision 1.12  2005/05/31 15:54:38  rkm
+ * *** empty log message ***
+ *
+ * Revision 1.11  2005/05/24 20:56:58  rkm
+ * Added min/max-noise parameters to cont_fileseg
+ *
+ * Revision 1.10  2005/05/13 23:28:43  egouvea
+ * Changed null device to system dependent one: NUL for windows, /dev/null for everything else
+ * 
+ * $Log: cont_fileseg.c,v $
+ * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
+ * re-importation
+ *
+ * Revision 1.13  2005/06/30 00:28:46  rkm
+ * Kept within-utterance silences in rawmode
+ *
+ * Revision 1.12  2005/05/31 15:54:38  rkm
+ * *** empty log message ***
+ *
+ * Revision 1.11  2005/05/24 20:56:58  rkm
+ * Added min/max-noise parameters to cont_fileseg
+ *
+ * Revision 1.9  2005/02/13 01:29:48  rkm
+ * Fixed cont_ad_read to never cross sil/speech boundary, and rawmode
+ *
+ * Revision 1.8  2005/02/01 22:21:13  rkm
+ * Added raw data logging, and raw data pass-through mode to cont_ad
+ *
+ * Revision 1.7  2004/07/16 00:57:11  egouvea
+ * Added Ravi's implementation of FSG support.
+ *
+ * Revision 1.3  2004/06/25 14:58:05  rkm
+ * *** empty log message ***
+ *
+ * Revision 1.2  2004/06/23 20:32:08  rkm
+ * Exposed several cont_ad config parameters
  * 
  * 27-Jun-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Created.
