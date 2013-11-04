@@ -69,7 +69,7 @@ static const arg_t cont_args_def[] = {
      ARG_STRING,
      NULL,
      "Name of audio device to use for input."},
-    {"-end_sil_num",
+    {"-end_sil_len",
      ARG_FLOAT32,
      "1.0",
      "Length of silence to end utterance in seconds."},
@@ -225,7 +225,7 @@ record_segments()
 	int16 *frame;
 	
 	int i, k, uttno, uttlen, sample_rate;
-	int start_sil_num, end_sil_num, end_sil;
+	int start_sil_num;
 	int frame_len, frame_overlap;
 	uint8 vad_state, vad_prev_state, is_writing;
 	
@@ -234,8 +234,6 @@ record_segments()
     char file[1024];
 	
     start_sil_num = cmd_ln_int_r(config, "-vad_prespeech");
-	end_sil_num = (int)(cmd_ln_float_r(config, "-end_sil_num") *
-	                            cmd_ln_int_r(config, "-frate"));
 	sample_rate = (int)cmd_ln_float32_r(config, "-samprate");
 	frame_len = cmd_ln_float32_r(config, "-wlen") * sample_rate;
 	frame_overlap = sample_rate/cmd_ln_int_r(config, "-frate");
@@ -263,7 +261,6 @@ record_segments()
 	vad_state = 0;
 	vad_prev_state = 0;
 	is_writing = 0;
-	end_sil = 0;
 	fp = NULL;
 	if (fe_start_utt(fe) < 0)
 	    E_FATAL("Failed to start utterance\n");
@@ -283,19 +280,7 @@ record_segments()
 		    frame_buf_read(frame_buf, frame, frame_len, frame_overlap);
             fe_process_frame(fe, frame, frame_len, mfcc_buf);
 			vad_state = fe_get_vad_state(fe);
-			
-			/* Waiting for silence of length specified by user */
-			if (vad_state)
-				end_sil = 0;
-			if (is_writing && !vad_state) {
-				end_sil++;
-				vad_state = 1;
-				if (end_sil >= end_sil_num) {
-				    end_sil = 0;
-					vad_state = 0;
-				}
-			}
-			
+						
 			if (vad_state) {
 			    if (!vad_prev_state) {
 				    //utterance detected. file should be created, prespeech dumped
@@ -334,6 +319,7 @@ record_segments()
 	
     ad_stop_rec(ad);
     ad_close(ad);
+	fe_end_utt(fe, mfcc_buf, &frame_len);
 	if (frame)
 	    ckd_free((void*)frame);
 	if (frame_buf)
@@ -346,6 +332,8 @@ int
 main(int argc, char *argv[])
 {
     char const *cfg;
+	int end_sil_num;
+	
     if (argc == 2) {
         config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }
@@ -358,6 +346,9 @@ main(int argc, char *argv[])
     }
     if (config == NULL)
         return 1;
+		
+	end_sil_num = (int)(cmd_ln_float_r(config, "-end_sil_len") * cmd_ln_int_r(config, "-frate"));
+	cmd_ln_set_int_r(config, "-vad_postspeech", end_sil_num);
 	
     fe = fe_init_auto_r(config);
     if (fe == NULL)

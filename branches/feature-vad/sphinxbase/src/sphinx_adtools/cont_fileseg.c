@@ -1,6 +1,6 @@
 /* -*- c-basic-offset: 4; indent-tabs-mode: nil -*- */
 /* ====================================================================
- * Copyright (c) 1999-2001 Carnegie Mellon University.  All rights
+ * Copyright (c) 2013 Carnegie Mellon University.  All rights
  * reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,63 +35,15 @@
  *
  */
 /*
- * cont_fileseg.c -- Read input file, filter silence regions, and segment into utterances.
+ * cont_fileseg.c -- Read and segment file with speech into utterances.
  * 
  * HISTORY
- * 
- * $Log: cont_fileseg.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
  *
- * Revision 1.13  2005/06/30 00:28:46  rkm
- * Kept within-utterance silences in rawmode
- *
- * 
- * 28-Jun-2005	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Modified to use new state variables in cont_ad_t.
- * 
- * Revision 1.12  2005/05/31 15:54:38  rkm
- * *** empty log message ***
- *
- * Revision 1.11  2005/05/24 20:56:58  rkm
- * Added min/max-noise parameters to cont_fileseg
- *
- * Revision 1.10  2005/05/13 23:28:43  egouvea
- * Changed null device to system dependent one: NUL for windows, /dev/null for everything else
- * 
- * $Log: cont_fileseg.c,v $
- * Revision 1.1.1.1  2006/05/23 18:45:02  dhuggins
- * re-importation
- *
- * Revision 1.13  2005/06/30 00:28:46  rkm
- * Kept within-utterance silences in rawmode
- *
- * Revision 1.12  2005/05/31 15:54:38  rkm
- * *** empty log message ***
- *
- * Revision 1.11  2005/05/24 20:56:58  rkm
- * Added min/max-noise parameters to cont_fileseg
- *
- * Revision 1.9  2005/02/13 01:29:48  rkm
- * Fixed cont_ad_read to never cross sil/speech boundary, and rawmode
- *
- * Revision 1.8  2005/02/01 22:21:13  rkm
- * Added raw data logging, and raw data pass-through mode to cont_ad
- *
- * Revision 1.7  2004/07/16 00:57:11  egouvea
- * Added Ravi's implementation of FSG support.
- *
- * Revision 1.3  2004/06/25 14:58:05  rkm
- * *** empty log message ***
- *
- * Revision 1.2  2004/06/23 20:32:08  rkm
- * Exposed several cont_ad config parameters
- *
+ * 03-Nov-13    Refactored to use new snr-based VAD
  * 
  * 27-Jun-96	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Created.
  */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -100,442 +52,276 @@
 
 #include <sphinxbase/prim_type.h>
 #include <sphinxbase/ad.h>
-#include <sphinxbase/cont_ad.h>
+#include <sphinxbase/fe.h>
+#include <sphinxbase/cmd_ln.h>
+#include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/err.h>
 
-static FILE *infp;              /* File being segmented */
-static int32 swap;
+static const arg_t cont_args_def[] = {
+    waveform_to_cepstral_command_line_macro(),
+    /* Argument file. */
+    {"-argfile",
+     ARG_STRING,
+     NULL,
+     "Argument file giving extra arguments."},
+    {"-infile",
+     ARG_STRING,
+     "",
+     "Name of audio file to use for input."},
+    {"-end_sil_len",
+     ARG_FLOAT32,
+     "1.0",
+     "Length of silence to end utterance in seconds."},
+	{ NULL, 0, NULL, NULL }
+};
 
-/* Max size read by file_ad_read function on each invocation, for debugging */
-static int32 max_ad_read_size;
-
-#if defined(WIN32) && !defined(GNUWINCE)
-#define NULL_DEVICE "NUL"
-#else
-#define NULL_DEVICE "/dev/null"
-#endif
-
-
-/*
- * Need to provide cont_ad_init with a read function to read the input file.
- * This is it.  The ad_rec_t *r argument is ignored since there is no A/D
- * device involved.
- */
-static int32
-file_ad_read(ad_rec_t * r, int16 * buf, int32 max)
-{
-    int32 i, k;
-
-    if (max > max_ad_read_size)
-        max = max_ad_read_size;
-
-    k = fread(buf, sizeof(int16), max, infp);
-    if (swap) {
-        for (i = 0; i < k; i++) {
-            buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00);
-        }
-    }
-
-    return ((k > 0) ? k : -1);
-}
-
-
-static void
-usagemsg(char *pgm)
-{
-    E_INFO("Usage: %s \\\n", pgm);
-    E_INFOCONT("\t[-? | -h] \\\n");
-    E_INFOCONT("\t[-d | -debug] \\\n");
-    E_INFOCONT("\t[-sps <sampling-rate> (16000)] \\\n");
-    E_INFOCONT("\t[-b | -byteswap] \\\n");
-    E_INFOCONT
-        ("\t[{-s | -silsep} <length-silence-separator(sec) (0.5)]> \\\n");
-    E_INFOCONT("\t[-w | -writeseg] \\\n");
-    E_INFOCONT("\t[-min-noise <min-noise>] \\\n");
-    E_INFOCONT("\t[-max-noise <max-noise>] \\\n");
-    E_INFOCONT("\t[-delta-sil <delta-sil>] \\\n");
-    E_INFOCONT("\t[-delta-speech <delta-speech>] \\\n");
-    E_INFOCONT("\t[-sil-onset <sil-onset>] \\\n");
-    E_INFOCONT("\t[-speech-onset <speech-onset>] \\\n");
-    E_INFOCONT("\t[-adapt-rate <adapt-rate>] \\\n");
-    E_INFOCONT("\t[-max-adreadsize <ad_read_blksize>] \\\n");
-    E_INFOCONT("\t[-c <copy-input-file>] \\\n");
-    E_INFOCONT("\t[-r | -rawmode] \\\n");
-    E_INFOCONT("\t-i <input-file>\n");
-
-    exit(0);
-}
+static fe_t* fe;
+static cmd_ln_t *config;
+static FILE *infile;
 
 /*
- * Read specified input file, segment it into utterances wherever a silence segment of
- * a given minimum duration is encountered.  Filter out long silences.
- * Utterances are written to files named 00000000.raw, 00000001.raw, 00000002.raw, etc.
+ * @brief Buffer for prespeech audio storage.
+ *        VAD in fe triggers only after N speech frames,
+ *        which are processed from internal buffer as cepstral
+ *        coefs. To keep this audio, it should be stored 
+ *        externaly.
  */
+typedef struct prespch_buf_s {
+    int16 **buf;
+	int write_ptr;
+	int frame_num;
+	int frame_len;
+} prespch_buf_t;
+
+prespch_buf_t*
+prespch_buf_init(int frame_num, int frame_len)
+{
+    prespch_buf_t *prespch_buf;
+	prespch_buf = (prespch_buf_t *) ckd_calloc(1, sizeof(prespch_buf_t));
+    prespch_buf->buf = (int16 **)ckd_calloc_2d(frame_num, frame_len, sizeof(int16));
+	prespch_buf->frame_num = frame_num;
+	prespch_buf->frame_len = frame_len;
+	prespch_buf->write_ptr = 0;
+	return prespch_buf;
+}
+
+void
+prespch_buf_free(prespch_buf_t* prespch_buf)
+{
+    if (prespch_buf->buf)
+	    ckd_free_2d((void **)prespch_buf->buf);
+	ckd_free(prespch_buf);
+	    
+}
+
+void
+prespch_buf_write(prespch_buf_t *prespch_buf, int16* in_buf, int len)
+{
+    memcpy(prespch_buf->buf[prespch_buf->write_ptr], in_buf, sizeof(int16)*len);
+	prespch_buf->write_ptr++;
+	if (prespch_buf->write_ptr >= prespch_buf->frame_num)
+	    //start writing from the beginning
+		prespch_buf->write_ptr = 0;
+}
+
+void
+prespch_buf_dump(prespch_buf_t *prespch_buf, FILE *fp)
+{
+    int i;
+	
+    for (i=prespch_buf->write_ptr; i<prespch_buf->frame_num; i++)
+	    fwrite(prespch_buf->buf[i], sizeof(int16), prespch_buf->frame_len, fp);
+	for (i=0; i<prespch_buf->write_ptr; i++)
+	    fwrite(prespch_buf->buf[i], sizeof(int16), prespch_buf->frame_len, fp);
+	prespch_buf->write_ptr = 0;
+}   /* end of prespch_buf declaration */
+
+/*
+ * @brief Buffer for frame accumulating
+ */
+typedef struct frame_buf_s {
+	int16 *buf;
+	int write_ptr;
+	int read_ptr;
+} frame_buf_t;
+
+frame_buf_t*
+frame_buf_init(int len) 
+{
+    frame_buf_t *frame_buf;
+	frame_buf = (frame_buf_t *) ckd_calloc(1, sizeof(frame_buf_t));
+    frame_buf->buf = (int16*)ckd_calloc(len, sizeof(int16));
+    frame_buf->write_ptr = 0;
+    frame_buf->read_ptr = 0;
+	return frame_buf;
+}
+
+void
+frame_buf_free(frame_buf_t *frame_buf)
+{
+    if (frame_buf->buf)
+        ckd_free(frame_buf->buf);
+	ckd_free(frame_buf);
+}
+
+void
+frame_buf_read(frame_buf_t *frame_buf, int16* out_buf, int len, int shift)
+{
+    memcpy(out_buf, &frame_buf->buf[frame_buf->read_ptr], sizeof(int16)*len);
+	frame_buf->read_ptr += shift;
+}
+
+void
+frame_buf_write(frame_buf_t *frame_buf, FILE *infile, int len)
+{
+    int k;
+    
+	k = fread(&frame_buf->buf[frame_buf->write_ptr], sizeof(int16), len, infile);
+	frame_buf->write_ptr += k;
+}
+
+void
+frame_buf_reset(frame_buf_t *frame_buf)
+{
+    memmove(frame_buf->buf, &frame_buf->buf[frame_buf->read_ptr], 
+	        sizeof(int16)*(frame_buf->write_ptr-frame_buf->read_ptr));
+    frame_buf->write_ptr -= frame_buf->read_ptr;
+    frame_buf->read_ptr = 0;
+}
+
 int
-main(int32 argc, char **argv)
+frame_buf_get_len(frame_buf_t *frame_buf)
 {
-    cont_ad_t *cont;
-    int32 uttid, uttlen, starttime, siltime, sps, debug, writeseg, rawmode;
-    int16 buf[4096];
-    char *infile, *copyfile, segfile[1024];
-    FILE *fp;
-    float endsil;
-    ad_rec_t ad;
-    int32 i, k;
-    int32 winsize, leader, trailer;
-    int32 orig_min_noise, orig_max_noise;
-    int32 orig_delta_sil, orig_delta_speech;
-    int32 orig_speech_onset, orig_sil_onset;
-    int32 min_noise, max_noise;
-    int32 delta_sil, delta_speech;
-    int32 sil_onset, speech_onset;
-    float32 orig_adapt_rate;
-    float32 adapt_rate;
-    int32 total_speech_samples;
-    float32 total_speech_sec;
-    FILE *rawfp;
+    return (frame_buf->write_ptr - frame_buf->read_ptr);
+} /* end of frame_buf declaration */
 
-    /* Set argument defaults */
-    cont = NULL;
-    sps = 16000;
-    swap = 0;
-    endsil = 0.5;
-    writeseg = 0;
-    min_noise = max_noise = -1;
-    delta_sil = delta_speech = -1;
-    sil_onset = speech_onset = -1;
-    adapt_rate = -1.0;
-    max_ad_read_size = (int32) 0x7ffffff0;
-    debug = 0;
-    infile = NULL;
-    copyfile = NULL;
-    rawfp = NULL;
-    rawmode = 0;
+/*
+ * Segment raw A/D input data into utterances whenever silence region of given
+ * duration is encountered.
+ * Utterances are written to files named 0001.raw, 0002.raw, 0003.raw, etc.
+ */
+void
+split_file()
+{
+	frame_buf_t *frame_buf;
+	prespch_buf_t *prespch_buf;
+	FILE *fp;
+	int16 *frame;
+	
+	int uttno, uttlen, sample_rate;
+	int start_sil_num;
+	int frame_len, frame_overlap;
+	uint8 vad_state, vad_prev_state, is_writing;
 
-    /* Parse arguments */
-    for (i = 1; i < argc; i++) {
-        if ((strcmp(argv[i], "-help") == 0)
-            || (strcmp(argv[i], "-h") == 0)
-            || (strcmp(argv[i], "-?") == 0)) {
-            usagemsg(argv[0]);
-        }
-        else if ((strcmp(argv[i], "-debug") == 0)
-                 || (strcmp(argv[i], "-d") == 0)) {
-            debug = 1;
-        }
-        else if (strcmp(argv[i], "-sps") == 0) {
-            i++;
-            if ((i == argc)
-                || (sscanf(argv[i], "%d", &sps) != 1)
-                || (sps <= 0)) {
-                E_ERROR("Invalid -sps argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if ((strcmp(argv[i], "-byteswap") == 0)
-                 || (strcmp(argv[i], "-b") == 0)) {
-            swap = 1;
-        }
-        else if ((strcmp(argv[i], "-silsep") == 0)
-                 || (strcmp(argv[i], "-s") == 0)) {
-            i++;
-            if ((i == argc)
-                || (sscanf(argv[i], "%f", &endsil) != 1)
-                || (endsil <= 0.0)) {
-                E_ERROR("Invalid -silsep argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if ((strcmp(argv[i], "-writeseg") == 0)
-                 || (strcmp(argv[i], "-w") == 0)) {
-            writeseg = 1;
-        }
-        else if (strcmp(argv[i], "-min-noise") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &min_noise) != 1) ||
-                (min_noise < 0)) {
-                E_ERROR("Invalid -min-noise argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-max-noise") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &max_noise) != 1) ||
-                (max_noise < 0)) {
-                E_ERROR("Invalid -max-noise argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-delta-sil") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &delta_sil) != 1) ||
-                (delta_sil < 0)) {
-                E_ERROR("Invalid -delta-sil argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-delta-speech") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &delta_speech) != 1) ||
-                (delta_speech < 0)) {
-                E_ERROR("Invalid -delta-speech argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-sil-onset") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &sil_onset) != 1) ||
-                (sil_onset < 1)) {
-                E_ERROR("Invalid -sil-onset argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-speech-onset") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &speech_onset) != 1) ||
-                (speech_onset < 1)) {
-                E_ERROR("Invalid -speech-onset argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-adapt-rate") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%f", &adapt_rate) != 1) ||
-                (adapt_rate < 0.0) || (adapt_rate > 1.0)) {
-                E_ERROR("Invalid -adapt-rate argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-max-adreadsize") == 0) {
-            i++;
-            if ((i == argc) ||
-                (sscanf(argv[i], "%d", &max_ad_read_size) != 1) ||
-                (max_ad_read_size < 1)) {
-                E_ERROR("Invalid -max-adreadsize argument\n");
-                usagemsg(argv[0]);
-            }
-        }
-        else if (strcmp(argv[i], "-c") == 0) {
-            i++;
-            if (i == argc) {
-                E_ERROR("Invalid -c argument\n");
-                usagemsg(argv[0]);
-            }
-            copyfile = argv[i];
-        }
-        else if ((strcmp(argv[i], "-rawmode") == 0)
-                 || (strcmp(argv[i], "-r") == 0)) {
-            rawmode = 1;
-        }
-        else if (strcmp(argv[i], "-i") == 0) {
-            i++;
-            if (i == argc) {
-                E_ERROR("Invalid -i argument\n");
-                usagemsg(argv[0]);
-            }
-            infile = argv[i];
-        }
-        else {
-            usagemsg(argv[0]);
-        }
+	mfcc_t mfcc_buf[128];
+    char file[1024];
+	
+    start_sil_num = cmd_ln_int_r(config, "-vad_prespeech");
+	sample_rate = (int)cmd_ln_float32_r(config, "-samprate");
+	frame_len = cmd_ln_float32_r(config, "-wlen") * sample_rate;
+	frame_overlap = sample_rate/cmd_ln_int_r(config, "-frate");
+	frame = (int16*)ckd_calloc(frame_len, sizeof(*frame));
+	frame_buf = frame_buf_init(2048);
+	prespch_buf = prespch_buf_init(start_sil_num, frame_overlap);
+	    
+    /* Forever listen for utterances */
+    uttno = 0;
+	uttlen = 0;
+	vad_state = 0;
+	vad_prev_state = 0;
+	is_writing = 0;
+	fp = NULL;
+	if (fe_start_utt(fe) < 0)
+	    E_FATAL("Failed to start utterance\n");
+    frame_buf_write(frame_buf, infile, 1024);
+    while (frame_buf_get_len(frame_buf) > frame_len) {
+		/* using obtained audio while there is at least frame */
+		while (frame_buf_get_len(frame_buf) > frame_len) {
+		    frame_buf_read(frame_buf, frame, frame_len, frame_overlap);
+            fe_process_frame(fe, frame, frame_len, mfcc_buf);
+			vad_state = fe_get_vad_state(fe);
+			
+			if (vad_state) {
+			    if (!vad_prev_state) {
+				    //utterance detected. file should be created, prespeech dumped
+					uttno++;
+                    sprintf(file, "%04d.raw", uttno);
+                    if ((fp = fopen(file, "wb")) == NULL)
+                        E_FATAL_SYSTEM("Failed to open '%s' for reading", file);
+                    prespch_buf_dump(prespch_buf, fp);
+					uttlen = start_sil_num * frame_overlap;
+					printf("Utterance %04d, logging to %s\n", uttno, file);
+					is_writing = 1;
+				}
+				//we're in the utterance, just dump frame to file
+				fwrite(frame, sizeof(*frame), frame_overlap, fp);
+				uttlen += frame_overlap;
+			} else {
+			    prespch_buf_write(prespch_buf, frame, frame_overlap);
+				if (is_writing) {
+				     //end of utterance detected. File should be closed
+					 fclose(fp);
+                     printf("\tUtterance %04d = %d samples (%.1fsec)\n\n",
+                        uttno, uttlen, (double) uttlen / (double) sample_rate);
+					is_writing = 0;
+				}
+			}
+			vad_prev_state = vad_state;
+		}
+		frame_buf_reset(frame_buf);
+		frame_buf_write(frame_buf, infile, 1024);
     }
+	
+	if (is_writing) {
+		fclose(fp);
+        printf("\tUtterance %04d = %d samples (%.1fsec)\n\n",
+                uttno, uttlen, (double) uttlen / (double) sample_rate);
+	}
+	
+	fe_end_utt(fe, mfcc_buf, &frame_len);
+	if (frame)
+	    ckd_free((void*)frame);
+	if (frame_buf)
+	    frame_buf_free(frame_buf);
+    if (prespch_buf)
+        prespch_buf_free(prespch_buf);
+}
 
-    if (infile == NULL) {
-        E_ERROR("No input file specified\n");
-        usagemsg(argv[0]);
+int
+main(int argc, char *argv[])
+{
+    char const *cfg;
+	int end_sil_num;
+	
+    if (argc == 2) {
+        config = cmd_ln_parse_file_r(NULL, cont_args_def, argv[1], TRUE);
     }
-
-    if ((infp = fopen(infile, "rb")) == NULL)
-        E_FATAL_SYSTEM("Failed to open '%s' for reading", infile);
-
-    /*
-     * Associate continuous listening module with opened input file and read function.
-     * No A/D device is involved, but need to fill in ad->sps.
-     * Calibrate input data using first few seconds of file, but then rewind it!!
-     */
-    ad.sps = sps;
-    ad.bps = sizeof(int16);
-    if (!rawmode)
-        cont = cont_ad_init(&ad, file_ad_read);
-    else
-        cont = cont_ad_init_rawmode(&ad, file_ad_read);
-
-    printf("Calibrating ...");
-    fflush(stdout);
-    if (cont_ad_calib(cont) < 0)
-        printf(" failed; file too short?\n");
-    else
-        printf(" done\n");
-    rewind(infp);
-
-    /* Convert desired min. inter-utterance silence duration to #samples */
-    siltime = (int32) (endsil * sps);
-
-    /* Enable writing raw input to output by the cont module if specified */
-    if (copyfile) {
-        if ((rawfp = fopen(copyfile, "wb")) == NULL)
-            E_ERROR_SYSTEM("Failed to open raw output file '%s' for writing");
-        else
-            cont_ad_set_rawfp(cont, rawfp);
+    else {
+        config = cmd_ln_parse_r(NULL, cont_args_def, argc, argv, FALSE);
+	}
+    /* Handle argument file as -argfile. */
+    if (config && (cfg = cmd_ln_str_r(config, "-argfile")) != NULL) {
+        config = cmd_ln_parse_file_r(config, cont_args_def, cfg, FALSE);
     }
+    if (config == NULL)
+        return 1;
+	
+	end_sil_num = (int)(cmd_ln_float_r(config, "-end_sil_len") * cmd_ln_int_r(config, "-frate"));
+	cmd_ln_set_int_r(config, "-vad_postspeech", end_sil_num);
+	
+	if ((infile = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
+		E_FATAL("Can't open [ %s ] for reading\n", cmd_ln_str_r(config, "-infile"));
+		return 1;
+	}
+	
+    fe = fe_init_auto_r(config);
+    if (fe == NULL)
+        return 1;
 
-    cont_ad_get_params(cont,
-                       &orig_delta_sil, &orig_delta_speech,
-                       &orig_min_noise, &orig_max_noise,
-                       &winsize,
-                       &orig_speech_onset, &orig_sil_onset,
-                       &leader, &trailer, &orig_adapt_rate);
+    split_file();
 
-    E_INFO("Default parameters:\n");
-    E_INFOCONT("\tmin-noise = %d, max-noise = %d\n",
-               orig_min_noise, orig_max_noise);
-    E_INFOCONT("\tdelta-sil = %d, delta-speech = %d\n",
-               orig_delta_sil, orig_delta_speech);
-    E_INFOCONT("\tsil-onset = %d, speech-onset = %d\n",
-               orig_sil_onset, orig_speech_onset);
-    E_INFOCONT("\tadapt_rate = %.3f\n", orig_adapt_rate);
-
-    if (min_noise < 0)
-        min_noise = orig_min_noise;
-    if (max_noise < 0)
-        max_noise = orig_max_noise;
-    if (delta_sil < 0)
-        delta_sil = orig_delta_sil;
-    if (delta_speech < 0)
-        delta_speech = orig_delta_speech;
-    if (sil_onset < 0)
-        sil_onset = orig_sil_onset;
-    if (speech_onset < 0)
-        speech_onset = orig_speech_onset;
-    if (adapt_rate < 0.0)
-        adapt_rate = orig_adapt_rate;
-
-    cont_ad_set_params(cont,
-                       delta_sil, delta_speech,
-                       min_noise, max_noise,
-                       winsize,
-                       speech_onset, sil_onset,
-                       leader, trailer, adapt_rate);
-
-    E_INFO("Current parameters:\n");
-    E_INFOCONT("\tmin-noise = %d, max-noise = %d\n", min_noise, max_noise);
-    E_INFOCONT("\tdelta-sil = %d, delta-speech = %d\n", delta_sil,
-               delta_speech);
-    E_INFOCONT("\tsil-onset = %d, speech-onset = %d\n", sil_onset,
-               speech_onset);
-    E_INFOCONT("\tadapt_rate = %.3f\n", adapt_rate);
-
-    E_INFO("Sampling rate: %d", sps);
-    E_INFOCONT("; Byteswap: %s", swap ? "Yes" : "No");
-    E_INFOCONT("; Max ad-read size: %d\n", max_ad_read_size);
-
-    if (debug)
-        cont_ad_set_logfp(cont, stdout);
-
-    total_speech_samples = 0;
-    total_speech_sec = 0.0;
-
-    uttid = 0;
-    uttlen = 0;
-    starttime = 0;
-    fp = NULL;
-
-    /* Process data */
-    for (;;) {
-        /* Get audio data from continuous listening module */
-        k = cont_ad_read(cont, buf, 4096);
-
-        if (k < 0) {            /* End of input audio file; close any open output file and exit */
-            if (fp != NULL) {
-                fclose(fp);
-                fp = NULL;
-
-                printf
-                    ("Utt %08d, st= %8.2fs, et= %8.2fs, seg= %7.2fs (#samp= %10d)\n",
-                     uttid, (double) starttime / (double) sps,
-                     (double) (starttime + uttlen) / (double) sps,
-                     (double) uttlen / (double) sps, uttlen);
-                fflush(stdout);
-
-                total_speech_samples += uttlen;
-                total_speech_sec += (double) uttlen / (double) sps;
-
-                uttid++;
-            }
-
-            break;
-        }
-
-        if (cont->state == CONT_AD_STATE_SIL) { /* Silence data got */
-            if (fp != NULL) {   /* Currently in an utterance */
-                if (cont->seglen > siltime) {   /* Long enough silence detected; end the utterance */
-                    fclose(fp);
-                    fp = NULL;
-
-                    printf
-                        ("Utt %08d, st= %8.2fs, et= %8.2fs, seg= %7.2fs (#samp= %10d)\n",
-                         uttid, (double) starttime / (double) sps,
-                         (double) (starttime + uttlen) / (double) sps,
-                         (double) uttlen / (double) sps, uttlen);
-                    fflush(stdout);
-
-                    total_speech_samples += uttlen;
-                    total_speech_sec += (double) uttlen / (double) sps;
-
-                    uttid++;
-                }
-                else {
-                    /*
-                     * Short silence within utt; write it to output.  (Some extra trailing silence
-                     * is included in the utterance, as a result.  Not to worry about it.)
-                     */
-                    if (k > 0) {
-                        fwrite(buf, sizeof(int16), k, fp);
-                        uttlen += k;
-                    }
-                }
-            }
-        }
-        else {
-            assert(cont->state == CONT_AD_STATE_SPEECH);
-
-            if (fp == NULL) {   /* Not in an utt; open a new output file */
-                if (writeseg)
-                    sprintf(segfile, "%08d.raw", uttid);
-                else
-                    strcpy(segfile, NULL_DEVICE);
-                if ((fp = fopen(segfile, "wb")) == NULL)
-                    E_FATAL_SYSTEM("Failed to open segmentation file '%s' for writing", segfile);
-
-                starttime = cont->read_ts - k;
-                uttlen = 0;
-            }
-
-            /* Write data obtained to output file */
-            if (k > 0) {
-                fwrite(buf, sizeof(int16), k, fp);
-                uttlen += k;
-            }
-        }
-    }
-
-    if (rawfp)
-        fclose(rawfp);
-
-    E_INFO("Total raw input speech = %d frames, %d samples, %.2f sec\n",
-           cont->tot_frm, cont->tot_frm * cont->spf,
-           (cont->tot_frm * cont->spf) / (float32) cont->sps);
-    E_INFO("Total speech detected = %d samples, %.2f sec\n",
-           total_speech_samples, total_speech_sec);
-
-    cont_ad_close(cont);
-
+    fe_free(fe);
+	fclose(infile);
     return 0;
 }
+

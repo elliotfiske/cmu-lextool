@@ -93,7 +93,7 @@ struct noise_stats_s {
 #define EPS 1e-10
 
 /* VAD constants */
-#define VAD_THRESHOLD 5
+#define VAD_THRESHOLD 1.5
 
 #ifdef VAD_DEBUG
 static FILE *vad_logfn = NULL;

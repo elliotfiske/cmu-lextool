@@ -30,6 +30,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sphinx_pitch", "win32\sphin
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sphinxbase_cont_adseg", "win32\sphinxbase_cont_adseg\sphinxbase_cont_adseg.vcxproj", "{263CEF22-5360-49E0-B7DE-07DD2372C08D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sphinxbase_cont_fileseg", "win32\sphinxbase_cont_fileseg\sphinxbase_cont_fileseg.vcxproj", "{2FB9DB2D-1EBE-4667-B3A0-CA4BEA578E70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -64,6 +66,10 @@ Global
 		{263CEF22-5360-49E0-B7DE-07DD2372C08D}.Debug|Win32.Build.0 = Debug|Win32
 		{263CEF22-5360-49E0-B7DE-07DD2372C08D}.Release|Win32.ActiveCfg = Release|Win32
 		{263CEF22-5360-49E0-B7DE-07DD2372C08D}.Release|Win32.Build.0 = Release|Win32
+		{2FB9DB2D-1EBE-4667-B3A0-CA4BEA578E70}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2FB9DB2D-1EBE-4667-B3A0-CA4BEA578E70}.Debug|Win32.Build.0 = Debug|Win32
+		{2FB9DB2D-1EBE-4667-B3A0-CA4BEA578E70}.Release|Win32.ActiveCfg = Release|Win32
+		{2FB9DB2D-1EBE-4667-B3A0-CA4BEA578E70}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
