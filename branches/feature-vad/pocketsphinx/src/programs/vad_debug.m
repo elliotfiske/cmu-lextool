@@ -25,16 +25,18 @@ colors = ['r' 'b' 'y' 'g'];
 colorIdx = 1;
 areaShift = 0;
 for i=1:length(dir(vad_dir))
-	if length(strfind(dir(vad_dir)(i).name, 'vad_values')) > 0
-		if strfind(dir(vad_dir)(i).name, 'vad_values')(1) == 1 %startWith
-			vad = load(strcat(vad_dir, '/', dir(vad_dir)(i).name));
+    files = dir(vad_dir);
+	if length(strfind(files(i).name, 'vad_values')) > 0
+		find_idxs = strfind(files(i).name, 'vad_values');
+        if find_idxs(1) == 1 %startWith
+			vad = load(strcat(vad_dir, '/', files(i).name));
 			vad_aligned = zeros(length(vad)*(Fs/frate),1);
-			for i=0:(length(vad)-1)
+			for k=0:(length(vad)-1)
 				for j=1:Fs/frate
-					vad_aligned(i*(Fs/frate) + j) = vad(i+1);
+					vad_aligned(k*(Fs/frate) + j) = vad(k+1);
 				end;
 			end;
-			area((areaShift + 0):1/Fs:(areaShift + (length(vad_aligned)-1)/Fs), vad_aligned, "FaceColor", colors(colorIdx));
+			area((areaShift + 0):1/Fs:(areaShift + (length(vad_aligned)-1)/Fs), vad_aligned, 'FaceColor', colors(colorIdx));
 			areaShift = areaShift + (length(vad_aligned)-1)/Fs;
 			colorIdx = colorIdx + 1;
 			if colorIdx > length(colors)
