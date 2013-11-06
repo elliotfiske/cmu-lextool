@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\sphinx_adtools\cont_fileseg.c">
+    <ClCompile Include="..\..\src\sphinx_adtools\cont_seg.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -16,12 +16,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\sphinx_adtools\cont_fileseg.c" />
+    <ClCompile Include="..\..\src\sphinx_adtools\cont_seg.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{2FB9DB2D-1EBE-4667-B3A0-CA4BEA578E70}</ProjectGuid>
+    <ProjectGuid>{728D39F6-6DAA-4EF2-96D8-E25FA63A325F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>sphinxbase_cont_fileseg</RootNamespace>
+    <RootNamespace>sphinx_cont_seg</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -49,6 +49,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)\bin\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
