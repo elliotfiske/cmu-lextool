@@ -304,10 +304,10 @@ segment_audio()
     /* Forever listen for utterances */
     uttno = 0;
 	uttlen = 0;
-	vad_state = 0;
-	vad_prev_state = 0;
-	is_writing = 0;
-	finish_reading = 0;
+	vad_state = FALSE;
+	vad_prev_state = FALSE;
+	is_writing = FALSE;
+	finish_reading = FALSE;
 	read_attempts = 0;
 	fp = NULL;
 	if (fe_start_utt(fe) < 0)
@@ -322,7 +322,7 @@ segment_audio()
 			    read_attempts++;
 				if (read_attempts >= READ_ATTEMPTS) {
 					//several attempts to read audio failed
-					finish_reading = 1;
+					finish_reading = TRUE;
 					break;
 				}
 			} else {
@@ -354,7 +354,7 @@ segment_audio()
 					  //so just continue writing
                     prespch_buf_dump(prespch_buf, fp);
 					uttlen += start_sil_num * frame_overlap;
-					is_writing = 1;
+					is_writing = TRUE;
 				}
 				//we're in the utterance, just dump frame to file
 				fwrite(frame, sizeof(*frame), frame_overlap, fp);
@@ -372,7 +372,7 @@ segment_audio()
 					    fclose(fp);
                         printf("\tUtterance %04d = %d samples (%.1fsec)\n\n",
                         uttno, uttlen, (double) uttlen / (double) sample_rate);
-					    is_writing = 0;
+					    is_writing = FALSE;
 						uttlen = 0;
 				    }
 				}
