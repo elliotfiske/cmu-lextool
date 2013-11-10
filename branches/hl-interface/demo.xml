@@ -13,13 +13,6 @@
 
 <project basedir="." default="all" name="Sphinx-4">
 
-  <!-- ********************************************************** -->
-  <!-- *                                                        * -->
-  <!-- * Where to find things...                                * -->
-  <!-- *                                                        * -->
-  <!-- ********************************************************** -->
-
-  <property name="version" value="1_2_0"/>
   <property name="demo_src_dir" value="src/apps"/>
   <property name="build_dir" value="bld"/>
   <property name="demo_classes_dir" value="${build_dir}"/>
@@ -38,34 +31,12 @@
 
   <!-- ********************************************************** -->
   <!-- *                                                        * -->
-  <!-- * Checks for the presence of jsapi.jar.                  * -->
-  <!-- *                                                        * -->
-  <!-- ********************************************************** -->
-  <target name="check_jsapi_jar_present">
-    <available file="lib/jsapi.jar" property="jsapi_jar_present"/>
-  </target>
-
-  <target name="issue_jsapi_warning"
-    unless="jsapi_jar_present">
-    <echo>
-
-      Cannot find lib/jsapi.jar. Will not build JSAPI demos.
-      See docs/jsapi_setup.html for information on setting up
-      your environment to use JSAPI.
-    </echo>
-  </target>
-
-
-  <!-- ********************************************************** -->
-  <!-- *                                                        * -->
   <!-- * Builds just the demos (using package names for the     * -->
   <!-- * demos would have made this easier).                    * -->
   <!-- *                                                        * -->
   <!-- ********************************************************** -->
   <target name="all"
     depends="make_lib_dir,
-    check_jsapi_jar_present,
-    issue_jsapi_warning,
     compile_sphinx_demos"
     description="Compiles and jars the demos"/>
 
@@ -73,8 +44,6 @@
     <mkdir dir="${lib_dir}"/>
   </target>
 
-
-  <!-- Sphinx-4 (non-JSAPI) demos -->
   <target name="compile_sphinx_demos"
     depends="compile_dialog,
     compile_sphinx_transcriber,
@@ -146,13 +115,4 @@
       compress="true"/>
   </target>
 
-  <target name="init">
-    <available property="keystore.exists" file="tempKeystore"/>
-    <tstamp/>
-  </target>
-
-  <target name="keystore" unless="keystore.exists">
-    <genkey alias="zipcity" storepass="public" keystore="tempKeystore"
-      dname="CN=Sphinx-4, OU=Sphinx, o=Carnegie Mellon University, c=us"/>
-  </target>
 </project>

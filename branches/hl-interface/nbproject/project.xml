@@ -28,12 +28,6 @@
                     <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
-                    <label>src/jsapi</label>
-                    <type>java</type>
-                    <location>src/jsapi</location>
-                    <encoding>UTF-8</encoding>
-                </source-folder>
-                <source-folder>
                     <label>src/sphinx4</label>
                     <type>java</type>
                     <location>src/sphinx4</location>
@@ -209,11 +203,6 @@
                 <build-target>all</build-target>
             </export>
             <export>
-                <type>jar</type>
-                <location>bin/ZipCity.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
                 <type>folder</type>
                 <location>bld</location>
                 <build-target>all</build-target>
@@ -221,11 +210,6 @@
             <export>
                 <type>folder</type>
                 <location>javadoc</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>lib/jsapi-1.0-base.jar</location>
                 <build-target>all</build-target>
             </export>
             <export>
@@ -279,10 +263,6 @@
                         <location>src/apps</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>src/jsapi</label>
-                        <location>src/jsapi</location>
-                    </source-folder>
-                    <source-folder style="packages">
                         <label>src/sphinx4</label>
                         <location>src/sphinx4</location>
                     </source-folder>
@@ -317,30 +297,11 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/apps</package-root>
-                <classpath mode="compile">lib/js.jar:lib/jsapi-1.0-base.jar:lib/jsapi.jar:lib/sphinx4.jar:lib/tags.jar:lib/TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.jar:bld</classpath>
+                <classpath mode="compile">lib/sphinx4.jar:lib/tags.jar:lib/TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.jar:bld</classpath>
                 <built-to>bld</built-to>
                 <built-to>bin/Aligner.jar</built-to>
-                <built-to>bin/AudioTool.jar</built-to>
-                <built-to>bin/ClassBased.jar</built-to>
-                <built-to>bin/Confidence.jar</built-to>
                 <built-to>bin/Dialog.jar</built-to>
-                <built-to>bin/FeatureValueDemo.jar</built-to>
-                <built-to>bin/HelloNGram.jar</built-to>
-                <built-to>bin/HelloWorld.jar</built-to>
-                <built-to>bin/JSGFDemo.jar</built-to>
-                <built-to>bin/LatticeDemo.jar</built-to>
-                <built-to>bin/LiveConnectDemo.jar</built-to>
-                <built-to>bin/Raw.jar</built-to>
                 <built-to>bin/Transcriber.jar</built-to>
-                <built-to>bin/ZipCity.jar</built-to>
-                <source-level>1.6</source-level>
-            </compilation-unit>
-            <compilation-unit>
-                <package-root>src/jsapi</package-root>
-                <classpath mode="compile">lib/js.jar:lib/jsapi.jar:bld</classpath>
-                <built-to>bld</built-to>
-                <built-to>javadoc</built-to>
-                <built-to>lib/jsapi-1.0-base.jar</built-to>
                 <source-level>1.6</source-level>
             </compilation-unit>
             <compilation-unit>
@@ -357,7 +318,7 @@
             <compilation-unit>
                 <package-root>src/test</package-root>
                 <unit-tests/>
-                <classpath mode="compile">bld:lib/junit-4.8.1.jar:lib/jsapi.jar</classpath>
+                <classpath mode="compile">bld:lib/junit-4.8.1.jar</classpath>
                 <built-to>bld</built-to>
                 <source-level>1.6</source-level>
             </compilation-unit>
