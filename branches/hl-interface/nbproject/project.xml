@@ -144,57 +144,7 @@
             </export>
             <export>
                 <type>jar</type>
-                <location>bin/AudioTool.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/ClassBased.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/Confidence.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
                 <location>bin/Dialog.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/FeatureValueDemo.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/HelloNGram.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/HelloWorld.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/JSGFDemo.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/LatticeDemo.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/LiveConnectDemo.jar</location>
-                <build-target>all</build-target>
-            </export>
-            <export>
-                <type>jar</type>
-                <location>bin/Raw.jar</location>
                 <build-target>all</build-target>
             </export>
             <export>
@@ -297,7 +247,7 @@
             </compilation-unit>
             <compilation-unit>
                 <package-root>src/apps</package-root>
-                <classpath mode="compile">lib/sphinx4.jar:lib/tags.jar:lib/TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.jar:bld</classpath>
+                <classpath mode="compile">lib/js.jar:lib/sphinx4.jar:lib/tags.jar:lib/TIDIGITS_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:lib/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.jar:bld</classpath>
                 <built-to>bld</built-to>
                 <built-to>bin/Aligner.jar</built-to>
                 <built-to>bin/Dialog.jar</built-to>

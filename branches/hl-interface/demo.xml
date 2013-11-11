@@ -22,12 +22,10 @@
   <path id="libs">
     <pathelement path="${demo_classes_dir}"/>
     <pathelement location="${lib_dir}/sphinx4.jar"/>
-    <pathelement location="${lib_dir}/jsapi.jar"/>
     <pathelement location="${lib_dir}/tags.jar"/>
     <pathelement location="${lib_dir}/js.jar"/>
     <pathelement location="${lib_dir}/junit-4.4.jar"/>
   </path>
-
 
   <!-- ********************************************************** -->
   <!-- *                                                        * -->
@@ -43,6 +41,7 @@
   <target name="make_lib_dir">
     <mkdir dir="${lib_dir}"/>
   </target>
+
 
   <target name="compile_sphinx_demos"
     depends="compile_dialog,

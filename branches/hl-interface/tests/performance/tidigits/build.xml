@@ -18,9 +18,6 @@ Run ant with -Dcount=5 to only do the first five utterances of a test.
     <!-- *                                                        * -->
     <!-- ********************************************************** -->
     <property name="top_dir"		value="../../.."/>
-    <path id="libs">
-        <fileset dir="lib" includes="${top_dir}/**/jsapi.jar"/>
-    </path>
     <property name="build_dir"		value="${top_dir}/bld"/>
     <property name="classes_dir"	value="${build_dir}"/>
     <property name="classpath"
@@ -239,9 +236,7 @@ Run ant with -Dcount=5 to only do the first five utterances of a test.
     <!-- ********************************************************** -->
     <target name="tidigits_jsgf"
 	    description="TIDIGITS test set with a JSGF digits grammar">
-        <java classname="${batch_main}"
-              classpath="${classpath}:${top_dir}/lib/jsapi.jar"
-	      fork="true">
+        <java classname="${batch_main}" classpath="${classpath}" fork="true">
             <jvmarg value="-ea"/>
             <jvmarg value="-${jit}"/>   
             <jvmarg value="-ms${initial_heap_size}"/>
