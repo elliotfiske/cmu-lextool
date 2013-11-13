@@ -39,9 +39,9 @@ public class LargeNgramTest {
 		Assert.assertEquals(3, model.getMaxDepth());
 		
 		Word[] words = {new Word("huggins",  null, false), new Word("daines",  null, false)};
-		Assert.assertEquals(model.getProbability(new WordSequence(words)), -83.161f, 0.001f);
+		Assert.assertEquals(-830.862f, model.getProbability(new WordSequence(words)), 0.001f);
 
 		Word[] words1 = {new Word("huggins",  null, false), new Word("daines",  null, false), new Word("david",  null, false)};
-		Assert.assertEquals(model.getProbability(new WordSequence(words1)), -6766.4487f, 0.001f);
+		Assert.assertEquals(-67625.77, model.getProbability(new WordSequence(words1)), 0.01f);
 	}
 }

@@ -171,7 +171,8 @@ public class RejectionTracker implements
                     ("   Correct OOG: " + numCorrectOutOfGrammarUtterances +
                             "   False OOG: " + numFalseOutOfGrammarUtterances +
                             "   Correct IG: " + numCorrectInGrammarUtterances +
-                            "   False IG: " + numFalseInGrammarUtterances);
+                            "   False IG: " + numFalseInGrammarUtterances +
+                            "   Actual number: " + numOutOfGrammarUtterances);
         }
     }
 

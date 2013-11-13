@@ -17,12 +17,10 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.MixtureComponent;
 import edu.cmu.sphinx.util.LogMath;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static java.lang.Math.*;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Some tests which test the functionality of <code>MixtureComponentt</code>s.
@@ -32,10 +30,9 @@ import java.util.Map;
  */
 public class MixtureComponentTest {
 
-    @Before
-    public void setup() {
+    @BeforeClass
+    public static void setup() {
         LogMath.setUseTable(true);
-        Map<String, Object> props = new HashMap<String, Object>();
     }
 
 
@@ -56,7 +53,7 @@ public class MixtureComponentTest {
         MixtureComponent gaussian = new MixtureComponent(new float[]{mean}, new float[]{var});
 
         for (float curX = minX; curX <= maxX; curX += resolution) {
-            double gauLogScore = gaussian.getScore(new FloatData(new float[]{curX}, 0, 0));
+            double gauLogScore = gaussian.getScore(new FloatData(new float[]{curX}, 16000, 0));
 
             double manualScore = (1 / sqrt(var * 2 * PI)) * exp((-0.5 / var) * (curX - mean) * (curX - mean));
             double gauScore = LogMath.getInstance().logToLinear((float) gauLogScore);

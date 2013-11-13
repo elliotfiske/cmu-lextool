@@ -14,11 +14,11 @@ public class FSTGrammarTest {
 
     @Test
     public void testForcedAlignerGrammar() throws IOException {
-        Dictionary dictionary = new FastDictionary(new URL("file:models/acoustic/wsj/dict/digits.dict"), new URL(
+        Dictionary dictionary = new FastDictionary(new URL("file:src/test/edu/cmu/sphinx/linguist/language/grammar/FSTGrammarTest.dic"), new URL(
                 "file:models/acoustic/wsj/noisedict"), null, false, null, false, false, new UnitManager());
         FSTGrammar grammar = new FSTGrammar
         		("src/test/edu/cmu/sphinx/linguist/language/grammar/FSTGrammarTest.gram", true, true, true, true, dictionary);
         grammar.allocate();
-        Assert.assertEquals(grammar.getGrammarNodes().size(), 9);
+        Assert.assertEquals(14, grammar.getGrammarNodes().size());
     }
 }

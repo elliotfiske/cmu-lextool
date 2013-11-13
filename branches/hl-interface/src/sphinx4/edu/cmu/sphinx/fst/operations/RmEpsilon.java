@@ -122,6 +122,7 @@ public class RmEpsilon {
 
         Fst res = new Fst(semiring);
 
+        @SuppressWarnings("unchecked")
         HashMap<State, Float>[] cl = new HashMap[fst.getNumStates()];
         State[] oldToNewStateMap = new State[fst.getNumStates()];
         State[] newToOldStateMap = new State[fst.getNumStates()];
