@@ -45,7 +45,6 @@ public class Transcriber {
             new StreamSpeechRecognizer(configuration);
         recognizer.startRecognition(new URL(AUDIO_PATH).openStream());
 
-        Writer writer = new PrintWriter(System.out);
         SpeechResult result;
 
         while ((result = recognizer.getResult()) != null) {
@@ -54,14 +53,13 @@ public class Transcriber {
                               result.getConfidence());
 
             System.out.println("best 3 hypothesis:");
+            
             for (String s : result.getNbest(3))
                 System.out.println(s);
 
-            result.getLattice().dumpSlf(writer);
-            writer.flush();
+            System.out.println("Lattice contains " + result.getLattice().getNodes().size() + " nodes");
         }
 
-        writer.close();
         recognizer.stopRecognition();
     }
 }

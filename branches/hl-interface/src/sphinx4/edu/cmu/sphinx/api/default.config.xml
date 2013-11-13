@@ -162,15 +162,15 @@
 
   <component name="batchFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
     <propertylist name="pipeline">
-      <item>dataSource</item>
-      <item>dataBlocker</item>
-      <item>preemphasizer</item>
-      <item>windower</item>
-      <item>fft</item>
-      <item>melFilterBank</item>
-      <item>dct</item>
-      <item>batchCMN</item>
-      <item>featureExtraction</item>
+      <item>dataSource </item>
+      <item>dataBlocker </item>
+      <item>preemphasizer </item>
+      <item>windower </item>
+      <item>fft </item>
+      <item>melFilterBank </item>
+      <item>dct </item>
+      <item>liveCMN </item>
+      <item>featureExtraction </item>
     </propertylist>
   </component>
 

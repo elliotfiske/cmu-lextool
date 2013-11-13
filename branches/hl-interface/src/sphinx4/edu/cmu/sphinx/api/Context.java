@@ -180,16 +180,16 @@ public class Context {
     public void setSpeechSource(InputStream stream) {
         // TODO: setup stream sample rate and other parameters
         getInstance(StreamDataSource.class).setInputStream(stream);
-        setLocalProperty("threadedScorer->frontend", "batchFrontEnd");
+        setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
     }
 
     /**
-     * Sets microphone as the speech source.
+     * Sets batch frontend to process whole file.
      *
      * @see    Context#setSpeechSource(URL)
      */
-    public void useMicrophone() {
-        setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
+    public void processBatch() {
+        setLocalProperty("threadedScorer->frontend", "batchFrontEnd");
     }
 
     /**
