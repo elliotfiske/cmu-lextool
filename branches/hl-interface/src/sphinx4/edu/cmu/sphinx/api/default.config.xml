@@ -153,10 +153,10 @@
       <item>preemphasizer </item>
       <item>windower </item>
       <item>fft </item>
-      <item>melFilterBank </item>
-      <item>dct </item>
+      <item>autoCepstrum </item>
       <item>liveCMN </item>
       <item>featureExtraction </item>
+      <item>featureTransform </item>
     </propertylist>
   </component>
 
@@ -167,10 +167,10 @@
       <item>preemphasizer </item>
       <item>windower </item>
       <item>fft </item>
-      <item>melFilterBank </item>
-      <item>dct </item>
+      <item>autoCepstrum </item>
       <item>liveCMN </item>
       <item>featureExtraction </item>
+      <item>featureTransform </item>
     </propertylist>
   </component>
 
@@ -203,12 +203,10 @@
     type="edu.cmu.sphinx.frontend.transform.DiscreteFourierTransform">
   </component>
 
-  <component name="melFilterBank"
-    type="edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank">
+  <component name="autoCepstrum"
+    type="edu.cmu.sphinx.frontend.AutoCepstrum">
+    <property name="loader" value="wsjLoader"/>
   </component>
-
-  <component name="dct"
-    type="edu.cmu.sphinx.frontend.transform.DiscreteCosineTransform"/>
 
   <component name="batchCMN"
     type="edu.cmu.sphinx.frontend.feature.BatchCMN"/>
@@ -218,6 +216,11 @@
 
   <component name="featureExtraction"
     type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
+
+  <component name="featureTransform"
+    type="edu.cmu.sphinx.frontend.feature.FeatureTransform">
+    <property name="loader" value="wsjLoader"/>
+  </component>
 
   <component name="confidenceScorer"
     type="edu.cmu.sphinx.result.MAPConfidenceScorer">

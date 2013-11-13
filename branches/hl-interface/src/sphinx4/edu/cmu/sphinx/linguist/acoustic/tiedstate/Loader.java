@@ -17,6 +17,7 @@ import edu.cmu.sphinx.linguist.acoustic.Unit;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Properties;
 
 /** Generic interface for a loader of acoustic models */
 public interface Loader extends Configurable {
@@ -128,4 +129,9 @@ public interface Loader extends Configurable {
      * @return the left context size
      */
     public int getRightContextSize();
+    
+    /**
+     * Returns the model properties
+     */
+    public Properties getProperties();
 }

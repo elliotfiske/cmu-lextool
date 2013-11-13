@@ -11,8 +11,6 @@
 
 package edu.cmu.sphinx.demo.transcriber;
 
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.URL;
 
 import edu.cmu.sphinx.api.Configuration;
@@ -26,24 +24,24 @@ import edu.cmu.sphinx.api.StreamSpeechRecognizer;
  */
 public class Transcriber {
 
-    private static final String ACOUSTIC_MODEL =
-        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz";
-    private static final String DICTIONARY_PATH =
-        "resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d";
-    private static final String AUDIO_PATH =
-        "file:src/apps/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav";
-
     public static void main(String[] args) throws Exception {
         System.out.println("Loading models...");
 
         Configuration configuration = new Configuration();
-        configuration.setAcousticModelPath(ACOUSTIC_MODEL);
-        configuration.setDictionaryPath(DICTIONARY_PATH);
-        configuration.setLanguageModelPath("./models/language/en-us.lm.dmp");
+
+        // Load model from the jar
+        configuration.setAcousticModelPath("resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz");
+        
+        // You can also load model from folder
+        // configuration.setAcousticModelPath("file:en-us");
+        
+        configuration.setDictionaryPath("resource:/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz/dict/cmudict.0.6d");
+        
+        configuration.setLanguageModelPath("models/language/en-us.lm.dmp");
 
         StreamSpeechRecognizer recognizer = 
             new StreamSpeechRecognizer(configuration);
-        recognizer.startRecognition(new URL(AUDIO_PATH).openStream());
+        recognizer.startRecognition(new URL("file:src/apps/edu/cmu/sphinx/demo/aligner/10001-90210-01803.wav").openStream());
 
         SpeechResult result;
 

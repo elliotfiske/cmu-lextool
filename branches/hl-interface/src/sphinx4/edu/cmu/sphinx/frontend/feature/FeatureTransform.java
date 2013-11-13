@@ -66,11 +66,10 @@ public class FeatureTransform extends BaseDataProcessor {
         }
         this.transformMatrix = loader.getTransformMatrix();
 
-        if (transformMatrix == null)
-            throw new RuntimeException("Model doesn't include transformation matrix");
-
-        this.rows = transformMatrix.length;
-        this.values = transformMatrix[0].length;
+        if (transformMatrix != null) {
+            this.rows = transformMatrix.length;
+            this.values = transformMatrix[0].length;
+        }
     }
 
     /**
@@ -86,6 +85,10 @@ public class FeatureTransform extends BaseDataProcessor {
     @Override
     public Data getData() throws DataProcessingException {
         Data input = getPredecessor().getData();
+        
+        if (transformMatrix == null)
+            return input;
+        
         Data output;
         getTimer().start();
         if (input != null && input instanceof FloatData) {

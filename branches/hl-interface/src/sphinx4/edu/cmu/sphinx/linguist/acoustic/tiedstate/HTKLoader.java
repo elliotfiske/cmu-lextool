@@ -202,7 +202,6 @@ public class HTKLoader implements Loader {
             properties = new Properties();
             try {
                 URL url = getClass().getResource(propsFile);
-                // System.out.println(getClass() + " " + url);
                 if (url != null)
                     properties.load(url.openStream());
             } catch (IOException ioe) {
@@ -237,7 +236,7 @@ public class HTKLoader implements Loader {
      * 
      * @return the acoustic model properties
      */
-    protected Properties getProperties() {
+    public Properties getProperties() {
         if (properties == null) {
             loadProperties();
         }

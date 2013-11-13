@@ -91,25 +91,6 @@ public class Context {
     public void setAcousticModel(String path) throws IOException {
         setLocalProperty("wsjLoader->location", path);
         setLocalProperty("dictionary->fillerPath", path + "/noisedict");
-
-        Map<String, String> props = new HashMap<String, String>();
-        InputStreamReader reader = new InputStreamReader(
-                resourceToURL(path + "/feat.params").openStream());
-        BufferedReader br = new BufferedReader(reader);
-
-        String s;
-        while (null != (s = br.readLine())) {
-            String[] f = s.split("\\s+");
-            props.put(f[0], f[1]);
-        }
-        br.close();
-
-        setLocalProperty("melFilterBank->numberFilters",
-                         props.get("-nfilt"));
-        setLocalProperty("melFilterBank->minimumFrequency",
-                         props.get("-lowerf"));
-        setLocalProperty("melFilterBank->maximumFrequency",
-                         props.get("-upperf"));
     }
 
     /**

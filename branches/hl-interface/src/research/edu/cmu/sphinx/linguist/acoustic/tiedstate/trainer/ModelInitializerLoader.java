@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.StreamCorruptedException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -656,5 +657,10 @@ public class ModelInitializerLoader implements Loader {
         senonePool.logInfo(logger);
         logger.info("Context Independent Unit Entries: " + contextIndependentUnits.size());
         hmmManager.logInfo(logger);
+    }
+
+    @Override
+    public Properties getProperties() {
+        return new Properties();
     }
 }
