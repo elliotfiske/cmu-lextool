@@ -60,7 +60,7 @@ public class LatticeCompTest {
 		AudioInputStream ais = AudioSystem.getAudioInputStream(audioFileURL);
 
 		/* set the stream data source to read from the audio file */
-		reader.setInputStream(ais, audioFileURL.getFile());
+		reader.setInputStream(ais);
 		
 		/* allocate the resource necessary for the recognizer */
 		recognizer.allocate();
@@ -82,8 +82,7 @@ public class LatticeCompTest {
 		recognizer.allocate();
 		
 		reader = (StreamDataSource) cm.lookup("streamDataSource");
-		reader.setInputStream(AudioSystem.getAudioInputStream(audioFileURL),
-				audioFileURL.getFile());
+		reader.setInputStream(AudioSystem.getAudioInputStream(audioFileURL));
 
 		Result allResult = recognizer.recognize();
 

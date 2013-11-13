@@ -92,10 +92,10 @@ public class ClientFrontEndImpl implements Configurable{
      * @param streamName the name of the InputStream
      * @return the result string
      */
-    public String decode(InputStream is, String streamName)
+    public String decode(InputStream is)
             throws DataProcessingException, IOException {
         sendRecognition();
-        streamAudioSource.setInputStream(is, streamName);
+        streamAudioSource.setInputStream(is);
         sendData();
         String result = readResult();
         return result;

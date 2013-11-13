@@ -15,7 +15,6 @@ package edu.cmu.sphinx.linguist.acoustic.tiedstate.test;
 import edu.cmu.sphinx.frontend.FloatData;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.MixtureComponent;
 import edu.cmu.sphinx.util.LogMath;
-import edu.cmu.sphinx.util.props.ConfigurationManager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -33,14 +32,9 @@ import java.util.Map;
  */
 public class MixtureComponentTest {
 
-    private LogMath logMath;
-
-    @BeforeClass setupOnce() {
-        LogMath.setUseTable(false);
-    }
-
     @Before
     public void setup() {
+        LogMath.setUseTable(true);
         Map<String, Object> props = new HashMap<String, Object>();
     }
 
@@ -65,7 +59,7 @@ public class MixtureComponentTest {
             double gauLogScore = gaussian.getScore(new FloatData(new float[]{curX}, 0, 0));
 
             double manualScore = (1 / sqrt(var * 2 * PI)) * exp((-0.5 / var) * (curX - mean) * (curX - mean));
-            double gauScore = lm.logToLinear((float) gauLogScore);
+            double gauScore = LogMath.getInstance().logToLinear((float) gauLogScore);
 
             assertEquals(manualScore, gauScore, 1E-5);
         }
@@ -79,14 +73,14 @@ public class MixtureComponentTest {
         float var = 0.001f;
 
         MixtureComponent gaussian = new MixtureComponent(new float[]{mean}, new float[][]{{2}}, new float[]{5}, new float[]{var}, null, null);
-        assertTrue(lm.logToLinear(gaussian.getScore(new float[]{2 * mean + 5})) > 10);
+        assertTrue(LogMath.getInstance().logToLinear(gaussian.getScore(new float[]{2 * mean + 5})) > 10);
     }
 
 
     /** Tests whether a <code>MixtureComponent</code>s can be cloned (using deep copying). */
     @Test
     public void testClone() throws CloneNotSupportedException {
-        MixtureComponent gaussian = new MixtureComponent(lm, new float[]{2}, new float[][]{{3}}, new float[]{4}, new float[]{5}, new float[][]{{6}}, new float[]{7});
+        MixtureComponent gaussian = new MixtureComponent(new float[]{2}, new float[][]{{3}}, new float[]{4}, new float[]{5}, new float[][]{{6}}, new float[]{7});
 
         MixtureComponent clonedGaussian = gaussian.clone();
 

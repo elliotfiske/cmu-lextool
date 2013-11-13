@@ -97,7 +97,7 @@ public class Lattice {
 
 
     /** Create an empty Lattice. */
-    protected Lattice() {
+    public Lattice() {
         edges = new HashSet<Edge>();
         nodes = new HashMap<String, Node>();
         logMath = LogMath.getInstance();

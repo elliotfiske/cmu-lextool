@@ -52,8 +52,7 @@ public class MAPConfidenceTest {
 		StreamDataSource reader = (StreamDataSource) cm
 				.lookup("streamDataSource");
 
-		reader.setInputStream(AudioSystem.getAudioInputStream(audioFileURL),
-				audioFileURL.getFile());
+		reader.setInputStream(AudioSystem.getAudioInputStream(audioFileURL));
 
 		Result result = recognizer.recognize();
         LogMath logMath = LogMath.getInstance();

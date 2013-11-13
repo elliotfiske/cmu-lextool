@@ -53,8 +53,7 @@ public class DumpTest {
 				.lookup("streamDataSource");
 
 		/* set the stream data source to read from the audio file */
-		reader.setInputStream(AudioSystem.getAudioInputStream(audioFileURL),
-				audioFileURL.getFile());
+		reader.setInputStream(AudioSystem.getAudioInputStream(audioFileURL));
 
 		Result result = recognizer.recognize();
 

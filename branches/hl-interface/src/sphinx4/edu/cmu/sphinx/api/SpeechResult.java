@@ -11,13 +11,9 @@
 
 package edu.cmu.sphinx.api;
 
-import java.io.IOException;
-import java.io.Writer;
-
 import java.util.ArrayList;
 import java.util.Collection;
 
-import edu.cmu.sphinx.result.ConfidenceResult;
 import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.Lattice;
 import edu.cmu.sphinx.result.LatticeOptimizer;

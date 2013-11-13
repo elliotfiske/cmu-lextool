@@ -11,18 +11,13 @@
 
 package edu.cmu.sphinx.demo.transcriber;
 
-import java.io.File;
 import java.io.PrintWriter;
 import java.io.Writer;
-
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
-
-import edu.cmu.sphinx.result.Path;
 
 
 /**

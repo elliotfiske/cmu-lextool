@@ -18,9 +18,6 @@ import java.util.ArrayList;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 
 import edu.cmu.sphinx.util.LogMath;
-import edu.cmu.sphinx.util.props.PropertyException;
-import edu.cmu.sphinx.util.props.PropertySheet;
-import edu.cmu.sphinx.util.props.S4Component;
 
 public class AlignerGrammar extends Grammar {
 

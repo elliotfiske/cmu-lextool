@@ -17,7 +17,6 @@ package edu.cmu.sphinx.result;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.util.LogMath;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 

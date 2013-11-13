@@ -5,7 +5,6 @@ import org.junit.Test;
 import edu.cmu.sphinx.result.Lattice;
 import edu.cmu.sphinx.result.LatticeOptimizer;
 import edu.cmu.sphinx.result.Node;
-import edu.cmu.sphinx.util.LogMath;
 
 public class LatticeTest {
 
@@ -22,7 +21,7 @@ public class LatticeTest {
 
 		System.err.println("Building test Lattice");
 
-		lattice = new Lattice(new LogMath(1.0001f, true));
+		lattice = new Lattice();
 
 		/*
 		 * 1 --> 2 - / \ 0 --> 1 --> 4 \ \ / 2 --> 3 -

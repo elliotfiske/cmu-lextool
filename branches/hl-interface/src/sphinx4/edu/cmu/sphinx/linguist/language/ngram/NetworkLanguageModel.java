@@ -18,7 +18,6 @@ import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 import edu.cmu.sphinx.util.props.S4String;
 import edu.cmu.sphinx.util.props.S4Integer;
-import edu.cmu.sphinx.util.props.S4Component;
 
 /*
  * The client of the SRILM language model server. It needs to

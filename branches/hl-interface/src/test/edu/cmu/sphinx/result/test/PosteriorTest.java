@@ -29,9 +29,9 @@ public class PosteriorTest {
 	@Test
 	public void testPosterior() {
 
-		LogMath logMath = new LogMath(1.0001f, true);
-
-		Lattice lattice = new Lattice(logMath);
+	    LogMath logMath = LogMath.getInstance();
+	    
+		Lattice lattice = new Lattice();
 
 		Node a = lattice.addNode("A", "A", 0, 0);
 		Node b = lattice.addNode("B", "B", 0, 0);

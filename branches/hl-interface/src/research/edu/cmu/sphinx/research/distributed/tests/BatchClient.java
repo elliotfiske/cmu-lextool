@@ -109,7 +109,7 @@ public class BatchClient implements Configurable {
         InputStream is = new FileInputStream(file);
 
         decodeTimer.start();
-        String result = clientFrontEnd.decode(is, file);
+        String result = clientFrontEnd.decode(is);
         decodeTimer.stop();
 
         aligner.align(reference, result);

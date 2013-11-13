@@ -17,7 +17,6 @@ import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.Result;
 
 import edu.cmu.sphinx.recognizer.Recognizer;
-import edu.cmu.sphinx.recognizer.Recognizer.State;
 
 
 /**

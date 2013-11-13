@@ -13,8 +13,6 @@ package edu.cmu.sphinx.api;
 
 import java.io.InputStream;
 
-import java.net.URL;
-
 
 /**
  * Speech recognizer that works with audio resources.

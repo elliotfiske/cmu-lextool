@@ -25,17 +25,15 @@ import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.dictionary.FullDictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.large.LargeTrigramModel;
-import edu.cmu.sphinx.util.LogMath;
 
 public class LargeNgramTest {
 	@Test
 	public void testNgram() throws IOException {
-		LogMath logMath = new LogMath(1.001f, true);
 		Dictionary dictionary = new FullDictionary(new URL(
 				"file:src/test/edu/cmu/sphinx/linguist/language/ngram/large/test/100.dict"), new URL(
 				"file:models/acoustic/wsj/noisedict"), null, false, null,
 				false, false, new UnitManager());		
-		LargeTrigramModel model = new LargeTrigramModel("", new URL("file:src/test/edu/cmu/sphinx/linguist/language/ngram/large/test/100.arpa.dmp"), null, 100, 100, false, 3, logMath, dictionary, false, 1.0f, 1.0f, 1.0f, false);
+		LargeTrigramModel model = new LargeTrigramModel("", new URL("file:src/test/edu/cmu/sphinx/linguist/language/ngram/large/test/100.arpa.dmp"), null, 100, 100, false, 3, dictionary, false, 1.0f, 1.0f, 1.0f, false);
 		dictionary.allocate();
 		model.allocate();
 		Assert.assertEquals(3, model.getMaxDepth());

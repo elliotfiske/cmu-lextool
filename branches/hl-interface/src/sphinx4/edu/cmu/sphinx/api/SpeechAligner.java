@@ -23,8 +23,6 @@ import edu.cmu.sphinx.recognizer.Recognizer;
 
 import edu.cmu.sphinx.result.WordResult;
 
-import edu.cmu.sphinx.util.props.ConfigurationManager;
-
 
 /**
  * Aligns text data and audio speech.
