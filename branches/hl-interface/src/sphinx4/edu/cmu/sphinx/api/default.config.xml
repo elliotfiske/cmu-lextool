@@ -4,13 +4,16 @@
 
   <property name="logLevel" value="WARNING"/>
 
-  <property name="absoluteBeamWidth"  value="20000"/>
+  <property name="absoluteBeamWidth"  value="50000"/>
   <property name="relativeBeamWidth"  value="1e-80"/>
+  <property name="absoluteWordBeamWidth"  value="1000"/>
+  <property name="relativeWordBeamWidth"  value="1e-60"/>
 
   <property name="wordInsertionProbability" value="0.1"/>
   <property name="silenceInsertionProbability" value="0.9"/>
+  <property name="fillerInsertionProbability" value="1e-2"/>
 
-  <property name="languageWeight" value="8.0"/>
+  <property name="languageWeight" value="12.0"/>
 
   <component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
     <property name="decoder" value="decoder"/>
@@ -34,9 +37,12 @@
     <property name="pruner" value="trivialPruner"/>
     <property name="scorer" value="threadedScorer"/>
     <property name="activeListManager" value="activeListManager"/>
+
     <property name="growSkipInterval" value="0"/>
-    <property name="checkStateOrder" value="false"/>
-    <property name="buildWordLattice" value="false"/>
+
+    <property name="buildWordLattice" value="true"/>
+    <property name="keepAllTokens" value="true"/>
+
     <property name="acousticLookaheadFrames" value="1.7"/>
     <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
   </component>
@@ -45,6 +51,30 @@
     type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
     <property name="absoluteBeamWidth" value="${absoluteBeamWidth}"/>
     <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+  </component>
+
+  <component name="activeListManager"
+    type="edu.cmu.sphinx.decoder.search.SimpleActiveListManager">
+    <propertylist name="activeListFactories">
+      <item>standardActiveListFactory</item>
+      <item>wordActiveListFactory</item>
+      <item>wordActiveListFactory</item>
+      <item>standardActiveListFactory</item>
+      <item>standardActiveListFactory</item>
+      <item>standardActiveListFactory</item>
+    </propertylist>
+  </component>
+
+  <component name="standardActiveListFactory"
+    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+    <property name="absoluteBeamWidth" value="${absoluteBeamWidth}"/>
+    <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+  </component>
+
+  <component name="wordActiveListFactory"
+    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+    <property name="absoluteBeamWidth" value="${absoluteWordBeamWidth}"/>
+    <property name="relativeBeamWidth" value="${relativeWordBeamWidth}"/>
   </component>
 
   <component name="trivialPruner"
@@ -58,7 +88,7 @@
   <component name="flatLinguist"
     type="edu.cmu.sphinx.linguist.flat.FlatLinguist">
     <property name="grammar" value="jsgfGrammar"/>
-    <property name="acousticModel" value="wsj"/>
+    <property name="acousticModel" value="acousticModel"/>
     <property name="wordInsertionProbability"
       value="${wordInsertionProbability}"/>
     <property name="silenceInsertionProbability"
@@ -69,17 +99,17 @@
 
   <component name="lexTreeLinguist"
     type="edu.cmu.sphinx.linguist.lextree.LexTreeLinguist">
-    <property name="acousticModel" value="wsj"/>
+    <property name="acousticModel" value="acousticModel"/>
     <property name="languageModel" value="simpleNGramModel"/>
     <property name="dictionary" value="dictionary"/>
-    <property name="addFillerWords" value="false"/>
-    <property name="fillerInsertionProbability" value="1E-10"/>
+    <property name="addFillerWords" value="true"/>
     <property name="generateUnitStates" value="false"/>
     <property name="wantUnigramSmear" value="true"/>
     <property name="unigramSmearWeight" value="1"/>
-    <property name="wordInsertionProbability" value="0.2"/>
-    <property name="silenceInsertionProbability" value=".1"/>
-    <property name="languageWeight" value="7.0"/>
+    <property name="wordInsertionProbability" value="${wordInsertionProbability}"/>
+    <property name="silenceInsertionProbability" value="${silenceInsertionProbability}"/>
+    <property name="fillerInsertionProbability" value="${fillerInsertionProbability}"/>
+    <property name="languageWeight" value="${languageWeight}"/>
     <property name="unitManager" value="unitManager"/>
   </component>
 
@@ -128,13 +158,13 @@
     <property name="unitManager" value="unitManager"/>
   </component>
 
-  <component name="wsj"
+  <component name="acousticModel"
     type="edu.cmu.sphinx.linguist.acoustic.tiedstate.TiedStateAcousticModel">
-    <property name="loader" value="wsjLoader"/>
+    <property name="loader" value="acousticModelLoader"/>
     <property name="unitManager" value="unitManager"/>
   </component>
 
-  <component name="wsjLoader"
+  <component name="acousticModelLoader"
     type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
     <property name="unitManager" value="unitManager"/>
     <property name="location" value=""/>
@@ -205,7 +235,7 @@
 
   <component name="autoCepstrum"
     type="edu.cmu.sphinx.frontend.AutoCepstrum">
-    <property name="loader" value="wsjLoader"/>
+    <property name="loader" value="acousticModelLoader"/>
   </component>
 
   <component name="batchCMN"
@@ -219,7 +249,7 @@
 
   <component name="featureTransform"
     type="edu.cmu.sphinx.frontend.feature.FeatureTransform">
-    <property name="loader" value="wsjLoader"/>
+    <property name="loader" value="acousticModelLoader"/>
   </component>
 
   <component name="confidenceScorer"
@@ -227,27 +257,4 @@
     <property name="languageWeight" value="${languageWeight}"/>
   </component>
 
-  <component name="activeListManager"
-    type="edu.cmu.sphinx.decoder.search.SimpleActiveListManager">
-    <propertylist name="activeListFactories">
-      <item>standardActiveListFactory</item>
-      <item>wordActiveListFactory</item>
-      <item>wordActiveListFactory</item>
-      <item>standardActiveListFactory</item>
-      <item>standardActiveListFactory</item>
-      <item>standardActiveListFactory</item>
-    </propertylist>
-  </component>
-
-  <component name="standardActiveListFactory"
-    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
-    <property name="absoluteBeamWidth" value="20000"/>
-    <property name="relativeBeamWidth" value="1E-80"/>
-  </component>
-
-  <component name="wordActiveListFactory"
-    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
-    <property name="absoluteBeamWidth" value="500"/>
-    <property name="relativeBeamWidth" value="1E-60"/>
-  </component>
 </config>

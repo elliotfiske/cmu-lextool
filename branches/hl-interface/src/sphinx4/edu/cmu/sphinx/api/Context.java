@@ -89,7 +89,7 @@ public class Context {
      * @throws IOException if failed to read feat.params
      */
     public void setAcousticModel(String path) throws IOException {
-        setLocalProperty("wsjLoader->location", path);
+        setLocalProperty("acousticModelLoader->location", path);
         setLocalProperty("dictionary->fillerPath", path + "/noisedict");
     }
 
