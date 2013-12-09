@@ -127,6 +127,7 @@ recognize_from_file()
     const char *uttid;
 
     int32 k;
+	uint8 cur_vad_state, vad_state;
 
     char waveheader[44];
     if ((rawfd = fopen(cmd_ln_str_r(config, "-infile"), "rb")) == NULL) {
@@ -136,10 +137,21 @@ recognize_from_file()
 
 	//skip wav header
     fread(waveheader, 1, 44, rawfd);
-
+	cur_vad_state = 0;
 	ps_start_utt(ps, NULL);
 	while ((k = fread(adbuf, sizeof(int16), 4096, rawfd)) > 0) {
 		ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+		vad_state = ps_get_vad_state(ps);
+		if (cur_vad_state && !vad_state) {
+			//speech->silence transition,
+			//time to end utterance and start new one
+			ps_end_utt(ps);
+            hyp = ps_get_hyp(ps, NULL, &uttid);
+            printf("%s: %s\n", uttid, hyp);
+	        fflush(stdout);
+			ps_start_utt(ps, NULL);
+		}
+		cur_vad_state = vad_state;
 	}
 	ps_end_utt(ps);
     hyp = ps_get_hyp(ps, NULL, &uttid);
@@ -179,7 +191,7 @@ recognize_from_microphone()
 {
 	ad_rec_t *ad;
     int16 adbuf[4096];
-    uint8 is_speech;
+    uint8 cur_vad_state, vad_state;
     int32 k;
     char const *hyp;
     char const *uttid;
@@ -191,45 +203,43 @@ recognize_from_microphone()
     if (ad_start_rec(ad) < 0)
         E_FATAL("Failed to start recording\n");
     
-    for (;;) {
-        /* Indicate listening for next utterance */
-        printf("READY....\n");
-        fflush(stdout);
-        fflush(stderr);
-        if (ps_start_utt(ps, NULL) < 0)
+	if (ps_start_utt(ps, NULL) < 0)
             E_FATAL("Failed to start utterance\n");
-        is_speech = 0;
-        
-        //skipping silence cycle
-        while (!is_speech) {
-			sleep_msec(100);
-			if ((k = ad_read(ad, adbuf, 4096)) < 0)
+    cur_vad_state = 0;
+	/* Indicate listening for next utterance */
+    printf("READY....\n");
+    fflush(stdout);
+    fflush(stderr);
+    for (;;) {
+		if ((k = ad_read(ad, adbuf, 4096)) < 0)
 				E_FATAL("Failed to read audio\n");
-			ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-			is_speech = ps_get_vad_state(ps);
+		sleep_msec(100);
+		ps_process_raw(ps, adbuf, k, FALSE, FALSE);
+		vad_state = ps_get_vad_state(ps);
+		if (vad_state && !cur_vad_state) {
+		    //silence -> speech transition,
+		    // let user know that he is heard
+			printf("Listening...\n");
+            fflush(stdout);
 		}
-		
-		printf("Listening...\n");
-        fflush(stdout);
-		//speech processing cycle
-		while (is_speech) {
-			if ((k = ad_read(ad, adbuf, 4096)) < 0)
-				E_FATAL("Failed to read audio\n");
-			ps_process_raw(ps, adbuf, k, FALSE, FALSE);
-			is_speech = ps_get_vad_state(ps);
+		if (!vad_state && cur_vad_state) {
+		    //speech -> silence transition, 
+			//time to start new utterance
+			ps_end_utt(ps);
+            hyp = ps_get_hyp(ps, NULL, &uttid);
+            printf("%s: %s\n", uttid, hyp);
+            fflush(stdout);
+            //Exit if the first word spoken was GOODBYE
+            if (hyp && (strcmp(hyp, "good bye") == 0))
+				break;
+			if (ps_start_utt(ps, NULL) < 0)
+                E_FATAL("Failed to start utterance\n");
+			/* Indicate listening for next utterance */
+            printf("READY....\n");
+            fflush(stdout);
+            fflush(stderr);
 		}
-        
-        //utterance finished, obtain and print result */
-        ps_end_utt(ps);
-        hyp = ps_get_hyp(ps, NULL, &uttid);
-        printf("%s: %s\n", uttid, hyp);
-        fflush(stdout);
-
-        /* Exit if the first word spoken was GOODBYE */
-        if (hyp) {
-            if (strcmp(hyp, "good bye") == 0)
-                break;
-        }
+		cur_vad_state = vad_state;
 	}
     ad_close(ad);
 }
