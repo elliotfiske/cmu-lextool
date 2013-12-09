@@ -224,7 +224,7 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     powspec_t *signal;
     powspec_t *gain;
     int32 i, num_filts;
-    uint8 is_speech;
+    uint8 local_vad_state;
     float64 snr, lrt;
 
     num_filts = noise_stats->num_filters;
@@ -268,7 +268,7 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 		fprintf(vad_logfn, "%f\n", lrt);
 	#endif /* VAD_DEBUG */
 
-    is_speech = lrt > VAD_THRESHOLD;
+    local_vad_state = lrt > VAD_THRESHOLD;
 	
     fe_low_envelope(signal, noise_stats->floor, num_filts);
 
@@ -297,5 +297,5 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     ckd_free(signal);
     ckd_free(gain);
 	
-    return is_speech;
+    return local_vad_state;
 }

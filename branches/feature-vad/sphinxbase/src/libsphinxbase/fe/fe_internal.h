@@ -115,6 +115,16 @@ typedef struct ringbuf_s {
 /* sqrt(1/2), also used for unitary DCT-II/DCT-III */
 #define SQRT_HALF FLOAT2MFCC(0.707106781186548)
 
+typedef struct vad_data_s {
+	uint8 global_state;
+	uint8 local_state;
+	uint8 state_changed;
+	uint8 store_pcm;
+	int16 prespch_num;
+	int16 postspch_num;
+	prespch_buf_t* prespch_buf;	
+} vad_data_t;
+
 /** Structure for the front-end computation. */
 struct fe_s {
     cmd_ln_t *config;
@@ -138,18 +148,15 @@ struct fe_s {
     uint8 transform;
     uint8 remove_noise;
 
-    uint8 is_speech;
-	int16 prespeech_num;
-	int16 postspeech_num;
-	int16 prespeech_max;
-	int16 postspeech_max;
-
     float32 pre_emphasis_alpha;
     int32 seed;
 
     int16 frame_counter;
     uint8 start_flag;
     uint8 reserved;
+
+	int16 prespch_len;
+	int16 postspch_len;
 
     /* Twiddle factors for FFT. */
     frame_t *ccc, *sss;
@@ -159,8 +166,8 @@ struct fe_s {
     window_t *hamming_window;
     /* Storage for noise removal  */
     noise_stats_t *noise_stats;
-	/* Prespeech buffer */
-	prespch_buf_t *prespch_buf;
+	/* Storage for VAD variables */
+	vad_data_t *vad_data;
 	
     /* Temporary buffers for processing. */
     /* FIXME: too many of these. */
@@ -198,7 +205,7 @@ int fe_read_frame(fe_t *fe, int16 const *in, int32 len);
 int fe_shift_frame(fe_t *fe, int16 const *in, int32 len);
 
 /* Process a frame of data into features. */
-int32 fe_write_frame(fe_t *fe, mfcc_t *fea);
+void fe_write_frame(fe_t *fe, mfcc_t *fea);
 
 /* Initialization functions. */
 int32 fe_build_melfilters(melfb_t *MEL_FB);

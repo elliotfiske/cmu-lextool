@@ -47,16 +47,25 @@
 typedef struct prespch_buf_s prespch_buf_t;
 
 /* Creates prespeech buffer */
-prespch_buf_t *fe_init_prespch(int num_frames, int num_cepstra);
+prespch_buf_t *fe_init_prespch(int num_frames, int num_cepstra, int num_samples);
 
 /* Reads mfcc frame from prespeech buffer */
-int fe_prespch_read(prespch_buf_t* prespch_buf, mfcc_t * fea);
+int fe_prespch_read_cep(prespch_buf_t* prespch_buf, mfcc_t * fea);
 
 /* Writes mfcc frame to prespeech buffer */
-void fe_prespch_write(prespch_buf_t* prespch_buf, mfcc_t * fea);
+void fe_prespch_write_cep(prespch_buf_t* prespch_buf, mfcc_t * fea);
 
-/* Resets read/write pointers */
-void fe_prespch_reset(prespch_buf_t* prespch_buf);
+/* Reads pcm frame from prespeech buffer */
+void fe_prespch_read_pcm(prespch_buf_t* prespch_buf, int16 ** samples, int32 *samples_num);
+
+/* Writes pcm frame to prespeech buffer */
+void fe_prespch_write_pcm(prespch_buf_t* prespch_buf, int16 * samples);
+
+/* Resets read/write pointers for cepstrum buffer */
+void fe_reset_prespch_cep(prespch_buf_t* prespch_buf);
+
+/* Resets read/write pointer for pcm audio buffer */
+void fe_reset_prespch_pcm(prespch_buf_t* prespch_buf);
 
 /* Releases prespeech buffer */
 void fe_free_prespch(prespch_buf_t* prespch_buf);
