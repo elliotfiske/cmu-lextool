@@ -48,6 +48,7 @@
 #include <unistd.h>
 #elif defined _WIN32 || defined _WIN32_WCE
 #include <io.h>
+#define F_OK 0
 #endif
 
 /* SphinxBase headers. */

@@ -56,6 +56,7 @@
 #include "pocketsphinx_internal.h"
 #include "ps_lattice_internal.h"
 #include "phone_loop_search.h"
+#include "kws_search.h"
 #include "fsg_search_internal.h"
 #include "ngram_search.h"
 #include "ngram_search_fwdtree.h"
@@ -193,6 +194,10 @@ ps_default_search_args(cmd_ln_t *config)
 int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
+    const char *path;
+    const char *key_phrase;
+    int32 lw;
+
     if (config && config != ps->config) {
         cmd_ln_free_r(ps->config);
         ps->config = cmd_ln_retain(config);
@@ -208,7 +213,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     /* Free old searches (do this before other reinit) */
     ps_free_searches(ps);
-    ps->searches = hash_table_new(2, HASH_CASE_YES);
+    ps->searches = hash_table_new(3, HASH_CASE_YES);
 
     /* Free old acmod. */
     acmod_free(ps->acmod);
@@ -258,8 +263,15 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     // Determine whether we are starting out in FSG or N-Gram search mode.
     // If neither is used skip search initialization.
-    const char *path;
-    int32 lw = cmd_ln_float32_r(config, "-lw");
+    lw = cmd_ln_float32_r(config, "-lw");
+
+    /* Load KWS if one was specified in config */
+    if ((key_phrase = cmd_ln_str_r(config, "-kws"))) {
+        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, key_phrase))
+            return -1;
+        ps_set_search(ps, PS_DEFAULT_SEARCH);
+    }
+
     /* Load an FSG if one was specified in config */
     if ((path = cmd_ln_str_r(config, "-fsg"))) {
         fsg_model_t *fsg = fsg_model_readfile(path, ps->lmath, lw);
@@ -318,11 +330,12 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     if ((path = cmd_ln_str_r(ps->config, "-lm"))) {
         ngram_model_t *lm;
+        int err;
         lm = ngram_model_read(ps->config, path, NGRAM_AUTO, ps->lmath);
         if (!lm)
             return -1;
 
-        int err = ps_set_lm(ps, PS_DEFAULT_SEARCH, lm);
+        err = ps_set_lm(ps, PS_DEFAULT_SEARCH, lm);
         ngram_model_free(lm);
         if (err)
             return -1;
@@ -331,17 +344,20 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 
     if ((path = cmd_ln_str_r(ps->config, "-lmctl"))) {
         ngram_model_t *lmset;
+        ngram_model_set_iter_t *lmset_it;
+        const char *name;
         if (!(lmset = ngram_model_set_read(ps->config, path, ps->lmath))) {
             E_ERROR("Failed to read language model control file: %s\n", path);
             return -1;
         }
 
-        ngram_model_set_iter_t *lmset_it = ngram_model_set_iter(lmset);
+        lmset_it = ngram_model_set_iter(lmset);
         for(; lmset_it; lmset_it = ngram_model_set_iter_next(lmset_it)) {
             const char *name;
+            int err;
             ngram_model_t *lm = ngram_model_set_iter_model(lmset_it, &name);
             E_INFO("adding search %s\n", name);
-            int err = ps_set_lm(ps, name, lm);
+            err = ps_set_lm(ps, name, lm);
             ngram_model_free(lm);
             if (err) {
                 ngram_model_set_iter_free(lmset_it);
@@ -349,7 +365,7 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
             }
         }
 
-        const char *name = cmd_ln_str_r(config, "-lmname");
+        name = cmd_ln_str_r(config, "-lmname");
         if (name)
             ps_set_search(ps, name);
         else
@@ -471,6 +487,15 @@ ps_get_fsg(ps_decoder_t *ps, const char *name)
     return search ? ((fsg_search_t *) search)->fsg : NULL;
 }
 
+const char*
+ps_get_kws(ps_decoder_t *ps, const char* name)
+{
+    ps_search_t *search = ps_find_search(ps, name);
+    if (search && strcmp(PS_SEARCH_KWS, ps_search_name(search)))
+        return NULL;
+    return search ? ((kws_search_t *) search)->key_phrase : NULL;
+}
+
 static int
 set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
 {
@@ -497,6 +522,14 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 }
 
 int
+ps_set_kws(ps_decoder_t *ps, const char *name, const char *key_phrase)
+{
+    ps_search_t *search;
+    search = kws_search_init(key_phrase, ps->config, ps->acmod, ps->dict, ps->d2p);
+    return set_search_internal(ps, name, search);
+}
+
+int
 ps_set_fsg(ps_decoder_t *ps, const char *name, fsg_model_t *fsg)
 {
     ps_search_t *search;
@@ -511,6 +544,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     cmd_ln_t *newconfig;
     dict2pid_t *d2p;
     dict_t *dict;
+    hash_iter_t *search_it;
 
     /* Create a new scratch config to load this dict (so existing one
      * won't be affected if it fails) */
@@ -548,7 +582,7 @@ ps_load_dict(ps_decoder_t *ps, char const *dictfile,
     ps->d2p = d2p;
 
     /* And tell all searches to reconfigure themselves. */
-    hash_iter_t *search_it = hash_table_iter(ps->searches);
+    search_it = hash_table_iter(ps->searches);
     for (; search_it; search_it = hash_table_iter_next(search_it)) {
         if (ps_search_reinit(hash_entry_val(search_it->ent), dict, d2p) < 0) {
             hash_table_iter_free(search_it);
@@ -574,6 +608,7 @@ ps_add_word(ps_decoder_t *ps,
 {
     int32 wid;
     s3cipid_t *pron;
+    hash_iter_t *search_it;
     char **phonestr, *tmp;
     int np, i, rv;
 
@@ -610,7 +645,7 @@ ps_add_word(ps_decoder_t *ps,
     dict2pid_add_word(ps->d2p, wid);
 
     // TODO: we definitely need to refactor this
-    hash_iter_t *search_it = hash_table_iter(ps->searches);
+    search_it = hash_table_iter(ps->searches);
     for (; search_it; search_it = hash_table_iter_next(search_it)) {
         ps_search_t *search = hash_entry_val(search_it->ent);
         if (!strcmp(PS_SEARCH_NGRAM, ps_search_name(search))) {

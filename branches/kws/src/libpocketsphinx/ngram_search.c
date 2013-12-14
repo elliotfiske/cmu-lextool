@@ -145,6 +145,7 @@ ngram_search_init(ngram_model_t *lm,
                   dict2pid_t *d2p)
 {
     ngram_search_t *ngs;
+    static char *lmname;
     /* Make the acmod's feature buffer growable if we are doing two-pass
      * search. */
     acmod_set_grow(acmod, cmd_ln_boolean_r(config, "-fwdflat") &&
@@ -192,7 +193,7 @@ ngram_search_init(ngram_model_t *lm,
     ngs->active_word_list = ckd_calloc_2d(2, dict_size(dict),
                                           sizeof(**ngs->active_word_list));
 
-    static char *lmname = "default";
+    lmname = "default";
     ngs->lmset = ngram_model_set_init(config, &lm, &lmname, NULL, 1);
     if (!ngs->lmset)
         goto error_out;
