@@ -47,12 +47,8 @@
 #include "pocketsphinx_internal.h"
 #include "hmm.h"
 
-/**
- * KWS search item
- */
 typedef struct kws_node_s {
-    hmm_t* hmm;
-    int32 score;
+    hmm_t hmm;
     uint8 active;
 } kws_node_t;
 
@@ -62,28 +58,31 @@ typedef struct kws_node_s {
 typedef struct kws_search_s {
     ps_search_t base;
 
-    hmm_context_t *hmmctx;  /**< HMM context. */
+    hmm_context_t *hmmctx;    /**< HMM context. */
 
-    char* key_phrase; /**< Key phrase to spot */
-    frame_idx_t frame;/**< Frame index */
+    char* keyphrase;          /**< Key phrase to spot */
+    int16 n_detect;           /**< Keyphrase detections amount */
+    frame_idx_t frame;        /**< Frame index */
 
-    int32 beam_orig;        /**< Global pruning threshold */
-    int32 pbeam_orig;        /**< Pruning threshold for phone transition */
-    int32 wbeam_orig;        /**< Pruning threshold for word exit */
-    float32 beam_factor;    /**< Dynamic/adaptive factor (<=1) applied to above
+    int32 beam_orig;          /**< Global pruning threshold */
+    int32 pbeam_orig;         /**< Pruning threshold for phone transition */
+    int32 wbeam_orig;         /**< Pruning threshold for word exit */
+    float32 beam_factor;      /**< Dynamic/adaptive factor (<=1) applied to above
                                      beams to determine actual effective beams.
                                      For implementing absolute pruning. */
-    int32 beam, pbeam, wbeam;    /**< Effective beams after applying beam_factor */
+    int32 beam, pbeam, wbeam; /**< Effective beams after applying beam_factor */              
 	float32 lw;
-    int32 pip, wip;         /**< Language weights */
-    int32 bestscore;            /**< For beam pruning */
+    int32 pip, wip;           /**< Language weights */
+    int32 plp;                /**< Phone loop probability */
+    int32 bestscore;          /**< For beam pruning */
 
-    float32 ascale;             /**< Acoustic score scale for posterior probabilities. */
+    float32 ascale;           /**< Acoustic score scale for posterior probabilities. */
 
-    int32 n_ci;                /**< Number of CI phones */
-    hmm_t* ci_loop_hmms;       /**< Phone loop hmms - hmms of CI phones */
+    int32 n_pl;               /**< Number of CI phones */
+    hmm_t* pl_hmms;           /**< Phone loop hmms - hmms of CI phones */
 
-    kws_node_t* nodes;         /**< Search nodes */
+    kws_node_t* nodes;        /**< Search nodes */
+    int32 n_nodes;
 } kws_search_t;
 
 /**

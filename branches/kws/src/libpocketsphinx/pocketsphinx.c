@@ -195,7 +195,7 @@ int
 ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
 {
     const char *path;
-    const char *key_phrase;
+    const char *keyphrase;
     int32 lw;
 
     if (config && config != ps->config) {
@@ -266,8 +266,8 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     lw = cmd_ln_float32_r(config, "-lw");
 
     /* Load KWS if one was specified in config */
-    if ((key_phrase = cmd_ln_str_r(config, "-kws"))) {
-        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, key_phrase))
+    if ((keyphrase = cmd_ln_str_r(config, "-kws"))) {
+        if (ps_set_kws(ps, PS_DEFAULT_SEARCH, keyphrase))
             return -1;
         ps_set_search(ps, PS_DEFAULT_SEARCH);
     }
@@ -493,7 +493,7 @@ ps_get_kws(ps_decoder_t *ps, const char* name)
     ps_search_t *search = ps_find_search(ps, name);
     if (search && strcmp(PS_SEARCH_KWS, ps_search_name(search)))
         return NULL;
-    return search ? ((kws_search_t *) search)->key_phrase : NULL;
+    return search ? ((kws_search_t *) search)->keyphrase : NULL;
 }
 
 static int
@@ -522,10 +522,10 @@ ps_set_lm(ps_decoder_t *ps, const char *name, ngram_model_t *lm)
 }
 
 int
-ps_set_kws(ps_decoder_t *ps, const char *name, const char *key_phrase)
+ps_set_kws(ps_decoder_t *ps, const char *name, const char *keyphrase)
 {
     ps_search_t *search;
-    search = kws_search_init(key_phrase, ps->config, ps->acmod, ps->dict, ps->d2p);
+    search = kws_search_init(keyphrase, ps->config, ps->acmod, ps->dict, ps->d2p);
     return set_search_internal(ps, name, search);
 }
 

@@ -179,7 +179,11 @@
 { "-kws",                                                       \
          ARG_STRING,                                            \
          NULL,                                                  \
-         "Keyphrase to spot"}                                   \
+         "Keyphrase to spot"},                                  \
+{ "-kws_plp",                                                   \
+      ARG_FLOAT64,                                              \
+      "1e-1",                                                   \
+      "Phone loop probability for keyword spotting" }
 
 /** Command-line options for finite state grammars. */
 #define POCKETSPHINX_FSG_OPTIONS \
