@@ -498,10 +498,12 @@ char const *kws_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_
     kws_search_t *kwss = (kws_search_t *)search;
     E_INFO("Keyphrase [%s] was detected [%d] times\n", kwss->keyphrase, kwss->n_detect);
     if (kwss->n_detect > 0) {
-		*out_score = kwss->n_detect;
+        if (out_score)
+		    *out_score = kwss->n_detect;
         return kwss->keyphrase;
 	} else {
-		*out_score = 0;
+        if (out_score)
+            *out_score = 0;
         return NULL;
 	}
 }
