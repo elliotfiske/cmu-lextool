@@ -183,7 +183,11 @@
 { "-kws_plp",                                                   \
       ARG_FLOAT64,                                              \
       "1e-1",                                                   \
-      "Phone loop probability for keyword spotting" }
+      "Phone loop probability for keyword spotting" },          \
+{ "-kws_threshold",                                             \
+      ARG_FLOAT64,                                              \
+      "1",                                                      \
+      "Threshold for p(hyp)/p(alternatives) ratio" }
 
 /** Command-line options for finite state grammars. */
 #define POCKETSPHINX_FSG_OPTIONS \

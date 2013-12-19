@@ -231,11 +231,11 @@ kws_search_trans(kws_search_t* kwss)
         return;
 
     /* Check whether keyword wasn't spotted yet */
-    if (kwss->nodes[kwss->n_nodes-1].active) {
-        fprintf(stderr, "%d; %d\n", hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm), hmm_in_score(pl_best_hmm));
-        if (hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm) BETTER_THAN hmm_in_score(pl_best_hmm)) {
+	if (kwss->nodes[kwss->n_nodes-1].active && hmm_in_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
+        //E_INFO("%d; %d\n", hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm), hmm_in_score(pl_best_hmm));
+		if (hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm) - hmm_in_score(pl_best_hmm) >= kwss->threshold) {
             detected = TRUE;
-            fprintf(stderr, ">>>>DETECTED IN FRAME [%d]\n", kwss->frame);
+            //E_INFO(">>>>DETECTED IN FRAME [%d]\n", kwss->frame);
             pl_best_hmm = &kwss->nodes[kwss->n_nodes-1].hmm;
             /* set all keyword nodes inactive for next occurrence search */
             for (i=0; i<kwss->n_nodes; i++) {
@@ -308,6 +308,8 @@ ps_search_t *kws_search_init(const char* key_phrase,
     kwss->plp = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_plp"))
                            * kwss->lw)
         >> SENSCR_SHIFT;
+
+	kwss->threshold = (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_threshold")));
 
     /* Acoustic score scale for posterior probabilities. */
     kwss->ascale = 1.0f / cmd_ln_float32_r(config, "-ascale");
@@ -495,8 +497,11 @@ char const *kws_search_hyp(ps_search_t *search, int32 *out_score, int32 *out_is_
 {
     kws_search_t *kwss = (kws_search_t *)search;
     E_INFO("Keyphrase [%s] was detected [%d] times\n", kwss->keyphrase, kwss->n_detect);
-    if (kwss->n_detect > 0)
+    if (kwss->n_detect > 0) {
+		*out_score = kwss->n_detect;
         return kwss->keyphrase;
-    else
+	} else {
+		*out_score = 0;
         return NULL;
+	}
 }

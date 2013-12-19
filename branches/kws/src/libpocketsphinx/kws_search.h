@@ -76,6 +76,8 @@ typedef struct kws_search_s {
     int32 plp;                /**< Phone loop probability */
     int32 bestscore;          /**< For beam pruning */
 
+    int32 threshold;          /**< threshold for p(hyp)/p(altern) ratio */
+
     float32 ascale;           /**< Acoustic score scale for posterior probabilities. */
 
     int32 n_pl;               /**< Number of CI phones */
