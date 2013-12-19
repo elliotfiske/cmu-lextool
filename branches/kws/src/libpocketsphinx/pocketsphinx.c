@@ -154,6 +154,7 @@ ps_default_search_args(cmd_ln_t *config)
     const char *lmfile = cmd_ln_str_r(config, "-lm");
     if (lmfile == NULL && !cmd_ln_str_r(config, "-fsg")
         && !cmd_ln_str_r(config, "-jsgf")
+        && !cmd_ln_str_r(config, "-kws")
         && !access(MODELDIR "/lm/en_US/hub4.5000.DMP", F_OK))
     {
         lmfile = MODELDIR "/lm/en_US/hub4.5000.DMP";
@@ -261,9 +262,10 @@ ps_reinit(ps_decoder_t *ps, cmd_ln_t *config)
     if ((ps->d2p = dict2pid_build(ps->acmod->mdef, ps->dict)) == NULL)
         return -1;
 
+    lw = cmd_ln_float32_r(config, "-lw");
+
     // Determine whether we are starting out in FSG or N-Gram search mode.
     // If neither is used skip search initialization.
-    lw = cmd_ln_float32_r(config, "-lw");
 
     /* Load KWS if one was specified in config */
     if ((keyphrase = cmd_ln_str_r(config, "-kws"))) {
