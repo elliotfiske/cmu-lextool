@@ -148,6 +148,10 @@
         *errcode = ps_set_fsg($self, name, fsg);
     }
 
+    void set_kws(const char *name, const char *keyphrase, int *errcode) {
+        *errcode = ps_set_kws($self, name, keyphrase);
+    }
+
     NGramModel * get_lm(const char *name) {
         return ngram_model_retain(ps_get_lm($self, name));
     }

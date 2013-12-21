@@ -11,12 +11,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\programs\pocketsphinx_kws.c" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\pocketsphinx\pocketsphinx.vcxproj">
       <Project>{94001a0e-a837-445c-8004-f918f10d0226}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\programs\kws.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AEAB0D37-783D-4189-A3D2-D665764C8633}</ProjectGuid>

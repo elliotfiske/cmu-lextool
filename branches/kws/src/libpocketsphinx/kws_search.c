@@ -436,6 +436,8 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
         n_nodes += pronlen;
     }
     /* allocate node array */
+    if (kwss->nodes)
+        ckd_free(kwss->nodes);
     kwss->nodes = (kws_node_t *) ckd_calloc(n_nodes, sizeof(kws_node_t));
     kwss->n_nodes = n_nodes;
     /* fill node array */
@@ -447,7 +449,7 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
             int32 ci = dict_pron(dict, wid, p);
             if (p == 0) {
                 /* first phone of word */
-                int32 rc = dict_pron(dict, wid, 1);
+                int32 rc = pronlen>1 ? dict_pron(dict, wid, 1) : silcipid;
                 ssid = dict2pid_ldiph_lc(d2p, ci, rc, silcipid);
             }
             else if (p == pronlen - 1) {
@@ -496,7 +498,6 @@ kws_search_start(ps_search_t * search)
         hmm_clear(hmm);
         hmm_enter(hmm, 0, -1, 0);
     }
-
     return 0;
 }
 
@@ -530,6 +531,12 @@ kws_search_step(ps_search_t * search, int frame_idx)
 int
 kws_search_finish(ps_search_t * search)
 {
+    int i;
+    kws_search_t* kwss = (kws_search_t *) search;
+
+    for (i = 0; i < kwss->n_nodes; i++) {
+        kwss->nodes[i].active = 0;
+    }
     return 0;
 }
 
@@ -538,8 +545,8 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
                int32 * out_is_final)
 {
     kws_search_t *kwss = (kws_search_t *) search;
-    E_INFO("Keyphrase [%s] was detected [%d] times\n", kwss->keyphrase,
-           kwss->n_detect);
+    //E_INFO("Keyphrase [%s] was detected [%d] times\n", kwss->keyphrase,
+    //       kwss->n_detect);
     if (kwss->n_detect > 0) {
         if (out_score)
             *out_score = kwss->n_detect;

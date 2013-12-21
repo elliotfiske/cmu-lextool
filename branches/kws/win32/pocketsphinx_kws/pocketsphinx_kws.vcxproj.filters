@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\programs\pocketsphinx_kws.c">
+    <ClCompile Include="..\..\src\programs\kws.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
