@@ -156,7 +156,7 @@ kws_search_sen_active(kws_search_t * kwss)
 static void
 kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
 {
-    int32 i, maxhmmpf;
+    int32 i;
     int32 bestscore = WORST_SCORE;
 
     hmm_context_set_senscore(kwss->hmmctx, senscr);
@@ -184,27 +184,6 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
         }
     }
 
-    /* Adjust beams if #active HMMs larger than absolute threshold */
-    maxhmmpf = cmd_ln_int32_r(ps_search_config(kwss), "-maxhmmpf");
-    if (maxhmmpf != -1 && i > maxhmmpf) {
-        /*
-         * Too many HMMs active; reduce the beam factor applied to the default
-         * beams, but not if the factor is already at a floor (0.1).
-         */
-        if (kwss->beam_factor > 0.1) {  /* Hack!!  Hardwired constant 0.1 */
-            kwss->beam_factor *= 0.9f;  /* Hack!!  Hardwired constant 0.9 */
-            kwss->beam = (int32) (kwss->beam_orig * kwss->beam_factor);
-            kwss->pbeam = (int32) (kwss->pbeam_orig * kwss->beam_factor);
-            kwss->wbeam = (int32) (kwss->wbeam_orig * kwss->beam_factor);
-        }
-    }
-    else {
-        kwss->beam_factor = 1.0f;
-        kwss->beam = kwss->beam_orig;
-        kwss->pbeam = kwss->pbeam_orig;
-        kwss->wbeam = kwss->wbeam_orig;
-    }
-
     kwss->bestscore = bestscore;
 }
 
@@ -217,7 +196,7 @@ kws_search_trans(kws_search_t * kwss)
     hmm_t *pl_best_hmm = NULL;
     int32 best_out_score = WORST_SCORE;
     uint8 detected = FALSE;
-    int32 thresh = kwss->bestscore + kwss->pbeam;
+    /* int32 thresh = kwss->bestscore + kwss->beam; */
     int i;
 
     /* select best hmm in phone-loop to be a predecessor */
@@ -234,13 +213,13 @@ kws_search_trans(kws_search_t * kwss)
     /* Check whether keyword wasn't spotted yet */
     if (kwss->nodes[kwss->n_nodes - 1].active
         && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
-        
+
         /* E_INFO("%d; %d\n",
-		hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm),
-    		hmm_out_score(pl_best_hmm),
-		hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm) -
-		hmm_out_score(pl_best_hmm)); */
-        
+           hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm),
+           hmm_out_score(pl_best_hmm),
+           hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm) -
+           hmm_out_score(pl_best_hmm)); */
+
         if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
             hmm_out_score(pl_best_hmm) >= kwss->threshold) {
             detected = TRUE;
@@ -276,19 +255,16 @@ kws_search_trans(kws_search_t * kwss)
         if (kwss->nodes[i - 1].active) {
             hmm_t *pred_hmm = &kwss->nodes[i - 1].hmm;
             if (!kwss->nodes[i].active
-                || hmm_out_score(pred_hmm) BETTER_THAN hmm_in_score(&kwss->
-                                                                    nodes
-                                                                    [i].
-                                                                    hmm))
+                || hmm_out_score(pred_hmm) BETTER_THAN
+                hmm_in_score(&kwss->nodes[i].hmm))
                 hmm_enter(&kwss->nodes[i].hmm, hmm_out_score(pred_hmm),
                           hmm_out_history(pred_hmm), kwss->frame + 1);
             kwss->nodes[i].active = TRUE;
         }
     }
     /* enter keyword start node from phone loop */
-    if (hmm_out_score(pl_best_hmm) BETTER_THAN hmm_in_score(&kwss->
-                                                               nodes[0].
-                                                               hmm)) {
+    if (hmm_out_score(pl_best_hmm) BETTER_THAN
+        hmm_in_score(&kwss->nodes[0].hmm)) {
         kwss->nodes[0].active = TRUE;
         hmm_enter(&kwss->nodes[0].hmm, hmm_out_score(pl_best_hmm),
                   hmm_out_history(pl_best_hmm), kwss->frame + 1);
@@ -304,53 +280,23 @@ kws_search_init(const char *key_phrase,
     ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict,
                    d2p);
 
-    /* Get search pruning parameters */
-    kwss->beam_factor = 1.0f;
-    kwss->beam = kwss->beam_orig
-        =
-        (int32) logmath_log(acmod->lmath,
-                            cmd_ln_float64_r(config, "-beam"))
-        >> SENSCR_SHIFT;
-    kwss->pbeam = kwss->pbeam_orig
-        =
-        (int32) logmath_log(acmod->lmath,
-                            cmd_ln_float64_r(config, "-pbeam"))
-        >> SENSCR_SHIFT;
-    kwss->wbeam = kwss->wbeam_orig
-        =
-        (int32) logmath_log(acmod->lmath,
-                            cmd_ln_float64_r(config, "-wbeam"))
-        >> SENSCR_SHIFT;
+    kwss->beam = (int32) logmath_log(acmod->lmath,
+                                     cmd_ln_float64_r(config,
+                                                      "-beam")) >>
+        SENSCR_SHIFT;
 
-    /* LM related weights/penalties */
-    kwss->lw = cmd_ln_float32_r(config, "-lw");
-    kwss->pip =
-        (int32) (logmath_log
-                 (acmod->lmath, cmd_ln_float32_r(config, "-pip"))
-                 * kwss->lw)
-        >> SENSCR_SHIFT;
-    kwss->wip =
-        (int32) (logmath_log
-                 (acmod->lmath, cmd_ln_float32_r(config, "-wip"))
-                 * kwss->lw)
-        >> SENSCR_SHIFT;
     kwss->plp =
-        (int32) (logmath_log
-                 (acmod->lmath, cmd_ln_float32_r(config, "-kws_plp"))
-                 * kwss->lw)
-        >> SENSCR_SHIFT;
+        (int32) logmath_log(acmod->lmath,
+                            cmd_ln_float32_r(config,
+                                             "-kws_plp")) >> SENSCR_SHIFT;
 
     kwss->threshold =
         (int32) (logmath_log
                  (acmod->lmath,
                   cmd_ln_float32_r(config, "-kws_threshold")));
 
-    /* Acoustic score scale for posterior probabilities. */
-    kwss->ascale = 1.0f / cmd_ln_float32_r(config, "-ascale");
-
-    E_INFO("KWS(beam: %d, pbeam: %d, wbeam: %d; wip: %d, pip: %d)\n",
-           kwss->beam_orig, kwss->pbeam_orig, kwss->wbeam_orig,
-           kwss->wip, kwss->pip);
+    E_INFO("KWS(beam: %d, plp: %d, threshold %d)\n",
+           kwss->beam, kwss->plp, kwss->threshold);
 
     kwss->keyphrase = ckd_salloc(key_phrase);
 
@@ -454,7 +400,8 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
             int32 ci = dict_pron(dict, wid, p);
             if (p == 0) {
                 /* first phone of word */
-                int32 rc = pronlen>1 ? dict_pron(dict, wid, 1) : silcipid;
+                int32 rc =
+                    pronlen > 1 ? dict_pron(dict, wid, 1) : silcipid;
                 ssid = dict2pid_ldiph_lc(d2p, ci, rc, silcipid);
             }
             else if (p == pronlen - 1) {
@@ -486,12 +433,6 @@ kws_search_start(ps_search_t * search)
 {
     int i;
     kws_search_t *kwss = (kws_search_t *) search;
-
-    /* Reset dynamic adjustment factor for beams */
-    kwss->beam_factor = 1.0f;
-    kwss->beam = kwss->beam_orig;
-    kwss->pbeam = kwss->pbeam_orig;
-    kwss->wbeam = kwss->wbeam_orig;
 
     kwss->frame = 0;
     kwss->n_detect = 0;
@@ -537,7 +478,7 @@ int
 kws_search_finish(ps_search_t * search)
 {
     int i;
-    kws_search_t* kwss = (kws_search_t *) search;
+    kws_search_t *kwss = (kws_search_t *) search;
 
     for (i = 0; i < kwss->n_nodes; i++) {
         kwss->nodes[i].active = 0;

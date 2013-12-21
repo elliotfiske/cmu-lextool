@@ -64,21 +64,11 @@ typedef struct kws_search_s {
     int16 n_detect;           /**< Keyphrase detections amount */
     frame_idx_t frame;        /**< Frame index */
 
-    int32 beam_orig;          /**< Global pruning threshold */
-    int32 pbeam_orig;         /**< Pruning threshold for phone transition */
-    int32 wbeam_orig;         /**< Pruning threshold for word exit */
-    float32 beam_factor;      /**< Dynamic/adaptive factor (<=1) applied to above
-                                     beams to determine actual effective beams.
-                                     For implementing absolute pruning. */
-    int32 beam, pbeam, wbeam; /**< Effective beams after applying beam_factor */              
-	float32 lw;
-    int32 pip, wip;           /**< Language weights */
+    int32 beam;
+
     int32 plp;                /**< Phone loop probability */
     int32 bestscore;          /**< For beam pruning */
-
     int32 threshold;          /**< threshold for p(hyp)/p(altern) ratio */
-
-    float32 ascale;           /**< Acoustic score scale for posterior probabilities. */
 
     int32 n_pl;               /**< Number of CI phones */
     hmm_t* pl_hmms;           /**< Phone loop hmms - hmms of CI phones */
