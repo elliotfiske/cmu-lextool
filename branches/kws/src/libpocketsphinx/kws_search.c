@@ -227,22 +227,29 @@ kws_search_trans(kws_search_t * kwss)
             pl_best_hmm = &kwss->pl_hmms[i];
         }
 
+    /* out probs are not ready yet */
     if (!pl_best_hmm)
-        /* out probs are not ready yet */
         return;
 
     /* Check whether keyword wasn't spotted yet */
     if (kwss->nodes[kwss->n_nodes - 1].active
-        && hmm_in_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
-        //E_INFO("%d; %d\n", hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm), hmm_in_score(pl_best_hmm));
+        && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
+        
+        /* E_INFO("%d; %d\n",
+		hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm),
+    		hmm_out_score(pl_best_hmm),
+		hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm) -
+		hmm_out_score(pl_best_hmm)); */
+        
         if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
-            hmm_in_score(pl_best_hmm) >= kwss->threshold) {
+            hmm_out_score(pl_best_hmm) >= kwss->threshold) {
             detected = TRUE;
-            //E_INFO(">>>>DETECTED IN FRAME [%d]\n", kwss->frame);
+            E_INFO(">>>>DETECTED IN FRAME [%d]\n", kwss->frame);
             pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
+
             /* set all keyword nodes inactive for next occurrence search */
             for (i = 0; i < kwss->n_nodes; i++) {
-                kwss->nodes[i].active = 0;
+                kwss->nodes[i].active = FALSE;
                 hmm_clear_scores(&kwss->nodes[i].hmm);
             }
         }
@@ -262,7 +269,6 @@ kws_search_trans(kws_search_t * kwss)
 
     if (detected) {
         kwss->n_detect++;
-        return;
     }
 
     /* activate new keyword nodes, enter their hmms */
@@ -280,8 +286,7 @@ kws_search_trans(kws_search_t * kwss)
         }
     }
     /* enter keyword start node from phone loop */
-    if (!kwss->nodes[0].active
-        || hmm_out_score(pl_best_hmm) BETTER_THAN hmm_in_score(&kwss->
+    if (hmm_out_score(pl_best_hmm) BETTER_THAN hmm_in_score(&kwss->
                                                                nodes[0].
                                                                hmm)) {
         kwss->nodes[0].active = TRUE;
