@@ -148,6 +148,10 @@
         *errcode = ps_set_fsg($self, name, fsg);
     }
 
+    const char * get_kws(const char *name) {
+        return ps_get_kws($self, name);
+    }
+
     void set_kws(const char *name, const char *keyphrase, int *errcode) {
         *errcode = ps_set_kws($self, name, keyphrase);
     }
