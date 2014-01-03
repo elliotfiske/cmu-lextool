@@ -33,38 +33,21 @@
  */
 
 /*
- * kws_search.c -- Search structures for key word spotting.
- * 
- * **********************************************
- * CMU ARPA Speech Project
- *
- * Copyright (c) 2013 Carnegie Mellon University.
- * ALL RIGHTS RESERVED.
- * **********************************************
- * 
- * HISTORY
- *
- * 13-Dec-2013
- * 		Started.
+ * kws_search.c -- Search object for key phrase spotting.
  */
 
-/* System headers. */
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 
-/* SphinxBase headers. */
 #include <sphinxbase/err.h>
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/strfuncs.h>
 #include <sphinxbase/cmd_ln.h>
 
-/* Local headers. */
 #include "pocketsphinx_internal.h"
 #include "kws_search.h"
 
-/* Turn this on for detailed debugging dump */
-#define __KWS_DBG__		0
 
 /* Cap functions to meet ps_search api */
 static ps_seg_t *
@@ -167,7 +150,6 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
         int32 score;
 
         score = hmm_vit_eval(hmm);
-        hmm_frame(hmm) = kwss->frame + 1;
         if (score BETTER_THAN bestscore)
             bestscore = score;
     }
@@ -178,7 +160,6 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
             int32 score;
 
             score = hmm_vit_eval(hmm);
-            hmm_frame(hmm) = kwss->frame + 1;
             if (score BETTER_THAN bestscore)
                 bestscore = score;
         }
@@ -186,6 +167,29 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
 
     kwss->bestscore = bestscore;
 }
+
+/*
+ * (Beam) prune the just evaluated HMMs, determine which ones remain
+ * active. Executed once per frame.
+ */
+static void
+kws_search_hmm_prune(kws_search_t *kwss)
+{
+    int32 thresh, i;
+
+    thresh = kwss->bestscore + kwss->beam;
+
+    for (i = 0; i < kwss->n_nodes; i++) {
+        if (kwss->nodes[i].active) {
+            if (hmm_bestscore(&kwss->nodes[i].hmm) < thresh) {
+        	kwss->nodes[i].active = FALSE;
+        	hmm_clear(&kwss->nodes[i].hmm);
+    	    }
+    	}
+    }
+    return;
+}
+
 
 /**
  * Do phone transitions
@@ -196,7 +200,6 @@ kws_search_trans(kws_search_t * kwss)
     hmm_t *pl_best_hmm = NULL;
     int32 best_out_score = WORST_SCORE;
     uint8 detected = FALSE;
-    /* int32 thresh = kwss->bestscore + kwss->beam; */
     int i;
 
     /* select best hmm in phone-loop to be a predecessor */
@@ -235,34 +238,34 @@ kws_search_trans(kws_search_t * kwss)
 
     }
 
-    /* make transition for all phone loop hmms */
+    /* Make transition for all phone loop hmms */
     for (i = 0; i < kwss->n_pl; i++) {
-        if (&kwss->pl_hmms[i] == pl_best_hmm) {
-            /* no need for phone to enter itself */
-            continue;
-        }
-        hmm_enter(&kwss->pl_hmms[i],
-                  hmm_out_score(pl_best_hmm) + kwss->plp,
+        if (hmm_out_score(pl_best_hmm) + kwss->plp BETTER_THAN
+	    hmm_in_score(&kwss->nodes[0].hmm)) {
+	    hmm_enter(&kwss->pl_hmms[i],
+    	          hmm_out_score(pl_best_hmm) + kwss->plp,
                   hmm_out_history(pl_best_hmm), kwss->frame + 1);
+	}
     }
 
     if (detected) {
         kwss->n_detect++;
     }
 
-    /* activate new keyword nodes, enter their hmms */
+    /* Activate new keyword nodes, enter their hmms */
     for (i = kwss->n_nodes - 1; i > 0; i--) {
         if (kwss->nodes[i - 1].active) {
             hmm_t *pred_hmm = &kwss->nodes[i - 1].hmm;
             if (!kwss->nodes[i].active
                 || hmm_out_score(pred_hmm) BETTER_THAN
-                hmm_in_score(&kwss->nodes[i].hmm))
+                hmm_in_score(&kwss->nodes[i].hmm)) {
                 hmm_enter(&kwss->nodes[i].hmm, hmm_out_score(pred_hmm),
                           hmm_out_history(pred_hmm), kwss->frame + 1);
-            kwss->nodes[i].active = TRUE;
+        	kwss->nodes[i].active = TRUE;
+    	    }
         }
     }
-    /* enter keyword start node from phone loop */
+    /* Enter keyword start node from phone loop */
     if (hmm_out_score(pl_best_hmm) BETTER_THAN
         hmm_in_score(&kwss->nodes[0].hmm)) {
         kwss->nodes[0].active = TRUE;
@@ -277,36 +280,29 @@ kws_search_init(const char *key_phrase,
                 acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
     kws_search_t *kwss = (kws_search_t *) ckd_calloc(1, sizeof(*kwss));
-    ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict,
-                   d2p);
+    ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict, d2p);
 
-    kwss->beam = (int32) logmath_log(acmod->lmath,
-                                     cmd_ln_float64_r(config,
-                                                      "-beam")) >>
-        SENSCR_SHIFT;
+    kwss->beam = 
+        (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam")) >> SENSCR_SHIFT;
 
     kwss->plp =
-        (int32) logmath_log(acmod->lmath,
-                            cmd_ln_float32_r(config,
-                                             "-kws_plp")) >> SENSCR_SHIFT;
+        (int32) logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_plp")) >> SENSCR_SHIFT;
 
     kwss->threshold =
-        (int32) (logmath_log
-                 (acmod->lmath,
-                  cmd_ln_float32_r(config, "-kws_threshold")));
+        (int32) (logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_threshold"))) >> SENSCR_SHIFT;
 
     E_INFO("KWS(beam: %d, plp: %d, threshold %d)\n",
            kwss->beam, kwss->plp, kwss->threshold);
 
     kwss->keyphrase = ckd_salloc(key_phrase);
 
-    /* check if all words are in dictionary */
+    /* Check if all words are in dictionary */
     if (!kws_search_check_dict(kwss)) {
         kws_search_free(ps_search_base(kwss));
         return NULL;
     }
 
-    /* reinit for provided keyword */
+    /* Reinit for provided keyword */
     if (kws_search_reinit(ps_search_base(kwss),
                           ps_search_dict(kwss),
                           ps_search_dict2pid(kwss)) < 0) {
@@ -325,7 +321,6 @@ kws_search_free(ps_search_t * search)
     ps_search_deinit(search);
     hmm_context_free(kwss->hmmctx);
 
-    /* free background hmms */
     ckd_free(kwss->pl_hmms);
     ckd_free(kwss->nodes);
     ckd_free(kwss->keyphrase);
@@ -379,6 +374,7 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
     n_wrds = str2words(tmp_keyphrase, NULL, 0);
     wrdptr = (char **) ckd_calloc(n_wrds, sizeof(*wrdptr));
     str2words(tmp_keyphrase, wrdptr, n_wrds);
+
     /* count amount of nodes */
     n_nodes = 0;
     for (i = 0; i < n_wrds; i++) {
@@ -386,11 +382,13 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
         pronlen = dict_pronlen(dict, wid);
         n_nodes += pronlen;
     }
+
     /* allocate node array */
     if (kwss->nodes)
         ckd_free(kwss->nodes);
     kwss->nodes = (kws_node_t *) ckd_calloc(n_nodes, sizeof(kws_node_t));
     kwss->n_nodes = n_nodes;
+
     /* fill node array */
     j = 0;
     for (i = 0; i < n_wrds; i++) {
@@ -465,7 +463,7 @@ kws_search_step(ps_search_t * search, int frame_idx)
     kws_search_hmm_eval(kwss, senscr);
 
     /* Prune hmms with low prob */
-    //TODO impl pruning
+    kws_search_hmm_prune(kwss);
 
     /* Do hmms transitions */
     kws_search_trans(kwss);
@@ -477,12 +475,7 @@ kws_search_step(ps_search_t * search, int frame_idx)
 int
 kws_search_finish(ps_search_t * search)
 {
-    int i;
-    kws_search_t *kwss = (kws_search_t *) search;
-
-    for (i = 0; i < kwss->n_nodes; i++) {
-        kwss->nodes[i].active = 0;
-    }
+    /* Nothing here */
     return 0;
 }
 
@@ -491,8 +484,7 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
                int32 * out_is_final)
 {
     kws_search_t *kwss = (kws_search_t *) search;
-    //E_INFO("Keyphrase [%s] was detected [%d] times\n", kwss->keyphrase,
-    //       kwss->n_detect);
+
     if (kwss->n_detect > 0) {
         if (out_score)
             *out_score = kwss->n_detect;
