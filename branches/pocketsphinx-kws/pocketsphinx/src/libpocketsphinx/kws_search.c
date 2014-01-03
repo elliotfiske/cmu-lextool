@@ -199,7 +199,6 @@ kws_search_trans(kws_search_t * kwss)
 {
     hmm_t *pl_best_hmm = NULL;
     int32 best_out_score = WORST_SCORE;
-    uint8 detected = FALSE;
     int i;
 
     /* select best hmm in phone-loop to be a predecessor */
@@ -225,7 +224,8 @@ kws_search_trans(kws_search_t * kwss)
 
         if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
             hmm_out_score(pl_best_hmm) >= kwss->threshold) {
-            detected = TRUE;
+
+            kwss->n_detect++;
             E_INFO(">>>>DETECTED IN FRAME [%d]\n", kwss->frame);
             pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
 
@@ -246,10 +246,6 @@ kws_search_trans(kws_search_t * kwss)
     	          hmm_out_score(pl_best_hmm) + kwss->plp,
                   hmm_out_history(pl_best_hmm), kwss->frame + 1);
 	}
-    }
-
-    if (detected) {
-        kwss->n_detect++;
     }
 
     /* Activate new keyword nodes, enter their hmms */
