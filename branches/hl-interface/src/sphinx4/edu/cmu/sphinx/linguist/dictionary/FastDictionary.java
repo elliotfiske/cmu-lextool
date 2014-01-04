@@ -234,7 +234,7 @@ public class FastDictionary implements Dictionary {
             logger.info("Loading filler dictionary from: " +
                     fillerDictionaryFile);
 
-            loadDictionary(fillerDictionaryFile.openStream(), true);
+            // loadDictionary(fillerDictionaryFile.openStream(), true);
 
             if(g2pModelFile != null && !g2pModelFile.getPath().equals("")) {
                 g2pDecoder = new G2PConverter(g2pModelFile);

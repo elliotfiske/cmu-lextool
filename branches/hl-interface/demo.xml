@@ -46,7 +46,8 @@
   <target name="compile_sphinx_demos"
     depends="compile_dialog,
     compile_sphinx_transcriber,
-    compile_aligner"
+    compile_aligner,
+    compile_yesno"
     description="Compiles Sphinx-4 demos"/>
 
   <target name="compile_dialog">
@@ -111,6 +112,32 @@
       manifest="${demo_src_dir}/edu/cmu/sphinx/demo/aligner/aligner.Manifest"
       basedir="${demo_classes_dir}"
       includes="edu/cmu/sphinx/demo/aligner/**"
+      compress="true"/>
+  </target>
+
+  <target name="compile_yesno">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/yesno"/>
+    <javac debug="true"
+      listfiles="true"
+      deprecation="true"
+      includeAntRuntime="false"
+      srcdir="${demo_src_dir}"
+      includes="edu/cmu/sphinx/demo/yesno/**"
+      destdir="${demo_classes_dir}">
+      <classpath refid="libs"/>
+    </javac>
+    <mkdir dir="${bin_dir}"/>
+
+    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/yesno">
+      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/yesno">
+        <include name="**/yesno.gram"/>
+      </fileset>
+    </copy>
+
+    <jar destfile="${bin_dir}/YesNo.jar"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/yesno/yesno.Manifest"
+      basedir="${demo_classes_dir}"
+      includes="edu/cmu/sphinx/demo/yesno/**"
       compress="true"/>
   </target>
 

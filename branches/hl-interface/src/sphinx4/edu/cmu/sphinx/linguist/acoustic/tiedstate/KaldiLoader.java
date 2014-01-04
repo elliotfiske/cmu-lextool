@@ -12,18 +12,48 @@
 
 package edu.cmu.sphinx.linguist.acoustic.tiedstate;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
-import edu.cmu.sphinx.util.props.PropertyException;
-import edu.cmu.sphinx.util.props.PropertySheet;
+import edu.cmu.sphinx.linguist.acoustic.*;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi.DiagGmm;
 
-import edu.cmu.sphinx.linguist.acoustic.Unit;
-
+import edu.cmu.sphinx.util.props.*;
 
 public class KaldiLoader implements Loader {
+
+    @S4Component(type = UnitManager.class)
+    public final static String PROP_UNIT_MANAGER = "unitManager";
+
+    @S4String(mandatory = true)
+    public final static String PROP_LOCATION = "location";
+
+    private URL location;
+    private HMMManager hmmManager;
+    private UnitManager unitManager;
+
+    private Pool<Senone> senonePool;
+    private Properties modelProperties;
+    private Map<String, Unit> contextIndependentUnits;
+
+    public KaldiLoader() {
+    }
+
+    public KaldiLoader(URL location, UnitManager unitManager) {
+        init(location, unitManager);
+    }
+
+    public void init(URL location, UnitManager unitManager) {
+        this.location = location;
+        this.unitManager = unitManager;
+    }
+
+    @Override
+    public void newProperties(PropertySheet ps) throws PropertyException {
+        init(ConfigurationManagerUtils.getResource(PROP_LOCATION, ps),
+             (UnitManager) ps.getComponent(PROP_UNIT_MANAGER));
+    }
 
     /**
      * Loads the acoustic model.
@@ -31,6 +61,118 @@ public class KaldiLoader implements Loader {
      * @throws IOException if an error occurs while loading the model
      */
     public void load() throws IOException {
+        senonePool = loadSenones();
+        hmmManager = new HMMManager();
+        contextIndependentUnits = new HashMap<String, Unit>();
+
+        Unit unit = UnitManager.SILENCE;
+        contextIndependentUnits.put(unit.getName(), unit);
+        SenoneSequence ss = getSenoneSequence(new int[] {0, 1});
+        float[][] transitionMatrix = {
+            {0.75f, 0,25f, 0},
+            {0, 0.75f, 0.25f}
+        };
+        hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
+                                     HMMPosition.UNDEFINED));
+
+        unit = unitManager.getUnit("Y_S", false);
+        contextIndependentUnits.put(unit.getName(), unit);
+        ss = getSenoneSequence(new int[] {2, 3});
+        transitionMatrix = new float[][] {
+            {0.75f, 0,25f, 0},
+            {0, 0.75f, 0.25f}
+        };
+        hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
+                                     HMMPosition.UNDEFINED));
+
+        unit = unitManager.getUnit("N_S", false);
+        contextIndependentUnits.put(unit.getName(), unit);
+        ss = getSenoneSequence(new int[] {4, 5});
+        transitionMatrix = new float[][] {
+            {0.75f, 0,25f, 0},
+            {0, 0.75f, 0.25f}
+        };
+        hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
+                                     HMMPosition.UNDEFINED));
+    }
+
+    private Pool<Senone> loadSenones() throws IOException {
+        // TODO: use StreamTokenizer as it's faster than Scanner.
+        Scanner sc = new Scanner(location.openStream());
+        // Skip transition model.
+        while (sc.hasNext() && !sc.next().trim().equals("</TransitionModel>"));
+
+        assertNextToken(sc, "<DIMENSION>");
+        int ndim = Integer.parseInt(sc.next());
+
+        assertNextToken(sc, "<NUMPDFS>");
+        int npdf = Integer.parseInt(sc.next());
+
+        Pool<Senone> senones = new Pool<Senone>("senones");
+
+        for (int i = 0; i < npdf; ++i) {
+            assertNextToken(sc, "<DiagGMM>");
+            assertNextToken(sc, "<GCONSTS>");
+            assertNextToken(sc, "[");
+            List<Float> gconsts = parseFloatList(sc);
+            System.out.format("gconsts %d %d\n", i, gconsts.size());
+
+            assertNextToken(sc, "<WEIGHTS>");
+            assertNextToken(sc, "[");
+            List<Float> weights = parseFloatList(sc);
+            System.out.format("weights %d %d\n", i, weights.size());
+
+            assertNextToken(sc, "<MEANS_INVVARS>");
+            assertNextToken(sc, "[");
+            List<Float> means = parseFloatList(sc);
+            System.out.format("means %d %d\n", i, means.size());
+
+            assertNextToken(sc, "<INV_VARS>");
+            assertNextToken(sc, "[");
+            List<Float> vars = parseFloatList(sc);
+            System.out.format("vars %d %d\n", i, vars.size());
+
+            senones.put(i, new DiagGmm(i, gconsts, means, vars));
+
+            assertNextToken(sc, "</DiagGMM>");
+        }
+
+        return senones;
+    }
+
+    private Properties loadProperties(String path)
+        throws IOException
+    {
+        Properties properties = new Properties();
+        Reader reader = new InputStreamReader(new FileInputStream(path));
+        BufferedReader br = new BufferedReader(reader);
+        String line;
+
+        while ((line = br.readLine()) != null) {
+            String[] tokens = line.split(" ");
+            properties.put(tokens[0].trim(), tokens[1].trim());
+        }
+
+        return properties;
+    }
+
+    private static void assertNextToken(Scanner scanner, String expected) {
+        String actual = scanner.next().trim();
+        if (!actual.equals(expected)) {
+            String msg;
+            msg = String.format("'%s' expected, '%s' got", expected, actual);
+            throw new IllegalStateException(msg);
+        }
+    }
+
+    private static List<Float> parseFloatList(Scanner scanner) {
+        List<Float> result = new ArrayList<Float>();
+        String token;
+
+        while (!(token = scanner.next().trim()).equals("]"))
+            result.add(Float.parseFloat(token));
+
+        return result;
     }
 
     /**
@@ -120,7 +262,7 @@ public class KaldiLoader implements Loader {
      * @return the pool
      */
     public Pool<Senone> getSenonePool() {
-        return null;
+        return senonePool;
     }
 
     /**
@@ -129,7 +271,7 @@ public class KaldiLoader implements Loader {
      * @return the HMM Manager
      */
     public HMMManager getHMMManager() {
-        return null;
+        return hmmManager;
     }
 
     /**
@@ -138,7 +280,7 @@ public class KaldiLoader implements Loader {
      * @return the map of context independent units
      */
     public Map<String, Unit> getContextIndependentUnits() {
-        return null;
+        return contextIndependentUnits;
     }
 
     /** logs information about this loader */
@@ -151,7 +293,7 @@ public class KaldiLoader implements Loader {
      * @return the left context size
      */
     public int getLeftContextSize() {
-        return 0;
+        return 1;
     }
 
     /**
@@ -160,76 +302,28 @@ public class KaldiLoader implements Loader {
      * @return the left context size
      */
     public int getRightContextSize() {
-        return 0;
+        return 1;
     }
     
-    @Override
-    public void newProperties(PropertySheet ps) throws PropertyException {
-
-        /*
-        init(ConfigurationManagerUtils.getResource(PROP_LOCATION, ps),
-                ps.getString(PROP_MODEL), ps.getString(PROP_DATA_LOCATION),
-                (UnitManager) ps.getComponent(PROP_UNIT_MANAGER),
-                ps.getFloat(PROP_MC_FLOOR), ps.getFloat(PROP_MW_FLOOR),
-                ps.getFloat(PROP_VARIANCE_FLOOR),
-                ps.getBoolean(PROP_USE_CD_UNITS), ps.getLogger());
-                */
-    }
-
     /**
      * Returns the model properties
      */
     public Properties getProperties() {
-        return null;
+        try {
+            if (null == modelProperties)
+                modelProperties = loadProperties("models/acoustic/wsj/feat.params");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return modelProperties;
     }
 
-    private static void assertNextToken(Scanner scanner, String expected) {
-        String actual = scanner.next().trim();
-        if (!actual.equals(expected)) {
-            String msg;
-            msg = String.format("'%s' expected, '%s' got", expected, actual);
-            throw new IllegalStateException(msg);
-        }
-    }
+    protected SenoneSequence getSenoneSequence(int[] ids) {
+        Senone[] senones = new Senone[ids.length];
+        for (int i = 0; i < ids.length; i++)
+            senones[i] = senonePool.get(ids[i]);
 
-    public static void main(String[] args) throws IOException {
-        Scanner sc = new Scanner(new FileInputStream(args[0]));
-        // Skip transition model.
-        while (sc.hasNext() && !sc.next().trim().equals("</TransitionModel>"));
-        assertNextToken(sc, "<DIMENSION>");
-        int ndim = Integer.parseInt(sc.next());
-
-        assertNextToken(sc, "<NUMPDFS>");
-        int npdf = Integer.parseInt(sc.next());
-
-        for (int i = 0; i < npdf; ++i) {
-            assertNextToken(sc, "<DiagGMM>");
-            assertNextToken(sc, "<GCONSTS>");
-            assertNextToken(sc, "[");
-            List<Float> gconsts = new ArrayList<Float>();
-            String token;
-            while (!(token = sc.next().trim()).equals("]"))
-                gconsts.add(Float.parseFloat(token));
-
-            assertNextToken(sc, "<WEIGHTS>");
-            assertNextToken(sc, "[");
-            List<Float> weights = new ArrayList<Float>();
-            while (!(token = sc.next().trim()).equals("]"))
-                weights.add(Float.parseFloat(token));
-
-            assertNextToken(sc, "<MEANS_INVVARS>");
-            assertNextToken(sc, "[");
-            List<Float> means = new ArrayList<Float>();
-            while (!(token = sc.next().trim()).equals("]"))
-                means.add(Float.parseFloat(token));
-
-            assertNextToken(sc, "<INV_VARS>");
-            assertNextToken(sc, "[");
-            List<Float> vars = new ArrayList<Float>();
-            while (!(token = sc.next().trim()).equals("]"))
-                vars.add(Float.parseFloat(token));
-
-            assertNextToken(sc, "</DiagGMM>");
-        }
+        return new SenoneSequence(senones);
     }
 }

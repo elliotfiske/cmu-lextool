@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.cmu.sphinx.frontend.util.StreamCepstrumSource;
 import edu.cmu.sphinx.frontend.util.StreamDataSource;
 
 import edu.cmu.sphinx.util.props.Configurable;
@@ -90,7 +91,7 @@ public class Context {
      */
     public void setAcousticModel(String path) throws IOException {
         setLocalProperty("acousticModelLoader->location", path);
-        setLocalProperty("dictionary->fillerPath", path + "/noisedict");
+        // setLocalProperty("dictionary->fillerPath", path + "/noisedict");
     }
 
     /**
@@ -160,8 +161,13 @@ public class Context {
      */
     public void setSpeechSource(InputStream stream) {
         // TODO: setup stream sample rate and other parameters
-        getInstance(StreamDataSource.class).setInputStream(stream);
-        setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
+        // getInstance(StreamDataSource.class).setInputStream(stream);
+        try {
+            getInstance(StreamCepstrumSource.class).setInputStream(stream, false);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        // setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
     }
 
     /**
