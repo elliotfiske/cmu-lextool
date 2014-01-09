@@ -20,6 +20,7 @@ import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi.DiagGmm;
 
 import edu.cmu.sphinx.util.props.*;
+import edu.cmu.sphinx.util.LogMath;
 
 public class KaldiLoader implements Loader {
 
@@ -68,9 +69,14 @@ public class KaldiLoader implements Loader {
         Unit unit = UnitManager.SILENCE;
         contextIndependentUnits.put(unit.getName(), unit);
         SenoneSequence ss = getSenoneSequence(new int[] {0, 1});
+        LogMath logMath = LogMath.getInstance();
         float[][] transitionMatrix = {
-            {0.75f, 0,25f, 0},
+            {logMath.lnToLog(-0.1219371f), logMath.lnToLog(-2.164599f), 0},
+            {0, logMath.lnToLog(-0.04802629f), logMath.lnToLog(-3.059923f)}
+            /*
+            {0.75f, 0.25f, 0},
             {0, 0.75f, 0.25f}
+            */
         };
         hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
                                      HMMPosition.UNDEFINED));
@@ -79,8 +85,12 @@ public class KaldiLoader implements Loader {
         contextIndependentUnits.put(unit.getName(), unit);
         ss = getSenoneSequence(new int[] {2, 3});
         transitionMatrix = new float[][] {
-            {0.75f, 0,25f, 0},
+            {logMath.lnToLog(-0.05272233f), logMath.lnToLog(-2.968962f), 0 },
+            {0, logMath.lnToLog(-0.04890276f), logMath.lnToLog(-3.042274f) }
+            /*
+            {0.75f, 0.25f, 0},
             {0, 0.75f, 0.25f}
+            */
         };
         hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
                                      HMMPosition.UNDEFINED));
@@ -89,8 +99,12 @@ public class KaldiLoader implements Loader {
         contextIndependentUnits.put(unit.getName(), unit);
         ss = getSenoneSequence(new int[] {4, 5});
         transitionMatrix = new float[][] {
-            {0.75f, 0,25f, 0},
+            {logMath.lnToLog(-0.04344284f), logMath.lnToLog(-3.157953f), 0 },
+            {0, logMath.lnToLog(-0.04845489f), logMath.lnToLog(-3.051252f) }
+            /*
+            {0.75f, 0.25f, 0},
             {0, 0.75f, 0.25f}
+            */
         };
         hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
                                      HMMPosition.UNDEFINED));
@@ -99,7 +113,37 @@ public class KaldiLoader implements Loader {
     private Pool<Senone> loadSenones() throws IOException {
         // TODO: use StreamTokenizer as it's faster than Scanner.
         Scanner sc = new Scanner(location.openStream());
-        // Skip transition model.
+
+        /*
+        assertNextToken(sc, "<TransitionModel>");
+
+        assertNextToken(sc, "<Topology>");
+        String token;
+        while (!(token = sc.nextToken()).equals("</TopologyEntry>")) {
+            assertToken("<TopologyEntry>", token);
+            assertNextToken(sc, "<ForPhones>");
+
+            List<Integer> phones = new ArrayList<Integer>();
+            while (!(token = sc.nextToken()).equals("</ForPhones>"))
+                phones.add(Integer.parseInt(token));
+        }
+        assertNextToken(sc, "</Topology>");
+
+        assertNextToken(sc, "<Triples>");
+        int numTriples = Integer.parseInt(sc.nextToken());
+        int[][] triples = new int[6][3];
+        for (int i = 0; i < numTriples; ++i) {
+            for (int j = 0; j < 3; ++j)
+                triples[i][j] = Integer.parseInt(sc.nextToken());
+        }
+        assertNextToken(sc, "</Triples>");
+
+        assertNextToken(sc, "<LogProbs>");
+        List<Float> logProbs = parseFloatList(sc);
+        assertNextToken(sc, "</LogProbs>");
+
+        assertNextToken(sc, "</TransitionModel>");
+        */
         while (sc.hasNext() && !sc.next().trim().equals("</TransitionModel>"));
 
         assertNextToken(sc, "<DIMENSION>");
@@ -113,19 +157,15 @@ public class KaldiLoader implements Loader {
         for (int i = 0; i < npdf; ++i) {
             assertNextToken(sc, "<DiagGMM>");
             assertNextToken(sc, "<GCONSTS>");
-            assertNextToken(sc, "[");
             List<Float> gconsts = parseFloatList(sc);
 
             assertNextToken(sc, "<WEIGHTS>");
-            assertNextToken(sc, "[");
             List<Float> weights = parseFloatList(sc);
 
             assertNextToken(sc, "<MEANS_INVVARS>");
-            assertNextToken(sc, "[");
             List<Float> means = parseFloatList(sc);
 
             assertNextToken(sc, "<INV_VARS>");
-            assertNextToken(sc, "[");
             List<Float> vars = parseFloatList(sc);
 
             senones.put(i, new DiagGmm(i, gconsts, means, vars));
@@ -154,14 +194,21 @@ public class KaldiLoader implements Loader {
 
     private static void assertNextToken(Scanner scanner, String expected) {
         String actual = scanner.next().trim();
-        if (!actual.equals(expected)) {
-            String msg;
-            msg = String.format("'%s' expected, '%s' got", expected, actual);
-            throw new IllegalStateException(msg);
-        }
+        assertToken(expected, actual);
+    }
+
+    private static void assertToken(String expected, String actual) {
+        if (actual.equals(expected))
+            return;
+
+        String msg;
+        msg = String.format("'%s' expected, '%s' got", expected, actual);
+        throw new IllegalStateException(msg);
     }
 
     private static List<Float> parseFloatList(Scanner scanner) {
+        assertNextToken(scanner, "[");
+
         List<Float> result = new ArrayList<Float>();
         String token;
 
