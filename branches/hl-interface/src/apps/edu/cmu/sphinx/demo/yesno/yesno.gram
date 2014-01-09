@@ -2,4 +2,4 @@
 
 grammar yesno;
 
-public <yesno> = (yes | no)+;
+public <yesno> = (yes | no) *;

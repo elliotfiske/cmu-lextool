@@ -29,7 +29,7 @@ public class YesNo {
 
         Configuration configuration = new Configuration();
 
-        configuration.setAcousticModelPath("models/acoustic/yesno/final.mdl");
+        configuration.setAcousticModelPath("models/acoustic/yesno");
         configuration.setDictionaryPath("models/acoustic/yesno/lexicon.txt");
         configuration.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
         configuration.setGrammarName("yesno");

@@ -91,7 +91,7 @@ public class Context {
      */
     public void setAcousticModel(String path) throws IOException {
         setLocalProperty("acousticModelLoader->location", path);
-        // setLocalProperty("dictionary->fillerPath", path + "/noisedict");
+        setLocalProperty("dictionary->fillerPath", path + "/noisedict");
     }
 
     /**

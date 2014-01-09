@@ -48,7 +48,7 @@ public class StreamCepstrumSource extends BaseDataProcessor {
     public static final String PROP_CEPSTRUM_LENGTH = "cepstrumLength";
 
     /** The property specifying whether the input data is big-endian. */
-    @S4Boolean(defaultValue = true)
+    @S4Boolean(defaultValue = false)
     public static final String PROP_BIG_ENDIAN_DATA = "bigEndianData";
 
     /** The property that defines the sample rate */
@@ -104,7 +104,7 @@ public class StreamCepstrumSource extends BaseDataProcessor {
         super.initialize();
         curPoint = -1;
         firstSampleNumber = 0;
-        bigEndian = true;
+        bigEndian = false;
     }
 
 

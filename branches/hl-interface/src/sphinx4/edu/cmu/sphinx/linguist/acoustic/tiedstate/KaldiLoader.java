@@ -71,8 +71,9 @@ public class KaldiLoader implements Loader {
         SenoneSequence ss = getSenoneSequence(new int[] {0, 1});
         LogMath logMath = LogMath.getInstance();
         float[][] transitionMatrix = {
-            {logMath.lnToLog(-0.1219371f), logMath.lnToLog(-2.164599f), 0},
-            {0, logMath.lnToLog(-0.04802629f), logMath.lnToLog(-3.059923f)}
+            {logMath.lnToLog(-0.1219371f), logMath.lnToLog(-2.164599f),  logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.lnToLog(-0.04802629f), logMath.lnToLog(-3.059923f)},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO}
             /*
             {0.75f, 0.25f, 0},
             {0, 0.75f, 0.25f}
@@ -85,8 +86,9 @@ public class KaldiLoader implements Loader {
         contextIndependentUnits.put(unit.getName(), unit);
         ss = getSenoneSequence(new int[] {2, 3});
         transitionMatrix = new float[][] {
-            {logMath.lnToLog(-0.05272233f), logMath.lnToLog(-2.968962f), 0 },
-            {0, logMath.lnToLog(-0.04890276f), logMath.lnToLog(-3.042274f) }
+            {logMath.lnToLog(-0.05272233f), logMath.lnToLog(-2.968962f),  logMath.LOG_ZERO },
+            { logMath.LOG_ZERO, logMath.lnToLog(-0.04890276f), logMath.lnToLog(-3.042274f) },
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO}
             /*
             {0.75f, 0.25f, 0},
             {0, 0.75f, 0.25f}
@@ -99,8 +101,9 @@ public class KaldiLoader implements Loader {
         contextIndependentUnits.put(unit.getName(), unit);
         ss = getSenoneSequence(new int[] {4, 5});
         transitionMatrix = new float[][] {
-            {logMath.lnToLog(-0.04344284f), logMath.lnToLog(-3.157953f), 0 },
-            {0, logMath.lnToLog(-0.04845489f), logMath.lnToLog(-3.051252f) }
+            {logMath.lnToLog(-0.04344284f), logMath.lnToLog(-3.157953f), logMath.LOG_ZERO },
+            {logMath.LOG_ZERO, logMath.lnToLog(-0.04845489f), logMath.lnToLog(-3.051252f) },
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO}
             /*
             {0.75f, 0.25f, 0},
             {0, 0.75f, 0.25f}
@@ -112,7 +115,7 @@ public class KaldiLoader implements Loader {
 
     private Pool<Senone> loadSenones() throws IOException {
         // TODO: use StreamTokenizer as it's faster than Scanner.
-        Scanner sc = new Scanner(location.openStream());
+        Scanner sc = new Scanner(new URL(location.toString() + "/final.mdl").openStream());
 
         /*
         assertNextToken(sc, "<TransitionModel>");
