@@ -23,13 +23,13 @@ public class DiagGmm extends ScoreCachingSenone {
 
     public DiagGmm(long id,
                    List<Float> gconsts,
-                   List<Float> invVars,
-                   List<Float> meansInvVars)
+                   List<Float> meansInvVars,
+                   List<Float> invVars)
     {
         this.id = id;
         this.gconsts = asFloatArray(gconsts);
-        this.invVars = asFloatArray(invVars);
         this.meansInvVars = asFloatArray(meansInvVars);
+        this.invVars = asFloatArray(invVars);
     }
 
     @Override
@@ -66,10 +66,10 @@ public class DiagGmm extends ScoreCachingSenone {
         for (int i = 0; i < likelihoods.length; ++i) {
             for (int j = 0; j < features.length; ++j) {
                 int k = i * features.length + j;
-                likelihoods[i] += features[j] * meansInvVars[k];
+                likelihoods[i] += meansInvVars[k] * features[j];
                 likelihoods[i] -= .5f * invVars[k] * features[j] * features[j];
-                // likelihoods[i] += features[j] * (meansInvVars[k] - .5 * invVars[k] * features[j]);
             }
+
             likelihoods[i] = LogMath.getInstance().lnToLog(likelihoods[i]);
         }
 
