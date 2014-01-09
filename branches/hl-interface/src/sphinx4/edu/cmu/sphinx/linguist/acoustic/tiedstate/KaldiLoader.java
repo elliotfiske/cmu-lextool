@@ -66,49 +66,42 @@ public class KaldiLoader implements Loader {
         hmmManager = new HMMManager();
         contextIndependentUnits = new HashMap<String, Unit>();
 
+
         Unit unit = UnitManager.SILENCE;
         contextIndependentUnits.put(unit.getName(), unit);
-        SenoneSequence ss = getSenoneSequence(new int[] {0, 1});
+        SenoneSequence ss = getSenoneSequence(new int[] {0, 1, 2});
         LogMath logMath = LogMath.getInstance();
         float[][] transitionMatrix = {
-            {logMath.lnToLog(-0.1219371f), logMath.lnToLog(-2.164599f),  logMath.LOG_ZERO},
-            { logMath.LOG_ZERO, logMath.lnToLog(-0.04802629f), logMath.lnToLog(-3.059923f)},
-            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO}
-            /*
-            {0.75f, 0.25f, 0},
-            {0, 0.75f, 0.25f}
-            */
+            { logMath.lnToLog(-0.07318653f), logMath.lnToLog(-2.651114f),  logMath.LOG_ZERO, logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.lnToLog(-0.08264011f), logMath.lnToLog(-2.534296f), logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.lnToLog(-0.04868259f), logMath.lnToLog(-3.046676f)},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO},
         };
         hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
                                      HMMPosition.UNDEFINED));
 
         unit = unitManager.getUnit("Y_S", false);
         contextIndependentUnits.put(unit.getName(), unit);
-        ss = getSenoneSequence(new int[] {2, 3});
+        ss = getSenoneSequence(new int[] {3, 4, 5});
         transitionMatrix = new float[][] {
-            {logMath.lnToLog(-0.05272233f), logMath.lnToLog(-2.968962f),  logMath.LOG_ZERO },
-            { logMath.LOG_ZERO, logMath.lnToLog(-0.04890276f), logMath.lnToLog(-3.042274f) },
-            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO}
-            /*
-            {0.75f, 0.25f, 0},
-            {0, 0.75f, 0.25f}
-            */
+            {logMath.lnToLog(-0.3332688f), logMath.lnToLog(-1.260817f),  logMath.LOG_ZERO, logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.lnToLog(-0.1528147f), logMath.lnToLog(-1.953964f), logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.lnToLog(-0.05612907f), logMath.lnToLog(-2.908035f)},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO},
         };
         hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
                                      HMMPosition.UNDEFINED));
 
         unit = unitManager.getUnit("N_S", false);
         contextIndependentUnits.put(unit.getName(), unit);
-        ss = getSenoneSequence(new int[] {4, 5});
+        ss = getSenoneSequence(new int[] {6, 7, 8});
         transitionMatrix = new float[][] {
-            {logMath.lnToLog(-0.04344284f), logMath.lnToLog(-3.157953f), logMath.LOG_ZERO },
-            {logMath.LOG_ZERO, logMath.lnToLog(-0.04845489f), logMath.lnToLog(-3.051252f) },
-            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO}
-            /*
-            {0.75f, 0.25f, 0},
-            {0, 0.75f, 0.25f}
-            */
+            { logMath.lnToLog(-0.3612101f), logMath.lnToLog(-1.19347f),  logMath.LOG_ZERO, logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.lnToLog(-0.3497762f), logMath.lnToLog(-1.220257f), logMath.LOG_ZERO},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.lnToLog(-0.0798042f), logMath.lnToLog(-2.567816f)},
+            { logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO, logMath.LOG_ZERO},
         };
+
         hmmManager.put(new SenoneHMM(unit, ss, transitionMatrix,
                                      HMMPosition.UNDEFINED));
     }

@@ -38,6 +38,7 @@ public class YesNo {
         StreamSpeechRecognizer recognizer = 
             new StreamSpeechRecognizer(configuration);
         URL audioUrl = new URL("file:src/apps/edu/cmu/sphinx/demo/yesno/feats/1_0_0_0_1_0_0_1.mfc");
+//          URL audioUrl = new URL("file:src/apps/edu/cmu/sphinx/demo/yesno/feats/1_1_1_1_1_1_1_1.mfc");
         recognizer.startRecognition(audioUrl.openStream());
 
         SpeechResult result;
