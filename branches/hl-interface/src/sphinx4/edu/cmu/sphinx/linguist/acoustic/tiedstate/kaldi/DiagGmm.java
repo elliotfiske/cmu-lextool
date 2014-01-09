@@ -34,21 +34,12 @@ public class DiagGmm extends ScoreCachingSenone {
 
     @Override
     public float calculateScore(Data data) {
-        LogMath logMath = LogMath.getInstance();
-        // float logTotal = LogMath.LOG_ZERO;
         float[] scores = calculateComponentScore(data);
-        float logTotal = scores[0];
-        //for (Float mixtureScore : calculateComponentScore(data)) {
-        for (int i = 1; i < scores.length; ++i) {
-            //logTotal = logTotal +
-            //           (float) Math.log(1 + Math.exp(scores[i] - logTotal));
-            logTotal = logMath.addAsLinear(logTotal, scores[i]);
-            // System.out.format("score: %f, total:%f\n", mixtureScore, logTotal);
-            // logTotal = logMath.addAsLinear(logTotal, mixtureScore);
-            //logTotal = (float) Math.log(Math.exp(logTotal) + Math.exp(mixtureScore));
-        }
+        float logTotal = LogMath.LOG_ZERO;
+        LogMath logMath = LogMath.getInstance();
+        for (Float mixtureScore : calculateComponentScore(data))
+            logTotal = logMath.addAsLinear(logTotal, mixtureScore);
 
-        System.out.format("%d log-total: %f\n", getID(), logTotal);
         return logTotal;
     }
 

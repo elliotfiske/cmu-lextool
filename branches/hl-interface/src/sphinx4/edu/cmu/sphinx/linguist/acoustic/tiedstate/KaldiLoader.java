@@ -115,22 +115,18 @@ public class KaldiLoader implements Loader {
             assertNextToken(sc, "<GCONSTS>");
             assertNextToken(sc, "[");
             List<Float> gconsts = parseFloatList(sc);
-            System.out.format("gconsts %d %d\n", i, gconsts.size());
 
             assertNextToken(sc, "<WEIGHTS>");
             assertNextToken(sc, "[");
             List<Float> weights = parseFloatList(sc);
-            System.out.format("weights %d %d\n", i, weights.size());
 
             assertNextToken(sc, "<MEANS_INVVARS>");
             assertNextToken(sc, "[");
             List<Float> means = parseFloatList(sc);
-            System.out.format("means %d %d\n", i, means.size());
 
             assertNextToken(sc, "<INV_VARS>");
             assertNextToken(sc, "[");
             List<Float> vars = parseFloatList(sc);
-            System.out.format("vars %d %d\n", i, vars.size());
 
             senones.put(i, new DiagGmm(i, gconsts, means, vars));
 
