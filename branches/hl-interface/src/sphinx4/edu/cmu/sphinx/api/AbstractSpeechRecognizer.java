@@ -33,15 +33,16 @@ public class AbstractSpeechRecognizer {
     /**
      * Constructs recognizer object using provided configuration.
      */
-    public AbstractSpeechRecognizer(Configuration configuration) {
-        try {
-            context = new Context(configuration);
-            recognizer = context.getInstance(Recognizer.class);
-            scorer = context.getInstance(ConfidenceScorer.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public AbstractSpeechRecognizer(Configuration configuration)
+        throws IOException
+    {
+        this(new Context(configuration));
+    }
 
+    protected AbstractSpeechRecognizer(Context context) throws IOException {
+        this.context = context;
+        recognizer = context.getInstance(Recognizer.class);
+        scorer = context.getInstance(ConfidenceScorer.class);
         speechSourceProvider = new SpeechSourceProvider();
     }
 

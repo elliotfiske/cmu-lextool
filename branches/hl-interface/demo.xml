@@ -130,6 +130,7 @@
 
     <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/yesno">
       <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/yesno">
+        <include name="**/config.xml"/>
         <include name="**/yesno.gram"/>
       </fileset>
     </copy>

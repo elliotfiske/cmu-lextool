@@ -36,18 +36,15 @@ public class SpeechAligner {
     /**
      * Constructs new aligner object.
      */
-    public SpeechAligner(Configuration configuration) {
-        try {
-            context = new Context(configuration);
-            context.setLocalProperty("decoder->searchManager",
-                                        "simpleSearchManager");
-            context.setLocalProperty("flatLinguist->grammar", "alignerGrammar");
+    public SpeechAligner(Configuration configuration) throws IOException {
+        context = new Context(configuration);
+        context.setLocalProperty("decoder->searchManager",
+                                 "simpleSearchManager");
+        context.setLocalProperty("flatLinguist->grammar",
+                                 "alignerGrammar");
 
-            recognizer = context.getInstance(Recognizer.class);
-            grammar = context.getInstance(AlignerGrammar.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        recognizer = context.getInstance(Recognizer.class);
+        grammar = context.getInstance(AlignerGrammar.class);
     }
 
     /**

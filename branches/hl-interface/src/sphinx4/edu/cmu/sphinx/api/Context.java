@@ -161,13 +161,13 @@ public class Context {
      */
     public void setSpeechSource(InputStream stream) {
         // TODO: setup stream sample rate and other parameters
-        // getInstance(StreamDataSource.class).setInputStream(stream);
+        //getInstance(StreamDataSource.class).setInputStream(stream);
         try {
             getInstance(StreamCepstrumSource.class).setInputStream(stream, false);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        // setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
+        //setLocalProperty("threadedScorer->frontend", "liveFrontEnd");
     }
 
     /**

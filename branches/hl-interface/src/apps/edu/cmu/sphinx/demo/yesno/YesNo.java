@@ -11,12 +11,17 @@
 
 package edu.cmu.sphinx.demo.yesno;
 
-import edu.cmu.sphinx.util.LogMath;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import java.net.MalformedURLException;
 import java.net.URL;
 
+import edu.cmu.sphinx.api.AbstractSpeechRecognizer;
 import edu.cmu.sphinx.api.Configuration;
+import edu.cmu.sphinx.api.Context;
 import edu.cmu.sphinx.api.SpeechResult;
-import edu.cmu.sphinx.api.StreamSpeechRecognizer;
 
 
 /**
@@ -24,38 +29,61 @@ import edu.cmu.sphinx.api.StreamSpeechRecognizer;
  */
 public class YesNo {
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("Loading models...");
+    private static class YesNoRecognizer extends AbstractSpeechRecognizer {
 
-        Configuration configuration = new Configuration();
+        private static final String CONFIG_PATH =
+            "resource:/edu/cmu/sphinx/demo/yesno/config.xml";
+        private static final String ACOUSTIC_MODEL_PATH =
+            "models/acoustic/yesno";
+        private static final String DICTIONARY_PATH =
+            "models/acoustic/yesno/lexicon.txt";
 
-        configuration.setAcousticModelPath("models/acoustic/yesno");
-        configuration.setDictionaryPath("models/acoustic/yesno/lexicon.txt");
-        configuration.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
-        configuration.setGrammarName("yesno");
-        configuration.setUseGrammar(true);
+        public static YesNoRecognizer createRecognizer() throws IOException {
+            Configuration configuration = new Configuration();
+            configuration.setAcousticModelPath(ACOUSTIC_MODEL_PATH);
+            configuration.setDictionaryPath(DICTIONARY_PATH);
 
-        StreamSpeechRecognizer recognizer = 
-            new StreamSpeechRecognizer(configuration);
-        URL audioUrl = new URL("file:src/apps/edu/cmu/sphinx/demo/yesno/feats/1_0_0_0_1_0_0_1.mfc");
-//          URL audioUrl = new URL("file:src/apps/edu/cmu/sphinx/demo/yesno/feats/1_1_1_1_1_1_1_1.mfc");
-        recognizer.startRecognition(audioUrl.openStream());
+            configuration.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
+            configuration.setGrammarName("yesno");
+            configuration.setUseGrammar(true);
 
-        SpeechResult result;
-
-        while ((result = recognizer.getResult()) != null) {
-            System.out.format("hypothesis: %s, confidence: %g\n",
-                              result.getUtterance(false),
-                              result.getConfidence());
-
-            System.out.println("best 3 hypothesis:");
-            
-            for (String s : result.getNbest(3))
-                System.out.println(s);
-
-            System.out.println("Lattice contains " + result.getLattice().getNodes().size() + " nodes");
+            return new YesNoRecognizer(configuration);
         }
 
-        recognizer.stopRecognition();
+        private YesNoRecognizer(Configuration configuration)
+            throws IOException
+        {
+            super(new Context(CONFIG_PATH, configuration));
+        }
+
+        public void startRecognition(String path)
+            throws MalformedURLException, IOException
+        {
+            recognizer.allocate();
+            context.setSpeechSource(new FileInputStream(path));
+            context.processBatch();
+        }
+
+        public void stopRecognition() {
+            recognizer.deallocate();
+        }
+    }
+
+    private static final String FEAT_PATH =
+        "src/apps/edu/cmu/sphinx/demo/yesno/feats/";
+
+    public static void main(String[] args) throws Exception {
+        YesNoRecognizer recognizer = YesNoRecognizer.createRecognizer();
+        for (String fileName : new File(FEAT_PATH).list()) {
+            recognizer.startRecognition(FEAT_PATH + fileName);
+            SpeechResult result;
+
+            while ((result = recognizer.getResult()) != null)
+                System.out.format("input: %s\nhypothesis: %s\nconfidence: %g\n",
+                                  fileName, result.getUtterance(false),
+                                  result.getConfidence());
+
+            recognizer.stopRecognition();
+        }
     }
 }

@@ -165,7 +165,7 @@
   </component>
 
   <component name="acousticModelLoader"
-    type="edu.cmu.sphinx.linguist.acoustic.tiedstate.KaldiLoader">
+    type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader">
     <property name="unitManager" value="unitManager"/>
     <property name="location" value=""/>
   </component>
@@ -190,24 +190,17 @@
     </propertylist>
   </component>
 
-  <component name="streamCepstrum"
-    type="edu.cmu.sphinx.frontend.util.StreamCepstrumSource">
-  </component>
-
   <component name="batchFrontEnd" type="edu.cmu.sphinx.frontend.FrontEnd">
     <propertylist name="pipeline">
-      <!--item>dataSource </item>
+      <item>dataSource </item>
       <item>dataBlocker </item>
       <item>preemphasizer </item>
       <item>windower </item>
       <item>fft </item>
       <item>autoCepstrum </item>
       <item>liveCMN </item>
-      <item>featureExtraction </item-->
-      <item>streamCepstrum</item>
-      <item>batchCMN</item>
       <item>featureExtraction </item>
-      <!--item>featureTransform </item-->
+      <item>featureTransform </item>
     </propertylist>
   </component>
 

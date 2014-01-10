@@ -11,6 +11,7 @@
 
 package edu.cmu.sphinx.api;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 
@@ -26,7 +27,9 @@ public class StreamSpeechRecognizer extends AbstractSpeechRecognizer {
      *
      * @param configuration configuration
      */
-    public StreamSpeechRecognizer(Configuration configuration) {
+    public StreamSpeechRecognizer(Configuration configuration)
+        throws IOException
+    {
         super(configuration);
     }
 

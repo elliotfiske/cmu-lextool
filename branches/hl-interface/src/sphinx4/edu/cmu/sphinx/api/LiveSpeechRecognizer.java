@@ -11,6 +11,8 @@
 
 package edu.cmu.sphinx.api;
 
+import java.io.IOException;
+
 import edu.cmu.sphinx.frontend.util.StreamDataSource;
 
 
@@ -26,7 +28,8 @@ public class LiveSpeechRecognizer extends AbstractSpeechRecognizer {
      *
      * @param configuration common configuration
      */
-    public LiveSpeechRecognizer(Configuration configuration) {
+    public LiveSpeechRecognizer(Configuration configuration) throws IOException
+    {
         super(configuration);
         microphone = speechSourceProvider.getMicrophone();
         context.getInstance(StreamDataSource.class)
