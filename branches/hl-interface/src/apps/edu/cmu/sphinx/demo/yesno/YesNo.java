@@ -13,6 +13,7 @@ package edu.cmu.sphinx.demo.yesno;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 
 import java.net.MalformedURLException;
@@ -23,6 +24,7 @@ import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.Context;
 import edu.cmu.sphinx.api.SpeechResult;
 
+import edu.cmu.sphinx.frontend.util.StreamCepstrumSource;
 
 /**
  * Example of using Kaldi's acoustic model.
@@ -39,15 +41,15 @@ public class YesNo {
             "models/acoustic/yesno/lexicon.txt";
 
         public static YesNoRecognizer createRecognizer() throws IOException {
-            Configuration configuration = new Configuration();
-            configuration.setAcousticModelPath(ACOUSTIC_MODEL_PATH);
-            configuration.setDictionaryPath(DICTIONARY_PATH);
+            Configuration config = new Configuration();
+            config.setAcousticModelPath(ACOUSTIC_MODEL_PATH);
+            config.setDictionaryPath(DICTIONARY_PATH);
 
-            configuration.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
-            configuration.setGrammarName("yesno");
-            configuration.setUseGrammar(true);
+            config.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
+            config.setGrammarName("yesno");
+            config.setUseGrammar(true);
 
-            return new YesNoRecognizer(configuration);
+            return new YesNoRecognizer(config);
         }
 
         private YesNoRecognizer(Configuration configuration)
@@ -60,8 +62,9 @@ public class YesNo {
             throws MalformedURLException, IOException
         {
             recognizer.allocate();
-            context.setSpeechSource(new FileInputStream(path));
-            context.processBatch();
+            InputStream stream = new FileInputStream(path);
+            Class<StreamCepstrumSource> cls = StreamCepstrumSource.class;
+            context.getInstance(cls).setInputStream(stream, false);
         }
 
         public void stopRecognition() {
