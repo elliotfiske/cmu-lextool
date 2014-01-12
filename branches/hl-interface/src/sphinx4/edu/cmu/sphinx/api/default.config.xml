@@ -5,15 +5,15 @@
   <property name="logLevel" value="INFO"/>
 
   <property name="absoluteBeamWidth"  value="50000"/>
-  <property name="relativeBeamWidth"  value="1e-200"/>
-  <property name="absoluteWordBeamWidth"  value="10000"/>
-  <property name="relativeWordBeamWidth"  value="1e-200"/>
+  <property name="relativeBeamWidth"  value="1e-80"/>
+  <property name="absoluteWordBeamWidth"  value="1000"/>
+  <property name="relativeWordBeamWidth"  value="1e-60"/>
 
-  <property name="wordInsertionProbability" value="1.0"/>
-  <property name="silenceInsertionProbability" value="1.0"/>
+  <property name="wordInsertionProbability" value="0.1"/>
+  <property name="silenceInsertionProbability" value="0.1"/>
   <property name="fillerInsertionProbability" value="1e-2"/>
 
-  <property name="languageWeight" value="1.0"/>
+  <property name="languageWeight" value="12.0"/>
 
   <component name="recognizer" type="edu.cmu.sphinx.recognizer.Recognizer">
     <property name="decoder" value="decoder"/>
@@ -81,7 +81,7 @@
     type="edu.cmu.sphinx.decoder.pruner.SimplePruner"/>
 
   <component name="threadedScorer"
-    type="edu.cmu.sphinx.decoder.scorer.SimpleAcousticScorer">
+    type="edu.cmu.sphinx.decoder.scorer.ThreadedAcousticScorer">
     <property name="frontend" value="liveFrontEnd"/>
   </component>
 
@@ -245,9 +245,7 @@
     type="edu.cmu.sphinx.frontend.feature.LiveCMN"/>
 
   <component name="featureExtraction"
-    type="edu.cmu.sphinx.frontend.feature.KaldiDeltasFeatureExtractor">
-    <property name="windowSize" value="4"/>
-  </component>
+    type="edu.cmu.sphinx.frontend.feature.DeltasFeatureExtractor"/>
 
   <component name="featureTransform"
     type="edu.cmu.sphinx.frontend.feature.FeatureTransform">
