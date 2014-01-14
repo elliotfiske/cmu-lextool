@@ -40,22 +40,24 @@ public class BatchFile {
      * @param skip      the number of lines to skip between items
      * @return a List of the lines in a batch file
      */
-    public static List<String> getLines(String batchFile, int skip) throws IOException {
-        int curCount = skip;
+    public static List<String> getLines(String batchFile, int skip)
+        throws IOException
+    {
         List<String> list = new ArrayList<String>();
         BufferedReader reader = new BufferedReader(new FileReader(batchFile));
+        int skipCountdown = 0;
+        String line;
 
-        String line = null;
+        while (null != (line = reader.readLine())) {
+            // if (line.isEmpty() || skipCountdown-- > 0)
+            if (line.isEmpty())
+                continue;
 
-        while ((line = reader.readLine()) != null) {
-            if (!line.isEmpty()) {
-                if (++curCount >= skip) {
-                    list.add(line);
-                    curCount = 0;
-                }
-            }
+            list.add(line);
+            skipCountdown = skip;
         }
         reader.close();
+
         return list;
     }
 
