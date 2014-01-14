@@ -21,7 +21,6 @@ Run ant with -Dskip=5 to do the standard 'quick' version of a test.
     <property name="classes_dir" value="${build_dir}"/>
     <property name="classpath" value="${classes_dir}:${top_dir}/lib/batch.jar"/>
 
-    <property name="skip"               value="40"/>
     <property name="logger_props"       value=""/>
 
     <property name="initial_heap_size"  value="512m"/>
