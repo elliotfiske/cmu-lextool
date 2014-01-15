@@ -44,7 +44,6 @@ public class StreamSpeechRecognizer extends AbstractSpeechRecognizer {
     public void startRecognition(InputStream stream) {
         recognizer.allocate();
         context.setSpeechSource(stream);
-        context.processBatch();
     }
 
     /**
