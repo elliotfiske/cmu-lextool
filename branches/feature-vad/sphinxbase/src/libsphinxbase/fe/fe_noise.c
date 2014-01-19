@@ -55,6 +55,8 @@
 
 #include "sphinxbase/prim_type.h"
 #include "sphinxbase/ckd_alloc.h"
+#include "sphinxbase/strfuncs.h"
+#include "sphinxbase/err.h"
 
 #include "fe_noise.h"
 #include "fe_internal.h"
@@ -67,6 +69,9 @@
 #define LAMBDA_T 0.85
 #define MU_T 0.2
 #define MAX_GAIN 20
+
+/* VAD constants */
+#define VAD_THRESHOLD 1.5
 
 struct noise_stats_s {
     /* Smoothed power */
@@ -256,12 +261,14 @@ fe_free_noisestats(noise_stats_t * noise_stats)
  * For fixed point we are doing the computation in a fixlog domain,
  * so we have to add many processing cases.
  */
-void
+uint8
 fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 {
     powspec_t *signal;
     powspec_t *gain;
+    powspec_t snr, lrt;
     int32 i, num_filts;
+    uint8 local_vad_state;
 
     num_filts = noise_stats->num_filters;
 
@@ -287,25 +294,33 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     for (i = 0; i < num_filts; i++) {
 #ifdef FIXED_POINT
         noise_stats->power[i] = fe_log_add(noise_stats->lambda_power + noise_stats->power[i],
-    					   noise_stats->comp_lambda_power + mfspec[i]);
+                           noise_stats->comp_lambda_power + mfspec[i]);
 #else
         noise_stats->power[i] =
             noise_stats->lambda_power * noise_stats->power[i] + noise_stats->comp_lambda_power * mfspec[i];
 #endif            
     }
 
-    /* Noise estimation */
+    /* Noise estimation and vad decision */
     fe_low_envelope(noise_stats, noise_stats->power, noise_stats->noise, num_filts);
 
+    lrt = 0.0;
     for (i = 0; i < num_filts; i++) {
 #ifndef FIXED_POINT
-	signal[i] = noise_stats->power[i] - noise_stats->noise[i];
+    signal[i] = noise_stats->power[i] - noise_stats->noise[i];
         if (signal[i] < 0)
             signal[i] = 0;
+	snr = noise_stats->power[i] / noise_stats->noise[i];
 #else
         signal[i] = fe_log_sub(noise_stats->power[i], noise_stats->noise[i]);
+		snr = noise_stats->power[i] - noise_stats->noise[i];
 #endif
+    
+    lrt += log(1.0/(1+snr)) + snr;
     }
+
+    lrt /= num_filts;
+    local_vad_state = lrt > VAD_THRESHOLD;
 
     fe_low_envelope(noise_stats, signal, noise_stats->floor, num_filts);
 
@@ -340,4 +355,6 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 
     ckd_free(signal);
     ckd_free(gain);
+
+    return local_vad_state;
 }
