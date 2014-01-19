@@ -229,6 +229,14 @@ POCKETSPHINX_EXPORT int
 ps_set_search(ps_decoder_t *ps, const char *name);
 
 /**
+ * Returns name of curent search in decoder
+ *
+ * @see ps_set_search
+ */
+POCKETSPHINX_EXPORT const char*
+ps_get_search(ps_decoder_t *ps);
+
+/**
  * Get the language model set object for this decoder.
  *
  * If N-Gram decoding is not enabled, this will return NULL.  You will
@@ -685,6 +693,15 @@ void ps_get_utt_time(ps_decoder_t *ps, double *out_nspeech,
 POCKETSPHINX_EXPORT
 void ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
                      double *out_ncpu, double *out_nwall);
+
+/**
+ * Checks if the last feed audio buffer contained speech
+ *
+ * @param ps Decoder.
+ * @return 1 if last buffer contained speech, 0 - otherwise
+ */
+POCKETSPHINX_EXPORT
+uint8 ps_get_vad_state(ps_decoder_t *ps);
 
 /**
  * @mainpage PocketSphinx API Documentation

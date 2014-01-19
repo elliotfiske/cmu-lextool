@@ -110,6 +110,7 @@ struct ps_search_s {
     dict_t *dict;        /**< Pronunciation dictionary. */
     dict2pid_t *d2p;       /**< Dictionary to senone mappings. */
     char *hyp_str;         /**< Current hypothesis string. */
+	char *table_name;      /**< Name of search in searches table */
     ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
     ps_latlink_t *last_link; /**< Final link in best path. */
     int32 post;            /**< Utterance posterior probability. */

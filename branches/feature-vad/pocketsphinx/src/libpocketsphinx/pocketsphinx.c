@@ -486,6 +486,15 @@ ps_set_search(ps_decoder_t *ps, const char *name)
     return NULL == search;
 }
 
+const char*
+ps_get_search(ps_decoder_t *ps)
+{
+	const char* name;
+
+	name = ps->search->table_name;
+	return name;
+}
+
 ngram_model_t *
 ps_get_lm(ps_decoder_t *ps, const char *name)
 {
@@ -523,6 +532,7 @@ set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
         old_search =
             (ps_search_t *)
             hash_table_replace(ps->searches, ckd_salloc(name), search);
+		search->table_name = ckd_salloc(name);
         if (old_search != search)
             ps_search_free(old_search);
     }
@@ -729,7 +739,6 @@ int
 ps_start_utt(ps_decoder_t *ps, char const *uttid)
 {
     int rv;
-
     if (ps->search == NULL) {
         E_ERROR("No search module is selected, did you forget to "
                 "specify a language model or grammar?\n");
@@ -1166,6 +1175,12 @@ ps_get_all_time(ps_decoder_t *ps, double *out_nspeech,
     *out_nspeech = (double)ps->n_frame / frate;
     *out_ncpu = ps->perf.t_tot_cpu;
     *out_nwall = ps->perf.t_tot_elapsed;
+}
+
+uint8 
+ps_get_vad_state(ps_decoder_t *ps)
+{
+    return fe_get_vad_state(ps->acmod->fe);
 }
 
 void
