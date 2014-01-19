@@ -1,6 +1,7 @@
 package edu.cmu.pocketsphinx.demo;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import edu.cmu.pocketsphinx.Hypothesis;
 public class WeatherForecastFragment extends ShowcaseFragment {
 
     private TextView resultText;
+    private String resultPrefix;
 
     private ToggleButton toggleButton;
 
@@ -28,6 +30,7 @@ public class WeatherForecastFragment extends ShowcaseFragment {
     @Override
     public void onStart() {
         super.onStart();
+        resultPrefix = "";
         toggleButton.setChecked(false);
         toggleButton.setOnCheckedChangeListener(this);
     }
@@ -35,20 +38,35 @@ public class WeatherForecastFragment extends ShowcaseFragment {
     @Override
     public void onPartialResult(Hypothesis hypothesis) {
         super.onPartialResult(hypothesis);
+        Log.i("WeatherForecastFragment", ">>> partial result from bank: " + hypothesis.getHypstr());
         if (hypothesis.getHypstr().equals(PocketSphinxActivity.KEYPHRASE))
             return;
-        resultText.setText(hypothesis.getHypstr());
+        resultText.setText(resultPrefix + " " + hypothesis.getHypstr());
     }
 
     @Override
     public void onResult(Hypothesis hypothesis) {
+    	Log.i("WeatherForecastFragment", ">>> final result from bank: " + hypothesis.getHypstr());
         if (hypothesis.getHypstr().equals(PocketSphinxActivity.KEYPHRASE))
             return;
-        resultText.setText(hypothesis.getHypstr());
+        resultPrefix += " " + hypothesis.getHypstr();
+        resultText.setText(resultPrefix);
+        //if recognition was stopped explicitly, reset vad state
     }
     
     @Override
     protected void setButtonPressed() {
         toggleButton.setChecked(true);
     }
+
+	@Override
+	public void onVadStateChanged(boolean state) {
+		if (!state && toggleButton.isChecked()) {
+			//speech -> silence transition, 
+			//end old utterance and start new one
+			recognizer.stopListening();
+			recognizer.startListening();
+			
+		}
+	}
 }

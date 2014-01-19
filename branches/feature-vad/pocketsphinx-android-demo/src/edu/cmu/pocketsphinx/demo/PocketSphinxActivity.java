@@ -48,11 +48,11 @@ public class PocketSphinxActivity extends Activity {
         Config config = Decoder.defaultConfig();
         config.setString("-dict", joinPath(appDir, "models/lm/cmu07a.dic"));
         config.setString("-hmm", joinPath(appDir, "models/hmm/en-us-semi"));
-        config.setString("-rawlogdir", appDir.getPath());
+        config.setString("-rawlogdir", "/sdcard/Music");
         config.setInt("-maxhmmpf", 10000);
         config.setBoolean("-fwdflat", false);
         config.setBoolean("-bestpath", false);
-        config.setFloat("-kws_threshold", 1e-5);
+        config.setFloat("-kws_threshold", 1e-1);
         recognizer = new SpeechRecognizer(config);
         
         recognizer.setKws(KWS_SRCH_NAME, KEYPHRASE);

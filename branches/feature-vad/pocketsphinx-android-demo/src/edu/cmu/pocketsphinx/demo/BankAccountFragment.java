@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,7 +16,7 @@ import edu.cmu.pocketsphinx.Hypothesis;
 public class BankAccountFragment extends ShowcaseFragment {
 
     private final static Map<String, String> DIGITS = new HashMap<String, String>();
-
+    
     static {
         DIGITS.put("point", ".");
         DIGITS.put("oh", "0");
@@ -81,6 +82,7 @@ public class BankAccountFragment extends ShowcaseFragment {
 
     @Override
     public void onPartialResult(Hypothesis hypothesis) {
+    	Log.i("BankAccountFragment", ">>> part result from bank: " + hypothesis.getHypstr());
         super.onPartialResult(hypothesis);
         if (hypothesis.getHypstr().equals(PocketSphinxActivity.KEYPHRASE))
             return;
@@ -90,6 +92,7 @@ public class BankAccountFragment extends ShowcaseFragment {
     @Override
     public void onResult(Hypothesis hypothesis) {
         String command = hypothesis.getHypstr();
+        Log.i("BankAccountFragment", ">>> final result from bank: " + hypothesis.getHypstr());
         if (command.equals(PocketSphinxActivity.KEYPHRASE))
             return;
         if (command.endsWith("balance"))
@@ -109,4 +112,13 @@ public class BankAccountFragment extends ShowcaseFragment {
         String text = context.getString(resId, args);
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
     }
+
+	@Override
+	public void onVadStateChanged(boolean state) {
+		if (!state && recognizer.getSearchName().equals(BankAccountFragment.class.getSimpleName())) {
+			//speech -> silence transition,
+			//utterance ended
+			toggleButton.setChecked(false);
+		}
+	}
 }
