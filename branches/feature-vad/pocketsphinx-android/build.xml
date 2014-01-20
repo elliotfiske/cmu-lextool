@@ -22,8 +22,6 @@
   <target name="compile" depends="swig">
     <mkdir dir="build/classes"/>
     <javac
-      source="1.6"
-      target="1.6"
       deprecation="true"
       destdir="build/classes"
       includeAntRuntime="false"
