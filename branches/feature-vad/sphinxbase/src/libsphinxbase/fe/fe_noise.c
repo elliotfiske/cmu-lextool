@@ -294,7 +294,7 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     for (i = 0; i < num_filts; i++) {
 #ifdef FIXED_POINT
         noise_stats->power[i] = fe_log_add(noise_stats->lambda_power + noise_stats->power[i],
-                           noise_stats->comp_lambda_power + mfspec[i]);
+                                           noise_stats->comp_lambda_power + mfspec[i]);
 #else
         noise_stats->power[i] =
             noise_stats->lambda_power * noise_stats->power[i] + noise_stats->comp_lambda_power * mfspec[i];
@@ -307,7 +307,7 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     lrt = 0.0;
     for (i = 0; i < num_filts; i++) {
 #ifndef FIXED_POINT
-    signal[i] = noise_stats->power[i] - noise_stats->noise[i];
+	signal[i] = noise_stats->power[i] - noise_stats->noise[i];
         if (signal[i] < 0)
             signal[i] = 0;
 	snr = noise_stats->power[i] / noise_stats->noise[i];
@@ -316,7 +316,7 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 		snr = noise_stats->power[i] - noise_stats->noise[i];
 #endif
     
-    lrt += log(1.0/(1+snr)) + snr;
+	lrt += log(1.0/(1+snr)) + snr;
     }
 
     lrt /= num_filts;

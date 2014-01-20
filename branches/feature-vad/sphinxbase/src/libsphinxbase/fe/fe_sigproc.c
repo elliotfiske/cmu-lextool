@@ -1360,11 +1360,11 @@ fe_vad_hangover(fe_t * fe, mfcc_t * fea)
         if (!fe->vad_data->global_state) {
             fe->vad_data->prespch_num++;
             fe_prespch_write_cep(fe->vad_data->prespch_buf, fea);
-            //check for transition sil->speech
+            /* check for transition sil->speech */
             if (fe->vad_data->prespch_num >= fe->prespch_len) {
                 fe->vad_data->prespch_num = 0;
                 fe->vad_data->global_state = 1;
-                //transition silence->speech occurred
+                /* transition silence->speech occurred */
                 fe->vad_data->state_changed = 1;
             }
         }
@@ -1373,11 +1373,11 @@ fe_vad_hangover(fe_t * fe, mfcc_t * fea)
         fe_reset_prespch_cep(fe->vad_data->prespch_buf);
         if (fe->vad_data->global_state) {
             fe->vad_data->postspch_num++;
-            //check for transition speech->sil
+            /* check for transition speech->sil */
             if (fe->vad_data->postspch_num >= fe->postspch_len) {
                 fe->vad_data->postspch_num = 0;
                 fe->vad_data->global_state = 0;
-                //transition speech->silence occurred
+                /* transition speech->silence occurred */
                 fe->vad_data->state_changed = 1;
             }
 		}
@@ -1388,7 +1388,7 @@ fe_vad_hangover(fe_t * fe, mfcc_t * fea)
         if (fe->vad_data->local_state || fe->vad_data->global_state)
             fe_prespch_write_pcm(fe->vad_data->prespch_buf, fe->spch);
         if (!fe->vad_data->local_state && !fe->vad_data->global_state)
-            //reset writing to pcm prespeech buffer if any
+            /* reset writing to pcm prespeech buffer if any */
             fe_reset_prespch_pcm(fe->vad_data->prespch_buf);
     }
 }

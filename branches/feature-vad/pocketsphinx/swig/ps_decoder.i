@@ -140,9 +140,9 @@
         return ps_get_feat($self);
     }
 	
-	bool get_vad_state() {
-		return ps_get_vad_state($self);
-	}
+    bool get_vad_state() {
+	return ps_get_vad_state($self);
+    }
 
     FsgModel * get_fsg(const char *name) {
         return fsg_model_retain(ps_get_fsg($self, name));

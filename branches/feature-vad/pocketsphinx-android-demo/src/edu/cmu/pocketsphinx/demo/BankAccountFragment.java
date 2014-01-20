@@ -82,7 +82,7 @@ public class BankAccountFragment extends ShowcaseFragment {
 
     @Override
     public void onPartialResult(Hypothesis hypothesis) {
-    	Log.i("BankAccountFragment", ">>> part result from bank: " + hypothesis.getHypstr());
+        Log.i("BankAccountFragment", ">>> part result from bank: " + hypothesis.getHypstr());
         super.onPartialResult(hypothesis);
         if (hypothesis.getHypstr().equals(PocketSphinxActivity.KEYPHRASE))
             return;
@@ -113,12 +113,12 @@ public class BankAccountFragment extends ShowcaseFragment {
         Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
     }
 
-	@Override
-	public void onVadStateChanged(boolean state) {
-		if (!state && recognizer.getSearchName().equals(BankAccountFragment.class.getSimpleName())) {
-			//speech -> silence transition,
-			//utterance ended
-			toggleButton.setChecked(false);
-		}
+    @Override
+    public void onVadStateChanged(boolean state) {
+	if (!state && recognizer.getSearchName().equals(BankAccountFragment.class.getSimpleName())) {
+	    //speech -> silence transition,
+	    //utterance ended
+	    toggleButton.setChecked(false);
 	}
+    }
 }

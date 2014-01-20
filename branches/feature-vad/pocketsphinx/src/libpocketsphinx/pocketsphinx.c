@@ -489,10 +489,7 @@ ps_set_search(ps_decoder_t *ps, const char *name)
 const char*
 ps_get_search(ps_decoder_t *ps)
 {
-	const char* name;
-
-	name = ps->search->table_name;
-	return name;
+    return ps_search_name(ps->search);
 }
 
 ngram_model_t *
@@ -532,7 +529,6 @@ set_search_internal(ps_decoder_t *ps, const char *name, ps_search_t *search)
         old_search =
             (ps_search_t *)
             hash_table_replace(ps->searches, ckd_salloc(name), search);
-		search->table_name = ckd_salloc(name);
         if (old_search != search)
             ps_search_free(old_search);
     }

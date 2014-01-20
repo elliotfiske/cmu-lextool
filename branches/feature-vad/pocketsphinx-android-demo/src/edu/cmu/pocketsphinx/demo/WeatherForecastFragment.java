@@ -46,7 +46,7 @@ public class WeatherForecastFragment extends ShowcaseFragment {
 
     @Override
     public void onResult(Hypothesis hypothesis) {
-    	Log.i("WeatherForecastFragment", ">>> final result from bank: " + hypothesis.getHypstr());
+        Log.i("WeatherForecastFragment", ">>> final result from bank: " + hypothesis.getHypstr());
         if (hypothesis.getHypstr().equals(PocketSphinxActivity.KEYPHRASE))
             return;
         resultPrefix += " " + hypothesis.getHypstr();
@@ -59,14 +59,13 @@ public class WeatherForecastFragment extends ShowcaseFragment {
         toggleButton.setChecked(true);
     }
 
-	@Override
-	public void onVadStateChanged(boolean state) {
-		if (!state && toggleButton.isChecked()) {
-			//speech -> silence transition, 
-			//end old utterance and start new one
-			recognizer.stopListening();
-			recognizer.startListening();
-			
-		}
+    @Override
+    public void onVadStateChanged(boolean state) {
+	if (!state && toggleButton.isChecked()) {
+	    //speech -> silence transition, 
+	    //end old utterance and start new one
+	    recognizer.stopListening();
+	    recognizer.startListening();
 	}
+    }
 }

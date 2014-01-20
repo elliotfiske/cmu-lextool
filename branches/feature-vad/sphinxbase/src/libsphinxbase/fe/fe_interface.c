@@ -322,12 +322,12 @@ fe_init_dither(int32 seed)
 static void
 fe_reset_vad_data(vad_data_t * vad_data)
 {
-vad_data->global_state = 0;
-vad_data->local_state = 0;
-vad_data->state_changed = 0;
-vad_data->prespch_num = 0;
-vad_data->postspch_num = 0;
-fe_reset_prespch_cep(vad_data->prespch_buf);
+    vad_data->global_state = 0;
+    vad_data->local_state = 0;
+    vad_data->state_changed = 0;
+    vad_data->prespch_num = 0;
+    vad_data->postspch_num = 0;
+    fe_reset_prespch_cep(vad_data->prespch_buf);
 }
 
 int32
@@ -338,9 +338,6 @@ fe_start_utt(fe_t * fe)
     fe->start_flag = 1;
     fe->prior = 0;
     fe_reset_vad_data(fe->vad_data);
-    //if (fe->remove_noise)
-    //    fe_reset_noisestats(fe->noise_stats);
-
     return 0;
 }
 
@@ -421,7 +418,7 @@ fe_process_frames(fe_t *fe,
             (*inout_nframes)--;
         }
         if ((*inout_nframes) < 1) {
-            //mfcc buffer is filled from prespeech buffer
+            /* mfcc buffer is filled from prespeech buffer */
             *inout_nframes = outidx;
             return 0;
         }
@@ -461,8 +458,8 @@ fe_process_frames(fe_t *fe,
         outidx++;
 
     if (fe->vad_data->state_changed && fe->vad_data->global_state) {
-        //previous frame triggered vad into speech state
-        //dumping prespeech buffer
+        /* previous frame triggered vad into speech state
+         * dumping prespeech buffer */
         while ((*inout_nframes) > 0 && fe_prespch_read_cep(fe->vad_data->prespch_buf, buf_cep[outidx]) > 0) {
             outidx++;
             (*inout_nframes)--;
@@ -485,14 +482,14 @@ fe_process_frames(fe_t *fe,
             fe->num_overflow_samps -= fe->frame_shift;
 
         if (fe->vad_data->state_changed && fe->vad_data->global_state)
-            //previous frame triggered vad into speech state
+            /* previous frame triggered vad into speech state */
             break;
     }
 
     if (i < frame_count) {
-        //processing of remaining frames was broken to dump prespeech buffer
-        prespch_num = frame_count - i + 1; //last frame wasn't filled
-        for (i=0; i<prespch_num; i++) {
+        /* processing of remaining frames was broken to dump prespeech buffer */
+        prespch_num = frame_count - i + 1; /* last frame wasn't filled */
+        for (i = 0; i < prespch_num; i++) {
             if (fe_prespch_read_cep(fe->vad_data->prespch_buf, buf_cep[outidx]) == 0) {
                 E_ERROR("Unable to read from full prespeech buffer\n");
                 return -1;

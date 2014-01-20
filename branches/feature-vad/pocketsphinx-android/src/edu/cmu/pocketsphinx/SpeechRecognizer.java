@@ -96,7 +96,7 @@ public class SpeechRecognizer {
                 break;
             case MSG_STOP:
                 if (isActive()) {
-                	endUtterance();
+                    endUtterance();
                 }
                 break;
             case MSG_START:

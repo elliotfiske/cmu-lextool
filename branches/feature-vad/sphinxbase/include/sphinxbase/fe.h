@@ -427,8 +427,8 @@ int fe_process_frames_ext(fe_t *fe,
                       size_t *inout_nsamps,
                       mfcc_t **buf_cep,
                       int32 *inout_nframes,
-					  int16 **voiced_spch,
-					  int32 *voiced_spch_nsamps);
+                      int16 **voiced_spch,
+                      int32 *voiced_spch_nsamps);
 
 /** 
  * Process a block of samples.

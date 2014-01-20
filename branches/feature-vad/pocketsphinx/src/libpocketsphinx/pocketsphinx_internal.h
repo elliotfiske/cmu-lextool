@@ -104,13 +104,13 @@ typedef struct ps_searchfuncs_s {
  */
 struct ps_search_s {
     ps_searchfuncs_t *vt;  /**< V-table of search methods. */
+
     ps_search_t *pls;      /**< Phoneme loop for lookahead. */
     cmd_ln_t *config;      /**< Configuration. */
     acmod_t *acmod;        /**< Acoustic model. */
     dict_t *dict;        /**< Pronunciation dictionary. */
     dict2pid_t *d2p;       /**< Dictionary to senone mappings. */
     char *hyp_str;         /**< Current hypothesis string. */
-	char *table_name;      /**< Name of search in searches table */
     ps_lattice_t *dag;	   /**< Current hypothesis word graph. */
     ps_latlink_t *last_link; /**< Final link in best path. */
     int32 post;            /**< Utterance posterior probability. */

@@ -49,117 +49,123 @@
 #include "fe_prespch_buf.h"
 
 struct prespch_buf_s {
-	/* saved mfcc frames */
-	mfcc_t** cep_buf;
-	/* saved pcm audio */
-	int16* pcm_buf;
-	/* flag for pcm buffer initialization */
-	uint8 pcm_init;
-	/* write pointer for cep buffer */
-	int16 cep_write_ptr;
-	/* read pointer for cep buffer */
-	int16 cep_read_ptr;
-	/* write pointer for pcm buffer */
-	int16 pcm_write_ptr;
-	/* frames amount */
-	int16 num_frames;
-	/* filters amount */
-	int16 num_cepstra;
-	/* amount of fresh samples in frame */
-	int16 num_samples;
+    /* saved mfcc frames */
+    mfcc_t **cep_buf;
+    /* saved pcm audio */
+    int16 *pcm_buf;
+    /* flag for pcm buffer initialization */
+    uint8 pcm_init;
+    /* write pointer for cep buffer */
+    int16 cep_write_ptr;
+    /* read pointer for cep buffer */
+    int16 cep_read_ptr;
+    /* write pointer for pcm buffer */
+    int16 pcm_write_ptr;
+    /* frames amount */
+    int16 num_frames;
+    /* filters amount */
+    int16 num_cepstra;
+    /* amount of fresh samples in frame */
+    int16 num_samples;
 };
 
 prespch_buf_t *
 fe_init_prespch(int num_frames, int num_cepstra, int num_samples)
 {
-	prespch_buf_t *prespch_buf;
+    prespch_buf_t *prespch_buf;
 
-	prespch_buf = (prespch_buf_t *) ckd_calloc(1, sizeof(prespch_buf_t));
+    prespch_buf = (prespch_buf_t *) ckd_calloc(1, sizeof(prespch_buf_t));
 
-	prespch_buf->num_cepstra = num_cepstra;
-	prespch_buf->num_frames = num_frames;
-	prespch_buf->num_samples = num_samples;
-	prespch_buf->cep_write_ptr = 0;
-	prespch_buf->cep_read_ptr = 0;
-	prespch_buf->pcm_write_ptr = 0;
-	prespch_buf->pcm_init = 0;
+    prespch_buf->num_cepstra = num_cepstra;
+    prespch_buf->num_frames = num_frames;
+    prespch_buf->num_samples = num_samples;
+    prespch_buf->cep_write_ptr = 0;
+    prespch_buf->cep_read_ptr = 0;
+    prespch_buf->pcm_write_ptr = 0;
+    prespch_buf->pcm_init = 0;
 
-	prespch_buf->cep_buf = (mfcc_t **)
-		ckd_calloc_2d(num_frames, num_cepstra, sizeof(**prespch_buf->cep_buf));
+    prespch_buf->cep_buf = (mfcc_t **)
+        ckd_calloc_2d(num_frames, num_cepstra,
+                      sizeof(**prespch_buf->cep_buf));
 
-	return prespch_buf;
+    return prespch_buf;
 }
 
-int 
-fe_prespch_read_cep(prespch_buf_t* prespch_buf, mfcc_t * fea)
+int
+fe_prespch_read_cep(prespch_buf_t * prespch_buf, mfcc_t * fea)
 {
-	if (prespch_buf->cep_read_ptr >= prespch_buf->num_frames)
-		return 0; //nothing to read
-	if (prespch_buf->cep_read_ptr >= prespch_buf->cep_write_ptr)
-		return 0; //nothing to read
-	memcpy(fea, prespch_buf->cep_buf[prespch_buf->cep_read_ptr], sizeof(mfcc_t)*prespch_buf->num_cepstra);
-	prespch_buf->cep_read_ptr++;
-	return 1;
+    if (prespch_buf->cep_read_ptr >= prespch_buf->num_frames)
+        return 0;
+    if (prespch_buf->cep_read_ptr >= prespch_buf->cep_write_ptr)
+        return 0;
+    memcpy(fea, prespch_buf->cep_buf[prespch_buf->cep_read_ptr],
+           sizeof(mfcc_t) * prespch_buf->num_cepstra);
+    prespch_buf->cep_read_ptr++;
+    return 1;
 }
 
-void 
-fe_prespch_write_cep(prespch_buf_t* prespch_buf, mfcc_t * fea)
+void
+fe_prespch_write_cep(prespch_buf_t * prespch_buf, mfcc_t * fea)
 {
-	assert(prespch_buf->cep_write_ptr < prespch_buf->num_frames);
-	memcpy(prespch_buf->cep_buf[prespch_buf->cep_write_ptr], fea, sizeof(mfcc_t)*prespch_buf->num_cepstra);
-	prespch_buf->cep_write_ptr++;
+    assert(prespch_buf->cep_write_ptr < prespch_buf->num_frames);
+    memcpy(prespch_buf->cep_buf[prespch_buf->cep_write_ptr], fea,
+           sizeof(mfcc_t) * prespch_buf->num_cepstra);
+    prespch_buf->cep_write_ptr++;
 }
 
-void 
-fe_prespch_read_pcm(prespch_buf_t* prespch_buf, int16 **samples, int32 *samples_num)
+void
+fe_prespch_read_pcm(prespch_buf_t * prespch_buf, int16 ** samples,
+                    int32 * samples_num)
 {
-	if (!prespch_buf->pcm_init) {
-		//pcm prespch buffer isn't initialized yet
-		samples = NULL;
-		*samples_num = 0;
-		return;
-	}
-	*samples = prespch_buf->pcm_buf;
-	*samples_num = prespch_buf->pcm_write_ptr * prespch_buf->num_samples;
-	prespch_buf->pcm_write_ptr = 0;
+    if (!prespch_buf->pcm_init) {
+        /* pcm prespch buffer isn't initialized yet */
+        samples = NULL;
+        *samples_num = 0;
+        return;
+    }
+    *samples = prespch_buf->pcm_buf;
+    *samples_num = prespch_buf->pcm_write_ptr * prespch_buf->num_samples;
+    prespch_buf->pcm_write_ptr = 0;
 }
 
-void 
-fe_prespch_write_pcm(prespch_buf_t* prespch_buf, int16 * samples)
+void
+fe_prespch_write_pcm(prespch_buf_t * prespch_buf, int16 * samples)
 {
-	int32 sample_ptr;
+    int32 sample_ptr;
 
-	if (!prespch_buf->pcm_init) {
-		//pcm buffer is not initialized
-		prespch_buf->pcm_init = 1;
-		prespch_buf->pcm_buf = (int16 *)
-			ckd_calloc(prespch_buf->num_frames * prespch_buf->num_samples, sizeof(int16));
-	}
-	assert(prespch_buf->pcm_write_ptr < prespch_buf->num_frames);
-	sample_ptr = prespch_buf->pcm_write_ptr * prespch_buf->num_samples;
-	memcpy(&prespch_buf->pcm_buf[sample_ptr], samples, prespch_buf->num_samples * sizeof(int16));
-	prespch_buf->pcm_write_ptr++;
+    if (!prespch_buf->pcm_init) {
+        /* pcm buffer is not initialized */
+        prespch_buf->pcm_init = 1;
+        prespch_buf->pcm_buf = (int16 *)
+            ckd_calloc(prespch_buf->num_frames * prespch_buf->num_samples,
+                       sizeof(int16));
+    }
+    assert(prespch_buf->pcm_write_ptr < prespch_buf->num_frames);
+    sample_ptr = prespch_buf->pcm_write_ptr * prespch_buf->num_samples;
+    memcpy(&prespch_buf->pcm_buf[sample_ptr], samples,
+           prespch_buf->num_samples * sizeof(int16));
+    prespch_buf->pcm_write_ptr++;
 }
 
-void 
-fe_reset_prespch_cep(prespch_buf_t* prespch_buf)
+void
+fe_reset_prespch_cep(prespch_buf_t * prespch_buf)
 {
-	prespch_buf->cep_read_ptr = 0;
-	prespch_buf->cep_write_ptr = 0;
+    prespch_buf->cep_read_ptr = 0;
+    prespch_buf->cep_write_ptr = 0;
 }
 
-void 
-fe_reset_prespch_pcm(prespch_buf_t* prespch_buf)
+void
+fe_reset_prespch_pcm(prespch_buf_t * prespch_buf)
 {
-	prespch_buf->pcm_write_ptr = 0;
+    prespch_buf->pcm_write_ptr = 0;
 }
 
-void 
-fe_free_prespch(prespch_buf_t* prespch_buf)
+void
+fe_free_prespch(prespch_buf_t * prespch_buf)
 {
-	if (prespch_buf->cep_buf)
-		ckd_free_2d((void **)prespch_buf->cep_buf);
-	if (prespch_buf->pcm_init && prespch_buf->pcm_buf)
-		ckd_free(prespch_buf->pcm_buf);
-	ckd_free(prespch_buf);
+    if (prespch_buf->cep_buf)
+        ckd_free_2d((void **) prespch_buf->cep_buf);
+    if (prespch_buf->pcm_init && prespch_buf->pcm_buf)
+        ckd_free(prespch_buf->pcm_buf);
+    ckd_free(prespch_buf);
 }
