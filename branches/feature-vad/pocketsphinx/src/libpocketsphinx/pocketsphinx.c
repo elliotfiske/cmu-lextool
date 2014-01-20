@@ -489,7 +489,16 @@ ps_set_search(ps_decoder_t *ps, const char *name)
 const char*
 ps_get_search(ps_decoder_t *ps)
 {
-    return ps_search_name(ps->search);
+    hash_iter_t *search_it;
+    const char* name = NULL;
+    for (search_it = hash_table_iter(ps->searches); search_it;
+         search_it = hash_table_iter_next(search_it)) {
+        if (hash_entry_val(search_it->ent) == ps->search) {
+    	    name = hash_entry_key(search_it->ent);
+    	    break;
+        }
+    }
+    return name;
 }
 
 ngram_model_t *
