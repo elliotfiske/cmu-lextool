@@ -1,2 +1,3 @@
-YES Y_S
-NO N_S
+<SIL> SIL
+YES Y
+NO N

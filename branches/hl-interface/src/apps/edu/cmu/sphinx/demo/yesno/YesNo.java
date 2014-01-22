@@ -36,7 +36,7 @@ public class YesNo {
         private static final String CONFIG_PATH =
             "resource:/edu/cmu/sphinx/demo/yesno/config.xml";
         private static final String ACOUSTIC_MODEL_PATH =
-            "models/acoustic/yesno";
+            "file:models/acoustic/yesno";
         private static final String DICTIONARY_PATH =
             "models/acoustic/yesno/lexicon.txt";
 

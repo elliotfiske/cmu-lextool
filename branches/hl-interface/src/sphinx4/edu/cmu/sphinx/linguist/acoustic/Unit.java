@@ -29,7 +29,7 @@ public class Unit {
     private volatile String key;
 
     /**
-     * Constructs a context dependent unit. Constructors are package private, use the UnitManager to create and access
+     * Constructs a context independent unit. Constructors are package private, use the UnitManager to create and access
      * units.
      *
      * @param name   the name of the unit
