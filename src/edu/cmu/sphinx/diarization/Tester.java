@@ -34,9 +34,10 @@ public class Tester {
 		ArrayList<float[]> ret = new ArrayList<float[]>();
 		float[] dummy = new float[vectorSize];
 		for (int i = 0; i < speakersCount; i++) {
-			for (int j = 0; j < vectorSize; j++) 
-				dummy[j] = (float)(i + 1) / 10 + (float)rd.nextInt(5000) / 50000;
-			dummy[0] = 3 + (float)(i + 1) / 10;
+			for (int j = 0; j < vectorSize; j++)
+				dummy[j] = (float) (i + 1) / 10 + (float) rd.nextInt(5000)
+						/ 50000;
+			dummy[0] = 3 + (float) (i + 1) / 10;
 			for (int j = 0; j < vectorsCount; j++) {
 				float[] copy = new float[vectorSize];
 				for (int k = 0; k < vectorSize; k++)
@@ -47,6 +48,11 @@ public class Tester {
 		return ret;
 	}
 
+	public static String formatedTime(int seconds) {
+		return (seconds / 60000) + ":"
+				+ (Math.round((double) (seconds % 60000) / 1000));
+	}
+
 	/**
 	 * @param speakers
 	 *            An array of clusters for which it is needed to be printed the
@@ -54,9 +60,31 @@ public class Tester {
 	 */
 	public static void printIntervals(ArrayList<SpeakerCluster> speakers) {
 		System.out.println("Detected " + speakers.size() + " Speakers :");
-		for (int i = 0; i < speakers.size(); i++)
-			System.out.println("Speaker " + i + " : "
-					+ speakers.get(i).getSpeakerIntervals().toString());
+		for (int i = 0; i < speakers.size(); i++) {
+			ArrayList<Integer> t = speakers.get(i).getSpeakerIntervals();
+			System.out.print("Speaker " + i + ": ");
+			for (int j = 0; j < t.size() / 2; j++)
+				System.out.print("[" + formatedTime(t.get(j * 2)) + " "
+						+ formatedTime((t.get(j * 2 + 1) + t.get(j * 2)))
+						+ "] ");
+			System.out.println();
+		}
+	}
+
+	/**
+	 * 
+	 * @param speakers
+	 *            An array of clusters for which it is needed to be printed the
+	 *            speakers intervals
+	 */
+	public static void printSpeakerIntervals(
+			ArrayList<SpeakerCluster> speakers, String fileName) {
+		for (int i = 0; i < speakers.size(); i++) {
+			ArrayList<Integer> t = speakers.get(i).getSpeakerIntervals();
+			for (int j = 0; j < t.size() / 2; j++)
+				System.out.println(fileName + " " + 1 + " " + t.get(2 * j) / 10
+						+ " " + t.get(2 * j + 1) / 10 + " U U U S" + i);
+		}
 	}
 
 	/**
@@ -107,7 +135,8 @@ public class Tester {
 	 *            the input file that needs to be diarized
 	 */
 	public static void testSpeakerDiarization(String inputFile) {
-		printIntervals(new SpeakerDiarization().cluster(inputFile));
+		printSpeakerIntervals(new SpeakerDiarization().cluster(inputFile),
+				inputFile);
 	}
 
 	/**
@@ -115,12 +144,10 @@ public class Tester {
 	 *            -i input file name
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		String inputFile = null;
 		for (int i = 0; i < args.length; i++)
 			if (args[i].equals("-i"))
 				inputFile = args[++i];
 		testSpeakerDiarization(inputFile);
-		testRepeatedSpeakerDiarization(13, 900, 4, 4);
 	}
 }
