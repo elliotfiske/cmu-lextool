@@ -39,6 +39,7 @@
         <propertylist name="pipeline">
             <item>streamDataSource</item>
             <item>preemphasizer</item>
+            <item>dither</item>
             <item>windower</item>
             <item>fft</item>
             <item>plpFrequencyFilterBank</item>
@@ -49,6 +50,8 @@
     <component name="preemphasizer"
                type="edu.cmu.sphinx.frontend.filter.Preemphasizer"/>
 
+    <component name="dither"
+               type="edu.cmu.sphinx.frontend.filter.Dither"/>
     <component name="windower"
                type="edu.cmu.sphinx.frontend.window.RaisedCosineWindower">
     </component>

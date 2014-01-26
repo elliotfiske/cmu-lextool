@@ -101,14 +101,18 @@ public class SpeakerDiarization implements Diarization {
 
 	/**
 	 * 
-	 * @param logDet log(det(cov(features))), this parameter it's useful when this
-	 * function is called repeatedly for different frame values and the same features
-	 * parameter
-	 * @param frame the frame which is tested for being a change point
-	 * @param features the feature vectors matrix
+	 * @param logDet
+	 *            log(det(cov(features))), this parameter it's useful when this
+	 *            function is called repeatedly for different frame values and
+	 *            the same features parameter
+	 * @param frame
+	 *            the frame which is tested for being a change point
+	 * @param features
+	 *            the feature vectors matrix
 	 * @return the likelihood ratio
 	 */
-	double getLikelihoodRatio(double logDet, int frame, Array2DRowRealMatrix features){
+	double getLikelihoodRatio(double logDet, int frame,
+			Array2DRowRealMatrix features) {
 		double logDet1, logDet2;
 		int d = Segment.FEATURES_SIZE;
 		double penalty = 0.5 * (d + 0.5 * d * (d + 1))
@@ -123,8 +127,8 @@ public class SpeakerDiarization implements Diarization {
 		logDet1 = getLogDet(sub1);
 		logDet2 = getLogDet(sub2);
 		return (nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2 - penalty);
-		
 	}
+
 	/**
 	 * @param start
 	 *            The starting frame
@@ -157,6 +161,8 @@ public class SpeakerDiarization implements Diarization {
 	}
 
 	/**
+	 * }
+	 * 
 	 * @param features
 	 *            Matrix with feature vectors as rows
 	 * @return A list with all changing points detected in the file
@@ -165,12 +171,12 @@ public class SpeakerDiarization implements Diarization {
 			Array2DRowRealMatrix features) {
 		LinkedList<Integer> ret = new LinkedList<Integer>();
 		ret.add(0);
-		int framesCount = features.getRowDimension(), step = 200;
+		int framesCount = features.getRowDimension(), step = 1000;
 		int start = 0, end = step, cp;
 		while (end < framesCount) {
 			cp = getPoint(start, end - start + 1, step / 10, features);
 			if (cp > 0) {
-				if (cp - ret.get(ret.size() - 1) > step / 2) {
+				if (cp - ret.get(ret.size() - 1) > 0) {
 					start = cp;
 					end = start + step;
 					ret.add(cp);
@@ -238,16 +244,23 @@ public class SpeakerDiarization implements Diarization {
 			previous = curent;
 		}
 		int clusterCount = ret.size();
+
 		Array2DRowRealMatrix distance;
 		distance = new Array2DRowRealMatrix(clusterCount, clusterCount);
 		distance = updateDistances(ret);
 		while (true) {
 			double distmin = 0;
 			int imin = -1, jmin = -1;
+
+			for (int i = 0; i < clusterCount; i++)
+				for (int j = 0; j < clusterCount; j++)
+					if (i != j)
+						distmin += distance.getEntry(i, j);
+			distmin /= (clusterCount * (clusterCount - 1) * 4);
+
 			for (int i = 0; i < clusterCount; i++) {
 				for (int j = 0; j < clusterCount; j++) {
-					if (distance.getEntry(i, j) < distmin
-							&& distance.getEntry(i, j) <= 0 && i != j) {
+					if (distance.getEntry(i, j) < distmin && i != j) {
 						distmin = distance.getEntry(i, j);
 						imin = i;
 						jmin = j;
@@ -273,23 +286,23 @@ public class SpeakerDiarization implements Diarization {
 	 * @param posj
 	 *            The index of the cluster that will be eliminated from the
 	 *            clustering
-	 * @param distance The distance matrix that will be updated
+	 * @param distance
+	 *            The distance matrix that will be updated
 	 */
-	void updateDistances(ArrayList<SpeakerCluster> clustering,
-			int posi, int posj, Array2DRowRealMatrix distance) {
+	void updateDistances(ArrayList<SpeakerCluster> clustering, int posi,
+			int posj, Array2DRowRealMatrix distance) {
 		int clusterCount = clustering.size();
 		for (int i = 0; i < clusterCount; i++) {
 			distance.setEntry(i, posi,
 					computeDistance(clustering.get(i), clustering.get(posi)));
-			distance.setEntry(posi, i,
-					computeDistance(clustering.get(i), clustering.get(posi)));
+			distance.setEntry(posi, i, distance.getEntry(i, posi));
 		}
-		for (int i = posj; i < clusterCount - 1; i++) 
-			for (int j = 0; j < clusterCount; j++) 
+		for (int i = posj; i < clusterCount - 1; i++)
+			for (int j = 0; j < clusterCount; j++)
 				distance.setEntry(i, j, distance.getEntry(i + 1, j));
-		
+
 		for (int i = 0; i < clusterCount; i++)
-			for(int j = posj; j < clusterCount - 1; j++)
+			for (int j = posj; j < clusterCount - 1; j++)
 				distance.setEntry(i, j, distance.getEntry(i, j + 1));
 	}
 
@@ -305,8 +318,7 @@ public class SpeakerDiarization implements Diarization {
 			for (int j = 0; j <= i; j++) {
 				distance.setEntry(i, j,
 						computeDistance(clustering.get(i), clustering.get(j)));
-				distance.setEntry(j, i,
-						computeDistance(clustering.get(i), clustering.get(j)));
+				distance.setEntry(j, i, distance.getEntry(i, j));
 			}
 		}
 		return distance;
