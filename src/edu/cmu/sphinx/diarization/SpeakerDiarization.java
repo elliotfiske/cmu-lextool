@@ -95,28 +95,29 @@ public class SpeakerDiarization implements Diarization {
 	 * @return Maximum likelihood ratio
 	 */
 	private double getLikelihoodRatio(int frame, Array2DRowRealMatrix features) {
-		double logDet = getLogDet(features);
-		return getLikelihoodRatio(logDet, frame, features);
+		double bicValue = getBICValue(features);
+		return getLikelihoodRatio(bicValue, frame, features);
 	}
 
 	/**
 	 * 
-	 * @param logDet
-	 *            log(det(cov(features))), this parameter it's useful when this
-	 *            function is called repeatedly for different frame values and
-	 *            the same features parameter
+	 * @param bicValue
+	 *            The bicValue of the model represented by only one Gaussian.
+	 *            This parameter it's useful when this function is called
+	 *            repeatedly for different frame values and the same features
+	 *            parameter
 	 * @param frame
 	 *            the frame which is tested for being a change point
 	 * @param features
 	 *            the feature vectors matrix
 	 * @return the likelihood ratio
 	 */
-	double getLikelihoodRatio(double logDet, int frame,
+	double getLikelihoodRatio(double bicValue, int frame,
 			Array2DRowRealMatrix features) {
-		double logDet1, logDet2;
+		double bicValue1, bicValue2;
 		int d = Segment.FEATURES_SIZE;
 		double penalty = 0.5 * (d + 0.5 * d * (d + 1))
-				* Math.log(features.getRowDimension()) * 4;
+				* Math.log(features.getRowDimension()) * 2;
 		int nrows = features.getRowDimension(), ncols = features
 				.getColumnDimension();
 		Array2DRowRealMatrix sub1, sub2;
@@ -124,9 +125,9 @@ public class SpeakerDiarization implements Diarization {
 				ncols - 1);
 		sub2 = (Array2DRowRealMatrix) features.getSubMatrix(frame, nrows - 1,
 				0, ncols - 1);
-		logDet1 = getLogDet(sub1);
-		logDet2 = getLogDet(sub2);
-		return (nrows * logDet - frame * logDet1 - (nrows - frame) * logDet2 - penalty);
+		bicValue1 = getBICValue(sub1);
+		bicValue2 = getBICValue(sub2);
+		return (bicValue - bicValue1 - bicValue2 - penalty);
 	}
 
 	/**
@@ -146,10 +147,10 @@ public class SpeakerDiarization implements Diarization {
 		int ncols = features.getColumnDimension(), point = 0;
 		Array2DRowRealMatrix sub = (Array2DRowRealMatrix) features
 				.getSubMatrix(start, start + length - 1, 0, ncols - 1);
-		double logDet = getLogDet(sub);
+		double bicValue = getBICValue(sub);
 		for (int i = Segment.FEATURES_SIZE + 1; i < length
 				- Segment.FEATURES_SIZE; i += step) {
-			double aux = getLikelihoodRatio(logDet, i, sub);
+			double aux = getLikelihoodRatio(bicValue, i, sub);
 			if (aux > max) {
 				max = aux;
 				point = i;
@@ -191,17 +192,18 @@ public class SpeakerDiarization implements Diarization {
 
 	/**
 	 * @param mat
-	 *            A matrix for which is computed log(det(cov(mat)))
-	 * @return log(det(cov(mat))) computed as sum of log(eigenvalues)
+	 *            A matrix with feature vectors as rows.
+	 * @return Returns the BICValue of the Gaussian model that approximates the
+	 *         the feature vectors data samples
 	 */
-	private double getLogDet(Array2DRowRealMatrix mat) {
+	public static double getBICValue(Array2DRowRealMatrix mat) {
 		double ret = 0;
 		EigenDecomposition ed = new EigenDecomposition(
 				new Covariance(mat).getCovarianceMatrix());
 		double[] re = ed.getRealEigenvalues();
 		for (int i = 0; i < re.length; i++)
 			ret += Math.log(re[i]);
-		return ret;
+		return ret * (mat.getRowDimension() / 2);
 	}
 
 	@Override
@@ -235,12 +237,12 @@ public class SpeakerDiarization implements Diarization {
 		int curent, previous = it.next();
 		while (it.hasNext()) {
 			curent = it.next();
-			SpeakerCluster c = new SpeakerCluster(new Segment(previous
-					* Segment.FRAME_LENGTH, (curent - previous)
-					* Segment.FRAME_LENGTH),
-					(Array2DRowRealMatrix) featuresMatrix.getSubMatrix(
-							previous, curent - 1, 0, 12));
-			ret.add(c);
+			Segment s = new Segment(previous * Segment.FRAME_LENGTH,
+					(curent - previous) * (Segment.FRAME_LENGTH));
+			Array2DRowRealMatrix featuresSubset = (Array2DRowRealMatrix) featuresMatrix
+					.getSubMatrix(previous, curent - 1, 0, 12);
+			ret.add(new SpeakerCluster(s, featuresSubset,
+					getBICValue(featuresSubset)));
 			previous = curent;
 		}
 		int clusterCount = ret.size();
@@ -333,8 +335,11 @@ public class SpeakerDiarization implements Diarization {
 		combinedFeatures.setSubMatrix(c1.getFeatureMatrix().getData(), 0, 0);
 		combinedFeatures.setSubMatrix(c2.getFeatureMatrix().getData(), c1
 				.getFeatureMatrix().getRowDimension(), 0);
-		return getLikelihoodRatio(c1.getFeatureMatrix().getRowDimension(),
-				combinedFeatures);
+		double bicValue = getBICValue(combinedFeatures);
+		double d = Segment.FEATURES_SIZE;
+		double penalty = 0.5 * (d + 0.5 * d * (d + 1))
+				* Math.log(combinedFeatures.getRowDimension()) * 2;
+		return bicValue - c1.getBicValue() - c2.getBicValue() - penalty;
 	}
 
 	/**
