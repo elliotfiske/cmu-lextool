@@ -67,7 +67,7 @@ public class Dialog {
 
         recognizer.startRecognition(true);
         while (true) {
-            String utterance = recognizer.getResult().getUtterance(false);
+            String utterance = recognizer.getResult().getHypothesis();
             if (utterance.equals("one zero one")
                 | utterance.equals("one oh one"))
                 break;
@@ -90,7 +90,7 @@ public class Dialog {
         recognizer.startRecognition(true);
 
         while (true) {
-            String utterance = recognizer.getResult().getUtterance(false);
+            String utterance = recognizer.getResult().getHypothesis();
             if (utterance.endsWith("back")) {
                 break;
             } else if (utterance.startsWith("deposit")) {
@@ -120,7 +120,7 @@ public class Dialog {
 
         recognizer.startRecognition(true);
         while (true) {
-            String utterance = recognizer.getResult().getUtterance(false);
+            String utterance = recognizer.getResult().getHypothesis();
             if (utterance.equals("the end"))
                 break;
             else
@@ -157,7 +157,7 @@ public class Dialog {
             System.out.println("Example: weather forecast");
             System.out.println("Example: digits\n");
 
-            String utterance = jsgfRecognizer.getResult().getUtterance(false);
+            String utterance = jsgfRecognizer.getResult().getHypothesis();
 
             if (utterance.startsWith("exit"))
                 break;

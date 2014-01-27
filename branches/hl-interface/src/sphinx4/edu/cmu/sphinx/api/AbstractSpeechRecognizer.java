@@ -13,7 +13,6 @@ package edu.cmu.sphinx.api;
 
 import java.io.IOException;
 
-import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.Result;
 
 import edu.cmu.sphinx.recognizer.Recognizer;
@@ -26,7 +25,6 @@ public class AbstractSpeechRecognizer {
 
     protected final Context context;
     protected final Recognizer recognizer;
-    protected final ConfidenceScorer scorer;
 
     protected final SpeechSourceProvider speechSourceProvider;
 
@@ -42,7 +40,6 @@ public class AbstractSpeechRecognizer {
     protected AbstractSpeechRecognizer(Context context) throws IOException {
         this.context = context;
         recognizer = context.getInstance(Recognizer.class);
-        scorer = context.getInstance(ConfidenceScorer.class);
         speechSourceProvider = new SpeechSourceProvider();
     }
 
@@ -51,6 +48,6 @@ public class AbstractSpeechRecognizer {
      */
     public SpeechResult getResult() {
         Result result = recognizer.recognize();
-        return null == result ? null : new SpeechResult(scorer, result);
+        return null == result ? null : new SpeechResult(result);
     }
 }

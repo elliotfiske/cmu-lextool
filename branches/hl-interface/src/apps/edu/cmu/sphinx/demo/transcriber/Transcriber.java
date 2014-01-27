@@ -46,9 +46,8 @@ public class Transcriber {
         SpeechResult result;
 
         while ((result = recognizer.getResult()) != null) {
-            System.out.format("hypothesis: %s, confidence: %g\n",
-                              result.getUtterance(false),
-                              result.getConfidence());
+            System.out.format("hypothesis: %s\n",
+                              result.getHypothesis());
 
             System.out.println("best 3 hypothesis:");
             

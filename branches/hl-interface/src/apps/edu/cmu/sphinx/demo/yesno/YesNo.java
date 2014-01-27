@@ -82,9 +82,8 @@ public class YesNo {
             SpeechResult result;
 
             while ((result = recognizer.getResult()) != null)
-                System.out.format("input: %s\nhypothesis: %s\nconfidence: %g\n",
-                                  fileName, result.getUtterance(false),
-                                  result.getConfidence());
+                System.out.format("input: %s\nhypothesis: %s\n",
+                                  fileName, result.getHypothesis());
 
             recognizer.stopRecognition();
         }

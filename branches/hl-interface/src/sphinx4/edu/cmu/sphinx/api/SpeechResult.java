@@ -14,7 +14,6 @@ package edu.cmu.sphinx.api;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import edu.cmu.sphinx.result.ConfidenceScorer;
 import edu.cmu.sphinx.result.Lattice;
 import edu.cmu.sphinx.result.LatticeOptimizer;
 import edu.cmu.sphinx.result.Nbest;
@@ -31,7 +30,6 @@ import edu.cmu.sphinx.util.LogMath;
 public final class SpeechResult {
 
     private final Result result;
-    private final Path hypothesis;
     private final Lattice lattice;
 
     /**
@@ -40,11 +38,10 @@ public final class SpeechResult {
      * @param scorer confidence scorer
      * @param result recognition result returned by {@link Recognizer}
      */
-    public SpeechResult(ConfidenceScorer scorer, Result result) {
+    public SpeechResult(Result result) {
         this.result = result;
         lattice = new Lattice(result);
         new LatticeOptimizer(lattice).optimize();
-        hypothesis = scorer.score(result).getBestHypothesis();
     }
 
     /**
@@ -60,48 +57,9 @@ public final class SpeechResult {
 
     /**
      * Returns string representaion of the result.
-     *
-     * @param withFillers should the filler parts be included
      */
-    public String getUtterance(boolean withFillers) {
-        // TODO: use com.google.common.base.Joiner
-        Collection<String> words = new ArrayList<String>();
-
-        for (WordResult word : getWords()) {
-            if (!word.isFiller() || withFillers)
-                words.add(word.getPronunciation().getWord().toString());
-        }
-
-
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-        for (String word : words) {
-            sb.append(word);
-            if (++count < words.size())
-                sb.append(" ");
-        }
-
-        return sb.toString();
-    }
-
-    /**
-     * Returns total score for the whole utterance.
-     *
-     * @return total score of the path of words
-     */
-    public double getScore() {
-        return LogMath.getInstance().logToLinear(
-                (float) hypothesis.getScore());
-    }
-
-    /**
-     * Returns confidence score for the whole utterance.
-     *
-     * @return confidence score of the path of words
-     */
-    public double getConfidence() {
-        return LogMath.getInstance().logToLinear(
-                (float) hypothesis.getConfidence());
+    public String getHypothesis() {
+	return result.getBestResultNoFiller();
     }
 
     /**
