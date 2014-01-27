@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ********************************************************** -->
+<!-- *                                                        * -->
+<!-- * Apache Ant build file used to build the Sphinx-4 demos.* -->
+<!-- * To build the demos, just type the following:           * -->
+<!-- *                                                        * -->
+<!-- *     ant -buildfile demo.xml                            * -->
+<!-- *                                                        * -->
+<!-- * For more information:  http://ant.apache.org/          * -->
+<!-- *                                                        * -->
+<!-- ********************************************************** -->
+
+<project basedir="." default="all" name="Sphinx-4">
+
+  <property name="demo_src_dir" value="src/apps"/>
+  <property name="build_dir" value="bld"/>
+  <property name="demo_classes_dir" value="${build_dir}"/>
+  <property name="lib_dir" value="lib"/>
+  <property name="bin_dir" value="bin"/>
+  <property name="deploy_dir" value="deploy"/>
+  <path id="libs">
+    <pathelement path="${demo_classes_dir}"/>
+    <pathelement location="${lib_dir}/sphinx4.jar"/>
+    <pathelement location="${lib_dir}/tags.jar"/>
+    <pathelement location="${lib_dir}/js.jar"/>
+    <pathelement location="${lib_dir}/junit-4.4.jar"/>
+  </path>
+
+  <!-- ********************************************************** -->
+  <!-- *                                                        * -->
+  <!-- * Builds just the demos (using package names for the     * -->
+  <!-- * demos would have made this easier).                    * -->
+  <!-- *                                                        * -->
+  <!-- ********************************************************** -->
+  <target name="all"
+    depends="make_lib_dir,
+    compile_sphinx_demos"
+    description="Compiles and jars the demos"/>
+
+  <target name="make_lib_dir">
+    <mkdir dir="${lib_dir}"/>
+  </target>
+
+
+  <target name="compile_sphinx_demos"
+    depends="compile_dialog,
+    compile_sphinx_transcriber,
+    compile_aligner,
+    compile_yesno"
+    description="Compiles Sphinx-4 demos"/>
+
+  <target name="compile_dialog">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/dialog"/>
+    <javac debug="true"
+      listfiles="true"
+      deprecation="true"
+      includeAntRuntime="false"
+      srcdir="${demo_src_dir}"
+      includes="edu/cmu/sphinx/demo/dialog/**"
+      destdir="${demo_classes_dir}">
+      <classpath refid="libs"/>
+    </javac>
+
+    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/dialog">
+      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/dialog">
+        <include name="**/*.gram"/>
+        <include name="**/*.grxml"/>
+        <include name="**/weather.lm"/>
+      </fileset>
+    </copy>
+
+    <jar destfile="${bin_dir}/Dialog.jar"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/dialog/dialog.Manifest"
+      basedir="${demo_classes_dir}"
+      includes="edu/cmu/sphinx/demo/dialog/**"
+      compress="true"/>
+  </target>
+
+  <target name="compile_sphinx_transcriber">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/transcriber"/>
+    <javac debug="true"
+      listfiles="true"
+      deprecation="true"
+      includeAntRuntime="false"
+      srcdir="${demo_src_dir}"
+      includes="edu/cmu/sphinx/demo/transcriber/,edu/cmu/sphinx/demo/transcriber/**,"
+      destdir="${demo_classes_dir}">
+      <classpath refid="libs"/>
+    </javac>
+    <mkdir dir="${bin_dir}"/>
+    <jar destfile="${bin_dir}/Transcriber.jar"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/transcriber/transcriber.Manifest"
+      basedir="${demo_classes_dir}"
+      includes="edu/cmu/sphinx/demo/transcriber/**"
+      compress="true"/>
+  </target>
+
+  <target name="compile_aligner">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/aligner"/>
+    <javac debug="true"
+      listfiles="true"
+      deprecation="true"
+      includeAntRuntime="false"
+      srcdir="${demo_src_dir}"
+      includes="edu/cmu/sphinx/demo/aligner/**"
+      destdir="${demo_classes_dir}">
+      <classpath refid="libs"/>
+    </javac>
+    <mkdir dir="${bin_dir}"/>
+    <jar destfile="${bin_dir}/Aligner.jar"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/aligner/aligner.Manifest"
+      basedir="${demo_classes_dir}"
+      includes="edu/cmu/sphinx/demo/aligner/**"
+      compress="true"/>
+  </target>
+
+  <target name="compile_yesno">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/yesno"/>
+    <javac debug="true"
+      listfiles="true"
+      deprecation="true"
+      includeAntRuntime="false"
+      srcdir="${demo_src_dir}"
+      includes="edu/cmu/sphinx/demo/yesno/**"
+      destdir="${demo_classes_dir}">
+      <classpath refid="libs"/>
+    </javac>
+    <mkdir dir="${bin_dir}"/>
+
+    <copy todir="${demo_classes_dir}/edu/cmu/sphinx/demo/yesno">
+      <fileset dir="${demo_src_dir}/edu/cmu/sphinx/demo/yesno">
+        <include name="**/config.xml"/>
+        <include name="**/yesno.gram"/>
+      </fileset>
+    </copy>
+
+    <jar destfile="${bin_dir}/YesNo.jar"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/yesno/yesno.Manifest"
+      basedir="${demo_classes_dir}"
+      includes="edu/cmu/sphinx/demo/yesno/**"
+      compress="true"/>
+  </target>
+
+</project>
