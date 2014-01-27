@@ -12,6 +12,8 @@
  */
 package edu.cmu.sphinx.diarization;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -76,15 +78,20 @@ public class Tester {
 	 * @param speakers
 	 *            An array of clusters for which it is needed to be printed the
 	 *            speakers intervals
+	 * @throws IOException
 	 */
 	public static void printSpeakerIntervals(
-			ArrayList<SpeakerCluster> speakers, String fileName) {
+			ArrayList<SpeakerCluster> speakers, String fileName)
+			throws IOException {
+		String ofName = fileName.substring(0, fileName.indexOf('.'));
+		FileWriter fr = new FileWriter(ofName);
 		for (int i = 0; i < speakers.size(); i++) {
 			ArrayList<Integer> t = speakers.get(i).getSpeakerIntervals();
 			for (int j = 0; j < t.size() / 2; j++)
-				System.out.println(fileName + " " + 1 + " " + t.get(2 * j) / 10
-						+ " " + t.get(2 * j + 1) / 10 + " U U U S" + i);
+				fr.write(fileName + " " + 1 + " " + t.get(2 * j) / 10 + " "
+						+ t.get(2 * j + 1) / 10 + " U U U S" + i + '\n');
 		}
+		fr.close();
 	}
 
 	/**
@@ -134,7 +141,8 @@ public class Tester {
 	 * @param inputFile
 	 *            the input file that needs to be diarized
 	 */
-	public static void testSpeakerDiarization(String inputFile) {
+	public static void testSpeakerDiarization(String inputFile)
+			throws IOException {
 		printSpeakerIntervals(new SpeakerDiarization().cluster(inputFile),
 				inputFile);
 	}
@@ -143,7 +151,7 @@ public class Tester {
 	 * @param args
 	 *            -i input file name
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		String inputFile = null;
 		for (int i = 0; i < args.length; i++)
 			if (args[i].equals("-i"))

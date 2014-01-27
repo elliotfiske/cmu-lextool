@@ -20,7 +20,15 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 public class SpeakerCluster {
 	private TreeSet<Segment> segmentSet;
-	protected String speakerGender;
+	private double bicValue;
+
+	public double getBicValue() {
+		return bicValue;
+	}
+
+	public void setBicValue(double bicValue) {
+		this.bicValue = bicValue;
+	}
 
 	protected Array2DRowRealMatrix featureMatrix;
 
@@ -30,19 +38,17 @@ public class SpeakerCluster {
 
 	public SpeakerCluster() {
 		this.segmentSet = new TreeSet<Segment>();
-		this.speakerGender = new String();
 	}
 
-	public SpeakerCluster(Segment s, Array2DRowRealMatrix featureMatrix) {
+	public SpeakerCluster(Segment s, Array2DRowRealMatrix featureMatrix, double bicValue) {
 		this.segmentSet = new TreeSet<Segment>();
-		this.speakerGender = new String();
 		this.featureMatrix = new Array2DRowRealMatrix(featureMatrix.getData());
+		this.bicValue = bicValue;
 		addSegment(s);
 	}
 
 	public SpeakerCluster(SpeakerCluster c) {
 		this.segmentSet = new TreeSet<Segment>();
-		this.speakerGender = c.speakerGender;
 		this.featureMatrix = new Array2DRowRealMatrix(c.getFeatureMatrix()
 				.getData());
 		Iterator<Segment> it = c.segmentSet.iterator();
@@ -121,6 +127,7 @@ public class SpeakerCluster {
 		combinedFeatures.setSubMatrix(featureMatrix.getData(), 0, 0);
 		combinedFeatures.setSubMatrix(target.getFeatureMatrix().getData(),
 				featureMatrix.getRowDimension(), 0);
+		bicValue = SpeakerDiarization.getBICValue(combinedFeatures);
 		featureMatrix = new Array2DRowRealMatrix(combinedFeatures.getData());
 	}
 }
