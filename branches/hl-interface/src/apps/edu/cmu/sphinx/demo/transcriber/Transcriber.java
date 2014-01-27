@@ -16,6 +16,7 @@ import java.net.URL;
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
 import edu.cmu.sphinx.api.StreamSpeechRecognizer;
+import edu.cmu.sphinx.result.WordResult;
 
 
 /**
@@ -46,11 +47,16 @@ public class Transcriber {
         SpeechResult result;
 
         while ((result = recognizer.getResult()) != null) {
-            System.out.format("hypothesis: %s\n",
+        
+            System.out.format("Hypothesis: %s\n",
                               result.getHypothesis());
+                              
+            System.out.println("List of recognized words and their times:");
+            for (WordResult r : result.getWords()) {
+        	System.out.println(r);
+            }
 
-            System.out.println("best 3 hypothesis:");
-            
+            System.out.println("Best 3 hypothesis:");            
             for (String s : result.getNbest(3))
                 System.out.println(s);
 

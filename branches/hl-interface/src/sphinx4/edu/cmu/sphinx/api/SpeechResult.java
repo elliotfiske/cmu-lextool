@@ -11,7 +11,7 @@
 
 package edu.cmu.sphinx.api;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Collection;
 
 import edu.cmu.sphinx.result.Lattice;
@@ -45,13 +45,12 @@ public final class SpeechResult {
     }
 
     /**
-     * Returns {@link Collection} of words of the recognition result.
-     *
-     * Within collection words are ordered by time frame.
+     * Returns {@link List} of words of the recognition result.
+     * Within the list words are ordered by time frame.
      *
      * @return words that form the result
      */
-    public Collection<WordResult> getWords() {
+    public List<WordResult> getWords() {
         return result.getWords();
     }
 
@@ -66,7 +65,7 @@ public final class SpeechResult {
      * Return N best hypothesis.
      *
      * @param  n number of hypothesis to return
-     * @return   collection of several best hypothesis
+     * @return   {@link Collection} of several best hypothesis
      */
     public Collection<String> getNbest(int n) {
         return new Nbest(lattice).getNbest(n);
