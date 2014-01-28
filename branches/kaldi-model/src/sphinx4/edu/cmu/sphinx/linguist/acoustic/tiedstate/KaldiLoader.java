@@ -22,42 +22,90 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi.DiagGmm;
 import edu.cmu.sphinx.util.props.*;
 import edu.cmu.sphinx.util.LogMath;
 
+class XXX {
+
+    private final int phone;
+    private final int left;
+    private final int right;
+
+    public XXX(int phone) {
+        this(phone, -1, -1);
+    }
+
+    public XXX(int phone, int left, int right) {
+        this.phone = phone;
+        this.left = left;
+        this.right = right;
+    }
+
+    public int getPhone() {
+        return phone;
+    }
+
+    public boolean hasContext() {
+        return -1 != left && -1 != right;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof XXX))
+            return false;
+
+        XXX other = (XXX) object;
+        return phone == other.phone &&
+            left == other.left &&
+            right == other.right;
+    }
+
+    @Override
+    public int hashCode() {
+        return ((phone * 31) + left) * 31 + right;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Context {%d, %d, %d}", phone, left, right);
+    }
+}
+
+final class HmmState {
+
+    private final int id;
+    private final int pdfClass;
+    private final List<Integer> transitions;
+
+    public HmmState(int id, int pdfClass, Collection<Integer> transitions) {
+        this.id = id;
+        this.pdfClass = pdfClass;
+        this.transitions = new ArrayList<Integer>(transitions);
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getPdfClass() {
+        return pdfClass;
+    }
+
+    public List<Integer> getTransitions() {
+        return transitions;
+    }
+
+    public int size() {
+        return transitions.size();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("HmmSate {%d, %d, %s}",
+                             id, pdfClass, transitions);
+    }
+}
 
 public class KaldiLoader implements Loader {
 
     final class AcousticModelParser {
-
-        private final class HmmState {
-
-            private final int pdfClass;
-            private final List<Integer> transitions;
-
-            public HmmState() {
-                transitions = new ArrayList<Integer>();
-                pdfClass = scanner.nextInt();
-                String token;
-
-                while ("<Transition>".equals(token = scanner.next())) {
-                    transitions.add(scanner.nextInt());
-                    // Skip initial probability.
-                    scanner.next();
-                }
-
-                assertToken("</State>", token);
-            }
-
-            public int getPdfClass() {
-                return pdfClass;
-            }
-
-            public List<Integer> getTransitions() {
-                return transitions;
-            }
-
-            public int size() {
-                return transitions.size();
-            }
-        }
 
         private final Scanner scanner;
 
@@ -112,7 +160,8 @@ public class KaldiLoader implements Loader {
 
         private void parseEventMap() {
             String token = scanner.next();
-            if ("NULL".equals(token)) return;
+            if ("NULL".equals(token))
+                return;
 
             if ("CE".equals(token))
                 parseConstantTableEventMap();
@@ -157,13 +206,11 @@ public class KaldiLoader implements Loader {
             int transitionId = 1;
 
             for (int i = 0; i < numTriples; ++i) {
-                int phoneId = scanner.nextInt();
-                List<HmmState> states = phoneStates.get(phoneId);
+                int phone = scanner.nextInt();
+                List<HmmState> states = phoneStates.get(phone);
                 int stateIndex = scanner.nextInt();
                 HmmState hmmState = states.get(stateIndex);
-               //  float[][] tmat = transitionMatrices.get(phoneId);
-                for (Integer transitionIndex : hmmState.getTransitions());
-                    // tmat[i][] = probabilities.get(transitionId++);
+                int pdf = scanner.nextInt();
             }
 
             expectToken("</Triples>");
@@ -190,11 +237,21 @@ public class KaldiLoader implements Loader {
                 List<HmmState> states = new ArrayList<HmmState>(3);
                 while ("<State>".equals(token = scanner.next())) {
                     // Skip state number.
-                    scanner.next();
+                    int id = scanner.nextInt();
                     token = scanner.next();
 
-                    if ("<PdfClass>".equals(token))
-                        states.add(new HmmState());
+                    if ("<PdfClass>".equals(token)) {
+                        int pdfClass = scanner.nextInt();
+                        List<Integer> transitions = new ArrayList<Integer>();
+                        while ("<Transition>".equals(token = scanner.next())) {
+                            transitions.add(scanner.nextInt());
+                            // Skip initial probability.
+                            scanner.next();
+                        }
+
+                        assertToken("</State>", token);
+                        states.add(new HmmState(id, pdfClass, transitions));
+                    }
                 }
 
                 for (Integer id : phones)
@@ -246,23 +303,29 @@ public class KaldiLoader implements Loader {
         }
 
         private void assertToken(String expected, String actual) {
-            if (actual.equals(expected)) return;
+            if (actual.equals(expected))
+                return;
 
             String msg;
             msg = String.format("'%s' expected, '%s' got", expected, actual);
             throw new InputMismatchException(msg);
         }
 
+        public Map<Integer, List<HmmState>> getPhoneStates() {
+            return phoneStates;
+        }
+
         public List<DiagGmm> getGaussianMixtures() {
             return mixtures;
         }
 
-        public float[][] getTransitionMatrix(int phoneId, int pdfId) {
-            List<HmmState> states = phoneStates.get(phoneId);
-            float[][] tmat = new float[states.size() + 1][states.size()];
+        public float[][] getTransitionMatrix(XXX context) {
+            List<HmmState> states = phoneStates.get(context.getPhone());
+            float[][] tmat = new float[states.size() + 1][states.size() + 1];
 
             for (int i = 0; i < states.size(); ++i) {
                 Arrays.fill(tmat[i], LogMath.LOG_ZERO);
+                tmat[i][i] = LogMath.LOG_ONE;
                 // List<Integer> transitions = states.get(i);
 
                 // TransitionState tstate;
@@ -305,10 +368,12 @@ public class KaldiLoader implements Loader {
     private String location;
     private UnitManager unitManager;
 
+    private Map<Integer, String> phones;
     private Pool<Senone> senonePool;
     private HMMManager hmmManager;
     private Properties modelProperties;
     private Map<String, Unit> contextIndependentUnits;
+    private Map<XXX, SortedMap<Integer, Integer>> contextData;
 
     int leftContextSize;
     int rightContextSize;
@@ -348,11 +413,21 @@ public class KaldiLoader implements Loader {
         rightContextSize = parser.getContextWidth() - leftContextSize - 1;
 
         for (DiagGmm gmm : parser.getGaussianMixtures())
-            senonePool.put(0, gmm);
+            senonePool.put((int) gmm.getID(), gmm);
 
         loadPhones();
         loadContext(parser);
         loadProperties();
+
+        for (XXX context : contextData.keySet()) {
+            String phone = phones.get(context.getPhone());
+            Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
+            contextIndependentUnits.put(unit.getName(), unit);
+            HMMPosition position = HMMPosition.UNDEFINED;
+            float[][] tmat = parser.getTransitionMatrix(context);
+            SenoneSequence seq = getSenoneSequence(context);
+            hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
+        }
     }
 
     private void loadPhones() throws IOException {
@@ -361,17 +436,17 @@ public class KaldiLoader implements Loader {
         InputStream stream = new URL(file.getPath()).openStream();
         Reader reader = new InputStreamReader(stream);
         BufferedReader br = new BufferedReader(reader);
-        Map<String, Integer> phones = new HashMap<String, Integer>();
+        phones = new HashMap<Integer, String>();
         contextIndependentUnits = new HashMap<String, Unit>();
         String line;
 
         while (null != (line = br.readLine())) {
             // Line format: <PHONE> <PHONE-ID>.
             String[] fields = line.split(" ");
-            phones.put(fields[0], Integer.parseInt(fields[1]));
+            phones.put(Integer.parseInt(fields[1]), fields[0]);
             // TODO: set valid silence flag
-            Unit unit = unitManager.getUnit(fields[0], false);
-            contextIndependentUnits.put(unit.getName(), unit);
+            //Unit unit = unitManager.getUnit(fields[0], false);
+            //contextIndependentUnits.put(unit.getName(), unit);
 
             // int pdfId = Integer.parseInt(fields[0]);
             // SenoneSequence seq = getSenoneSequence(new int[] { pdfId });
@@ -384,6 +459,7 @@ public class KaldiLoader implements Loader {
 
     private void loadContext(AcousticModelParser parser) throws IOException {
         hmmManager = new HMMManager();
+        contextData = new HashMap<XXX, SortedMap<Integer, Integer>>();
 
         File file = new File(location, "context");
         InputStream stream = new URL(file.getPath()).openStream();
@@ -392,24 +468,36 @@ public class KaldiLoader implements Loader {
         String line;
 
         while (null != (line = br.readLine())) {
+            int phone;
+            XXX context;
             String[] fields = line.split(" ");
-            // Skip short records as they are probably for silence phones.
-            if (fields.length < 5) continue;
 
-            int phoneId = Integer.parseInt(fields[4]);
-            int left = Integer.parseInt(fields[3]);
-            int right = Integer.parseInt(fields[5]);
-            //Context context = new Context(phoneId, left, right);
-            //if (!states.containsKey(context)) {
-            //    states.put(context, new SortedSet<Index>(index));
-            //}
-            // Line format: <PDF-ID> <PDF-CLASS> <LEFT> <CENTER> <RIGHT>
-            //SenoneSequence seq = getSenoneSequence(new int[] { pdfId });
-            //int phoneId = phones.get(fields[2]);
-            //float[][] tmat = parser.getTransitionMatrix(phoneId, pdfId);
-            //HMMPosition position = HMMPosition.UNDEFINED;
-            //Unit unit = unitManager.getUnit(fields[0], false);
-            //hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
+            if (fields.length > 3) {
+                phone = Integer.parseInt(fields[3]);
+                context = new XXX(phone,
+                                      Integer.parseInt(fields[2]),
+                                      Integer.parseInt(fields[4]));
+            } else {
+                phone = Integer.parseInt(fields[2]);
+                context = new XXX(phone);
+            }
+
+            SortedMap<Integer, Integer> states;
+            if (!contextData.containsKey(context))
+                contextData.put(context,
+                        states = new TreeMap<Integer, Integer>());
+            else
+                states = contextData.get(context);
+
+            int pdf = Integer.parseInt(fields[0]);
+            int pdfClass = Integer.parseInt(fields[1]);
+
+            // For each state with <pdf-class> within HMM topology for the
+            // <phone> assign <pdf-id>.
+            for (HmmState state : parser.getPhoneStates().get(phone)) {
+                if (pdfClass == state.getPdfClass())
+                    states.put(state.getId(), pdf);
+            }
         }
     }
 
@@ -426,6 +514,15 @@ public class KaldiLoader implements Loader {
         }
 
         return properties;
+    }
+
+    private SenoneSequence getSenoneSequence(XXX context) {
+        Map<Integer, Integer> states = contextData.get(context);
+        Senone[] senones = new Senone[states.size()];
+        for (Map.Entry<Integer, Integer> e : states.entrySet())
+            senones[e.getKey()] = senonePool.get(e.getValue());
+
+        return new SenoneSequence(senones);
     }
 
     /**
@@ -480,14 +577,6 @@ public class KaldiLoader implements Loader {
      */
     public Properties getProperties() {
         return modelProperties;
-    }
-
-    protected SenoneSequence getSenoneSequence(int[] ids) {
-        Senone[] senones = new Senone[ids.length];
-        for (int i = 0; i < ids.length; i++)
-            senones[i] = senonePool.get(ids[i]);
-
-        return new SenoneSequence(senones);
     }
 
     /**
