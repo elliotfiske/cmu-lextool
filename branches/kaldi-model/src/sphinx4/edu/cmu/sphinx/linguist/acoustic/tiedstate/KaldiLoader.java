@@ -59,7 +59,7 @@ class XXX {
 
     @Override
     public int hashCode() {
-        return ((phone * 31) + left) * 31 + right;
+        return 31 * (31 * phone + left) + right;
     }
 
     @Override
@@ -103,6 +103,40 @@ final class HmmState {
     }
 }
 
+class Triple {
+
+    private int phone;
+    private int hmmState;
+    private int pdf;
+
+    public Triple(int phone, int hmmState, int pdf) {
+        this.phone = phone;
+        this.hmmState = hmmState;
+        this.pdf = pdf;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof Triple))
+            return false;
+
+        Triple other = (Triple) object;
+        return phone    == other.phone &&
+               hmmState == other.hmmState &&
+               pdf      == other.pdf;
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * (31 * phone + hmmState) + pdf;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Triple {%d, %d, %d}", phone, hmmState, pdf);
+    }
+}
+
 public class KaldiLoader implements Loader {
 
     final class AcousticModelParser {
@@ -111,6 +145,7 @@ public class KaldiLoader implements Loader {
 
         // phone -> topology
         private Map<Integer, List<HmmState>> phoneStates;
+        private Map<Triple, Integer> transitionStates;
         private List<Float> logProbabilities;
         private List<DiagGmm> mixtures;
 
@@ -202,15 +237,18 @@ public class KaldiLoader implements Loader {
             parseTopology();
 
             expectToken("<Triples>");
+            transitionStates = new HashMap<Triple, Integer>();
             int numTriples = scanner.nextInt();
             int transitionId = 1;
 
             for (int i = 0; i < numTriples; ++i) {
                 int phone = scanner.nextInt();
-                List<HmmState> states = phoneStates.get(phone);
-                int stateIndex = scanner.nextInt();
-                HmmState hmmState = states.get(stateIndex);
+                int hmmState = scanner.nextInt();
                 int pdf = scanner.nextInt();
+                Triple triple = new Triple(phone, hmmState, pdf);
+                transitionStates.put(triple, transitionId);
+                transitionId +=
+                    phoneStates.get(phone).get(hmmState).getTransitions().size();
             }
 
             expectToken("</Triples>");
@@ -218,6 +256,15 @@ public class KaldiLoader implements Loader {
             logProbabilities = parseFloatList();
             expectToken("</LogProbs>");
             expectToken("</TransitionModel>");
+        }
+
+        public int getTransitionStateIndex(Triple triple) {
+            System.out.println(triple);
+            return transitionStates.get(triple);
+        }
+
+        public float getProbability(int i) {
+            return logProbabilities.get(i);
         }
 
         private void parseTopology() {
@@ -319,35 +366,6 @@ public class KaldiLoader implements Loader {
             return mixtures;
         }
 
-        public float[][] getTransitionMatrix(XXX context) {
-            List<HmmState> states = phoneStates.get(context.getPhone());
-            float[][] tmat = new float[states.size() + 1][states.size() + 1];
-
-            for (int i = 0; i < states.size(); ++i) {
-                Arrays.fill(tmat[i], LogMath.LOG_ZERO);
-                tmat[i][i] = LogMath.LOG_ONE;
-                // List<Integer> transitions = states.get(i);
-
-                // TransitionState tstate;
-                // tstate = new TransitionState(phoneId, i, pdfId);
-                // System.out.println(tstate);
-                // int tid = transitionIds.get(tstate);
-
-                //for (int j = 0; j < transitions.size(); ++j) {
-                //    int tid = pdfId * 2;
-                //    float prob = logProbabilities.get(tid + 1);
-                //    tmat[i][j] = logMath.lnToLog(prob);
-                //}
-            }
-
-            Arrays.fill(tmat[states.size()], LogMath.LOG_ZERO);
-            return tmat;
-        }
-
-        public int[] getPhonePdfs(int phoneId) {
-            return null;
-        }
-
         public int getContextWidth() {
             return contextWidth;
         }
@@ -373,6 +391,7 @@ public class KaldiLoader implements Loader {
     private HMMManager hmmManager;
     private Properties modelProperties;
     private Map<String, Unit> contextIndependentUnits;
+    // context -> [state -> pdf]
     private Map<XXX, SortedMap<Integer, Integer>> contextData;
 
     int leftContextSize;
@@ -420,11 +439,16 @@ public class KaldiLoader implements Loader {
         loadProperties();
 
         for (XXX context : contextData.keySet()) {
+            System.out.println(context);
             String phone = phones.get(context.getPhone());
+            System.out.println(phone);
             Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
+            if (unit.isFiller() && unit.getName().equals("SIL"))
+                unit = UnitManager.SILENCE;
             contextIndependentUnits.put(unit.getName(), unit);
+            System.out.println(unit);
             HMMPosition position = HMMPosition.UNDEFINED;
-            float[][] tmat = parser.getTransitionMatrix(context);
+            float[][] tmat = getTransitionMatrix(parser, context);
             SenoneSequence seq = getSenoneSequence(context);
             hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
         }
@@ -444,16 +468,6 @@ public class KaldiLoader implements Loader {
             // Line format: <PHONE> <PHONE-ID>.
             String[] fields = line.split(" ");
             phones.put(Integer.parseInt(fields[1]), fields[0]);
-            // TODO: set valid silence flag
-            //Unit unit = unitManager.getUnit(fields[0], false);
-            //contextIndependentUnits.put(unit.getName(), unit);
-
-            // int pdfId = Integer.parseInt(fields[0]);
-            // SenoneSequence seq = getSenoneSequence(new int[] { pdfId });
-            // int phoneId = phones.get(fields[2]);
-            // float[][] tmat = parser.getTransitionMatrix(phoneId, pdfId);
-            // HMMPosition position = HMMPosition.UNDEFINED;
-            // hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
         }
     }
 
@@ -514,6 +528,33 @@ public class KaldiLoader implements Loader {
         }
 
         return properties;
+    }
+
+    public float[][] getTransitionMatrix(
+            AcousticModelParser parser, XXX context)
+    {
+        List<HmmState> states = parser.getPhoneStates().get(context.getPhone());
+        float[][] tmat = new float[states.size() + 1][states.size() + 1];
+
+        for (Integer i : contextData.get(context).keySet()) {
+            Arrays.fill(tmat[i], LogMath.LOG_ZERO);
+            int pdf = contextData.get(context).get(i);
+            Triple triple = new Triple(context.getPhone(), i, pdf);
+            int idx = parser.getTransitionStateIndex(triple);
+            int tid = 0;
+
+            for (Integer j : states.get(i).getTransitions())
+                tmat[i][j] = parser.getProbability(idx + tid++);
+        }
+
+        Arrays.fill(tmat[states.size()], LogMath.LOG_ZERO);
+
+        for (int i = 0; i < tmat.length; ++i) {
+            for (int j = 0; j < tmat[i].length; ++j)
+                System.out.print(tmat[i][j] + " ");
+            System.out.println();
+        }
+        return tmat;
     }
 
     private SenoneSequence getSenoneSequence(XXX context) {

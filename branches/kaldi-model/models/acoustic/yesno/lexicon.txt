@@ -1,3 +1,2 @@
-<SIL> SIL
 YES Y
 NO N
