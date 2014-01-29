@@ -258,8 +258,7 @@ public class KaldiLoader implements Loader {
             expectToken("</TransitionModel>");
         }
 
-        public int getTransitionStateIndex(Triple triple) {
-            System.out.println(triple);
+        public int getTransitionIndex(Triple triple) {
             return transitionStates.get(triple);
         }
 
@@ -439,14 +438,11 @@ public class KaldiLoader implements Loader {
         loadProperties();
 
         for (XXX context : contextData.keySet()) {
-            System.out.println(context);
             String phone = phones.get(context.getPhone());
-            System.out.println(phone);
             Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
             if (unit.isFiller() && unit.getName().equals("SIL"))
                 unit = UnitManager.SILENCE;
             contextIndependentUnits.put(unit.getName(), unit);
-            System.out.println(unit);
             HMMPosition position = HMMPosition.UNDEFINED;
             float[][] tmat = getTransitionMatrix(parser, context);
             SenoneSequence seq = getSenoneSequence(context);
@@ -540,7 +536,7 @@ public class KaldiLoader implements Loader {
             Arrays.fill(tmat[i], LogMath.LOG_ZERO);
             int pdf = contextData.get(context).get(i);
             Triple triple = new Triple(context.getPhone(), i, pdf);
-            int idx = parser.getTransitionStateIndex(triple);
+            int idx = parser.getTransitionIndex(triple);
             int tid = 0;
 
             for (Integer j : states.get(i).getTransitions())
@@ -549,11 +545,6 @@ public class KaldiLoader implements Loader {
 
         Arrays.fill(tmat[states.size()], LogMath.LOG_ZERO);
 
-        for (int i = 0; i < tmat.length; ++i) {
-            for (int j = 0; j < tmat[i].length; ++j)
-                System.out.print(tmat[i][j] + " ");
-            System.out.println();
-        }
         return tmat;
     }
 
@@ -601,7 +592,7 @@ public class KaldiLoader implements Loader {
      * @return the left context size
      */
     public int getLeftContextSize() {
-        return leftContextSize;
+        return 1;
     }
 
     /**
@@ -610,7 +601,7 @@ public class KaldiLoader implements Loader {
      * @return the right context size
      */
     public int getRightContextSize() {
-        return rightContextSize;
+        return 1;
     }
 
     /**
