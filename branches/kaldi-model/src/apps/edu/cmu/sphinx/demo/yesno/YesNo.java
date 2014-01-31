@@ -36,18 +36,19 @@ public class YesNo {
         private static final String CONFIG_PATH =
             "resource:/edu/cmu/sphinx/demo/yesno/config.xml";
         private static final String ACOUSTIC_MODEL_PATH =
-            "file:models/acoustic/yesno";
+            "file:models/acoustic/librivox";
         private static final String DICTIONARY_PATH =
-            "models/acoustic/yesno/lexicon.txt";
+            "models/acoustic/librivox/lexicon.txt";
 
         public static YesNoRecognizer createRecognizer() throws IOException {
             Configuration config = new Configuration();
             config.setAcousticModelPath(ACOUSTIC_MODEL_PATH);
             config.setDictionaryPath(DICTIONARY_PATH);
 
-            config.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
-            config.setGrammarName("yesno");
-            config.setUseGrammar(true);
+            //config.setGrammarPath("resource:/edu/cmu/sphinx/demo/yesno");
+            //config.setGrammarName("yesno");
+            //config.setUseGrammar(true);
+            config.setLanguageModelPath("models/language/librivox.lm");
 
             return new YesNoRecognizer(config);
         }
@@ -73,7 +74,8 @@ public class YesNo {
     }
 
     private static final String FEAT_PATH =
-        "src/apps/edu/cmu/sphinx/demo/yesno/feats/";
+        //"src/apps/edu/cmu/sphinx/demo/yesno/feats/";
+        "librivox-features/";
 
     public static void main(String[] args) throws Exception {
         YesNoRecognizer recognizer = YesNoRecognizer.createRecognizer();
