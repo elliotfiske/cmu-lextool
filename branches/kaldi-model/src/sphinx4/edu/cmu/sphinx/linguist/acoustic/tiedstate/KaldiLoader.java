@@ -166,7 +166,7 @@ public class KaldiLoader implements Loader {
             throws IOException, MalformedURLException
         {
             // TODO: rewrite with StreamTokenizer, see ExtendedStreamTokenizer.
-            File modelFile = new File(path, "tri1/final.mdl");
+            File modelFile = new File(path, "final.mdl");
             InputStream modelStream = new URL(modelFile.getPath()).openStream();
             //File treeFile = new File(path, "tree");
             //InputStream treeStream = new URL(treeFile.getPath()).openStream();
@@ -627,7 +627,7 @@ public class KaldiLoader implements Loader {
         hmmManager = new HMMManager();
         contextData = new HashMap<XXX, SortedMap<Integer, Integer>>();
 
-        File file = new File(location, "tri1/context");
+        File file = new File(location, "context");
         InputStream stream = new URL(file.getPath()).openStream();
         Reader reader = new InputStreamReader(stream);
         BufferedReader br = new BufferedReader(reader);

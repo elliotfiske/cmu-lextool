@@ -3,7 +3,7 @@
 <config>
   <property name="logLevel" value="WARNING"/>
 
-  <property name="absoluteBeamWidth"  value="50000"/>
+  <property name="absoluteBeamWidth"  value="500"/>
   <property name="relativeBeamWidth"  value="1e-80"/>
   <property name="absoluteWordBeamWidth"  value="1000"/>
   <property name="relativeWordBeamWidth"  value="1e-60"/>
