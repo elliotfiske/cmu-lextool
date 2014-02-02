@@ -26,6 +26,8 @@ import edu.cmu.sphinx.api.SpeechResult;
 
 import edu.cmu.sphinx.frontend.util.StreamCepstrumSource;
 
+import edu.cmu.sphinx.result.WordResult;
+
 /**
  * Example of using Kaldi's acoustic model.
  */
@@ -49,6 +51,7 @@ public class YesNo {
             //config.setGrammarName("yesno");
             //config.setUseGrammar(true);
             config.setLanguageModelPath("models/language/librivox.lm");
+            //config.setLanguageModelPath("models/language/en-us.lm.dmp");
 
             return new YesNoRecognizer(config);
         }
@@ -75,19 +78,41 @@ public class YesNo {
 
     private static final String FEAT_PATH =
         //"src/apps/edu/cmu/sphinx/demo/yesno/feats/";
-        "librivox-features/";
+        "librivox-feats/";
 
     public static void main(String[] args) throws Exception {
         YesNoRecognizer recognizer = YesNoRecognizer.createRecognizer();
+
         for (String fileName : new File(FEAT_PATH).list()) {
             recognizer.startRecognition(FEAT_PATH + fileName);
             SpeechResult result;
 
-            while ((result = recognizer.getResult()) != null)
+            while ((result = recognizer.getResult()) != null) {
                 System.out.format("input: %s\nhypothesis: %s\n",
                                   fileName, result.getHypothesis());
+                /*
+                for (WordResult word: result.getWords())
+                    System.out.print(word.getPronunciation());
+                System.out.println();
+                */
+            }
 
             recognizer.stopRecognition();
         }
+        
+        /*
+           <s> so the young man tried to reply evasively </s>
+           (blockaderunners_04_verne_64kb-2900)
+           */
+
+        // recognizer.startRecognition(
+        //         "librivox-feats/blockaderunners_04_verne_64kb-2900.mfc");
+        // SpeechResult result;
+
+        // while ((result = recognizer.getResult()) != null)
+        //     System.out.format("input: %s\nhypothesis: %s\n",
+        //                       null, result.getHypothesis());
+
+        // recognizer.stopRecognition();
     }
 }

@@ -474,8 +474,8 @@ public class KaldiLoader implements Loader {
         float[][] transitionMatrix = new float[4][4];
         for (int i = 0; i < 3; ++i) {
             Arrays.fill(transitionMatrix[i], LogMath.LOG_ZERO);
-            transitionMatrix[i][i] = logMath.lnToLog((float) Math.log(0.5));
-            transitionMatrix[i][i + 1] = logMath.lnToLog((float) Math.log(0.5));
+            transitionMatrix[i][i] = logMath.lnToLog((float) Math.log(0.75));
+            transitionMatrix[i][i + 1] = logMath.lnToLog((float) Math.log(0.25));
         }
         Arrays.fill(transitionMatrix[3], LogMath.LOG_ZERO);
 
