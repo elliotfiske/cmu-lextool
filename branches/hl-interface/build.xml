@@ -2,10 +2,10 @@
 
 <project basedir="." default="all" name="Sphinx-4">
 
-  <property name="version" value="1.0beta6"/>
+  <property name="version" value="1.0beta7"/>
 
   <path id="libs">
-    <fileset dir="lib" includes="**/js.jar,**/junit-4.8.1.jar,**/fst.jar"/>
+    <fileset dir="lib" includes="**/js.jar,**/junit-4.8.1.jar,**/fst.jar,**/commons-math3-3.1.1.jar"/>
   </path>
   <property name="src_dir" value="src"/>
   <property name="build_dir" value="bld"/>
@@ -90,6 +90,7 @@
       destdir="${classes_dir}">
       <src path="${src_dir}/sphinx4"/>
       <src path="${src_dir}/research"/>
+      <src path="${src_dir}/speaker_diarization"/>
       <patternset refid="all_files"/>
       <classpath refid="libs"/>
     </javac>
