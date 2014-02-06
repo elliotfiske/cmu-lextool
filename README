@@ -1,7 +1,7 @@
-This is the Speaker Diarization project for sphinx4.
+This is the Speaker Identification project for sphinx4.
 The proposed method is GMM clusterization in a BIC fashion.
 
 Team:
 Alexandru Tifrea
-Cosmin Boaca
-Alexandru Tomescu
+Cosmin Boaca (darkseeker)
+Alexandru Tomescu (tomy91)
