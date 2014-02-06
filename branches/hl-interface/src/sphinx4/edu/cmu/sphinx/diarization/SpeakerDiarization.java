@@ -38,7 +38,7 @@ public class SpeakerDiarization implements Diarization {
 
 	public final String FRONTEND_NAME = "plpFrontEnd";
 
-	public final String CONFIG_FILE = "src/apps/edu/cmu/sphinx/demo/diarization/frontend.config.xml";
+	public final String CONFIG_FILE = "src/sphinx4/edu/cmu/sphinx/diarization/frontend.config.xml";
 
 	private FrontEnd frontEnd;
 	private StreamDataSource audioSource;
