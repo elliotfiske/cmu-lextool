@@ -15,16 +15,14 @@ public class SpeakerIdentificationDemo {
      */
     public static void printSpeakerIntervals(ArrayList<SpeakerCluster> speakers, String fileName) throws IOException {
         String ofName = fileName.substring(0, fileName.indexOf('.')) + ".seg";
-        FileWriter fr = new FileWriter(ofName);
         int spk = 0;
         for (SpeakerCluster sc : speakers) {
             spk++;
             ArrayList<Integer> t = sc.getSpeakerIntervals();
             for (int j = 0; j < t.size() / 2; j++)
-                fr.write(fileName + " " + 1 + " " + t.get(2 * j) / 10 + " "
+                System.out.println(fileName + " " + 1 + " " + t.get(2 * j) / 10 + " "
                     + t.get(2 * j + 1) / 10 + " U U U S" + spk + '\n');
         }
-        fr.close();
     }
 
     public static void main(String[] args) throws IOException {
