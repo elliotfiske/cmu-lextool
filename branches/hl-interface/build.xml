@@ -90,7 +90,6 @@
       destdir="${classes_dir}">
       <src path="${src_dir}/sphinx4"/>
       <src path="${src_dir}/research"/>
-      <src path="${src_dir}/speaker_diarization"/>
       <patternset refid="all_files"/>
       <classpath refid="libs"/>
     </javac>

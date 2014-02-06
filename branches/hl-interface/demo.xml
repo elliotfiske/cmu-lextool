@@ -48,7 +48,7 @@
     depends="compile_dialog,
     compile_sphinx_transcriber,
     compile_aligner,
-    compile_speaker_identification"
+    compile_speakerid"
     description="Compiles Sphinx-4 demos"/>
 
   <target name="compile_dialog">
@@ -116,22 +116,22 @@
       compress="true"/>
   </target>
 
-  <target name="compile_speaker_identification">
-    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/speaker_identification"/>
+  <target name="compile_speakerid">
+    <mkdir dir="${demo_classes_dir}/edu/cmu/sphinx/demo/speakerid"/>
     <javac debug="true"
       listfiles="true"
       deprecation="true"
       includeAntRuntime="false"
       srcdir="${demo_src_dir}"
-      includes="edu/cmu/sphinx/demo/speaker_identification/**"
+      includes="edu/cmu/sphinx/demo/speakerid/**"
       destdir="${demo_classes_dir}">
       <classpath refid="libs"/>
     </javac>
     <mkdir dir="${bin_dir}"/>
     <jar destfile="${bin_dir}/SpeakerIdentification.jar"
-      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/speaker_identification/identification.Manifest"
+      manifest="${demo_src_dir}/edu/cmu/sphinx/demo/speakerid/identification.Manifest"
       basedir="${demo_classes_dir}"
-      includes="edu/cmu/sphinx/demo/speaker_identification/**"
+      includes="edu/cmu/sphinx/demo/speakerid/**"
       compress="true"/>
   </target>
 </project>
