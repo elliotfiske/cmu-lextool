@@ -1,6 +1,5 @@
 package edu.cmu.sphinx.demo.speakerid;
 
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import edu.cmu.sphinx.speakerid.*;
@@ -8,20 +7,30 @@ import edu.cmu.sphinx.speakerid.*;
 public class SpeakerIdentificationDemo {
 
     /**
+     * Returns string version of the given time in miliseconds 
+     * @param seconds
+     * @return time in format mm:ss
+     */
+    public static String time(int seconds) {
+        return (seconds / 60000) + ":" + (Math.round((double) (seconds % 60000) / 1000));
+    }
+
+    /**
+     * 
      * @param speakers
      *            An array of clusters for which it is needed to be printed the
      *            speakers intervals
      * @throws IOException
      */
-    public static void printSpeakerIntervals(ArrayList<SpeakerCluster> speakers, String fileName) throws IOException {
-        String ofName = fileName.substring(0, fileName.indexOf('.')) + ".seg";
-        int spk = 0;
-        for (SpeakerCluster sc : speakers) {
-            spk++;
-            ArrayList<Integer> t = sc.getSpeakerIntervals();
-            for (int j = 0; j < t.size() / 2; j++)
-                System.out.println(fileName + " " + 1 + " " + t.get(2 * j) / 10 + " "
-                    + t.get(2 * j + 1) / 10 + " U U U S" + spk + '\n');
+    public static void printSpeakerIntervals(ArrayList<SpeakerCluster> speakers, String fileName)
+            throws IOException {
+        int idx = 0;
+        for (SpeakerCluster spk : speakers) {
+            idx++;
+            ArrayList<Segment> segments = spk.getSpeakerIntervals();
+            for (Segment seg : segments)
+                System.out.println(fileName + " " + " " + time(seg.getStartTime()) + " "
+                        + time(seg.getLength()) + " Speaker" + idx);
         }
     }
 

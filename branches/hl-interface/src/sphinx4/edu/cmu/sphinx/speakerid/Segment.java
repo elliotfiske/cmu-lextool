@@ -18,13 +18,10 @@ public class Segment implements Comparable<Segment> {
     public final static int FRAME_LENGTH = 10;
 
     private int startTime, length;
-    float[] features = new float[FEATURES_SIZE];
 
     public Segment(Segment ref) {
         this.startTime = ref.startTime;
         this.length = ref.length;
-        for (int i = 0; i < FEATURES_SIZE; i++)
-            this.features[i] = ref.features[i];
     }
 
     public Segment(int startTime, int length) {
@@ -35,14 +32,12 @@ public class Segment implements Comparable<Segment> {
     public Segment(int startTime, int length, float[] features) {
         this.startTime = startTime;
         this.length = length;
-        this.features = features;
     }
 
     public Segment() {
         this.startTime = this.length = 0;
     }
 
-    /* setters */
     public void setStartTime(int startTime) {
         this.startTime = startTime;
     }
@@ -51,21 +46,12 @@ public class Segment implements Comparable<Segment> {
         this.length = length;
     }
 
-    public void setFeatures(float[] features) {
-        this.features = features;
-    }
-
-    /* getters */
     public int getStartTime() {
         return this.startTime;
     }
 
     public int getLength() {
         return this.length;
-    }
-
-    public float[] getFeatures() {
-        return this.features;
     }
 
     public int equals(Segment ref) {
