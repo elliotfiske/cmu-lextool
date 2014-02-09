@@ -11,10 +11,10 @@ public interface EventMap {
     /**
      * Maps speech unit to probability distribution function.
      *
-     * @param pdfClass requested state
-     * @param unit     unit of speech
+     * @param pdfClass pdf-class
+     * @param context  context
      *
      * @return identifier of probability distribution function
      */
-    public int map(int pdfClass, Unit unit);
+    public int map(int pdfClass, int[] context);
 }

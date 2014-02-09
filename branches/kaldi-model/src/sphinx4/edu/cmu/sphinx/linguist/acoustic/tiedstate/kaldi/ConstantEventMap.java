@@ -1,6 +1,5 @@
 package edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi;
 
-import edu.cmu.sphinx.linguist.acoustic.Unit;
 
 /**
  * Stores a single answer.
@@ -22,11 +21,11 @@ public class ConstantEventMap implements EventMap {
 
     /**
      * @param  pdfClass is not used
-     * @param  unit     is not used
+     * @param  context  is not used
      *
      * @return stored value
      */
-    public int map(int pdfClass, Unit unit) {
+    public int map(int pdfClass, int[] context) {
         return value;
     }
 }

@@ -1,35 +1,35 @@
 package edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi;
 
 import edu.cmu.sphinx.linguist.acoustic.Context;
-import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
-import edu.cmu.sphinx.linguist.acoustic.Unit;
+import edu.cmu.sphinx.linguist.acoustic.Context;
 
 
+/**
+ * Event map that splits on a key.
+ */
 public abstract class EventMapWithKey implements EventMap {
 
     protected final int key;
 
+    /**
+     * Constructs new event map.
+     *
+     * @param key key to split on
+     */
     protected EventMapWithKey(int key) {
         this.key = key;
     }
 
-    protected int getKeyValue(int pdfClass, Unit unit) {
-        if (-1 == key)
-            return pdfClass;
-
-        if (1 == key)
-            return unit.getBaseID();
-
-        if (0 == key) {
-            LeftRightContext context = (LeftRightContext) unit.getContext();
-            return context.getLeftContext()[0].getBaseID();
-        }
-
-        if (2 == key) {
-            LeftRightContext context = (LeftRightContext) unit.getContext();
-            return context.getRightContext()[0].getBaseID();
-        }
-
-        throw new IllegalStateException("invalid key " + key);
+    /**
+     * Returns value of the given context for the key.
+     *
+     * @param pdfClass pdf-class
+     * @param context  context
+     *
+     * @return phone ID for non-negative values of the key and pdf-class if the
+     *         key equals -1
+     */
+    protected int getKeyValue(int pdfClass, int[] context) {
+        return -1 == key ? pdfClass : context[key];
     }
 }
