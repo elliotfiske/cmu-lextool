@@ -327,7 +327,6 @@ public class SpeakerIdentification implements Identification {
     }
 
     void printMatrix(Array2DRowRealMatrix a) {
-        DecimalFormat df = new DecimalFormat("#.######");
         for (int i = 0; i < a.getRowDimension(); i++) {
             for (int j = 0; j < a.getColumnDimension(); j++)
                 System.out.print(a.getEntry(i, j) + " ");

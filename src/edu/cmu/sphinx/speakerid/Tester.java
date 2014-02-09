@@ -17,8 +17,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.sun.org.apache.xml.internal.security.keys.content.SPKIData;
-
 public class Tester {
 
     /**
@@ -70,10 +68,10 @@ public class Tester {
         System.out.println("Detected " + speakers.size() + " Speakers :");
         int idx = 0;
         for (SpeakerCluster spk : speakers) {
-            System.out.print("Speaker " + (++idx) + ": ");
+            System.out.print("Speaker " + (++idx) + ":");
             ArrayList<Segment> segments = spk.getSpeakerIntervals();
             for (Segment seg : segments)
-                System.out.print("[" + time(seg.getStartTime()) + " " + time(seg.getLength()) + "]");
+                System.out.print(" [" + time(seg.getStartTime()) + " " + time(seg.getLength()) + "]");
             System.out.println();
         }
     }
@@ -95,7 +93,7 @@ public class Tester {
             ArrayList<Segment> segments = spk.getSpeakerIntervals();
             for (Segment seg : segments)
                 fr.write(fileName + " " + 1 + " " + seg.getStartTime() / 10 + " " + seg.getLength() / 10
-                        + "U U U Speaker" + idx + "\n");
+                        + " U U U Speaker" + idx + "\n");
         }
         fr.close();
     }
