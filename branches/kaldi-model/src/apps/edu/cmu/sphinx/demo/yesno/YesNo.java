@@ -40,7 +40,7 @@ public class YesNo {
         private static final String ACOUSTIC_MODEL_PATH =
             "file:models/acoustic/librivox";
         private static final String DICTIONARY_PATH =
-            "models/acoustic/librivox/lexicon.txt";
+            "lexicon-fixed.txt";
 
         public static YesNoRecognizer createRecognizer() throws IOException {
             Configuration config = new Configuration();
@@ -77,7 +77,6 @@ public class YesNo {
     }
 
     private static final String FEAT_PATH =
-        //"src/apps/edu/cmu/sphinx/demo/yesno/feats/";
         "librivox-feats/";
 
     public static void main(String[] args) throws Exception {
@@ -88,31 +87,12 @@ public class YesNo {
             SpeechResult result;
 
             while ((result = recognizer.getResult()) != null) {
+                result.getLattice().dumpDot(fileName + ".dot", fileName);
                 System.out.format("input: %s\nhypothesis: %s\n",
                                   fileName, result.getHypothesis());
-                /*
-                for (WordResult word: result.getWords())
-                    System.out.print(word.getPronunciation());
-                System.out.println();
-                */
             }
 
             recognizer.stopRecognition();
         }
-        
-        /*
-           <s> so the young man tried to reply evasively </s>
-           (blockaderunners_04_verne_64kb-2900)
-           */
-
-        // recognizer.startRecognition(
-        //         "librivox-feats/blockaderunners_04_verne_64kb-2900.mfc");
-        // SpeechResult result;
-
-        // while ((result = recognizer.getResult()) != null)
-        //     System.out.format("input: %s\nhypothesis: %s\n",
-        //                       null, result.getHypothesis());
-
-        // recognizer.stopRecognition();
     }
 }
