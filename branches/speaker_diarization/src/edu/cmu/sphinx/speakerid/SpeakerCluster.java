@@ -84,25 +84,23 @@ public class SpeakerCluster {
      * We may need a delay parameter to this function because the segments may
      * not be exactly consecutive
      */
-    public ArrayList<Integer> getSpeakerIntervals() {
-        ArrayList<Integer> ret = new ArrayList<Integer>();
+    public ArrayList<Segment> getSpeakerIntervals() {
         Iterator<Segment> it = segmentSet.iterator();
-        Segment curent, previous = it.next();
+        Segment curent = new Segment(0, 0), previous = it.next();
         int start = previous.getStartTime();
         int length = previous.getLength();
         int idx = 0;
-        ret.add(start);
-        ret.add(length);
+        ArrayList<Segment> ret = new ArrayList<Segment>();
+        ret.add(previous);
         while (it.hasNext()) {
             curent = it.next();
-            start = ret.get(2 * idx);
-            length = ret.get(2 * idx + 1);
+            start = ret.get(idx).getStartTime();
+            length = ret.get(idx).getLength();
             if ((start + length) == curent.getStartTime()) {
-                ret.set(2 * idx + 1, length + curent.getLength());
+                ret.set(idx, new Segment(start, length + curent.getLength()));
             } else {
                 idx++;
-                ret.add(curent.getStartTime());
-                ret.add(curent.getLength());
+                ret.add(curent);
             }
             previous = curent;
         }
