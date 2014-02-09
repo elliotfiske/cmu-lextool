@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import com.sun.org.apache.xml.internal.security.keys.content.SPKIData;
+
 public class Tester {
 
     /**
@@ -49,7 +51,13 @@ public class Tester {
         return ret;
     }
 
-    public static String formatedTime(int seconds) {
+    /**
+     * Returns string version of the given time in miliseconds
+     * 
+     * @param seconds
+     * @return mm:ss
+     */
+    public static String time(int seconds) {
         return (seconds / 60000) + ":" + (Math.round((double) (seconds % 60000) / 1000));
     }
 
@@ -60,12 +68,12 @@ public class Tester {
      */
     public static void printIntervals(ArrayList<SpeakerCluster> speakers) {
         System.out.println("Detected " + speakers.size() + " Speakers :");
-        for (int i = 0; i < speakers.size(); i++) {
-            ArrayList<Integer> t = speakers.get(i).getSpeakerIntervals();
-            System.out.print("Speaker " + i + ": ");
-            for (int j = 0; j < t.size() / 2; j++)
-                System.out.print("[" + formatedTime(t.get(j * 2)) + " "
-                        + formatedTime((t.get(j * 2 + 1) + t.get(j * 2))) + "] ");
+        int idx = 0;
+        for (SpeakerCluster spk : speakers) {
+            System.out.print("Speaker " + (++idx) + ": ");
+            ArrayList<Segment> segments = spk.getSpeakerIntervals();
+            for (Segment seg : segments)
+                System.out.print("[" + time(seg.getStartTime()) + " " + time(seg.getLength()) + "]");
             System.out.println();
         }
     }
@@ -81,11 +89,13 @@ public class Tester {
             throws IOException {
         String ofName = fileName.substring(0, fileName.indexOf('.')) + ".seg";
         FileWriter fr = new FileWriter(ofName);
-        for (int i = 0; i < speakers.size(); i++) {
-            ArrayList<Integer> t = speakers.get(i).getSpeakerIntervals();
-            for (int j = 0; j < t.size() / 2; j++)
-                fr.write(fileName + " " + 1 + " " + formatedTime(t.get(2 * j)) + " "
-                        + formatedTime(t.get(2 * j + 1) + t.get(2 * j)) + " U U U S" + i + '\n');
+        int idx = 0;
+        for (SpeakerCluster spk : speakers) {
+            idx ++;
+            ArrayList<Segment> segments = spk.getSpeakerIntervals();
+            for (Segment seg : segments)
+                fr.write(fileName + " " + 1 + " " + seg.getStartTime() / 10 + " " + seg.getLength() / 10
+                        + "U U U Speaker" + idx + "\n");
         }
         fr.close();
     }
@@ -135,8 +145,9 @@ public class Tester {
      *            the input file that needs to be diarized
      */
     public static void testSpeakerIdentification(String inputFile) throws IOException {
-        printIntervals(new SpeakerIdentification().cluster(inputFile));
-        printSpeakerIntervals(new SpeakerIdentification().cluster(inputFile), inputFile);
+        ArrayList<SpeakerCluster> speakers = (new SpeakerIdentification().cluster(inputFile));
+        printIntervals(speakers);
+        printSpeakerIntervals(speakers, inputFile);
     }
 
     /**
