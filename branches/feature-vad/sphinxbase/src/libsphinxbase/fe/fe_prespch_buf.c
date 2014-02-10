@@ -61,8 +61,10 @@ struct prespch_buf_s {
     int16 cep_read_ptr;
     /* write pointer for pcm buffer */
     int16 pcm_write_ptr;
-    /* frames amount */
-    int16 num_frames;
+    /* frames amount in cep buffer */
+    int16 num_frames_cep;
+    /* frames amount in pcm buffer */
+    int16 num_frames_pcm;
     /* filters amount */
     int16 num_cepstra;
     /* amount of fresh samples in frame */
@@ -77,8 +79,9 @@ fe_init_prespch(int num_frames, int num_cepstra, int num_samples)
     prespch_buf = (prespch_buf_t *) ckd_calloc(1, sizeof(prespch_buf_t));
 
     prespch_buf->num_cepstra = num_cepstra;
-    prespch_buf->num_frames = num_frames;
+    prespch_buf->num_frames_cep = num_frames;
     prespch_buf->num_samples = num_samples;
+    prespch_buf->num_frames_pcm = 0;
     prespch_buf->cep_write_ptr = 0;
     prespch_buf->cep_read_ptr = 0;
     prespch_buf->pcm_write_ptr = 0;
@@ -91,10 +94,23 @@ fe_init_prespch(int num_frames, int num_cepstra, int num_samples)
     return prespch_buf;
 }
 
+void 
+fe_reinit_prespch_pcm(prespch_buf_t* prespch_buf, int num_frames_pcm)
+{
+    num_frames_pcm += prespch_buf->num_frames_cep;
+    if (num_frames_pcm > prespch_buf->num_frames_pcm) {
+        if (prespch_buf->pcm_init && prespch_buf->pcm_buf)
+            ckd_free(prespch_buf->pcm_buf);
+        prespch_buf->num_frames_pcm = num_frames_pcm;
+        prespch_buf->pcm_buf = (int16 *) ckd_calloc(prespch_buf->num_frames_pcm * prespch_buf->num_samples, sizeof(int16));
+        prespch_buf->pcm_init = 1;
+    }
+}
+
 int
 fe_prespch_read_cep(prespch_buf_t * prespch_buf, mfcc_t * fea)
 {
-    if (prespch_buf->cep_read_ptr >= prespch_buf->num_frames)
+    if (prespch_buf->cep_read_ptr >= prespch_buf->num_frames_cep)
         return 0;
     if (prespch_buf->cep_read_ptr >= prespch_buf->cep_write_ptr)
         return 0;
@@ -107,7 +123,7 @@ fe_prespch_read_cep(prespch_buf_t * prespch_buf, mfcc_t * fea)
 void
 fe_prespch_write_cep(prespch_buf_t * prespch_buf, mfcc_t * fea)
 {
-    assert(prespch_buf->cep_write_ptr < prespch_buf->num_frames);
+    assert(prespch_buf->cep_write_ptr < prespch_buf->num_frames_cep);
     memcpy(prespch_buf->cep_buf[prespch_buf->cep_write_ptr], fea,
            sizeof(mfcc_t) * prespch_buf->num_cepstra);
     prespch_buf->cep_write_ptr++;
@@ -133,14 +149,7 @@ fe_prespch_write_pcm(prespch_buf_t * prespch_buf, int16 * samples)
 {
     int32 sample_ptr;
 
-    if (!prespch_buf->pcm_init) {
-        /* pcm buffer is not initialized */
-        prespch_buf->pcm_init = 1;
-        prespch_buf->pcm_buf = (int16 *)
-            ckd_calloc(prespch_buf->num_frames * prespch_buf->num_samples,
-                       sizeof(int16));
-    }
-    assert(prespch_buf->pcm_write_ptr < prespch_buf->num_frames);
+    assert(prespch_buf->pcm_write_ptr < prespch_buf->num_frames_pcm);
     sample_ptr = prespch_buf->pcm_write_ptr * prespch_buf->num_samples;
     memcpy(&prespch_buf->pcm_buf[sample_ptr], samples,
            prespch_buf->num_samples * sizeof(int16));

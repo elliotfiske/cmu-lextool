@@ -50,6 +50,9 @@ typedef struct prespch_buf_s prespch_buf_t;
 prespch_buf_t *fe_init_prespch(int num_frames, int num_cepstra,
                                int num_samples);
 
+/* initialize pcm prespeech buffer with specified amount of frames */
+void fe_reinit_prespch_pcm(prespch_buf_t* prespch_buf, int num_frames_pcm);
+
 /* Reads mfcc frame from prespeech buffer */
 int fe_prespch_read_cep(prespch_buf_t * prespch_buf, mfcc_t * fea);
 

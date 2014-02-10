@@ -371,7 +371,7 @@ fe_process_frames(fe_t *fe,
                   int32 *inout_nframes)
 {
     int32 frame_count;
-    int outidx, i, n, n_overflow, orig_n_overflow, prespch_num;
+    int outidx, i, n_overflow, orig_n_overflow;
     int16 const *orig_spch;
 
     /* In the special case where there is no output buffer, return the
@@ -481,22 +481,14 @@ fe_process_frames(fe_t *fe,
         if (fe->num_overflow_samps > 0)
             fe->num_overflow_samps -= fe->frame_shift;
 
-        if (fe->vad_data->state_changed && fe->vad_data->global_state)
+        if (fe->vad_data->state_changed && fe->vad_data->global_state) {
             /* previous frame triggered vad into speech state */
-            break;
-    }
-
-    if (i < frame_count) {
-        /* processing of remaining frames was broken to dump prespeech buffer */
-        prespch_num = frame_count - i + 1; /* last frame wasn't filled */
-        for (i = 0; i < prespch_num; i++) {
-            if (fe_prespch_read_cep(fe->vad_data->prespch_buf, buf_cep[outidx]) == 0) {
-                E_ERROR("Unable to read from full prespeech buffer\n");
-                return -1;
+            while (i < frame_count && fe_prespch_read_cep(fe->vad_data->prespch_buf, buf_cep[outidx]) != 0) {
+                i++;
+                outidx++;
             }
-            outidx++;
-        }
-    }
+		}
+	}
 
     /* How many relevant overflow samples are there left? */
     if (fe->num_overflow_samps <= 0) {
@@ -556,6 +548,8 @@ fe_process_frames_ext(fe_t *fe,
 
     fe->vad_data->store_pcm = 1;
     *voiced_spch_nsamps = 0;
+    fe_reinit_prespch_pcm(fe->vad_data->prespch_buf, *inout_nframes);
+    fe_reinit_prespch_pcm(fe->vad_data->prespch_buf, *inout_nframes);
     proc_result = fe_process_frames(fe, inout_spch, inout_nsamps, buf_cep, inout_nframes);
     if (fe->vad_data->global_state)
         fe_prespch_read_pcm(fe->vad_data->prespch_buf, voiced_spch, voiced_spch_nsamps);
