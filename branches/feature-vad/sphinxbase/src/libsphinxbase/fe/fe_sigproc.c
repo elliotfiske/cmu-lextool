@@ -1380,7 +1380,7 @@ fe_vad_hangover(fe_t * fe, mfcc_t * fea)
                 /* transition speech->silence occurred */
                 fe->vad_data->state_changed = 1;
             }
-		}
+        }
     }
 
     /* deal with pcm prespeech buffer if needed */

@@ -121,11 +121,11 @@ fe_low_envelope(noise_stats_t *noise_stats, powspec_t * buf, powspec_t * floor_b
 #else
         if (buf[i] >= floor_buf[i]) {
             floor_buf[i] = fe_log_add(noise_stats->lambda_a + floor_buf[i],
-        	                      noise_stats->comp_lambda_a + buf[i]);
+                                  noise_stats->comp_lambda_a + buf[i]);
         }
         else {
             floor_buf[i] = fe_log_add(noise_stats->lambda_b + floor_buf[i],
-        	                      noise_stats->comp_lambda_b + buf[i]);
+                                  noise_stats->comp_lambda_b + buf[i]);
         }
 #endif
     }
@@ -219,7 +219,7 @@ fe_init_noisestats(int num_filters)
     noise_stats->inv_max_gain = 1.0 / MAX_GAIN;
     
     for (i = 0; i < 2 * SMOOTH_WINDOW + 1; i++) {
-	noise_stats->smooth_scaling[i] = 1.0 / i;
+        noise_stats->smooth_scaling[i] = 1.0 / i;
     }
 #else
     noise_stats->lambda_power = FLOAT2FIX(log(LAMBDA_POWER));
@@ -234,7 +234,7 @@ fe_init_noisestats(int num_filters)
     noise_stats->inv_max_gain = FLOAT2FIX(log(1.0 / MAX_GAIN));
 
     for (i = 1; i < 2 * SMOOTH_WINDOW + 3; i++) {
-	noise_stats->smooth_scaling[i] = FLOAT2FIX(log(i));
+        noise_stats->smooth_scaling[i] = FLOAT2FIX(log(i));
     }
 #endif
 
@@ -333,7 +333,7 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 
 #ifndef FIXED_POINT
     for (i = 0; i < num_filts; i++) {
-	if (signal[i] < noise_stats->max_gain * noise_stats->power[i])
+        if (signal[i] < noise_stats->max_gain * noise_stats->power[i])
             gain[i] = signal[i] / noise_stats->power[i];
         else
             gain[i] = noise_stats->max_gain;

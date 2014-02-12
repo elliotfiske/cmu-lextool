@@ -337,6 +337,7 @@ fe_start_utt(fe_t * fe)
     memset(fe->overflow_samps, 0, fe->frame_size * sizeof(int16));
     fe->start_flag = 1;
     fe->prior = 0;
+    fe_reset_noisestats(fe->noise_stats);
     fe_reset_vad_data(fe->vad_data);
     return 0;
 }
@@ -487,8 +488,8 @@ fe_process_frames(fe_t *fe,
                 i++;
                 outidx++;
             }
-		}
-	}
+        }
+    }
 
     /* How many relevant overflow samples are there left? */
     if (fe->num_overflow_samps <= 0) {
