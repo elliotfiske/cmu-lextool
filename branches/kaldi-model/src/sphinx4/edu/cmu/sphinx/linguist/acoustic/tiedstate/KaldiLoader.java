@@ -358,7 +358,6 @@ public class KaldiLoader implements Loader {
     private String location;
     private UnitManager unitManager;
 
-    private Map<String, Integer> phones;
     private Pool<Senone> senonePool;
     private HMMManager hmmManager;
     private Properties modelProperties;
@@ -402,21 +401,28 @@ public class KaldiLoader implements Loader {
         for (DiagGmm gmm : parser.getGaussianMixtures())
             senonePool.put(gmm.getId(), gmm);
 
-        loadPhones();
-    }
-
-    private void loadPhones() throws IOException {
         File file = new File(location, "phones.txt");
         InputStream stream = new URL(file.getPath()).openStream();
         Reader reader = new InputStreamReader(stream);
         BufferedReader br = new BufferedReader(reader);
-        phones = new HashMap<String, Integer>();
+        Map<String, Integer> symbolTable = new HashMap<String, Integer>();
         String line;
 
         while (null != (line = br.readLine())) {
-            // Line format: <PHONE> <PHONE-ID>.
             String[] fields = line.split(" ");
-            phones.put(fields[0], Integer.parseInt(fields[1]));
+            if (Character.isAlphabetic(fields[0].charAt(0)))
+                symbolTable.put(fields[0], Integer.parseInt(fields[1]));
+        }
+
+        hmmManager = new LazyHmmManager(parser.getEventMap(),
+                                        senonePool, symbolTable);
+        contextIndependentUnits = new HashMap<String, Unit>();
+
+        for (String phone : symbolTable.keySet()) {
+            Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
+            contextIndependentUnits.put(unit.getName(), unit);
+            // Ensure monophone HMMs are created.
+            hmmManager.get(HMMPosition.UNDEFINED, unit);
         }
     }
 
