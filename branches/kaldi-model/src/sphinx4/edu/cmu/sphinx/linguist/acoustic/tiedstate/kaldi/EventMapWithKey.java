@@ -23,6 +23,8 @@ public abstract class EventMapWithKey implements EventMap {
     /**
      * Returns value of the given context for the key.
      *
+     * Convenient method to retrieve value for the key.
+     *
      * @param pdfClass pdf-class
      * @param context  context
      *

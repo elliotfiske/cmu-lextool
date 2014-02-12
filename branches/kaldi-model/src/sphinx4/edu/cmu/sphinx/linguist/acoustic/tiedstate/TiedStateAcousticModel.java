@@ -290,29 +290,36 @@ public class TiedStateAcousticModel implements AcousticModel {
 
 
     /**
-     * Get a composite senone sequence given the unit The unit should have a LeftRightContext, where one or two of
-     * 'left' or 'right' may be null to indicate that the match should succeed on any context.
+     * Get a composite senone sequence given the unit.
+     *
+     * The unit should have a LeftRightContext, where one or two of 'left' or
+     * 'right' may be null to indicate that the match should succeed on any
+     * context.
      *
      * @param unit the unit
      */
     public SenoneSequence getCompositeSenoneSequence(Unit unit,
-                                                     HMMPosition position) {
-        Context context = unit.getContext();
-        SenoneSequence compositeSenoneSequence = null;
-        compositeSenoneSequence = compositeSenoneSequenceCache.get(unit.toString());
+                                                     HMMPosition position)
+    {
+        String unitStr = unit.toString();
+        SenoneSequence compositeSenoneSequence;
+        compositeSenoneSequence = compositeSenoneSequenceCache.get(unitStr);
 
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("getCompositeSenoneSequence: " + unit + (compositeSenoneSequence == null ? "" : "Cached"));
-        }
-        if (compositeSenoneSequence != null) {
+        if (logger.isLoggable(Level.FINE))
+            logger.fine("getCompositeSenoneSequence: "
+                        + unit +
+                        compositeSenoneSequence == null ? "" : "Cached");
+
+        if (compositeSenoneSequence != null)
             return compositeSenoneSequence;
-        }
 
         // Iterate through all HMMs looking for
         // a) An hmm with a unit that has the proper base
         // b) matches the non-null context
 
-        List<SenoneSequence> senoneSequenceList = new ArrayList<SenoneSequence>();
+        Context context = unit.getContext();
+        List<SenoneSequence> senoneSequenceList;
+        senoneSequenceList = new ArrayList<SenoneSequence>();
 
         // collect all senone sequences that match the pattern
         for (Iterator<HMM> i = getHMMIterator(); i.hasNext();) {
