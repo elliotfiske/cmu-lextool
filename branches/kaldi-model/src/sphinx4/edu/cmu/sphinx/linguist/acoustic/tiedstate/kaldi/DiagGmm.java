@@ -1,13 +1,10 @@
 package edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi;
 
 import java.util.Arrays;
-import java.util.List;
 
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.frontend.FloatData;
-
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.ScoreCachingSenone;
-
 import edu.cmu.sphinx.util.LogMath;
 
 /**
@@ -25,30 +22,41 @@ public class DiagGmm extends ScoreCachingSenone {
     /**
      * Constructs new mixture model.
      *
-     * @param   id           identifier of probability density function
-     *                       represented by this model
-     * @param   gconsts      sdf
-     * @param   meansInvVars ...
-     * @param   invVars      ...
+     * @param   id     identifier of this GMM as defined in the model
+     * @param   parser text format parser
      */
-    public DiagGmm(int id,
-                   List<Float> gconsts,
-                   List<Float> meansInvVars,
-                   List<Float> invVars)
-    {
+    public DiagGmm(int id, KaldiTextParser parser) {
         this.id = id;
-        this.gconsts = asFloatArray(gconsts);
-        this.meansInvVars = asFloatArray(meansInvVars);
-        this.invVars = asFloatArray(invVars);
+
+        parser.expectToken("<DiagGMM>");
+        parser.expectToken("<GCONSTS>");
+        gconsts = parser.getFloatArray();
+
+        parser.expectToken("<WEIGHTS>");
+        // Do not use weights as they are in gconsts.
+        parser.getFloatArray();
+
+        parser.expectToken("<MEANS_INVVARS>");
+        meansInvVars = parser.getFloatArray();
+
+        parser.expectToken("<INV_VARS>");
+        invVars = parser.getFloatArray();
+        parser.expectToken("</DiagGMM>");
     }
 
+    /**
+     * Convenient method if 32-bit ID is required.
+     *
+     * Kaldi model uses 32-bit integer to store GMM id while Senone contract
+     * imposes long type. This method is present to avaoid type cast when
+     * working in the Kaldi domain.
+     */
     public int getId() {
         return id;
     }
 
     @Override
     public float calculateScore(Data data) {
-        float[] scores = calculateComponentScore(data);
         float logTotal = LogMath.LOG_ZERO;
         LogMath logMath = LogMath.getInstance();
         for (Float mixtureScore : calculateComponentScore(data))
@@ -90,14 +98,5 @@ public class DiagGmm extends ScoreCachingSenone {
     @Override
     public void dump(String msg) {
         System.out.format("%s DiagGmm: ID %d\n", msg, id);
-    }
-
-    private static float[] asFloatArray(List<Float> list) {
-        float[] array = new float[list.size()];
-        int i = 0;
-        for (Float n : list)
-            array[i++] = n;
-
-        return array;
     }
 }

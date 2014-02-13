@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class SplitEventMap extends EventMapWithKey {
 
-    private final Set<Integer> answers;
+    private final Set<Integer> values;
     private final EventMap yesMap;
     private final EventMap noMap;
 
@@ -23,16 +23,16 @@ public class SplitEventMap extends EventMapWithKey {
      * Constructs new event map.
      *
      * @param key     key to split on
-     * @param answers yes answers
+     * @param values yes values
      * @param yesMap  event map for "yes" answer
      * @param noMap   eventMap for no answer
      */
     public SplitEventMap(int key,
-                         Collection<Integer> answers,
+                         Collection<Integer> values,
                          EventMap yesMap, EventMap noMap)
     {
         super(key);
-        this.answers = new HashSet<Integer>(answers);
+        this.values = new HashSet<Integer>(values);
         this.yesMap = yesMap;
         this.noMap = noMap;
     }
@@ -45,7 +45,7 @@ public class SplitEventMap extends EventMapWithKey {
      * @return identifier of probability distribution function.
      */
     public int map(int pdfClass, int[] context) {
-        return answers.contains(getKeyValue(pdfClass, context)) ?
+        return values.contains(getKeyValue(pdfClass, context)) ?
                yesMap.map(pdfClass, context) : noMap.map(pdfClass, context);
     }
 }
