@@ -215,6 +215,7 @@ fe_t *
 fe_init_auto_r(cmd_ln_t *config)
 {
     fe_t *fe;
+    int prespch_frame_len;
 
     fe = (fe_t*)ckd_calloc(1, sizeof(*fe));
     fe->refcount = 1;
@@ -266,7 +267,8 @@ fe_init_auto_r(cmd_ln_t *config)
         fe->noise_stats = fe_init_noisestats(fe->mel_fb->num_filters);
 
     fe->vad_data = (vad_data_t*)ckd_calloc(1, sizeof(*fe->vad_data));
-    fe->vad_data->prespch_buf = fe_init_prespch(fe->prespch_len + 1, fe->num_cepstra, fe->frame_shift);
+    prespch_frame_len = fe->log_spec != RAW_LOG_SPEC ? fe->num_cepstra : fe->mel_fb->num_filters;
+    fe->vad_data->prespch_buf = fe_init_prespch(fe->prespch_len + 1, prespch_frame_len, fe->frame_shift);
 
     /* Create temporary FFT, spectrum and mel-spectrum buffers. */
     /* FIXME: Gosh there are a lot of these. */
