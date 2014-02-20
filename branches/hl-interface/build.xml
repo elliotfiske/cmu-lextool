@@ -52,7 +52,6 @@
     </classpath>
   </taskdef>
 
-
   <condition property="javadoc_level"
     value="${access}">
     <isset property="access"/>
@@ -312,12 +311,10 @@
       windowtitle="${javadoc_desc}"
       doctitle="${javadoc_desc}"
       access="${javadoc_level}">
-      <packageset dir="${src_dir}/sphinx4" defaultexcludes="yes">
-        <patternset refid="edu"/>
-      </packageset>
+      <packageset dir="${src_dir}/sphinx4" defaultexcludes="yes"/>
       <classpath>
         <path refid="libs"/>
-        <pathelement path="${java.class.path}"/>
+        <pathelement path="${classes_dir}"/>
       </classpath>
     </javadoc>
   </target>
