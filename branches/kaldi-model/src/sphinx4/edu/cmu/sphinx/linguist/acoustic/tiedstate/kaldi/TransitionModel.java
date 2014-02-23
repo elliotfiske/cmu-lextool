@@ -44,7 +44,7 @@ final class HmmState {
     }
 }
 
-class Triple {
+final class Triple {
 
     private int phone;
     private int hmmState;
@@ -90,6 +90,11 @@ public class TransitionModel {
     private List<DiagGmm> mixtures;
     private EventMap eventMap;
 
+    /**
+     * Loads transition model using provided parser.
+     *
+     * @param parser parser
+     */
     public TransitionModel(KaldiTextParser parser) {
         parser.expectToken("<TransitionModel>");
         parseTopology(parser);
@@ -118,24 +123,6 @@ public class TransitionModel {
         LogMath logMath = LogMath.getInstance();
         for (int i = 0; i < logProbabilities.length; ++i)
             logProbabilities[i] = logMath.lnToLog(logProbabilities[i]);
-    }
-
-    public float[][] getTransitionMatrix(int phone, int[] pdfs) {
-        // TODO: use variable size
-        float[][] transitionMatrix = new float[4][4];
-        Arrays.fill(transitionMatrix[3], LogMath.LOG_ZERO);
-
-        for (HmmState state : phoneStates.get(phone)) {
-            int stateId = state.getId();
-            Arrays.fill(transitionMatrix[stateId], LogMath.LOG_ZERO);
-            Triple triple = new Triple(phone, stateId, pdfs[stateId]);
-            int i = transitionStates.get(triple);
-
-            for (Integer j : state.getTransitions())
-                transitionMatrix[stateId][j] = logProbabilities[i++];
-        }
-
-        return transitionMatrix;
     }
 
     private void parseTopology(KaldiTextParser parser) {
@@ -177,5 +164,33 @@ public class TransitionModel {
         }
 
         parser.assertToken("</Topology>", token);
+    }
+
+    /**
+     * Returns transition matrix for the given context.
+     *
+     * @param phone central phone in the context
+     * @param pdfs  array of pdf identifiers of the context units
+     *
+     * @return
+     * 4 by 4 matrix where cell i,j contains probability in {@link LogMath}
+     * domain of transition from state i to state j
+     */
+    public float[][] getTransitionMatrix(int phone, int[] pdfs) {
+        // TODO: use variable size
+        float[][] transitionMatrix = new float[4][4];
+        Arrays.fill(transitionMatrix[3], LogMath.LOG_ZERO);
+
+        for (HmmState state : phoneStates.get(phone)) {
+            int stateId = state.getId();
+            Arrays.fill(transitionMatrix[stateId], LogMath.LOG_ZERO);
+            Triple triple = new Triple(phone, stateId, pdfs[stateId]);
+            int i = transitionStates.get(triple);
+
+            for (Integer j : state.getTransitions())
+                transitionMatrix[stateId][j] = logProbabilities[i++];
+        }
+
+        return transitionMatrix;
     }
 }

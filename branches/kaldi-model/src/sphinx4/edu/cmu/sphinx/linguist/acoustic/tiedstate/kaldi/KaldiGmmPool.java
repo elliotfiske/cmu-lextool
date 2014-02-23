@@ -4,8 +4,14 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.Pool;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
 
 
+/**
+ * Pool of GMMs loaded from Kaldi model.
+ */
 public class KaldiGmmPool extends Pool<Senone> {
 
+    /**
+     * Constructs new pool of GMMs loading them from the provided parser.
+     */
     public KaldiGmmPool(KaldiTextParser parser) {
         super("senones");
         parser.expectToken("<DIMENSION>");
