@@ -13,6 +13,7 @@
 
 package edu.cmu.sphinx.frontend.frequencywarp;
 
+import java.util.Arrays;
 
 /**
  * Defines a triangular mel-filter. The {@link edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank} creates
@@ -54,13 +55,19 @@ public class MelFilter {
      * @param rightEdge   the filter's highest passing frequency
      * @param initialFreq the first frequency bin in the pass band
      * @param deltaFreq   the step in the frequency axis between frequency bins
+     * @param height      height of the filter, special value -1 is used for
+     *                    dynamic height. The height is then computed assyming
+     *                    triangle square equal to 1.
      * @throws IllegalArgumentException
      */
     public MelFilter(double leftEdge,
                      double centerFreq,
                      double rightEdge,
                      double initialFreq,
-                     double deltaFreq) throws IllegalArgumentException {
+                     double deltaFreq,
+                     double height)
+        throws IllegalArgumentException
+    {
 
         double filterHeight;
         double leftSlope;
@@ -97,10 +104,10 @@ public class MelFilter {
         }
         weight = new double[numberElementsWeightField];
 
-        /**
-         * Let's make the filter area equal to 1.
-         */
-        filterHeight = 2.0f / (rightEdge - leftEdge);
+        if (-1 == height)
+            filterHeight = 2. / (rightEdge - leftEdge);
+        else
+            filterHeight = 1.;
 
         /**
          * Now let's compute the slopes based on the height.

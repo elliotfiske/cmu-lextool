@@ -131,6 +131,7 @@ public class AutoCepstrum extends BaseDataProcessor {
             filterBank = new MelFrequencyFilterBank(
                     Double.parseDouble((String) featParams.get("-lowerf")),
                     Double.parseDouble((String) featParams.get("-upperf")),
+                    Double.parseDouble((String) featParams.get("-fheight")),
                     Integer.parseInt((String) featParams.get("-nfilt")));
             selectedDataProcessors.add(filterBank);
 
@@ -161,6 +162,16 @@ public class AutoCepstrum extends BaseDataProcessor {
             if ((featParams.get("-transform") != null)
                     && (featParams.get("-transform").equals("dct"))) {
                 dct = new DiscreteCosineTransform2(
+                        DiscreteCosineTransform.class
+                                .getField("PROP_NUMBER_FILTERS")
+                                .getAnnotation(S4Integer.class).defaultValue(),
+                        DiscreteCosineTransform.class
+                                .getField("PROP_CEPSTRUM_LENGTH")
+                                .getAnnotation(S4Integer.class).defaultValue());
+            } else if ((featParams.get("-transform") != null)
+                    && (featParams.get("-transform").equals("kaldi")))
+            {
+                dct = new KaldiDiscreteCosineTransform(
                         DiscreteCosineTransform.class
                                 .getField("PROP_NUMBER_FILTERS")
                                 .getAnnotation(S4Integer.class).defaultValue(),
@@ -203,9 +214,9 @@ public class AutoCepstrum extends BaseDataProcessor {
     @Override
     public void initialize() {
         super.initialize();
-        for (DataProcessor dataProcessor : selectedDataProcessors) {
+
+        for (DataProcessor dataProcessor : selectedDataProcessors)
             dataProcessor.initialize();
-        }
     }
 
     /**
@@ -218,8 +229,9 @@ public class AutoCepstrum extends BaseDataProcessor {
      */
     @Override
     public Data getData() throws DataProcessingException {
-        return selectedDataProcessors.get(selectedDataProcessors.size() - 1)
-                .getData();
+        DataProcessor dp;
+        dp = selectedDataProcessors.get(selectedDataProcessors.size() - 1);
+        return dp.getData();
     }
 
     /**
