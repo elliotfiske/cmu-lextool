@@ -106,21 +106,21 @@ public class KaldiLoader implements Loader {
             // Ensure monophone HMMs are created.
             hmmManager.get(HMMPosition.UNDEFINED, unit);
         }
+
+        loadProperties();
     }
 
-    private Properties loadProperties() throws IOException {
+    private void loadProperties() throws IOException {
         String path = "models/acoustic/wsj/feat.params";
         Reader reader = new InputStreamReader(new FileInputStream(path));
         BufferedReader br = new BufferedReader(reader);
-        Properties properties = new Properties();
+        modelProperties = new Properties();
         String line;
 
         while ((line = br.readLine()) != null) {
             String[] tokens = line.split(" ");
-            properties.put(tokens[0], tokens[1]);
+            modelProperties.put(tokens[0], tokens[1]);
         }
-
-        return properties;
     }
 
     /**
