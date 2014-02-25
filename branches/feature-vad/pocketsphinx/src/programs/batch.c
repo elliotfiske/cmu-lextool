@@ -276,12 +276,14 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
 static int
 process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
 {
-    if (fname == NULL)
-        return 0;
-
+    int err;
+    fsg_model_t *fsg;
     char *path = NULL;
     const char *fsgdir = cmd_ln_str_r(config, "-fsgdir");
     const char *fsgext = cmd_ln_str_r(config, "-fsgext");
+
+    if (fname == NULL)
+        return 0;
 
     if (fsgdir)
         path = string_join(fsgdir, "/", fname, fsgext ? fsgext : "", NULL);
@@ -290,9 +292,9 @@ process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
     else
         path = ckd_salloc(fname);
 
-    fsg_model_t *fsg = fsg_model_readfile(path, ps_get_logmath(ps),
+    fsg = fsg_model_readfile(path, ps_get_logmath(ps),
                                           cmd_ln_float32_r(config, "-lw"));
-    int err = 0;
+    err = 0;
     if (!fsg) {
         err = -1;
         goto error_out;
