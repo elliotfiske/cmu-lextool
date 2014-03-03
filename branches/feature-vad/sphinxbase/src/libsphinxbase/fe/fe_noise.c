@@ -311,12 +311,12 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
         if (signal[i] < 0)
             signal[i] = 0;
 	snr = noise_stats->power[i] / noise_stats->noise[i];
+	lrt += log(1.0/(1+snr)) + snr;
 #else
         signal[i] = fe_log_sub(noise_stats->power[i], noise_stats->noise[i]);
-		snr = noise_stats->power[i] - noise_stats->noise[i];
-#endif
-    
-	lrt += log(1.0/(1+snr)) + snr;
+	snr = noise_stats->power[i] - noise_stats->noise[i];
+	lrt += log(1.0/(1+MFCC2FLOAT(snr))) + MFCC2FLOAT(snr);
+#endif    
     }
 
     lrt /= num_filts;
