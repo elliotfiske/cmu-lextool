@@ -266,9 +266,16 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 {
     powspec_t *signal;
     powspec_t *gain;
-    powspec_t snr, lrt;
+    powspec_t snr;
     int32 i, num_filts;
     uint8 local_vad_state;
+
+// TODO: Not properly converted yet
+#ifdef FIXED_POINT
+    float lrt;
+#else
+    powspec_t lrt;
+#endif
 
     num_filts = noise_stats->num_filters;
 
@@ -311,11 +318,11 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
         if (signal[i] < 0)
             signal[i] = 0;
 	snr = noise_stats->power[i] / noise_stats->noise[i];
-	lrt += log(1.0/(1+snr)) + snr;
+	lrt += log(1.0 / (1 + snr)) + snr;
 #else
         signal[i] = fe_log_sub(noise_stats->power[i], noise_stats->noise[i]);
 	snr = noise_stats->power[i] - noise_stats->noise[i];
-	lrt += log(1.0/(1+MFCC2FLOAT(snr))) + MFCC2FLOAT(snr);
+	lrt += log(1.0 / (1 + exp(FIX2FLOAT(snr)))) + exp(FIX2FLOAT(snr));
 #endif    
     }
 
