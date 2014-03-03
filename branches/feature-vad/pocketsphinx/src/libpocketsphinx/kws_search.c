@@ -33,8 +33,8 @@
  */
 
 /*
- * kws_search.c -- Search object for key phrase spotting.
- */
+* kws_search.c -- Search object for key phrase spotting.
+*/
 
 #include <stdio.h>
 #include <string.h>
@@ -49,14 +49,6 @@
 #include "kws_search.h"
 
 
-/* Cap functions to meet ps_search api */
-static ps_seg_t *
-kws_search_seg_iter(ps_search_t * search, int32 * out_score)
-{
-    *out_score = 0;
-    return NULL;
-}
-
 static ps_lattice_t *
 kws_search_lattice(ps_search_t * search)
 {
@@ -67,6 +59,64 @@ static int
 kws_search_prob(ps_search_t * search)
 {
     return 0;
+}
+
+static void
+kws_seg_free(ps_seg_t *seg)
+{
+    kws_seg_t *itor = (kws_seg_t *)seg;
+    ckd_free(itor);
+}
+
+static void
+kws_seg_fill(kws_seg_t *itor)
+{
+    kws_detection_t* detection = (kws_detection_t*)gnode_ptr(itor->detection);
+
+    itor->base.word = detection->keyphrase;
+    itor->base.sf = detection->sf;
+    itor->base.ef = detection->ef;
+    itor->base.prob = detection->prob;
+    itor->base.ascr = detection->ascr;
+    itor->base.lscr = 0;
+}
+
+static ps_seg_t *
+kws_seg_next(ps_seg_t *seg)
+{
+    kws_seg_t *itor = (kws_seg_t *)seg;
+    itor->detection = gnode_next(itor->detection);
+    if (!itor->detection) {
+        kws_seg_free(seg);
+        return NULL;
+    }
+
+    kws_seg_fill(itor);
+
+    return seg;
+}
+
+static ps_segfuncs_t kws_segfuncs = {
+    /* seg_next */ kws_seg_next,
+    /* seg_free */ kws_seg_free
+};
+
+static ps_seg_t *
+kws_search_seg_iter(ps_search_t * search, int32 * out_score)
+{
+    kws_search_t *kwss = (kws_search_t *)search;
+    kws_seg_t *itor;
+    *out_score = 0;
+
+    if (!kwss->detections->detect_list)
+        return NULL;
+    itor = (kws_seg_t *)ckd_calloc(1, sizeof(*itor));
+    itor->base.vt = &kws_segfuncs;
+    itor->base.search = search;
+    itor->base.lwf = 1.0;
+    itor->detection = kwss->detections->detect_list;
+    kws_seg_fill(itor);
+    return (ps_seg_t *)itor;
 }
 
 static ps_searchfuncs_t kws_funcs = {
@@ -127,15 +177,15 @@ kws_search_sen_active(kws_search_t * kwss)
 
     /* activate hmms in active nodes */
     for (i = 0; i < kwss->n_nodes; i++) {
-        if (kwss->nodes[i].active)
+        if (kws_node_is_active(&kwss->nodes[i]))
             acmod_activate_hmm(ps_search_acmod(kwss), &kwss->nodes[i].hmm);
     }
 }
 
 /*
- * Evaluate all the active HMMs.
- * (Executed once per frame.)
- */
+* Evaluate all the active HMMs.
+* (Executed once per frame.)
+*/
 static void
 kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
 {
@@ -155,7 +205,7 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
     }
     /* evaluate hmms for active nodes */
     for (i = 0; i < kwss->n_nodes; i++) {
-        if (kwss->nodes[i].active) {
+        if (kws_node_is_active(&kwss->nodes[i])) {
             hmm_t *hmm = &kwss->nodes[i].hmm;
             int32 score;
 
@@ -169,31 +219,27 @@ kws_search_hmm_eval(kws_search_t * kwss, int16 const *senscr)
 }
 
 /*
- * (Beam) prune the just evaluated HMMs, determine which ones remain
- * active. Executed once per frame.
- */
+* (Beam) prune the just evaluated HMMs, determine which ones remain
+* active. Executed once per frame.
+*/
 static void
-kws_search_hmm_prune(kws_search_t *kwss)
+kws_search_hmm_prune(kws_search_t * kwss)
 {
     int32 thresh, i;
 
     thresh = kwss->bestscore + kwss->beam;
 
-    for (i = 0; i < kwss->n_nodes; i++) {
-        if (kwss->nodes[i].active) {
-            if (hmm_bestscore(&kwss->nodes[i].hmm) < thresh) {
-        	kwss->nodes[i].active = FALSE;
-        	hmm_clear(&kwss->nodes[i].hmm);
-    	    }
-    	}
-    }
+    for (i = 0; i < kwss->n_nodes; i++)
+        if (kws_node_is_active(&kwss->nodes[i]))
+            if (hmm_bestscore(&kwss->nodes[i].hmm) < thresh)
+                hmm_clear(&kwss->nodes[i].hmm);
     return;
 }
 
 
 /**
- * Do phone transitions
- */
+* Do phone transitions
+*/
 static void
 kws_search_trans(kws_search_t * kwss)
 {
@@ -213,27 +259,22 @@ kws_search_trans(kws_search_t * kwss)
         return;
 
     /* Check whether keyword wasn't spotted yet */
-    if (kwss->nodes[kwss->n_nodes - 1].active
+    if (kws_node_is_active(&kwss->nodes[kwss->n_nodes - 1])
         && hmm_out_score(pl_best_hmm) BETTER_THAN WORST_SCORE) {
-
-        /* E_INFO("%d; %d\n",
-           hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm),
-           hmm_out_score(pl_best_hmm),
-           hmm_out_score(&kwss->nodes[kwss->n_nodes-1].hmm) -
-           hmm_out_score(pl_best_hmm)); */
 
         if (hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) -
             hmm_out_score(pl_best_hmm) >= kwss->threshold) {
-
-            kwss->n_detect++;
-            E_INFO(">>>>DETECTED IN FRAME [%d]\n", kwss->frame);
+            int32 prob = hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm) - 
+                         hmm_out_score(pl_best_hmm) - kwss->threshold;
+            kws_detections_add(kwss->detections, kwss->keyphrase, 
+                              hmm_out_history(&kwss->nodes[kwss->n_nodes - 1].hmm), 
+                              kwss->frame, prob, 
+                              hmm_out_score(&kwss->nodes[kwss->n_nodes - 1].hmm));
             pl_best_hmm = &kwss->nodes[kwss->n_nodes - 1].hmm;
 
             /* set all keyword nodes inactive for next occurrence search */
-            for (i = 0; i < kwss->n_nodes; i++) {
-                kwss->nodes[i].active = FALSE;
-                hmm_clear_scores(&kwss->nodes[i].hmm);
-            }
+            for (i = 0; i < kwss->n_nodes; i++)
+                hmm_clear(&kwss->nodes[i].hmm);
         }
 
     }
@@ -241,33 +282,30 @@ kws_search_trans(kws_search_t * kwss)
     /* Make transition for all phone loop hmms */
     for (i = 0; i < kwss->n_pl; i++) {
         if (hmm_out_score(pl_best_hmm) + kwss->plp BETTER_THAN
-	    hmm_in_score(&kwss->nodes[0].hmm)) {
-	    hmm_enter(&kwss->pl_hmms[i],
-    	          hmm_out_score(pl_best_hmm) + kwss->plp,
-                  hmm_out_history(pl_best_hmm), kwss->frame + 1);
-	}
+            hmm_in_score(&kwss->nodes[0].hmm)) {
+            hmm_enter(&kwss->pl_hmms[i],
+                      hmm_out_score(pl_best_hmm) + kwss->plp,
+                      hmm_out_history(pl_best_hmm), kwss->frame + 1);
+        }
     }
 
     /* Activate new keyword nodes, enter their hmms */
     for (i = kwss->n_nodes - 1; i > 0; i--) {
-        if (kwss->nodes[i - 1].active) {
+        if (kws_node_is_active(&kwss->nodes[i - 1])) {
             hmm_t *pred_hmm = &kwss->nodes[i - 1].hmm;
-            if (!kwss->nodes[i].active
+            if (!kws_node_is_active(&kwss->nodes[i])
                 || hmm_out_score(pred_hmm) BETTER_THAN
                 hmm_in_score(&kwss->nodes[i].hmm)) {
                 hmm_enter(&kwss->nodes[i].hmm, hmm_out_score(pred_hmm),
                           hmm_out_history(pred_hmm), kwss->frame + 1);
-        	kwss->nodes[i].active = TRUE;
-    	    }
+            }
         }
     }
     /* Enter keyword start node from phone loop */
     if (hmm_out_score(pl_best_hmm) BETTER_THAN
-        hmm_in_score(&kwss->nodes[0].hmm)) {
-        kwss->nodes[0].active = TRUE;
+        hmm_in_score(&kwss->nodes[0].hmm))
         hmm_enter(&kwss->nodes[0].hmm, hmm_out_score(pl_best_hmm),
-                  hmm_out_history(pl_best_hmm), kwss->frame + 1);
-    }
+                  kwss->frame, kwss->frame + 1);
 }
 
 ps_search_t *
@@ -276,16 +314,26 @@ kws_search_init(const char *key_phrase,
                 acmod_t * acmod, dict_t * dict, dict2pid_t * d2p)
 {
     kws_search_t *kwss = (kws_search_t *) ckd_calloc(1, sizeof(*kwss));
-    ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict, d2p);
+    ps_search_init(ps_search_base(kwss), &kws_funcs, config, acmod, dict,
+                   d2p);
 
-    kwss->beam = 
-        (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-beam")) >> SENSCR_SHIFT;
+    kwss->detections = (kws_detections_t *)ckd_calloc(1, sizeof(*kwss->detections));
+
+    kwss->beam =
+        (int32) logmath_log(acmod->lmath,
+                            cmd_ln_float64_r(config,
+                                             "-beam")) >> SENSCR_SHIFT;
 
     kwss->plp =
-        (int32) logmath_log(acmod->lmath, cmd_ln_float32_r(config, "-kws_plp")) >> SENSCR_SHIFT;
+        (int32) logmath_log(acmod->lmath,
+                            cmd_ln_float32_r(config,
+                                             "-kws_plp")) >> SENSCR_SHIFT;
 
     kwss->threshold =
-        (int32) logmath_log(acmod->lmath, cmd_ln_float64_r(config, "-kws_threshold")) >> SENSCR_SHIFT;
+        (int32) logmath_log(acmod->lmath,
+                            cmd_ln_float64_r(config,
+                                             "-kws_threshold")) >>
+        SENSCR_SHIFT;
 
     E_INFO("KWS(beam: %d, plp: %d, threshold %d)\n",
            kwss->beam, kwss->plp, kwss->threshold);
@@ -316,6 +364,7 @@ kws_search_free(ps_search_t * search)
 
     ps_search_deinit(search);
     hmm_context_free(kwss->hmmctx);
+    kws_detections_reset(kwss->detections);
 
     ckd_free(kwss->pl_hmms);
     ckd_free(kwss->nodes);
@@ -412,7 +461,6 @@ kws_search_reinit(ps_search_t * search, dict_t * dict, dict2pid_t * d2p)
             tmatid = bin_mdef_pid2tmatid(mdef, ci);
             hmm_init(kwss->hmmctx, &kwss->nodes[j].hmm, FALSE, ssid,
                      tmatid);
-            kwss->nodes[j].active = FALSE;
             j++;
         }
     }
@@ -429,8 +477,8 @@ kws_search_start(ps_search_t * search)
     kws_search_t *kwss = (kws_search_t *) search;
 
     kwss->frame = 0;
-    kwss->n_detect = 0;
     kwss->bestscore = 0;
+    kws_detections_reset(kwss->detections);
 
     /* Reset and enter all phone-loop HMMs. */
     for (i = 0; i < kwss->n_pl; ++i) {
@@ -480,15 +528,11 @@ kws_search_hyp(ps_search_t * search, int32 * out_score,
                int32 * out_is_final)
 {
     kws_search_t *kwss = (kws_search_t *) search;
+    *out_score = 0;
 
-    if (kwss->n_detect > 0) {
-        if (out_score)
-            *out_score = kwss->n_detect;
-        return kwss->keyphrase;
-    }
-    else {
-        if (out_score)
-            *out_score = 0;
-        return NULL;
-    }
+    if (search->hyp_str)
+        ckd_free(search->hyp_str);
+    kws_detections_hyp_str(kwss->detections, &search->hyp_str);
+    
+    return search->hyp_str;
 }

@@ -53,8 +53,8 @@
 
 /* Silvio Moioli: setbuf doesn't exist in Windows CE */
 #if defined(_WIN32_WCE)
-	void setbuf(FILE* file, char* buf){
-	}
+    void setbuf(FILE* file, char* buf){
+    }
 #endif
 
 static const arg_t ps_args_def[] = {
@@ -276,8 +276,8 @@ process_mllrctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *file)
 static int
 process_fsgctl_line(ps_decoder_t *ps, cmd_ln_t *config, char const *fname)
 {
-    int err;
     fsg_model_t *fsg;
+    int err;
     char *path = NULL;
     const char *fsgdir = cmd_ln_str_r(config, "-fsgdir");
     const char *fsgext = cmd_ln_str_r(config, "-fsgext");
@@ -750,10 +750,10 @@ process_ctl(ps_decoder_t *ps, cmd_ln_t *config, FILE *ctlfh)
                    uttid, n_speech, n_cpu, n_wall);
             E_INFO("%s: %.2f xRT (CPU), %.2f xRT (elapsed)\n",
                    uttid, n_cpu / n_speech, n_wall / n_speech);
-			/* help make the logfile somewhat less opaque (air) */
-			E_INFO_NOFN("%s (%s %d)\n", hyp ? hyp : "", uttid, score); 
-			E_INFO_NOFN("%s done --------------------------------------\n", uttid);
-		}
+            /* help make the logfile somewhat less opaque (air) */
+            E_INFO_NOFN("%s (%s %d)\n", hyp ? hyp : "", uttid, score); 
+            E_INFO_NOFN("%s done --------------------------------------\n", uttid);
+        }
         i += ctlincr;
     nextline:
         ckd_free(mllrline);
