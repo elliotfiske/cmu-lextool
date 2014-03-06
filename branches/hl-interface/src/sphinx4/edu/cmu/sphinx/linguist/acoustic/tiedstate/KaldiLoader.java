@@ -20,7 +20,9 @@ import edu.cmu.sphinx.linguist.acoustic.*;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi.DiagGmm;
 
 import edu.cmu.sphinx.util.props.*;
+import edu.cmu.sphinx.util.ExtendedStreamTokenizer;
 import edu.cmu.sphinx.util.LogMath;
+
 
 class XXX {
 
@@ -40,6 +42,14 @@ class XXX {
 
     public int getPhone() {
         return phone;
+    }
+
+    public int getLeftPhone() {
+        return left;
+    }
+
+    public int getRightPhone() {
+        return right;
     }
 
     public boolean hasContext() {
@@ -156,17 +166,17 @@ public class KaldiLoader implements Loader {
             throws IOException, MalformedURLException
         {
             // TODO: rewrite with StreamTokenizer, see ExtendedStreamTokenizer.
-            File modelFile = new File(path, "final.mdl");
+            File modelFile = new File(path, "tri1/final.mdl");
             InputStream modelStream = new URL(modelFile.getPath()).openStream();
-            File treeFile = new File(path, "tree");
-            InputStream treeStream = new URL(treeFile.getPath()).openStream();
+            //File treeFile = new File(path, "tree");
+            //InputStream treeStream = new URL(treeFile.getPath()).openStream();
 
-            InputStream s = new SequenceInputStream(modelStream, treeStream);
-            scanner = new Scanner(s);
+            // InputStream s = new SequenceInputStream(modelStream, treeStream);
+            scanner = new Scanner(modelStream);
 
             try {
                 parseModel();
-                parseTree();
+                // parseTree();
             } catch (InputMismatchException e) {
                 // TODO: refactor
                 throw e;
@@ -433,21 +443,168 @@ public class KaldiLoader implements Loader {
         for (DiagGmm gmm : parser.getGaussianMixtures())
             senonePool.put((int) gmm.getID(), gmm);
 
+        String mdefPath = new File(location, "mdef").getPath();
+        ExtendedStreamTokenizer est =
+            new ExtendedStreamTokenizer(
+                    new URL(mdefPath).openStream(), '#', false);
+
+        est.expectString("0.3");
+
+        int numBase = est.getInt("numBase");
+        est.expectString("n_base");
+
+        int numTri = est.getInt("numTri");
+        est.expectString("n_tri");
+
+        int numStateMap = est.getInt("numStateMap");
+        est.expectString("n_state_map");
+
+        int numTiedState = est.getInt("numTiedState");
+        est.expectString("n_tied_state");
+
+        int numContextIndependentTiedState = est
+                .getInt("numContextIndependentTiedState");
+        est.expectString("n_tied_ci_state");
+
+        int numTiedTransitionMatrices = est.getInt("numTiedTransitionMatrices");
+        est.expectString("n_tied_tmat");
+
+        int numStatePerHMM = numStateMap / (numTri + numBase);
+
+        float[][] transitionMatrix = new float[4][4];
+        for (int i = 0; i < 3; ++i) {
+            Arrays.fill(transitionMatrix[i], LogMath.LOG_ZERO);
+            transitionMatrix[i][i] = logMath.lnToLog((float) Math.log(0.5));
+            transitionMatrix[i][i + 1] = logMath.lnToLog((float) Math.log(0.5));
+        }
+        Arrays.fill(transitionMatrix[3], LogMath.LOG_ZERO);
+
+        contextIndependentUnits = new HashMap<String, Unit>();
+        hmmManager = new HMMManager();
+
+        // Load the base phones
+        for (int i = 0; i < numBase; i++) {
+            String name = est.getString();
+            String left = est.getString();
+            String right = est.getString();
+            String position = est.getString();
+            String attribute = est.getString();
+            int tmat = est.getInt("tmat");
+
+            int[] stid = new int[numStatePerHMM - 1];
+
+            for (int j = 0; j < numStatePerHMM - 1; j++) {
+                stid[j] = est.getInt("j");
+            }
+            est.expectString("N");
+
+            Unit unit = unitManager.getUnit(name, attribute.equals("filler"));
+            contextIndependentUnits.put(unit.getName(), unit);
+
+            // The first filler
+            if (unit.isFiller() && unit.getName().equals("SIL")) {
+                unit = UnitManager.SILENCE;
+            }
+
+            SenoneSequence ss = getSenoneSequence(stid);
+
+            HMM hmm = new SenoneHMM(unit, ss, transitionMatrix,
+                    HMMPosition.lookup(position));
+            hmmManager.put(hmm);
+        }
+
+        if (hmmManager.get(HMMPosition.UNDEFINED, UnitManager.SILENCE) == null) {
+            throw new IOException("Could not find SIL unit in acoustic model");
+        }
+
+        // Load the context dependent phones. If the useCDUnits
+        // property is false, the CD phones will not be created, but
+        // the values still need to be read in from the file.
+
+        String lastUnitName = "";
+        Unit lastUnit = null;
+        int[] lastStid = null;
+        SenoneSequence lastSenoneSequence = null;
+
+        for (int i = 0; i < numTri; i++) {
+            String name = est.getString();
+            String left = est.getString();
+            String right = est.getString();
+            String position = est.getString();
+            String attribute = est.getString();
+            int tmat = est.getInt("tmat");
+
+            int[] stid = new int[numStatePerHMM - 1];
+
+            for (int j = 0; j < numStatePerHMM - 1; j++) {
+                stid[j] = est.getInt("j");
+            }
+            est.expectString("N");
+
+            Unit unit;
+            String unitName = (name + ' ' + left + ' ' + right);
+
+            if (unitName.equals(lastUnitName)) {
+                unit = lastUnit;
+            } else {
+                Unit[] leftContext = new Unit[1];
+                leftContext[0] = contextIndependentUnits.get(left);
+
+                Unit[] rightContext = new Unit[1];
+                rightContext[0] = contextIndependentUnits.get(right);
+
+                Context context = LeftRightContext.get(leftContext,
+                        rightContext);
+                unit = unitManager.getUnit(name, false, context);
+            }
+            lastUnitName = unitName;
+            lastUnit = unit;
+
+            SenoneSequence ss = getSenoneSequence(stid);
+            HMM hmm = new SenoneHMM(unit, ss, transitionMatrix,
+                                    HMMPosition.lookup(position));
+            hmmManager.put(hmm);
+        }
+
+        est.close();
+
+        /*
         loadPhones();
         loadContext(parser);
         loadProperties();
+        */
 
+        /*
         for (XXX context : contextData.keySet()) {
             String phone = phones.get(context.getPhone());
-            Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
-            if (unit.isFiller() && unit.getName().equals("SIL"))
-                unit = UnitManager.SILENCE;
-            contextIndependentUnits.put(unit.getName(), unit);
-            HMMPosition position = HMMPosition.UNDEFINED;
-            float[][] tmat = getTransitionMatrix(parser, context);
-            SenoneSequence seq = getSenoneSequence(context);
-            hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
+            //if (!context.hasContext() && phone.endsWith("_S")) {
+            //    phone = phone.substring(0, phone.length() - 2);
+            //    Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
+            //    if (unit.isFiller() && unit.getName().equals("SIL"))
+            //        unit = UnitManager.SILENCE;
+            //    System.out.println(phone);
+            //    contextIndependentUnits.put(unit.getName(), unit);
+            //    HMMPosition position = HMMPosition.UNDEFINED;
+            //    float[][] tmat = getTransitionMatrix(parser, context);
+            //    SenoneSequence seq = getSenoneSequence(context);
+            //    hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
+            //}
+            //else {
+            //    String left = phones.get(context.getLeftPhone());
+            //    String right = phones.get(context.getRightPhone());
+            //    if ("SIL".equals(left) && "SIL".equals(right)) {
+            //        phone = phone.substring(0, phone.length() - 2);
+            //        System.out.println(phone);
+            //        Unit unit = unitManager.getUnit(phone, false);
+            //        contextIndependentUnits.put(unit.getName(), unit);
+            //        HMMPosition position = HMMPosition.UNDEFINED;
+            //        float[][] tmat = getTransitionMatrix(parser, context);
+            //        SenoneSequence seq = getSenoneSequence(context);
+            //        hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
+            //    }
+            //}
         }
+        */
     }
 
     private void loadPhones() throws IOException {
@@ -457,7 +614,6 @@ public class KaldiLoader implements Loader {
         Reader reader = new InputStreamReader(stream);
         BufferedReader br = new BufferedReader(reader);
         phones = new HashMap<Integer, String>();
-        contextIndependentUnits = new HashMap<String, Unit>();
         String line;
 
         while (null != (line = br.readLine())) {
@@ -471,7 +627,7 @@ public class KaldiLoader implements Loader {
         hmmManager = new HMMManager();
         contextData = new HashMap<XXX, SortedMap<Integer, Integer>>();
 
-        File file = new File(location, "context");
+        File file = new File(location, "tri1/context");
         InputStream stream = new URL(file.getPath()).openStream();
         Reader reader = new InputStreamReader(stream);
         BufferedReader br = new BufferedReader(reader);
@@ -547,6 +703,15 @@ public class KaldiLoader implements Loader {
 
         return tmat;
     }
+
+    protected SenoneSequence getSenoneSequence(int[] stateid) {
+        Senone[] senones = new Senone[stateid.length];
+        for (int i = 0; i < stateid.length; i++) {
+            senones[i] = senonePool.get(stateid[i]);
+        }
+        return new SenoneSequence(senones);
+    }
+
 
     private SenoneSequence getSenoneSequence(XXX context) {
         Map<Integer, Integer> states = contextData.get(context);
