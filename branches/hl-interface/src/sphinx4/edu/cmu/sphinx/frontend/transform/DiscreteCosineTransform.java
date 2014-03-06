@@ -29,7 +29,7 @@ import edu.cmu.sphinx.util.props.*;
 public class DiscreteCosineTransform extends BaseDataProcessor {
 
     /** The property for the number of filters in the filterbank. */
-    @S4Integer(defaultValue = 40)
+    @S4Integer(defaultValue = 23)
     public static final String PROP_NUMBER_FILTERS = "numberFilters";
 
     /** The property for the size of the cepstrum */
@@ -128,7 +128,7 @@ public class DiscreteCosineTransform extends BaseDataProcessor {
 
 
     /** Compute the MelCosine filter bank. */
-    private void computeMelCosine() {
+    protected void computeMelCosine() {
         melcosine = new double[cepstrumSize][numberMelFilters];
         double period = (double) 2 * numberMelFilters;
         for (int i = 0; i < cepstrumSize; i++) {

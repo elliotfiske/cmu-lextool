@@ -53,7 +53,8 @@ import java.util.Map;
 public class RaisedCosineWindower extends BaseDataProcessor {
 
     /** The property for window size in milliseconds. */
-    @S4Double(defaultValue = 25.625)
+//    @S4Double(defaultValue = 25.625)
+    @S4Double(defaultValue = 25)
     public static final String PROP_WINDOW_SIZE_MS = "windowSizeInMs";
     private float windowSizeInMs;
 
@@ -158,6 +159,8 @@ public class RaisedCosineWindower extends BaseDataProcessor {
             if (input != null) {
                 if (input instanceof DoubleData) {
                     DoubleData data = (DoubleData) input;
+                    // System.err.print("to windower: ");
+                    // System.err.println(Arrays.toString(data.getValues()));
                     if (currentFirstSampleNumber == -1) {
                         currentFirstSampleNumber = data.getFirstSampleNumber();
                     }

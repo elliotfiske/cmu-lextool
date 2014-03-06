@@ -76,6 +76,9 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
     @S4Double(defaultValue = 6800.0)
     public static final String PROP_MAX_FREQ = "maximumFrequency";
 
+    @S4Double(defaultValue = 1)
+    public static final String PROP_FILTER_HEIGHT = "filterHeight";
+
     // ----------------------------------
     // Configuration data
     // ----------------------------------
@@ -84,14 +87,21 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
     private int numberFilters;
     private double minFreq;
     private double maxFreq;
+    private double filterHeight;
+
     private MelFilter[] filter;
 
 
-    public MelFrequencyFilterBank(double minFreq, double maxFreq, int numberFilters) {
+    public MelFrequencyFilterBank(double minFreq,
+                                  double maxFreq,
+                                  double height,
+                                  int numberFilters)
+    {
         initLogger();
         this.minFreq = minFreq;
         this.maxFreq = maxFreq;
         this.numberFilters = numberFilters;
+        this.filterHeight = height;
     }
 
     public MelFrequencyFilterBank() {
@@ -107,6 +117,7 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
         super.newProperties(ps);
         minFreq = ps.getDouble(PROP_MIN_FREQ);
         maxFreq = ps.getDouble(PROP_MAX_FREQ);
+        filterHeight = ps.getDouble(PROP_FILTER_HEIGHT);
         numberFilters = ps.getInt(PROP_NUMBER_FILTERS);
     }
 
@@ -132,7 +143,7 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
      * @return the frequency in a mel scale
      */
     private double linToMelFreq(double inputFreq) {
-        return (2595.0 * (Math.log(1.0 + inputFreq / 700.0) / Math.log(10.0)));
+        return 1127 * Math.log1p(inputFreq / 700);
     }
 
 
@@ -143,7 +154,7 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
      * @return the frequency in a linear scale
      */
     private double melToLinFreq(double inputFreq) {
-        return (700.0 * (Math.pow(10.0, (inputFreq / 2595.0)) - 1.0));
+        return 700 * (Math.exp(inputFreq / 1127) - 1);
     }
 
 
@@ -237,9 +248,9 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
             if (initialFreqBin < leftEdge[i]) {
                 initialFreqBin += deltaFreq;
             }
-            //System.out.format("%d %f %f\n", i, leftEdge[i], rightEdge[i]);
+
             this.filter[i] = new MelFilter(leftEdge[i], centerFreq[i],
-                    rightEdge[i], initialFreqBin, deltaFreq);
+                    rightEdge[i], initialFreqBin, deltaFreq, filterHeight);
         }
     }
 
@@ -255,7 +266,6 @@ public class MelFrequencyFilterBank extends BaseDataProcessor {
     private DoubleData process(DoubleData input)
             throws IllegalArgumentException {
         double[] in = input.getValues();
-
         if (filter == null || sampleRate != input.getSampleRate()) {
             numberFftPoints = (in.length - 1) << 1;
             sampleRate = input.getSampleRate();
