@@ -437,174 +437,68 @@ public class KaldiLoader implements Loader {
     public void load() throws IOException {
         AcousticModelParser parser = new AcousticModelParser(location);
         senonePool = new Pool<Senone>("senones");
-        leftContextSize = parser.getContextPosition();
-        rightContextSize = parser.getContextWidth() - leftContextSize - 1;
 
         for (DiagGmm gmm : parser.getGaussianMixtures())
             senonePool.put((int) gmm.getID(), gmm);
 
-        String mdefPath = new File(location, "mdef").getPath();
-        ExtendedStreamTokenizer est =
-            new ExtendedStreamTokenizer(
-                    new URL(mdefPath).openStream(), '#', false);
-
-        est.expectString("0.3");
-
-        int numBase = est.getInt("numBase");
-        est.expectString("n_base");
-
-        int numTri = est.getInt("numTri");
-        est.expectString("n_tri");
-
-        int numStateMap = est.getInt("numStateMap");
-        est.expectString("n_state_map");
-
-        int numTiedState = est.getInt("numTiedState");
-        est.expectString("n_tied_state");
-
-        int numContextIndependentTiedState = est
-                .getInt("numContextIndependentTiedState");
-        est.expectString("n_tied_ci_state");
-
-        int numTiedTransitionMatrices = est.getInt("numTiedTransitionMatrices");
-        est.expectString("n_tied_tmat");
-
-        int numStatePerHMM = numStateMap / (numTri + numBase);
-
-        float[][] transitionMatrix = new float[4][4];
-        for (int i = 0; i < 3; ++i) {
-            Arrays.fill(transitionMatrix[i], LogMath.LOG_ZERO);
-            transitionMatrix[i][i] = logMath.lnToLog((float) Math.log(0.75));
-            transitionMatrix[i][i + 1] = logMath.lnToLog((float) Math.log(0.25));
-        }
-        Arrays.fill(transitionMatrix[3], LogMath.LOG_ZERO);
+        URL mdefUrl = new URL(new File(location, "mdef").getPath());
+        Scanner sc = new Scanner(mdefUrl.openStream());
 
         contextIndependentUnits = new HashMap<String, Unit>();
         hmmManager = new HMMManager();
+        int[] gmms = new int[3];
 
-        // Load the base phones
-        for (int i = 0; i < numBase; i++) {
-            String name = est.getString();
-            String left = est.getString();
-            String right = est.getString();
-            String position = est.getString();
-            String attribute = est.getString();
-            int tmat = est.getInt("tmat");
+        while (sc.hasNext()) {
+            String phone = sc.next();
+            String left = sc.next();
+            String right = sc.next();
+            String position = sc.next();
 
-            int[] stid = new int[numStatePerHMM - 1];
+            gmms[0] = sc.nextInt();
+            gmms[1] = sc.nextInt();
+            gmms[2] = sc.nextInt();
 
-            for (int j = 0; j < numStatePerHMM - 1; j++) {
-                stid[j] = est.getInt("j");
+            float[][] tmat = new float[4][4];
+            Arrays.fill(tmat[3], LogMath.LOG_ZERO);
+            for (int i = 0; i < 3; ++i) {
+                Arrays.fill(tmat[i], LogMath.LOG_ZERO);
+                tmat[i][i] = logMath.lnToLog(sc.nextFloat());
+                tmat[i][i + 1] = logMath.lnToLog(sc.nextFloat());
             }
-            est.expectString("N");
-
-            Unit unit = unitManager.getUnit(name, attribute.equals("filler"));
-            contextIndependentUnits.put(unit.getName(), unit);
-
-            // The first filler
-            if (unit.isFiller() && unit.getName().equals("SIL")) {
-                unit = UnitManager.SILENCE;
-            }
-
-            SenoneSequence ss = getSenoneSequence(stid);
-
-            HMM hmm = new SenoneHMM(unit, ss, transitionMatrix,
-                    HMMPosition.lookup(position));
-            hmmManager.put(hmm);
-        }
-
-        if (hmmManager.get(HMMPosition.UNDEFINED, UnitManager.SILENCE) == null) {
-            throw new IOException("Could not find SIL unit in acoustic model");
-        }
-
-        // Load the context dependent phones. If the useCDUnits
-        // property is false, the CD phones will not be created, but
-        // the values still need to be read in from the file.
-
-        String lastUnitName = "";
-        Unit lastUnit = null;
-        int[] lastStid = null;
-        SenoneSequence lastSenoneSequence = null;
-
-        for (int i = 0; i < numTri; i++) {
-            String name = est.getString();
-            String left = est.getString();
-            String right = est.getString();
-            String position = est.getString();
-            String attribute = est.getString();
-            int tmat = est.getInt("tmat");
-
-            int[] stid = new int[numStatePerHMM - 1];
-
-            for (int j = 0; j < numStatePerHMM - 1; j++) {
-                stid[j] = est.getInt("j");
-            }
-            est.expectString("N");
 
             Unit unit;
-            String unitName = (name + ' ' + left + ' ' + right);
+            Unit prevUnit = null;
+            String prevUnitName = null;
 
-            if (unitName.equals(lastUnitName)) {
-                unit = lastUnit;
+            if ("-".equals(left)) {
+                unit = unitManager.getUnit(phone, "SIL".equals(phone));
+                contextIndependentUnits.put(unit.getName(), unit);
             } else {
-                Unit[] leftContext = new Unit[1];
-                leftContext[0] = contextIndependentUnits.get(left);
+                String unitName = (phone + ' ' + left + ' ' + right);
 
-                Unit[] rightContext = new Unit[1];
-                rightContext[0] = contextIndependentUnits.get(right);
+                if (unitName.equals(prevUnitName)) {
+                    unit = prevUnit;
+                } else {
+                    Unit[] leftContext = new Unit[1];
+                    leftContext[0] = contextIndependentUnits.get(left);
+                    Unit[] rightContext = new Unit[1];
+                    rightContext[0] = contextIndependentUnits.get(right);
+                    Context context;
+                    context = LeftRightContext.get(leftContext, rightContext);
+                    unit = unitManager.getUnit(phone, false, context);
+                }
 
-                Context context = LeftRightContext.get(leftContext,
-                        rightContext);
-                unit = unitManager.getUnit(name, false, context);
+                prevUnitName = unitName;
+                prevUnit = unit;
             }
-            lastUnitName = unitName;
-            lastUnit = unit;
 
-            SenoneSequence ss = getSenoneSequence(stid);
-            HMM hmm = new SenoneHMM(unit, ss, transitionMatrix,
-                                    HMMPosition.lookup(position));
-            hmmManager.put(hmm);
+            SenoneSequence ss = getSenoneSequence(gmms);
+            HMMPosition pos = HMMPosition.lookup(position);
+            hmmManager.put(new SenoneHMM(unit, ss, tmat, pos));
         }
 
-        est.close();
-
-        /*
-        loadPhones();
-        loadContext(parser);
-        loadProperties();
-        */
-
-        /*
-        for (XXX context : contextData.keySet()) {
-            String phone = phones.get(context.getPhone());
-            //if (!context.hasContext() && phone.endsWith("_S")) {
-            //    phone = phone.substring(0, phone.length() - 2);
-            //    Unit unit = unitManager.getUnit(phone, "SIL".equals(phone));
-            //    if (unit.isFiller() && unit.getName().equals("SIL"))
-            //        unit = UnitManager.SILENCE;
-            //    System.out.println(phone);
-            //    contextIndependentUnits.put(unit.getName(), unit);
-            //    HMMPosition position = HMMPosition.UNDEFINED;
-            //    float[][] tmat = getTransitionMatrix(parser, context);
-            //    SenoneSequence seq = getSenoneSequence(context);
-            //    hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
-            //}
-            //else {
-            //    String left = phones.get(context.getLeftPhone());
-            //    String right = phones.get(context.getRightPhone());
-            //    if ("SIL".equals(left) && "SIL".equals(right)) {
-            //        phone = phone.substring(0, phone.length() - 2);
-            //        System.out.println(phone);
-            //        Unit unit = unitManager.getUnit(phone, false);
-            //        contextIndependentUnits.put(unit.getName(), unit);
-            //        HMMPosition position = HMMPosition.UNDEFINED;
-            //        float[][] tmat = getTransitionMatrix(parser, context);
-            //        SenoneSequence seq = getSenoneSequence(context);
-            //        hmmManager.put(new SenoneHMM(unit, seq, tmat, position));
-            //    }
-            //}
-        }
-        */
+        if (hmmManager.get(HMMPosition.UNDEFINED, UnitManager.SILENCE) == null)
+            throw new IOException("Could not find SIL unit in acoustic model");
     }
 
     private void loadPhones() throws IOException {
