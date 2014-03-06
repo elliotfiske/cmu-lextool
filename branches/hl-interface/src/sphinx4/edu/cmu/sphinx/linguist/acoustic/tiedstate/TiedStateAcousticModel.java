@@ -175,56 +175,55 @@ public class TiedStateAcousticModel implements AcousticModel {
     public HMM lookupNearestHMM(Unit unit, HMMPosition position,
                                 boolean exactMatch) {
 
-        if (exactMatch) {
+        if (exactMatch)
             return lookupHMM(unit, position);
-        } else {
-            HMMManager mgr = loader.getHMMManager();
-            HMM hmm = mgr.get(position, unit);
 
-            if (hmm != null) {
-                return hmm;
-            }
-            // no match, try a composite
+        HMMManager mgr = loader.getHMMManager();
+        HMM hmm = mgr.get(position, unit);
 
-            if (useComposites && hmm == null) {
-                if (isComposite(unit)) {
-
-                    hmm = getCompositeHMM(unit, position);
-                    if (hmm != null) {
-                        mgr.put(hmm);
-                    }
-                }
-            }
-            // no match, try at other positions
-            if (hmm == null) {
-                hmm = getHMMAtAnyPosition(unit);
-            }
-            // still no match, try different filler
-            if (hmm == null) {
-                hmm = getHMMInSilenceContext(unit, position);
-            }
-
-            // still no match, backoff to base phone
-            if (hmm == null) {
-                Unit ciUnit = lookupUnit(unit.getName());
-
-                assert unit.isContextDependent();
-                if (ciUnit == null) {
-                    logger.severe("Can't find HMM for " + unit.getName());
-                }
-                assert ciUnit != null;
-                assert !ciUnit.isContextDependent();
-
-                hmm = mgr.get(HMMPosition.UNDEFINED, ciUnit);
-            }
-
-            assert hmm != null;
-
-            // System.out.println("PROX match for "
-            // 	+ unit + " at " + position + ":" + hmm);
-
+        if (hmm != null) {
             return hmm;
         }
+        // no match, try a composite
+
+        if (useComposites && hmm == null) {
+            if (isComposite(unit)) {
+
+                hmm = getCompositeHMM(unit, position);
+                if (hmm != null) {
+                    mgr.put(hmm);
+                }
+            }
+        }
+        // no match, try at other positions
+        if (hmm == null) {
+            hmm = getHMMAtAnyPosition(unit);
+        }
+        // still no match, try different filler
+        if (hmm == null) {
+            hmm = getHMMInSilenceContext(unit, position);
+        }
+
+        // still no match, backoff to base phone
+        if (hmm == null) {
+            Unit ciUnit = lookupUnit(unit.getName());
+
+            assert unit.isContextDependent();
+            if (ciUnit == null) {
+                logger.severe("Can't find HMM for " + unit.getName());
+            }
+            assert ciUnit != null;
+            assert !ciUnit.isContextDependent();
+
+            hmm = mgr.get(HMMPosition.UNDEFINED, ciUnit);
+        }
+
+        assert hmm != null;
+
+        // System.out.println("PROX match for "
+        // 	+ unit + " at " + position + ":" + hmm);
+
+        return hmm;
     }
 
 
