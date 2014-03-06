@@ -131,7 +131,6 @@ public class AutoCepstrum extends BaseDataProcessor {
             filterBank = new MelFrequencyFilterBank(
                     Double.parseDouble((String) featParams.get("-lowerf")),
                     Double.parseDouble((String) featParams.get("-upperf")),
-                    Double.parseDouble((String) featParams.get("-fheight")),
                     Integer.parseInt((String) featParams.get("-nfilt")));
             selectedDataProcessors.add(filterBank);
 
