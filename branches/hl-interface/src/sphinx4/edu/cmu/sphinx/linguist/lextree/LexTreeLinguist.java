@@ -431,8 +431,8 @@ public class LexTreeLinguist implements Linguist {
 
     protected void generateHmmTree() {
         hmmPool = new HMMPool(acousticModel, logger, unitManager);
-
-        hmmTree = new HMMTree(hmmPool, dictionary, languageModel, addFillerWords, languageWeight);
+        hmmTree = new HMMTree(hmmPool, dictionary, languageModel,
+                              addFillerWords, languageWeight);
 
         hmmPool.dumpInfo();
     }

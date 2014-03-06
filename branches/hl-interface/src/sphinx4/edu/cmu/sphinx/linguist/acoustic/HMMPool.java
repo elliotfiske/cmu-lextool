@@ -46,23 +46,21 @@ public class HMMPool {
      *
      * @param model the model to use for the pool
      */
-    public HMMPool(AcousticModel model, Logger logger, UnitManager unitManager) {
+    public HMMPool(AcousticModel model, Logger logger, UnitManager unitManager)
+    {
         this.logger = logger;
         int maxCIUnits = 0;
         this.model = model;
         this.unitManager = unitManager;
         TimerPool.getTimer(this,"Build HMM Pool").start();
 
-        if (model.getLeftContextSize() != 1) {
+        if (model.getLeftContextSize() != 1)
             throw new Error("LexTreeLinguist: Unsupported left context size");
-        }
 
-        if (model.getRightContextSize() != 1) {
+        if (model.getRightContextSize() != 1)
             throw new Error("LexTreeLinguist: Unsupported right context size");
-        }
 
         // count CI units:
-
         for (Iterator<Unit> i = model.getContextIndependentUnitIterator(); i.hasNext();) {
             Unit unit = i.next();
             logger.fine("CI unit " + unit);
@@ -173,7 +171,8 @@ public class HMMPool {
 
 
     /**
-     * Given a unit id and a position, return the HMM associated with the unit/position
+     * Given a unit id and a position, return the HMM associated with the
+     * unit/position.
      *
      * @param unitID   the id of the unit
      * @param position the position within the word
@@ -195,10 +194,9 @@ public class HMMPool {
             LeftRightContext context = (LeftRightContext) unit.getContext();
             assert context.getLeftContext().length == 1;
             assert context.getRightContext().length == 1;
-            return buildID(
-                    getSimpleUnitID(unit),
-                    getSimpleUnitID(context.getLeftContext()[0]),
-                    getSimpleUnitID(context.getRightContext()[0]));
+            return buildID(getSimpleUnitID(unit),
+                           getSimpleUnitID(context.getLeftContext()[0]),
+                           getSimpleUnitID(context.getRightContext()[0]));
         } else {
             return getSimpleUnitID(unit);
         }
@@ -217,7 +215,9 @@ public class HMMPool {
 
 
     public boolean isValidID(int unitID) {
-        return unitID >= 0 && unitID < unitTable.length && unitTable[unitID] != null;
+        return unitID >= 0 &&
+               unitID < unitTable.length &&
+               unitTable[unitID] != null;
     }
 
 
@@ -234,9 +234,8 @@ public class HMMPool {
         // filler than we have no context ... so use the CI
         // form
 
-        if (unitTable[unitID] == null) {
+        if (unitTable[unitID] == null)
             return -1;
-        }
 
         int id;
         if (unitTable[unitID].isFiller()) {
