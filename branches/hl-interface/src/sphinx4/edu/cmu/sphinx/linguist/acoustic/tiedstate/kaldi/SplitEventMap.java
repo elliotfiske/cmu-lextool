@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import edu.cmu.sphinx.linguist.acoustic.Unit;
-
 
 /**
  * Binary decision tree.
@@ -40,16 +38,15 @@ public class SplitEventMap extends EventMapWithKey {
     }
 
     /**
-     * Maps speech unit to probability distribution function.
+     * Maps given context to probability distribution function.
      *
-     * @param unit unit of speech.
+     * @param context phonetic context
      *
      * @return identifier of probability distribution function.
      */
-    public int map(int pdfClass, Unit unit) {
-        int id = (-1 == key ? pdfClass : getKeyValue(key, unit));
-        return answers.contains(id) ?
-               yesMap.map(pdfClass, unit) : noMap.map(pdfClass, unit);
+    public int map(int pdfClass, int[] context) {
+        return answers.contains(getKeyValue(pdfClass, context)) ?
+               yesMap.map(pdfClass, context) : noMap.map(pdfClass, context);
     }
 }
 

@@ -24,7 +24,8 @@ public class TableEventMap extends EventMapWithKey {
      *
      */
     @Override
-    public int map(int pdfClass, Unit unit) {
-        return table.get(getKeyValue(pdfClass, unit)).map(pdfClass, unit);
+    public int map(int pdfClass, int[] context) {
+        EventMap eventMap = table.get(getKeyValue(pdfClass, context));
+        return eventMap.map(pdfClass, context);
     }
 }

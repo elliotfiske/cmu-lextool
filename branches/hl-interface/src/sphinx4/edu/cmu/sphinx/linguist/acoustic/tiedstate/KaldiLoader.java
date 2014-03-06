@@ -7,7 +7,6 @@
  * See the file "license.terms" for information on usage and
  * redistribution of this file, and for a DISCLAIMER OF ALL 
  * WARRANTIES.
- *
  */
 
 package edu.cmu.sphinx.linguist.acoustic.tiedstate;
@@ -23,60 +22,6 @@ import edu.cmu.sphinx.util.props.*;
 import edu.cmu.sphinx.util.ExtendedStreamTokenizer;
 import edu.cmu.sphinx.util.LogMath;
 
-
-class XXX {
-
-    private final int phone;
-    private final int left;
-    private final int right;
-
-    public XXX(int phone) {
-        this(phone, -1, -1);
-    }
-
-    public XXX(int phone, int left, int right) {
-        this.phone = phone;
-        this.left = left;
-        this.right = right;
-    }
-
-    public int getPhone() {
-        return phone;
-    }
-
-    public int getLeftPhone() {
-        return left;
-    }
-
-    public int getRightPhone() {
-        return right;
-    }
-
-    public boolean hasContext() {
-        return -1 != left && -1 != right;
-    }
-
-    @Override
-    public boolean equals(Object object) {
-        if (!(object instanceof XXX))
-            return false;
-
-        XXX other = (XXX) object;
-        return phone == other.phone &&
-            left == other.left &&
-            right == other.right;
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * (31 * phone + left) + right;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Context {%d, %d, %d}", phone, left, right);
-    }
-}
 
 final class HmmState {
 
@@ -150,7 +95,7 @@ class Triple {
 
 public class KaldiLoader implements Loader {
 
-    final class AcousticModelParser {
+    private final class AcousticModelParser {
 
         private final Scanner scanner;
 
@@ -159,6 +104,7 @@ public class KaldiLoader implements Loader {
         private Map<Triple, Integer> transitionStates;
         private List<Float> logProbabilities;
         private List<DiagGmm> mixtures;
+        private EventMap eventMap;
 
         private int contextWidth;
         private int contextPosition;
@@ -203,39 +149,41 @@ public class KaldiLoader implements Loader {
             contextWidth = scanner.nextInt();
             contextPosition = scanner.nextInt();
             expectToken("ToPdf");
-            EventMap eventMap = parseEventMap();
+            eventMap = parseEventMap();
+            expectToken("EndContextDependency");
         }
 
         private EventMap parseEventMap() {
             String token = scanner.next();
+
+            if ("CE".equals(token))
+                return new ConstantEventMap(scanner.nextInt());
+
+            if ("SE".equals(token))
+                return parseSplitEventMap();
+
+            if ("TE".equals(token))
+                return parseTableEventMap();
+
             if ("NULL".equals(token))
                 return null;
 
-            if ("CE".equals(token))
-                return parseConstantTableEventMap();
-            else if ("SE".equals(token))
-                return parseSplitEventMap();
-            else if ("TE".equals(token))
-                return parseTableEventMap();
-            else
-                throw new InputMismatchException(token);
-        }
-
-        private EventMap parseConstantTableEventMap() {
-            return new ConstantEventMap(scanner.nextInt());
+            throw new InputMismatchException(token);
         }
 
         private EventMap parseSplitEventMap() {
             int key = scanner.nextInt();
             Collection<Integer> answers = new ArrayList<Integer>();
+
             for (String token : parseTokenList("[", "]"))
                 answers.add(Integer.valueOf(token));
 
             expectToken("{");
-            EventMap eventMap = new SplitEventMap(key, answers,
-                                                  parseEventMap(),
-                                                  parseEventMap());
+            EventMap yesMap = parseEventMap();
+            EventMap noMap = parseEventMap();
+            EventMap eventMap = new SplitEventMap(key, answers, yesMap, noMap);
             expectToken("}");
+
             return eventMap;
         }
 
@@ -393,6 +341,10 @@ public class KaldiLoader implements Loader {
         public int getContextPosition() {
             return contextPosition;
         }
+
+        public EventMap getEventMap() {
+            return eventMap;
+        }
     }
 
     @S4Component(type = UnitManager.class)
@@ -406,19 +358,17 @@ public class KaldiLoader implements Loader {
     private String location;
     private UnitManager unitManager;
 
-    private Map<Integer, String> phones;
+    private Map<String, Integer> phones;
     private Pool<Senone> senonePool;
     private HMMManager hmmManager;
     private Properties modelProperties;
     private Map<String, Unit> contextIndependentUnits;
-    // context -> [state -> pdf]
-    private Map<XXX, SortedMap<Integer, Integer>> contextData;
 
     int leftContextSize;
     int rightContextSize;
 
     /**
-     * Empty consructor.
+     * Constructs empty object.
      *
      * Does nothing but is required for instantiation from the context object.
      */
@@ -452,123 +402,21 @@ public class KaldiLoader implements Loader {
         for (DiagGmm gmm : parser.getGaussianMixtures())
             senonePool.put(gmm.getId(), gmm);
 
-        URL mdefUrl = new URL(new File(location, "mdef").getPath());
-        Scanner sc = new Scanner(mdefUrl.openStream());
-
-        contextIndependentUnits = new HashMap<String, Unit>();
-        hmmManager = new HMMManager();
-        int[] gmms = new int[3];
-
-        while (sc.hasNext()) {
-            String phone = sc.next();
-            String left = sc.next();
-            String right = sc.next();
-            String position = sc.next();
-
-            gmms[0] = sc.nextInt();
-            gmms[1] = sc.nextInt();
-            gmms[2] = sc.nextInt();
-
-            float[][] tmat = new float[4][4];
-            Arrays.fill(tmat[3], LogMath.LOG_ZERO);
-            for (int i = 0; i < 3; ++i) {
-                Arrays.fill(tmat[i], LogMath.LOG_ZERO);
-                tmat[i][i] = logMath.lnToLog(sc.nextFloat());
-                tmat[i][i + 1] = logMath.lnToLog(sc.nextFloat());
-            }
-
-            Unit unit;
-            Unit prevUnit = null;
-            String prevUnitName = null;
-
-            if ("-".equals(left)) {
-                unit = unitManager.getUnit(phone, "SIL".equals(phone));
-                contextIndependentUnits.put(unit.getName(), unit);
-            } else {
-                String unitName = (phone + ' ' + left + ' ' + right);
-
-                if (unitName.equals(prevUnitName)) {
-                    unit = prevUnit;
-                } else {
-                    Unit[] leftContext = new Unit[1];
-                    leftContext[0] = contextIndependentUnits.get(left);
-                    Unit[] rightContext = new Unit[1];
-                    rightContext[0] = contextIndependentUnits.get(right);
-                    Context context;
-                    context = LeftRightContext.get(leftContext, rightContext);
-                    unit = unitManager.getUnit(phone, false, context);
-                }
-
-                prevUnitName = unitName;
-                prevUnit = unit;
-            }
-
-            SenoneSequence ss = getSenoneSequence(gmms);
-            HMMPosition pos = HMMPosition.lookup(position);
-            hmmManager.put(new SenoneHMM(unit, ss, tmat, pos));
-        }
-
-        if (hmmManager.get(HMMPosition.UNDEFINED, UnitManager.SILENCE) == null)
-            throw new IOException("Could not find SIL unit in acoustic model");
+        loadPhones();
     }
 
     private void loadPhones() throws IOException {
-        // Load base phones.
         File file = new File(location, "phones.txt");
         InputStream stream = new URL(file.getPath()).openStream();
         Reader reader = new InputStreamReader(stream);
         BufferedReader br = new BufferedReader(reader);
-        phones = new HashMap<Integer, String>();
+        phones = new HashMap<String, Integer>();
         String line;
 
         while (null != (line = br.readLine())) {
             // Line format: <PHONE> <PHONE-ID>.
             String[] fields = line.split(" ");
-            phones.put(Integer.parseInt(fields[1]), fields[0]);
-        }
-    }
-
-    private void loadContext(AcousticModelParser parser) throws IOException {
-        hmmManager = new HMMManager();
-        contextData = new HashMap<XXX, SortedMap<Integer, Integer>>();
-
-        File file = new File(location, "context");
-        InputStream stream = new URL(file.getPath()).openStream();
-        Reader reader = new InputStreamReader(stream);
-        BufferedReader br = new BufferedReader(reader);
-        String line;
-
-        while (null != (line = br.readLine())) {
-            int phone;
-            XXX context;
-            String[] fields = line.split(" ");
-
-            if (fields.length > 3) {
-                phone = Integer.parseInt(fields[3]);
-                context = new XXX(phone,
-                                      Integer.parseInt(fields[2]),
-                                      Integer.parseInt(fields[4]));
-            } else {
-                phone = Integer.parseInt(fields[2]);
-                context = new XXX(phone);
-            }
-
-            SortedMap<Integer, Integer> states;
-            if (!contextData.containsKey(context))
-                contextData.put(context,
-                        states = new TreeMap<Integer, Integer>());
-            else
-                states = contextData.get(context);
-
-            int pdf = Integer.parseInt(fields[0]);
-            int pdfClass = Integer.parseInt(fields[1]);
-
-            // For each state with <pdf-class> within HMM topology for the
-            // <phone> assign <pdf-id>.
-            for (HmmState state : parser.getPhoneStates().get(phone)) {
-                if (pdfClass == state.getPdfClass())
-                    states.put(state.getId(), pdf);
-            }
+            phones.put(fields[0], Integer.parseInt(fields[1]));
         }
     }
 
@@ -585,46 +433,6 @@ public class KaldiLoader implements Loader {
         }
 
         return properties;
-    }
-
-    public float[][] getTransitionMatrix(
-            AcousticModelParser parser, XXX context)
-    {
-        List<HmmState> states = parser.getPhoneStates().get(context.getPhone());
-        float[][] tmat = new float[states.size() + 1][states.size() + 1];
-
-        for (Integer i : contextData.get(context).keySet()) {
-            Arrays.fill(tmat[i], LogMath.LOG_ZERO);
-            int pdf = contextData.get(context).get(i);
-            Triple triple = new Triple(context.getPhone(), i, pdf);
-            int idx = parser.getTransitionIndex(triple);
-            int tid = 0;
-
-            for (Integer j : states.get(i).getTransitions())
-                tmat[i][j] = parser.getProbability(idx + tid++);
-        }
-
-        Arrays.fill(tmat[states.size()], LogMath.LOG_ZERO);
-
-        return tmat;
-    }
-
-    protected SenoneSequence getSenoneSequence(int[] stateid) {
-        Senone[] senones = new Senone[stateid.length];
-        for (int i = 0; i < stateid.length; i++) {
-            senones[i] = senonePool.get(stateid[i]);
-        }
-        return new SenoneSequence(senones);
-    }
-
-
-    private SenoneSequence getSenoneSequence(XXX context) {
-        Map<Integer, Integer> states = contextData.get(context);
-        Senone[] senones = new Senone[states.size()];
-        for (Map.Entry<Integer, Integer> e : states.entrySet())
-            senones[e.getKey()] = senonePool.get(e.getValue());
-
-        return new SenoneSequence(senones);
     }
 
     /**
