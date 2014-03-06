@@ -218,8 +218,7 @@ public class SenoneHMM implements HMM {
 
     @Override
     public int hashCode() {
-        return getTransitionMatrix().hashCode() * 3 +
-                getSenoneSequence().hashCode();
+        return getSenoneSequence().hashCode();
     }
 
 
@@ -229,10 +228,7 @@ public class SenoneHMM implements HMM {
             return true;
         } else if (o instanceof SenoneHMM) {
             SenoneHMM other = (SenoneHMM) o;
-            return getTransitionMatrix() ==
-                    other.getTransitionMatrix()
-                    && getSenoneSequence().equals(
-                    other.getSenoneSequence());
+		return getSenoneSequence().equals(other.getSenoneSequence());
         }
         return false;
     }
