@@ -19,9 +19,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Scanner;
 
 import edu.cmu.sphinx.linguist.acoustic.HMMPosition;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
@@ -49,6 +53,7 @@ public class KaldiLoader implements Loader {
     private HMMManager hmmManager;
     private Properties modelProperties;
     private Map<String, Unit> contextIndependentUnits;
+    private float[][] transform;
 
     /**
      * Constructs empty object.
@@ -107,7 +112,43 @@ public class KaldiLoader implements Loader {
             hmmManager.get(HMMPosition.UNDEFINED, unit);
         }
 
+        loadTransform();
         loadProperties();
+    }
+
+    private void loadTransform() throws IOException {
+        URL transformUrl = new URL(new File(location, "final.mat").getPath());
+        Reader reader = new InputStreamReader(transformUrl.openStream());
+        BufferedReader br = new BufferedReader(reader);
+        List<Float> values = new ArrayList<Float>();
+        int numRows = 0;
+        int numCols = 0;
+        String line;
+
+        while (null != (line = br.readLine())) {
+            int colCount = 0;
+
+            for (String word : line.split("\\s+")) {
+                if (word.isEmpty() || "[".equals(word) || "]".equals(word))
+                    continue;
+
+                values.add(Float.parseFloat(word));
+                ++colCount;
+            }
+
+            if (colCount > 0)
+                ++numRows;
+
+            numCols = colCount;
+        }
+
+        transform = new float[numRows][numCols];
+        Iterator<Float> valueIterator = values.iterator();
+
+        for (int i = 0; i < numRows; ++i) {
+            for (int j = 0; j < numCols; ++j)
+                transform[i][j] = valueIterator.next();
+        }
     }
 
     private void loadProperties() throws IOException {
@@ -244,6 +285,6 @@ public class KaldiLoader implements Loader {
      * Not implemented.
      */
     public float[][] getTransformMatrix() {
-        return null;
+        return transform;
     }
 }

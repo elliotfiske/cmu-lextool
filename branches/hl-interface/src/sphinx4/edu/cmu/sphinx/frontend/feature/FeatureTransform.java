@@ -13,22 +13,27 @@
  */
 package edu.cmu.sphinx.frontend.feature;
 
+import java.util.Arrays;
+
 import edu.cmu.sphinx.frontend.*;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.*;
 import edu.cmu.sphinx.util.props.*;
 
 /**
- * Implements a linear feature transformation transformation. It might be a
- * dimension reduction or just a decorrelation transform. This component
- * requires a special model trained with LDA/MLLT transform.
+ * Implements a linear feature transformation transformation.
+ *
+ * It might be a dimension reduction or just a decorrelation transform. This
+ * component requires a special model trained with LDA/MLLT transform.
  */
 public class FeatureTransform extends BaseDataProcessor {
 
-    /** The name of the transform matrix file */
+    /**
+     * The name of the transform matrix file.
+     */
     @S4Component(type = Loader.class)
     public final static String PROP_LOADER = "loader";
 
-    float[][] transformMatrix;
+    float[][] transform;
     protected Loader loader;
 
     int rows;
@@ -52,7 +57,6 @@ public class FeatureTransform extends BaseDataProcessor {
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
-
         init((Loader) ps.getComponent(PROP_LOADER));
     }
 
@@ -64,12 +68,8 @@ public class FeatureTransform extends BaseDataProcessor {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        this.transformMatrix = loader.getTransformMatrix();
 
-        if (transformMatrix != null) {
-            this.rows = transformMatrix.length;
-            this.values = transformMatrix[0].length;
-        }
+        transform = loader.getTransformMatrix();
     }
 
     /**
@@ -84,32 +84,34 @@ public class FeatureTransform extends BaseDataProcessor {
      */
     @Override
     public Data getData() throws DataProcessingException {
-        Data input = getPredecessor().getData();
-        
-        if (transformMatrix == null)
-            return input;
-        
-        Data output;
+        Data data = getPredecessor().getData();
+
+        if (null == transform || null == data || !(data instanceof FloatData))
+            return data;
+
+        FloatData floatData = (FloatData) data; 
+        float[] features = floatData.getValues();
+
+        if (features.length > transform[0].length + 1)
+            throw new IllegalArgumentException("dimenstion mismatch");
+
+        float[] result = new float[transform.length];
         getTimer().start();
-        if (input != null && input instanceof FloatData) {
-            FloatData inputData = (FloatData) input;
-            float[] in = inputData.getValues();
-            float[] out = new float[rows];
 
-            assert in.length == values;
-
-            for (int i = 0; i < rows; i++) {
-                out[i] = 0;
-                float transform_matrix_i[] = transformMatrix[i];
-                for (int j = 0; j < values; j++) {
-                    out[i] += in[j] * transform_matrix_i[j];
-                }
-            }
-            output = new FloatData(out, inputData.getSampleRate(), inputData.getFirstSampleNumber());
-        } else {
-            output = input;
+        for (int i = 0; i < transform.length; ++i) {
+            for (int j = 0; j < features.length; ++j)
+                result[i] += transform[i][j] * features[j];
         }
+
+        if (features.length > transform[0].length) {
+            for (int i = 0; i < transform.length; ++i)
+                result[i] += transform[i][features.length];
+        }
+
         getTimer().stop();
-        return output;
+
+        return new FloatData(result,
+                             floatData.getSampleRate(),
+                             floatData.getFirstSampleNumber());
     }
 }
