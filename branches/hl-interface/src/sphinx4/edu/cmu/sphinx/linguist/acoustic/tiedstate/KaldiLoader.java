@@ -17,7 +17,7 @@ import java.net.*;
 import java.util.*;
 
 import edu.cmu.sphinx.linguist.acoustic.*;
-import edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi.DiagGmm;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.kaldi.*;
 
 import edu.cmu.sphinx.util.props.*;
 import edu.cmu.sphinx.util.ExtendedStreamTokenizer;
@@ -131,6 +131,7 @@ class Triple {
             return false;
 
         Triple other = (Triple) object;
+
         return phone    == other.phone &&
                hmmState == other.hmmState &&
                pdf      == other.pdf;
@@ -168,15 +169,15 @@ public class KaldiLoader implements Loader {
             // TODO: rewrite with StreamTokenizer, see ExtendedStreamTokenizer.
             File modelFile = new File(path, "final.mdl");
             InputStream modelStream = new URL(modelFile.getPath()).openStream();
-            //File treeFile = new File(path, "tree");
-            //InputStream treeStream = new URL(treeFile.getPath()).openStream();
+            File treeFile = new File(path, "tree");
+            InputStream treeStream = new URL(treeFile.getPath()).openStream();
 
-            // InputStream s = new SequenceInputStream(modelStream, treeStream);
-            scanner = new Scanner(modelStream);
+            InputStream s = new SequenceInputStream(modelStream, treeStream);
+            scanner = new Scanner(s);
 
             try {
                 parseModel();
-                // parseTree();
+                parseTree();
             } catch (InputMismatchException e) {
                 // TODO: refactor
                 throw e;
@@ -201,45 +202,55 @@ public class KaldiLoader implements Loader {
             expectToken("ContextDependency");
             contextWidth = scanner.nextInt();
             contextPosition = scanner.nextInt();
+            expectToken("ToPdf");
+            EventMap eventMap = parseEventMap();
         }
 
-        private void parseEventMap() {
+        private EventMap parseEventMap() {
             String token = scanner.next();
             if ("NULL".equals(token))
-                return;
+                return null;
 
             if ("CE".equals(token))
-                parseConstantTableEventMap();
-            else if ("TE".equals(token))
-                parseTableEventMap();
+                return parseConstantTableEventMap();
             else if ("SE".equals(token))
-                parseSplitEventMap();
+                return parseSplitEventMap();
+            else if ("TE".equals(token))
+                return parseTableEventMap();
             else
                 throw new InputMismatchException(token);
         }
 
-        private void parseConstantTableEventMap() {
-            int pdfId = scanner.nextInt();
+        private EventMap parseConstantTableEventMap() {
+            return new ConstantEventMap(scanner.nextInt());
         }
 
-        private void parseTableEventMap() {
-            int pos = scanner.nextInt();
-            int tableSize = scanner.nextInt();
-            expectToken("(");
-            while (0 < tableSize--)
-                parseEventMap();
-            expectToken(")");
-        }
+        private EventMap parseSplitEventMap() {
+            int key = scanner.nextInt();
+            Collection<Integer> answers = new ArrayList<Integer>();
+            for (String token : parseTokenList("[", "]"))
+                answers.add(Integer.valueOf(token));
 
-        private void parseSplitEventMap() {
-            int pos = scanner.nextInt();
-            expectToken("[");
-            String token;
-            while (!"]".equals(token = scanner.next()));
             expectToken("{");
-            parseEventMap();
-            parseEventMap();
+            EventMap eventMap = new SplitEventMap(key, answers,
+                                                  parseEventMap(),
+                                                  parseEventMap());
             expectToken("}");
+            return eventMap;
+        }
+
+        private EventMap parseTableEventMap() {
+            int key = scanner.nextInt();
+            int size = scanner.nextInt();
+            List<EventMap> table = new ArrayList<EventMap>(size);
+
+            expectToken("(");
+
+            while (0 < size--)
+                table.add(parseEventMap());
+
+            expectToken(")");
+            return new TableEventMap(key, table);
         }
 
         private void parseTransitionModel() {
@@ -439,7 +450,7 @@ public class KaldiLoader implements Loader {
         senonePool = new Pool<Senone>("senones");
 
         for (DiagGmm gmm : parser.getGaussianMixtures())
-            senonePool.put((int) gmm.getID(), gmm);
+            senonePool.put(gmm.getId(), gmm);
 
         URL mdefUrl = new URL(new File(location, "mdef").getPath());
         Scanner sc = new Scanner(mdefUrl.openStream());

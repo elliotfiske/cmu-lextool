@@ -11,17 +11,27 @@ import edu.cmu.sphinx.linguist.acoustic.tiedstate.ScoreCachingSenone;
 import edu.cmu.sphinx.util.LogMath;
 
 /**
+ * Gaussian Mixture Model with diagonal covariances.
  *
  * @see DiagGmm class in Kaldi.
  */
 public class DiagGmm extends ScoreCachingSenone {
 
-    private long id;
+    private int id;
     private float[] gconsts;
     private float[] invVars;
     private float[] meansInvVars;
 
-    public DiagGmm(long id,
+    /**
+     * Constructs new mixture model.
+     *
+     * @param   id           identifier of probability density function
+     *                       represented by this model
+     * @param   gconsts      sdf
+     * @param   meansInvVars ...
+     * @param   invVars      ...
+     */
+    public DiagGmm(int id,
                    List<Float> gconsts,
                    List<Float> meansInvVars,
                    List<Float> invVars)
@@ -30,6 +40,10 @@ public class DiagGmm extends ScoreCachingSenone {
         this.gconsts = asFloatArray(gconsts);
         this.meansInvVars = asFloatArray(meansInvVars);
         this.invVars = asFloatArray(invVars);
+    }
+
+    public int getId() {
+        return id;
     }
 
     @Override
@@ -47,6 +61,7 @@ public class DiagGmm extends ScoreCachingSenone {
     public float[] calculateComponentScore(Data data) {
         float[] features = FloatData.toFloatData(data).getValues();
         int dim = meansInvVars.length / gconsts.length;
+
         if (features.length != dim) {
             String fmt = "feature vector must be of length %d, got %d";
             String msg = String.format(fmt, dim, features.length);
