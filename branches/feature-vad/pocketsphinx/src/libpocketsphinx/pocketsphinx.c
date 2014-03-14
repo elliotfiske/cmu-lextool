@@ -525,7 +525,7 @@ ps_get_kws(ps_decoder_t *ps, const char* name)
     ps_search_t *search = ps_find_search(ps, name);
     if (search && strcmp(PS_SEARCH_KWS, ps_search_name(search)))
         return NULL;
-    return search ? ((kws_search_t *) search)->keyphrase : NULL;
+    return search ? kws_search_get_keywords(search) : NULL;
 }
 
 static int
