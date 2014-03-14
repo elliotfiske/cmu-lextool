@@ -148,13 +148,14 @@ public class SpeechRecognizer {
             decoder.processRaw(buffer, nread, false, false);
 
         decoder.endUtt();
+        handler.removeMessages(MSG_NEXT);
         final Hypothesis hypothesis = decoder.hyp();
         if (null != hypothesis)
             mainLoopHandler.post(new ResultCallback(hypothesis));
     }
     
     public String getSearchName() {
-    	return decoder.getSearch();
+        return decoder.getSearch();
     }
     
     public void setFsg(String name, FsgModel fsg) {
