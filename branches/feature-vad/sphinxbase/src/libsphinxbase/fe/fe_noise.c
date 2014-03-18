@@ -71,7 +71,7 @@
 #define MAX_GAIN 20
 
 /* VAD constants */
-#define VAD_THRESHOLD 1.5
+#define VAD_THRESHOLD 2.6
 
 struct noise_stats_s {
     /* Smoothed power */
@@ -266,16 +266,10 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 {
     powspec_t *signal;
     powspec_t *gain;
-    powspec_t snr;
     int32 i, num_filts;
     uint8 local_vad_state;
 
-// TODO: Not properly converted yet
-#ifdef FIXED_POINT
-    float lrt;
-#else
-    powspec_t lrt;
-#endif
+    float lrt, snr;
 
     num_filts = noise_stats->num_filters;
 
@@ -286,12 +280,12 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
         for (i = 0; i < num_filts; i++) {
             noise_stats->power[i] = mfspec[i];
             noise_stats->noise[i] = mfspec[i];
-#ifdef FIXED_POINT
+#ifndef FIXED_POINT
+            noise_stats->floor[i] = mfspec[i] / noise_stats->max_gain;
+            noise_stats->peak[i] = 0.0;       
+#else
             noise_stats->floor[i] = mfspec[i] - noise_stats->max_gain;
             noise_stats->peak[i] = MIN_FIXLOG;
-#else
-            noise_stats->floor[i] = mfspec[i] / noise_stats->max_gain;
-            noise_stats->peak[i] = 0.0;
 #endif
         }
         noise_stats->undefined = FALSE;
@@ -299,13 +293,13 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
 
     /* Calculate smoothed power */
     for (i = 0; i < num_filts; i++) {
-#ifdef FIXED_POINT
-        noise_stats->power[i] = fe_log_add(noise_stats->lambda_power + noise_stats->power[i],
-                                           noise_stats->comp_lambda_power + mfspec[i]);
-#else
+#ifndef FIXED_POINT
         noise_stats->power[i] =
-            noise_stats->lambda_power * noise_stats->power[i] + noise_stats->comp_lambda_power * mfspec[i];
-#endif            
+            noise_stats->lambda_power * noise_stats->power[i] + noise_stats->comp_lambda_power * mfspec[i];   
+#else
+        noise_stats->power[i] = fe_log_add(noise_stats->lambda_power + noise_stats->power[i],
+            noise_stats->comp_lambda_power + mfspec[i]);
+#endif
     }
 
     /* Noise estimation and vad decision */
@@ -314,19 +308,18 @@ fe_remove_noise(noise_stats_t * noise_stats, powspec_t * mfspec)
     lrt = 0.0;
     for (i = 0; i < num_filts; i++) {
 #ifndef FIXED_POINT
-	signal[i] = noise_stats->power[i] - noise_stats->noise[i];
-        if (signal[i] < 0)
-            signal[i] = 0;
-	snr = noise_stats->power[i] / noise_stats->noise[i];
-	lrt += log(1.0 / (1 + snr)) + snr;
+        signal[i] = noise_stats->power[i] - noise_stats->noise[i];
+            if (signal[i] < 0)
+                signal[i] = 0;
+        snr = log(noise_stats->power[i] / noise_stats->noise[i]);
 #else
         signal[i] = fe_log_sub(noise_stats->power[i], noise_stats->noise[i]);
-	snr = noise_stats->power[i] - noise_stats->noise[i];
-	lrt += log(1.0 / (1 + exp(FIX2FLOAT(snr)))) + exp(FIX2FLOAT(snr));
+        snr = MFCC2FLOAT(noise_stats->power[i] - noise_stats->noise[i]);
 #endif    
+        if (snr > lrt)
+            lrt = snr;
     }
 
-    lrt /= num_filts;
     local_vad_state = lrt > VAD_THRESHOLD;
 
     fe_low_envelope(noise_stats, signal, noise_stats->floor, num_filts);
