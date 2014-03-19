@@ -1,4 +1,5 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html PUBLIC "-//IETF//DTD HTML 2.0//EN">
+
 <!--
 
 Copyright 1999-2004 Carnegie Mellon University.
@@ -12,6 +13,8 @@ WARRANTIES.
 
 -->
 
+
+
 <html>
 
 <head>
@@ -23,16 +26,16 @@ WARRANTIES.
 </head>
 
 <body>
-  <span style="font-family: Arial; ">
+  <font face="Arial">
   <table bgcolor="#99CCFF" width="100%">
     <tr>
-      <td align="center" width="100%">
-        <div style="text-align: center;"><span style="font-family: Times New Roman; "><h1>Sphinx-4 Frequently
-        Asked Questions</h1></span></div>
+      <td align=center width="100%">
+        <center><font face="Times New Roman"><h1>Sphinx-4 Frequently
+        Asked Questions</h1></font></center>
       </td>
     </tr>
   </table>
-  </span>
+  </font>
 
 <p>
 
@@ -41,12 +44,12 @@ WARRANTIES.
 <li><a href="#who_created">Who created Sphinx-4?</a></li>
 <li><a href="#questions">I have a question about Sphinx-4. How can I get it answered?</a></li>
 <li><a href="#contact">How can I contact the Sphinx-4 team?</a></li>
-<li><a href="#which_dist">Which Sphinx-4 distribution should I use?</a></li>
+<li><a href="#which_dist">Which Sphinx-4 distribution should I use?<a></li>
 </ul>
 
 <b>Java</b>
 <ul>
-<li><a href="#performance">How well does Sphinx-4 perform compared to other speech recognizers?</a></li>
+<li><a href="#performance">How well does Sphinx-4 perform compared to other speech recognizers?</li>
 <li><a href="#java_slow">Isn't the Java Platform too slow to be used for speech recognition?</a></li>
 <li><a href="#support_jsapi">Does Sphinx-4 support the Java Speech API (JSAPI)?</a></li>
 <li><a href="#learn_jsgf">Where can I learn more about the Java Speech Grammar Format (JSGF)?</a></li>
@@ -67,18 +70,17 @@ WARRANTIES.
 <li><a href="#out_of_grammar">How can I detect and ignore out-of-grammar utterances?</a></li>
 <li><a href="#change_grammars">How can I change my language models or grammars at runtime?</a></li>
 <li><a href="#word_spotting">How can I perform word-spotting?</a></li>
-<li><a href="#8k_audio">Can I use Sphinx-4 to recognize telephone audio?</a></li>
+<li><a href="#8k_audio">Can I use Sphinx-4 to recognize 8khz audio?</a></li>
 <li><a href="#regression_data">Where can I get the audio data used in the regression tests?</a></li>
 <li><a href="#result">How do I use the Result object?</a></li>
 <li><a href="#speaker_identification">Does Sphinx-4 support speaker identification?</a></li>
 <li><a href="#confidence_scores">How can I obtain confidence scores for the recognition result?</a></li>
-<li><a href="#no_vocabulary">How to decode without predefined vocabulary?</a></li>
 </ul>
 
-<b>Acoustic &amp; Language Models</b>
+<b>Acoustic & Language Models</b>
 
 <ul>
-<li><a href="#train_am">How can I train my own acoustic models?</a></li>
+<li><a href="#train_am">How can I train my own acoustic models?</b></a></li>
 <li><a href="#sphinxtrain_models">How do I use models trained by SphinxTrain in Sphinx-4?</a></li>
 <li><a href="#sphinxtrain_feats">Does the Sphinx-4 front end generate the same features as the SphinxTrain wave2feat program?</a></li>
 <li><a href="#create_lm">How can I create my own language models?</a></li>
@@ -86,17 +88,11 @@ WARRANTIES.
 <li><a href="#create_dict">How can I create my own dictionary?</a></li>
 </ul>
 
-<b>Requesting support on forums</b>
+<hr>
 
-<ul>
-<li><a href="#rate_support">How to get support on recognition rate problems?</a></li>
-</ul>
+<p>
 
-</p>
-
-<hr/>
-
-<a name="who_created"><b>Who created Sphinx-4?</b></a>
+<a name="who_created"><b>Who created Sphinx-4?</b> </a>
 
     <blockquote>
     Sphinx-4 was created via a joint collaboration between the Sphinx group
@@ -151,15 +147,15 @@ WARRANTIES.
         programming language to its native-C counterpart.
     </blockquote>
 
-<a name="which_dist"><b>Which Sphinx-4 distribution should I use?</b></a>
+<a name="which_dist"><b>Which Sphinx-4 distribution should I use?</b></a></a>
     <blockquote>
 
     Download the binary distribution if:
     <ul>
 
-    <li> You just want to check out Sphinx-4 by running the demos.</li>
+    <li> You just want to check out Sphinx-4 by running the demos.
     <li> You want to build applications using Sphinx-4, but you don't
-      want to touch the source code of Sphinx-4.</li>
+      want to touch the source code of Sphinx-4.
     </ul>
 
       Download the source distribution if you want to do everything
@@ -167,17 +163,23 @@ WARRANTIES.
       <ul>
         <li> You want to get all the source code of Sphinx-4, so that you
         can understand how Sphinx-4 works, and do your experimentation
-        with Sphinx-4.</li>
-        <li> You want to build Sphinx-4 from the ground up.</li>
-        <li> You want to run the unit tests.</li>
-        <li> You want to run the regression tests.</li>
+        with Sphinx-4.
+        <li> You want to build Sphinx-4 from the ground up.
+        <li> You want to run the unit tests.
+        <li> You want to run the regression tests.
       </ul>
 
     </blockquote>
 
 <a name="support_jsapi"> <b>Does Sphinx-4 support the Java Speech API (JSAPI)?</b></a>
     <blockquote>
-      It does not.
+       Currently, Sphinx-4 does not support the full Java Speech API.
+       Instead, Sphinx-4 uses a lower-level <a
+       href="../javadoc/index.html">API</a>.
+       However, Sphinx-4 does support <a
+       hfref="http://java.sun.com/products/java-media/speech/forDevelopers/JSGF/">Java
+       Speech Grammar Format</a> (JSGF)
+       grammars.
     </blockquote>
 
 
@@ -243,7 +245,6 @@ WARRANTIES.
          Try switching to another version of the JDK. If JDK 1.4 doesn't
          work, try 1.5 and vice versa.
          </li>
-      </ul>
     </blockquote>
 
 <a name="microphone_selection"> <b> How do I select a different
@@ -258,10 +259,10 @@ microphone (e.g., a USB headset) on my machine?</b></a>
       chosen if more than one line matches the requirements of the
       front end.  For example, if you plug in a USB headset into a
       Macintosh PowerBook, the getLine method of the AudioSystem class
-      will typcially never select a line from the USB device.</p>
+      will typcially never select a line from the USB device.
 
       <p>This behavior can be frustrating, especially when you have
-      a nice USB microphone you'd like to use.</p>
+      a nice USB microphone you'd like to use.  
 
       <p>To override the default behavior, you can set the <a
       href="../javadoc/edu/cmu/sphinx/frontend/util/Microphone.html#PROP_SELECT_MIXER">selectMixer</a>
@@ -274,7 +275,7 @@ microphone (e.g., a USB headset) on my machine?</b></a>
       Furthermore, when you plug in a USB headset, a new Mixer will
       appear for that headset.  The selectMixer property allows you to
       specify which specific Mixer Sphinx-4 will use to select the
-      TargetDataLine.</p>
+      TargetDataLine.
 
       <p>The value of the selectMixer property can be "default," which
       means let the AudioSystem decide which line to use from all the
@@ -282,18 +283,18 @@ microphone (e.g., a USB headset) on my machine?</b></a>
       supported by the AudioSystem (USB headsets tend to be associated
       with the last Mixer), or an integer value that represents the
       index of the Mixer.Info that is returned by
-      AudioSystem.getMixerInfo().</p>
+      AudioSystem.getMixerInfo().  
 
-      <p>To get the list of Mixer.Info objects available on your
+      <P>To get the list of Mixer.Info objects available on your
       system, along with their integer index values, run the AudioTool
-      application with a command line argument of "-dumpMixers".</p>
+      application with a command line argument of "-dumpMixers".
 
       <p>To set the selectMixer property of the Microphone, you 
       need to have a component in your config file that defines the
       microphone.  In the examples in Sphinx-4, this component is
       aptly named "microphone."  In the configuration for the 
       microphone component, you can the set the selectMixer
-      property in the config file for the application.  For example:</p>
+      property in the config file for the application.  For example:
 
 <pre>
         &lt;property name="selectMixer" value="last"/>
@@ -301,7 +302,6 @@ microphone (e.g., a USB headset) on my machine?</b></a>
 
       <p>You can also set the selectMixer property from the command
       line.  For example:
-      </p>
 
 <pre>
         java -Dmicrophone[selectMixer]=last -jar bin/AudioTool.jar 
@@ -309,7 +309,7 @@ microphone (e.g., a USB headset) on my machine?</b></a>
  
       <p>In both of these examples, the last Mixer discovered by
       the Java Sound AudioSystem class will be used to select
-      the TargetDataLine for the microphone.</p>
+      the TargetDataLine for the microphone.
     </blockquote>
 
 <a name="java_tts"> <b> Where can I find a speech synthesizer for the Java
@@ -336,11 +336,11 @@ microphone (e.g., a USB headset) on my machine?</b></a>
 
     <blockquote>
       Take a look at the <a
-      href="../src/apps/edu/cmu/sphinx/demo/helloworld/README.html">Hello Wave Demo</a>
+      href="../demo/sphinx/helloworld/README.html">Hello Wave Demo</a>
       program a  command line
       application that transcribes audio in a '.wav' file.  Additionally, the
       <a
-      href="../src/apps/edu/cmu/sphinx/demo/transcriber/README.html">Transcriber Demo</a> demonstrates how Sphinx-4 can be used to
+      href="../demo/sphinx/transcriber/README.html">Transcriber Demo</a> demonstrates how Sphinx-4 can be used to
       transcribe a continuous audio file with multiple utterances.
     </blockquote>
 
@@ -349,58 +349,52 @@ microphone (e.g., a USB headset) on my machine?</b></a>
     while a recognition is in process?</b></a>
 
     <blockquote>
-    <p>
     It is possible to configure Sphinx-4 to generate partial results,
     that is, to inform you periodically as to what it thinks is the
     best possible hypothesis so far, even before the user has stopped
-    speaking.</p>
+    speaking.
     <p>
     To get this information, add a result listener to the recognizer.
     Your listener will receive a result (which may or not be a final
-    result). The hypothesis text can be extracted from the text.</p>
+    result). The hypothesis text can be extracted from the text.
     <p>
     There is a good example of this in sphinx4/tests/live/Live.java
-    </p>
 
-    <p>
     You can control how often the result listener is fired by setting
     the configuration variable <i>'featureBlockSize'</i> in the decoder. 
     The default setting of 50 indicates that the listener will be 
     called after every 50 frames.
     Since each frame represents 10MS of speech, the listener is called
-    every 500ms.</p>
+    every 500ms.
     </blockquote>
 
 
 <a name="n_best_list"> <b>How can I get the N-Best list?</b></a>
 
     <blockquote>
-        <p>
         The method 'Results.getResultTokens()' returns a list of all
         the tokens associated with paths that have reached the end of
-        sentence state.</p>
+        sentence state.
 
         <p>This list is not a traditional N-best list of results. Some
         good results are not represented in this list. We also support
         full word lattices that can provide full N-Best lists. We
         currently do not have any user documentation for this,
-        however, we will be providing some shortly.</p>
+        however, we will be providing some shortly.
 
         <p>See also: <a href="#confidence_scores">How can I obtain
-        confidence scores for the recognition result?</a></p>
+        confidence scores for the recognition result?</a>
     </blockquote>
 
 <a name="out_of_grammar"> <b>How can I detect and ignore out-of-grammar
     utterances?</b></a>
     <blockquote>
-        <p>
         An out-of-grammar utterance occurs when a speaker says
         something that is not represented by the speech grammar.
         Usually, the recognizer will try to force a match between what
         was said and the grammar.  Many applications need to detect
         when the user has spoken something unexpected.  This is called
         out-of-grammar detection.
-        </p>
         <p>
         The FlatLinguist and the DynamicFlatLinguist can be configured
         to detect out-of-grammar utterances. To do so, set the following
@@ -415,7 +409,6 @@ microphone (e.g., a USB headset) on my machine?</b></a>
 	typically the Wall Street Journal (WSJ) model. WSJ has a wide
 	enough range of phones to ensure that rejection works well </li>
 	</ul>
-	</p>
         <p>
         When configured this way, the search will look for
         out-of-grammar utterances. If an out of grammar utterance is
@@ -426,28 +419,27 @@ microphone (e.g., a USB headset) on my machine?</b></a>
         <code>
         Result.getBestToken().getWordUnitPath() 
         </code>
-        </p>
     </blockquote>
 
 <a name="change_grammars"> <b>How can I change my language models or grammars at runtime?</b></a>
 
     <blockquote>
         The <a
-        href="../javadoc/edu/cmu/sphinx/jsgf/JSGFGrammar.html">JSGFGrammar</a>
+        href="../javadoc/edu/cmu/sphinx/jsapi/JSGFGrammar.html">JSGFGrammar</a>
         class provides methods that allow for swapping in a new JSGF
         grammar or
         modifying the currently active <a
         href="http://java.sun.com/products/java-media/speech/forDevelopers/jsapi-doc/javax/speech/recognition/RuleGrammar.html">RuleGrammar</a>
         grammar used by a given Recognizer.  The <a
-        href="../src/apps/edu/cmu/sphinx/demo/jsapi/jsgf/README.html">JSGFDemo</a> gives an
+        href="../demo/jsapi/jsgf/README.html">JSGFDemo</a> gives an
         example of how to do this.
 
         <p>To handle more complex problems, such as switching between
         n-Gram grammars, you can configure more than one Recognizer
         (one grammar per Recognizer) and switch between those
         Recognizers.  The <a
-        href="../src/apps/edu/cmu/sphinx/demo/jsapi/dialog/README.html">Dialog Demo</a>
-        provides an example of how to do this.</p>
+        href="../demo/jsapi/dialog/README.html">Dialog Demo</a>
+        provides an example of how to do this.
     </blockquote>
 
 <a name="word_spotting"> <b>How can I perform word-spotting?</b></a>
@@ -456,48 +448,23 @@ microphone (e.g., a USB headset) on my machine?</b></a>
       There is no support for word-spotting right now. 
     </blockquote>
 
-<a name="8k_audio"> <b>Can I use Sphinx-4 to recognize telephone audio?</b></a>
+<a name="8k_audio"> <b>Can I use Sphinx-4 to recognize 8khz audio?</b></a>
 
     <blockquote>
-    <p>
-    The issue with telephone audio is that it has limited range of frequences.
-    Unlike usual microphone recording that includes frequences from 1 Hz to
-    8000 kHz, telephone audio is passed through frequency filters. As a result
-    telephone audio contains frequences from 200 Hz to 3500 Hz. That makes
-    it impossible to recognize telephone audio with usual microphone acoustic model.
-    You need to use specialized models to recognize it.
-    </p>
-    
-    <p>There are few common telephone models distributed which you can use. Most notably, 
-    Communicator models, WSJ_8k model from sphinx4 and Voxforge English model.
-    </p>
-    
-    <p>To configure sphinx4 with 8kHz model change two things mel filter parameters and model itself:
-    </p>
+    Yes. In your configuration file, specify the 8kHz Wall Street Journal
+    models, and tell the front end that your models are 8kHz:
     <pre>
-  &lt;component name="melFilterBank" type="edu.cmu.sphinx.frontend.frequencywarp.MelFrequencyFilterBank"&gt;
-    &lt;property name="numberFilters" value="31"/&gt;
-    &lt;property name="minimumFrequency" value="200"/&gt;
-    &lt;property name="maximumFrequency" value="3500"/&gt;
-  &lt;/component&gt;
+&lt;component name="wsj"
+    type="edu.cmu.sphinx.model.acoustic.WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.Model"&gt;
+    &lt;property name="loader" value="8kLoader"&gt;
+    ...
+&lt;/component&gt;
 
-  &lt;component name="sphinx3Loader"
-   	     type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader"&gt;
-    &lt;property name="logMath" value="logMath"/&gt;
-    &lt;property name="unitManager" value="unitManager"/&gt;
-    &lt;property name="location" value="<b>the path to the model folder</b>"/&gt;
-  &lt;/component>
-
-  &lt;component name="wsjLoader" type="edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader"&gt;
-    &lt;property name="logMath" value="logMath"/&gt;
-    &lt;property name="unitManager" value="unitManager"/&gt;
-    &lt;property name="location" value="resource:/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz"/&gt;
-    &lt;property name="modelDefinition" value="etc/WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.4000.mdef"/&gt;
-    &lt;property name="dataLocation" value="cd_continuous_8gau/"/&gt;
-  &lt;/component>
-
+&lt;component name="8kLoader"&gt;
+    type="edu.cmu.sphinx.model.acoustic.WSJ_8gau_13dCep_8kHz_31mel_200Hz_3500Hz.ModelLoader"&gt;
+    ...
+&lt;/component&gt;
     </pre>
-
     </blockquote>
 
 
@@ -513,27 +480,25 @@ microphone (e.g., a USB headset) on my machine?</b></a>
 <a name="result"> <b> How do I use the <b>Result</b> object? </b></a>
 
     <blockquote>
-    <p>
     A search result typically consists of a number of hypothesis. Each
     hypothesis is represented by a path through the search space. Each
     path is represented by a single token. The token corresponds to
     the end point of the path. Using the token.getPredecessor() method
     it is possible for an application to trace back through the entire
     path to the beginning of the utterance.
-    </p>
     <p>
     Each token along the path contains numerous interesting data that
     can be used by the application including:
 
     <ul>
-    <li> the total path score up to this point (retrieved by getScore())</li>
+    <li> the total path score up to this point (retrieved by getScore())
     <li> A frame number indicating which input frame this token is
-      associated with</li>
+      associated with
     <li> A pointer to a state in the search graph corresponding to this
         token (A token may correspond to a word, unit, HMM, HMM state
         or other things). This pointer allows the application to
         retrieve the word, unit, or hmm information associated with
-        the token.</li>
+        the token.
     </ul>
 
         The method getScore() returns the path score for the path
@@ -560,7 +525,7 @@ microphone (e.g., a USB headset) on my machine?</b></a>
         </pre>
 
         (where entryScore is token.getPredecessor().getScore() )
-    </p>
+
 
     </blockquote>
 
@@ -568,55 +533,27 @@ microphone (e.g., a USB headset) on my machine?</b></a>
 <a name="speaker_identification"><b>Does Sphinx-4 support speaker identification?</b></a>
 
     <blockquote>
-    <p>
     Sphinx-4 currently does not support speaker identification, which is the
     process of identifying who is speaking. However, the architecture of
     Sphinx-4 is flexible enough for someone to add such capabilities.
     To learn more about speaker identification:
     <a href="http://www.speech.cs.cmu.edu/comp.speech/Section6/Q6.6.html">
     http://www.speech.cs.cmu.edu/comp.speech/Section6/Q6.6.html</a>
-    </p>
-
-    <p> For those interested to implement it it makes sense to
-    investigate the software specifically targetted to do speaker
-    identification first like <a
-    href="http://mistral.univ-avignon.fr/en/index.html">MISTRAL</a>
-    </p>
-
     </blockquote>
+
 
 <a name="confidence_scores"><b>How can I obtain confidence scores for the recognition result?</b></a>
 
     <blockquote>
     Some experimental work has been done to support confidence scores.
     As this work is still experimental, please use it with precaution.
-    Please refer to the <a href="../src/apps/edu/cmu/sphinx/demo/confidence/README.html">
+    Please refer to the <a href="../demo/sphinx/confidence/README.html">
     Confidence Score Demo</a> for example code of how to do this.
     <i>Note that currently this only works for configurations using the
     <b>LexTreeLinguist</b> and the <b>WordPruningBreadthFirstSearchManager</b>
     </i>.
     </blockquote>
 
-<a name="no_vocabulary"><b>How to decode without predefined vocabulary?</b></a>
-
-   <blockquote> <p> To have efficient error rate, decoder still should
-   have some form of vocabulary. To decode arbitrary words,
-   subword-based decoding is used. It might be phone-based vocabulary
-   which is easy to construct or vocabulary built from
-   automatically-selected subwords of large size (typically, sequences
-   of 4-6 phones). In both cases, it's required to build a subword
-   dictionary and subword language model. With phone-based decoding
-   phone error rate will be significant like (40-60%), so it's only
-   usable for research purposes. Subword-based decoding with large
-   subword units is often used in practice. For more details on this see
-   the articles like:</p>
-   
-   <p>
-   <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.40.4377">
-   Kenney Ng, Victor W. Zue. Subword-based Approaches for Spoken Document Retrieval (1999).
-   </a>
-   </p>
-   </blockquote>
 
 <a name="train_am"> <b> How can I train my own acoustic models?</b></a>
 
@@ -680,7 +617,7 @@ microphone (e.g., a USB headset) on my machine?</b></a>
     Each line of the dictionary specifies the word, followed by spaces
     or tab, followed by the pronuncation (by way of the list of
     phones) of the word. Each word can have more than one
-    pronunciations. For example, a digits dictionary will look like:</p>
+    pronunciations. For example, a digits dictionary will look like:
 
     <pre>
     ONE HH W AH N
@@ -698,14 +635,12 @@ microphone (e.g., a USB headset) on my machine?</b></a>
     OH OW
     </pre>
 
-    <p>
     In the above example, the words "one" and "zero" have two
     pronunciations each.  
-    </p>
     <p>
     Some more details on the format of the dictionary can be found
     at the <a href="http://www.speech.cs.cmu.edu/cgi-bin/cmudict">CMU
-    Pronouncing Dictionary</a> page.</p>
+    Pronouncing Dictionary</a> page.
     <p>
     Note that the phones used to define the pronunciation for a word
     can be arbitrary strings. It is important however, that they match
@@ -713,66 +648,47 @@ microphone (e.g., a USB headset) on my machine?</b></a>
     you will find among the many files a file with the suffix ".mdef".
     This file contains a mapping of units to senones (tied gaussian
     mixtures). The first column in this file represent the unit names
-    (phone) used by the acoustic model.</p>
+    (phone) used by the acoustic model.
     <p>
     Your dictionary should use these units to define the pronunciation
-    for a word.</p>
+    for a word.
     </blockquote>
 
 
 <a name="create_binary_lm"> <b> I've created by own language model. How do I create the binary (DMP) form?</b></a>
 
     <blockquote>
-    <p>
-    Use <code>sphinx_lm_convert</code> tool from sphinxbase package. This
-    tool allows you to convert from ARPA language model format to 
-    DMP format and back. Please note that some LM tools create non-standard
-    language model that require additional preprocessing. For example
-    use <code>sphinx_lm_sort</code> tool from sphinxbase to convert
-    SRILM model to proper ARPA model that is handled by CMUSphinx tools
-    and libraries.
-    </p>
+    The tool lm3g2dmp generates a DMP file from an LM in ARPA format
+    (which can be generated by the CMU/CU Statistical Language Model
+    Toolkit).
+
+    The lm3g2dmp code is available at sf.net, in the module
+    share/lm3g2dmp. But the easiest way to get it is via a nightly
+    build (a tarball generated nightly from the cvs tree). The site:
+
+    <a
+    href="http://cmusphinx.sourceforge.net/webpage/html/download.php#utilities">Sphinx
+    utilities </a>
+
+    has a link to this build (and also to the CMU SLM toolkit). Or one
+    can retrieve it from the
+    <a href="http://cmusphinx.org/download/nightly">Sphinx nightly
+    builds</a>.
+
     <p>
     Note that the format of the output 
     from the CMU/CU SLM Toolkit program <code>idngram2lm</code>
     (using the <code>-binary</code> option)
-    is different from the DMP format, and therefore cannot be read by Sphinx-4.</p>
+    is different from the DMP format, and therefore cannot be read by Sphinx-4.
     </blockquote>
 
 
-<a name="rate_support"> <b> How to get support on recognition rate problems?</b></a>
-    <blockquote>
-    <p>
-    CMUSphinx team is always willing to help you with your problems using CMUSphinx.
-    But please understand that without detailed descriptoin it's hard to help you since
-    there are too many unknowns. Like you might have done minor mistake somewhere 
-    and that minor type can break the whole system.</p>
-    <p>
-    If you are going to ask on forum about accuracy issues, especially with your own 
-    trained model please understand that we can't guess what you have done. You need
-    to provide detailed description of your work, provide the data you are using and
-    describe your expectations.
-    </p>
-    <p>
-    The easiest way to provide the data is to pack everything into archive and upload
-    it to public hosting like RapidShare, Mediafire or some other resource. Then just
-    give a link on forum on the data archive. Pack into the archive everything you are using,
-    without single file support becomes way more complicated. If you are training
-    acoustic database, pack whole training folder. If you are running modified sphinx4 demo,
-    pack into archive demo jar, sphinx4 jar, demo source code with your modifications,
-    audio recordings.
-    </p>
-    <p>
-    The more information you'll provide the bigger chance you'll get the helpful response.
-    </p>
-    </blockquote>
 
-
-<hr/>
-Last update on March 6, 2010.<br/>
-Copyright 1999-2010 Carnegie Mellon University.<br/>
-Portions Copyright 2002-2004 Sun Microsystems, Inc.<br/>
-Portions Copyright 2002-2004 Mitsubishi Electric Research Laboratories.<br/>
+<hr>
+Last update on June 30, 2004.<br>
+Copyright 1999-2004 Carnegie Mellon University.<br>
+Portions Copyright 2002-2004 Sun Microsystems, Inc.<br>
+Portions Copyright 2002-2004 Mitsubishi Electric Research Laboratories.<br>
 All Rights Reserved.  Usage is subject to 
 <a href="../license.terms">license terms</a>.
 
