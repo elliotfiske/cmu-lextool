@@ -17,16 +17,19 @@ Run ant with -Dskip=5 to do the standard 'quick' version of a test.
     <!-- *                                                        * -->
     <!-- ********************************************************** -->
     <property name="top_dir"		value="../../.."/>
+    <path id="libs">
+        <fileset dir="lib" includes="${top_dir}/**/jsapi.jar"/>
+    </path>
     <property name="build_dir"		value="${top_dir}/bld"/>
-    <property name="classes_dir"	value="${build_dir}"/>
+    <property name="classes_dir"	value="${build_dir}/classes"/>
     <property name="lib_dir"            value="${build_dir}/lib"/>
-    <property name="classpath" value="${classes_dir}:${top_dir}/lib/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar:${top_dir}/lib/batch.jar"/>
+    <property name="classpath" value="${classes_dir}:${top_dir}/lib/WSJ_8gau_13dCep_16k_40mel_130Hz_6800Hz.jar"/>
 
     <property name="skip"               value="0"/>
     <property name="logger_props"       value=""/>  
 
     <property name="initial_heap_size"  value="128m"/>
-    <property name="maximum_heap_size"  value="1024m"/>
+    <property name="maximum_heap_size"  value="512m"/>
     <property name="jit"                value="server"/>
     <property name="gc_log_file"        value="gc.txt"/>
     <property name="batch_main"               
@@ -36,18 +39,6 @@ Run ant with -Dskip=5 to do the standard 'quick' version of a test.
     <property name="config" value="an4.config.xml"/>
     <property name="batch" value="an4.batch"/>
 
-    <!-- ********************************************************** -->
-    <!-- *                                                        * -->
-    <!-- * Displays minimal help.                                 * -->
-    <!-- *                                                        * -->
-    <!-- ********************************************************** -->
-    <target name="none">
-        <echo>Type 'ant -p' for possible targets.</echo>
-    </target>
-
-    <!-- dummy target for automated test compilation -->
-    <target name="compile" />
-    
     <!-- ********************************************************** -->
     <!-- *                                                        * -->
     <!-- * an4_words_wordlist                                     * -->
@@ -674,7 +665,7 @@ Run ant with -Dskip=5 to do the standard 'quick' version of a test.
 	      classname="${live_main}"
 	      fork="true">
             <jvmarg value="-ea"/>
-            <jvmarg value="-${jit}"/>
+            <jvmarg value="-${jit}"/>   
             <jvmarg value="-ms${initial_heap_size}"/>
             <jvmarg value="-mx${maximum_heap_size}"/> 
             <sysproperty key="live[skip]" value="${skip}"/> 
@@ -706,36 +697,6 @@ Run ant with -Dskip=5 to do the standard 'quick' version of a test.
             <sysproperty key="batch[skip]" 	value="${skip}"/> 
             <arg value="an4_words_trigram.config.xml"/> 
             <arg value="an4_words.batch"/> 
-        </java>
-    </target>
-
-
-    <!-- ********************************************************** -->
-    <!-- *                                                        * -->
-    <!-- * an4_words_rejection                                    * -->
-    <!-- *                                                        * -->
-    <!-- ********************************************************** -->
-    <target name="an4_words_rejection"
-	    description="AN4 words test set with a word list language model (that is, non-digit words are out-of-grammar, and a rejection CI phone loop.">
-        <java classpath="${classpath}"
-	      classname="${batch_main}"
-	      fork="true">
-            <jvmarg value="-ea"/>
-            <jvmarg value="-${jit}"/>   
-            <jvmarg value="-ms${initial_heap_size}"/>
-            <jvmarg value="-mx${maximum_heap_size}"/> 
-            <jvmarg value="-Xloggc:${gc_log_file}"/>
-            <sysproperty key="batch[skip]" value="${skip}"/> 
-            <sysproperty key="grammarPath"
-	                 value="../tidigits/tidigits.wordlist"/>
-	    <sysproperty key="recognizer" value="rejectionRecognizer"/>
-            <sysproperty key="wordInsertionProbability" value="1.0E-25"/>
-            <sysproperty key="relativeBeamWidth" value="1.0E-250"/>
-            <sysproperty key="languageWeight" value="10"/>
-            <sysproperty key="flatLinguist[addOutOfGrammarBranch]"
-	                 value="true"/>
-            <arg value="${config}"/> 
-            <arg value="an4_words_rejection.batch"/> 
         </java>
     </target>
 
