@@ -39,29 +39,10 @@
  * 
  * HISTORY
  * 
- * 30-Nov-2005	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Modified all backtrace functions to fill in as much of search_hyp_t
- * 		structure as possible, in one place.  (Previously this was being
- * 		done, piecemeal, all over the place.)
- * 		Added acoustic confidence scoring to all hypotheses.  (Currently,
- * 		needs compute-all-senones for this to work.)
- * 
  * $Log$
- * Revision 1.17  2005/12/18  17:22:19  rkm
- * Fixed minor bug in search_get_alt
- * 
- * Revision 1.16  2005/12/13 17:04:14  rkm
- * Added confidence reporting in nbest files; fixed some backtrace bugs
- * 
- * Revision 1.15  2005/12/03 17:54:34  rkm
- * Added acoustic confidence scores to hypotheses; and cleaned up backtrace functions
- *
- * Revision 1.14  2005/11/14 15:28:39  rkm
- * Bugfixes: using SIL when context is filler; pruning WORST_SCORE links from dag
- *
- * Revision 1.13  2005/09/21 02:18:06  rkm
+ * Revision 1.13  2005/09/21  02:18:06  rkm
  * Fixed altpron bug in nbest
- *
+ * 
  * Revision 1.12  2004/12/10 16:48:57  rkm
  * Added continuous density acoustic model handling
  *
@@ -155,16 +136,13 @@ static dictT *dict;
 static BPTBL_T *bptbl;
 static int32 *BScoreStack;
 static int32 **rc_fwdperm;
-
-/* For storing utterance hypothesis */
-extern search_hyp_t *hyp;		/* Defined in search.c */
-extern int32 hyp_sz_max, hyp_sz_cur;	/* Defined in search.c */
-
-static int32 reportpron = FALSE;
+static search_hyp_t *hyp;
+static int32 altpron = FALSE;
 
 extern BPTBL_T *search_get_bptable ();
 extern int32 *search_get_bscorestack ();
 extern double search_get_lw ();
+extern search_hyp_t *search_get_hyp ();
 
 #if 0
 extern char *query_utt_id(void);
@@ -483,7 +461,7 @@ static int32 build_lattice (int32 bptbl_sz)
 		break;
 	}
 
-	/* For the moment, store bptbl indices in node.{fef,lef}; an atrocious piece of code (rkm) */
+	/* For the moment, store bptbl indices in node.{fef,lef} */
 	if (node)
 	    node->lef = i;
 	else {
@@ -542,10 +520,7 @@ static int32 build_lattice (int32 bptbl_sz)
 	if (! to->reachable)
 	    continue;
 	
-	/*
-	 * Find predecessors of to : from->fef+1 <= to->sf <= from->lef+1.
-	 * Note that fef,lef are really bptable indices at this time.
-	 */
+	/* Find predecessors of to : from->fef+1 <= to->sf <= from->lef+1 */
 	for (from = to->next; from; from = from->next) {
 	    ef = bptbl[from->fef].frame;
 	    lef = bptbl[from->lef].frame;
@@ -571,12 +546,8 @@ static int32 build_lattice (int32 bptbl_sz)
 		bss_offset = rc_fwdperm[bp_ptr->r_diph][dict->dict_list[to->wid]->ci_phone_ids[0]];
 	    else
 		bss_offset = 0;
-	    
-	    score = BScoreStack[bp_ptr->s_idx + bss_offset];
+	    score = (BScoreStack[bp_ptr->s_idx + bss_offset] - bp_ptr->score) + bp_ptr->ascr;
 	    if (score > WORST_SCORE) {
-		/* Adjust ascr for the appropriate right context */
-		score = bp_ptr->ascr + (score - bp_ptr->score);
-		
 		link_latnodes (from, to, score, bp_ptr->frame);
 		from->reachable = TRUE;
 	    }
@@ -600,6 +571,12 @@ static int32 build_lattice (int32 bptbl_sz)
 	
 	sprintf (latfile, "%s/%s.lat", dumplatdir, uttproc_get_uttid());
 	dump_lattice (latfile);
+    }
+
+    /* Change node->wid to base wid if not reporting actual pronunciations. */
+    for (node = latnode_list; node; node = node->next) {
+	if (! altpron)
+	    node->wid = dict->dict_list[node->wid]->fwid;
     }
 
     /* Remove SIL and noise nodes from DAG; extend links through them */
@@ -730,30 +707,8 @@ int32 bptbl2latdensity (int32 bptbl_sz, int32 *density)
 }
 
 static int32 seg;	/* for traversing hyp[] */
+extern int32 print_back_trace;
 
-static void print_back_trace (search_hyp_t *h, int32 n_seg)
-{
-  int32 i;
-  
-  printf("\t%4s %4s %11s %11s %6s %6s %s (%s) (%s)\n",
-	 "SFrm", "Efrm", "AScr", "PathScr", "Conf", "LatDen", "Word",
-	 "BestPath", uttproc_get_uttid());
-  printf("\t---------------------------------------------------------------------\n");
-  
-  for (i = 0; i < n_seg; i++) {
-    printf("\t%4d %4d %11d %11d %6.2f %6d %s\n",
-	   h[i].sf, h[i].ef, h[i].ascr, h[i].scr, h[i].conf, h[i].latden,
-	   h[i].word);
-  }
-  printf("\t---------------------------------------------------------------------\n");
-}
-
-
-/*
- * Obtain result and segmentation.
- * NOTE: All acoustic/lm score information is unreliable, since filler
- * word scores have been accumulated into non-filler neighbors.
- */
 static void lattice_seg_back_trace (latlink_t *link)
 {
     int32 f, latden;
@@ -766,46 +721,54 @@ static void lattice_seg_back_trace (latlink_t *link)
     
     if (link) {
 	lattice_seg_back_trace (link->best_prev);
-	
-	latden = 0;
-	perp = 0.0;
-	for (f = link->from->sf; f <= link->ef; f++) {
-	  latden += lattice_density[f];
-	  perp += phone_perplexity[f];
+
+	if (ISA_REAL_WORD(link->from->wid)) {
+	    if (seg >= HYP_SZ-1)
+		E_FATAL("**ERROR** Increase HYP_SZ\n");
+	    
+	    hyp[seg].wid = link->from->wid;
+	    hyp[seg].sf = uttproc_feat2rawfr(link->from->sf);
+	    hyp[seg].ef = uttproc_feat2rawfr(link->ef);
+	    
+	    hyp[seg].latden = 0;
+	    hyp[seg].phone_perp = 0.0;
+	    
+	    for (f = link->from->sf; f <= link->ef; f++) {
+		hyp[seg].latden += lattice_density[f];
+		hyp[seg].phone_perp += phone_perplexity[f];
+	    }
+	    if ((link->ef - link->from->sf + 1) > 0) {
+		hyp[seg].latden /= (link->ef - link->from->sf + 1);
+		hyp[seg].phone_perp /= (link->ef - link->from->sf + 1);
+	    }
+	    latden = hyp[seg].latden;
+	    perp = hyp[seg].phone_perp;
+	    
+	    seg++;
+	    hyp[seg].wid = -1;
+
+	    if (print_back_trace)
+		printf ("\t%4d %4d %10d %11d %11d %8d %6d %6.2f %s\n",
+			link->from->sf, link->ef,
+			(-(link->link_scr))/(link->ef - link->from->sf + 1),
+			-(link->link_scr), -(link->path_scr),
+			seg_topsen_score(link->from->sf, link->ef)/(link->ef-link->from->sf+1),
+			latden, perp,
+			dict->dict_list[link->from->wid]->word);
 	}
-	if ((link->ef - link->from->sf + 1) > 0) {
-	  latden /= (link->ef - link->from->sf + 1);
-	  perp /= (link->ef - link->from->sf + 1);
-	}
-	
-	if (seg >= hyp_sz_max - 1) {	/* 1 for the trailing sentinel */
-	  hyp = (search_hyp_t *) CM_recalloc (hyp, hyp_sz_max + HYP_SZ, sizeof(search_hyp_t));
-	  hyp_sz_max += HYP_SZ;
-	}
-	
-	hyp[seg].word = dict->dict_list[link->from->wid]->word;
-	hyp[seg].wid = link->from->wid;
-	hyp[seg].sf = link->from->sf;
-	hyp[seg].ef = link->ef;
-	hyp[seg].ascr = link->link_scr;
-	hyp[seg].scr = link->path_scr;
-	hyp[seg].fsg_state_from = -1;
-	hyp[seg].fsg_state_to = -1;
-	hyp[seg].bsdiff = 0;
-	hyp[seg].tsdiff = 0;
-	hyp[seg].conf = -1.0;	/* Not yet computed */
-	hyp[seg].latden = latden;
-	hyp[seg].phone_perp = perp;
-	seg++;
-	hyp_sz_cur++;
-	hyp[seg].wid = -1;	/* sentinel */
     } else {
 	seg = 0;
 	hyp[0].wid = -1;
-	hyp_sz_cur = 0;
+
+	if (print_back_trace) {
+	    printf ("\t%4s %4s %10s %11s %11s %8s %6s %6s %s (Bestpath) (%s)\n",
+		    "SFrm", "EFrm", "AScr/Frm", "AScr", "PathScr", "BSDiff",
+		    "LatDen", "PhPerp", "Word",
+		    uttproc_get_uttid());
+	    printf ("\t------------------------------------------------------------------------\n");
+	}
     }
 }
-
 
 /*
  * Lattice rescoring:  Goal: Form DAG of nodes based on unique <wid,start-fram> values,
@@ -822,7 +785,6 @@ int32 lattice_rescore ( double lwf )
     int32 fr;
     char *res;
     char *orig_lmname = NULL;
-    search_hyp_t *hyplist;
     
     sil_pen = search_get_sil_penalty ();
     filler_pen = search_get_filler_penalty ();
@@ -881,10 +843,14 @@ int32 lattice_rescore ( double lwf )
     for (link = start_node->links; link; link = link->next) {
 	assert (! (ISA_FILLER_WORD(link->to->wid)));
 
-	bw1 = dict->dict_list[start_wid]->fwid;
-	bw2 = dict->dict_list[link->to->wid]->fwid;
-	
-	link->path_scr = link->link_scr + lm_bg_score (bw1, bw2) * lwf;
+	if (altpron) {
+	    bw1 = dict->dict_list[start_wid]->fwid;
+	    bw2 = dict->dict_list[link->to->wid]->fwid;
+	    
+	    link->path_scr = link->link_scr + lm_bg_score (bw1, bw2) * lwf;
+	} else
+	    link->path_scr = link->link_scr +
+		lm_bg_score (start_wid, link->to->wid) * lwf;
 
 	link->best_prev = NULL;
 	
@@ -911,12 +877,16 @@ int32 lattice_rescore ( double lwf )
 	for (link = node->links; link; link = link->next) {
 	    assert (! (ISA_FILLER_WORD(link->to->wid)));
 
-	    bw0 = dict->dict_list[q_head->from->wid]->fwid;
-	    bw1 = dict->dict_list[node->wid]->fwid;
-	    bw2 = dict->dict_list[link->to->wid]->fwid;
-	    
-	    score = q_head->path_scr + link->link_scr +
-	      lm_tg_score (bw0, bw1, bw2) * lwf;
+	    if (altpron) {
+		bw0 = dict->dict_list[q_head->from->wid]->fwid;
+		bw1 = dict->dict_list[node->wid]->fwid;
+		bw2 = dict->dict_list[link->to->wid]->fwid;
+		
+		score = q_head->path_scr + link->link_scr +
+		    lm_tg_score (bw0, bw1, bw2) * lwf;
+	    } else
+		score = q_head->path_scr + link->link_scr +
+		    lm_tg_score (q_head->from->wid, node->wid, link->to->wid) * lwf;
 	    
 	    if (score > link->path_scr) {
 		link->path_scr = score;
@@ -958,27 +928,9 @@ int32 lattice_rescore ( double lwf )
 
 	assert(best != NULL);
 	lattice_seg_back_trace (best);
-	
-	/* Fill in .next ptr for hyp[] entries */
-	hyplist = search_hyparray_build_nextptr (hyp, hyp_sz_cur);
-	
-	/* Fill in confidence information */
-	search_hyp_conf(hyplist);
-	
-	/* Log detailed back trace, if specified */
-	if (query_back_trace())
-	  print_back_trace (hyp, hyp_sz_cur);
-	
-	/* Remove non-REAL words from hyp[] */
-	hyplist = search_hyp_filter();
-	
-#if 0
-	/* Remove context words (OBSOLETE; no longer compatible) */
-	search_remove_context (hyp);
-#endif
 
-	/* Generate sentence string */
-	search_hyp_to_str (hyplist);
+	search_remove_context (hyp);
+	search_hyp_to_str ();
 
 	/* NB: best->path_scr doesn't include acoustic score for the final </s>! */
 	search_set_hyp_total_score (best->path_scr+final_node_ascr);
@@ -1053,10 +1005,12 @@ void searchlat_init ( void )
     sil_wid = kb_get_word_id ("SIL");
     dict = kb_get_word_dict ();
     rc_fwdperm = dict_right_context_fwd_perm ();
-    reportpron = query_report_altpron ();
+    altpron = query_report_altpron ();
     
     bptbl = search_get_bptable ();
     BScoreStack = search_get_bscorestack ();
+
+    hyp = search_get_hyp ();
 
     lattice.latnode_list = NULL;
     lattice.final_node = NULL;
@@ -1073,7 +1027,6 @@ typedef struct latpath_s {
     latnode_t *node;		/* Also contains score estimate to final node */
     struct latpath_s *parent;
     struct latpath_s *next;	/* All paths linked linearly, sorted by best score */
-    int32 parent_ef;		/* End frame for link from parent to this node */
     int32 score;		/* Exact score from start node upto node->sf */
 } latpath_t;
 static latpath_t *path_list;	/* Partial paths to be processed */
@@ -1091,7 +1044,7 @@ static int32 insert_depth;
 #define MAX_HYP_TRIES	10000
 
 /* Back trace from path to root */
-static search_hyp_t *latpath_seg_back_trace (latpath_t *path, int32 ef)
+static search_hyp_t *latpath_seg_back_trace (latpath_t *path)
 {
     search_hyp_t *head, *h;
     
@@ -1100,18 +1053,13 @@ static search_hyp_t *latpath_seg_back_trace (latpath_t *path, int32 ef)
 	h = (search_hyp_t *) listelem_alloc (sizeof(search_hyp_t));
 	h->wid = path->node->wid;
 	h->word = kb_get_word_str (h->wid);
-	h->sf = path->node->sf;
-	h->ef = ef;
-	h->bsdiff = 0;
-	h->tsdiff = 0;
-	h->conf = -1.0;
-	
+	h->sf = uttproc_feat2rawfr(path->node->sf);
+	h->ef = uttproc_feat2rawfr(path->node->fef);	/* Approximately */
+
 	h->next = head;
 	head = h;
-	
-	ef = path->parent_ef;
     }
-    
+
     return head;
 }
 
@@ -1135,10 +1083,14 @@ static int32 best_rem_score (latnode_t *from)
 	score = best_rem_score (link->to);
 	score += link->link_scr;
 	
-	bw1 = dict->dict_list[from->wid]->fwid;
-	bw2 = dict->dict_list[link->to->wid]->fwid;
-	
-	score += (lm_bg_score (bw1, bw2) * lw_factor);
+	if (altpron) {
+	  bw1 = dict->dict_list[from->wid]->fwid;
+	  bw2 = dict->dict_list[link->to->wid]->fwid;
+	  
+	  score += (lm_bg_score (bw1, bw2) * lw_factor);
+	} else {
+	  score += (lm_bg_score (from->wid, link->to->wid) * lw_factor);
+	}
 	
 	if (score > bestscore)
 	    bestscore = score;
@@ -1213,20 +1165,30 @@ static void  path_extend (latpath_t *path)
 	newpath = (latpath_t *) listelem_alloc (sizeof(latpath_t));
 	newpath->node = link->to;
 	newpath->parent = path;
-	newpath->parent_ef = link->ef;
 	newpath->score = path->score + link->link_scr;
-	
 	if (path->parent) {
-	  bw0 = dict->dict_list[path->parent->node->wid]->fwid;
-	  bw1 = dict->dict_list[path->node->wid]->fwid;
-	  bw2 = dict->dict_list[newpath->node->wid]->fwid;
-	  
-	  newpath->score += (lm_tg_score (bw0, bw1, bw2) * lw_factor);
+	  if (altpron) {
+	    bw0 = dict->dict_list[path->parent->node->wid]->fwid;
+	    bw1 = dict->dict_list[path->node->wid]->fwid;
+	    bw2 = dict->dict_list[newpath->node->wid]->fwid;
+	    
+	    newpath->score += (lm_tg_score (bw0, bw1, bw2) * lw_factor);
+	  } else {
+	    newpath->score += (lm_tg_score (path->parent->node->wid,
+					    path->node->wid,
+					    newpath->node->wid)
+			       * lw_factor);
+	  }
 	} else {
-	  bw1 = dict->dict_list[path->node->wid]->fwid;
-	  bw2 = dict->dict_list[newpath->node->wid]->fwid;
-	  
-	  newpath->score += (lm_bg_score (bw1, bw2) * lw_factor);
+	  if (altpron) {
+	    bw1 = dict->dict_list[path->node->wid]->fwid;
+	    bw2 = dict->dict_list[newpath->node->wid]->fwid;
+	    
+	    newpath->score += (lm_bg_score (bw1, bw2) * lw_factor);
+	  } else {
+	    newpath->score += (lm_bg_score (path->node->wid, newpath->node->wid)
+			       * lw_factor);
+	  }
 	}
 	
 	/* Insert new partial path hypothesis into sorted path_list */
@@ -1267,18 +1229,6 @@ static int32 hyp_diff (search_hyp_t *hyp1, search_hyp_t *hyp2)
 	 h1 = h1->next, h2 = h2->next);
     return (h1 || h2) ? 1 : 0;
 }
-
-
-static void hyp_basepron (search_hyp_t *hyplist)
-{
-  search_hyp_t *h;
-  
-  for (h = hyplist; h; h = h->next) {
-    h->wid = dict->dict_list[h->wid]->fwid;
-    h->word = dict->dict_list[h->wid]->word;
-  }
-}
-
 
 /*
  * Get n best alternatives in lattice for the given frame range [sf..ef].
@@ -1354,9 +1304,8 @@ int32 search_get_alt (int32 n,			/* In: No. of alternatives to look for */
 	    path = (latpath_t *) listelem_alloc (sizeof(latpath_t));
 	    path->node = node;
 	    path->parent = NULL;
-	    path->parent_ef = sf-1;
 	    
-	    bwid = dict->dict_list[node->wid]->fwid;
+	    bwid = (altpron) ? dict->dict_list[node->wid]->fwid : node->wid;
 	    
 	    if (w1 < 0) {
 	      scr = lm_bg_score(w2, bwid);
@@ -1382,25 +1331,19 @@ int32 search_get_alt (int32 n,			/* In: No. of alternatives to look for */
 	if ((top->node->sf >= ef) || ((top->node == lattice.final_node) &&
 				      (ef > lattice.final_node->sf))) {
 	    /* Complete hypothesis; generate output, but omit last (bracketing) node */
-	    alt[n_alt] = latpath_seg_back_trace (top->parent, top->parent_ef);
+	    alt[n_alt] = latpath_seg_back_trace (top->parent);
 	    /* alt[n_alt] = latpath_seg_back_trace (top); */
 
 	    /* Accept hyp only if non-empty */
 	    if (alt[n_alt]) {
-	      search_hyp_conf (alt[n_alt]);	  /* Get confidence scores */
-
-	      if (! reportpron)			/* Remove exact pronunciation spec */
-		hyp_basepron (alt[n_alt]);
-	      
-	      /* Accept only if hypothesis not already output */
-	      for (j = 0; (j < n_alt) && (hyp_diff (alt[j], alt[n_alt])); j++);
-	      
-	      if (j >= n_alt)	{	/* New, distinct alternative hypothesis */
-		n_alt++;
-	      } else {
-		search_hyp_free (alt[n_alt]);
-		alt[n_alt] = NULL;
-	      }
+		/* Check if hypothesis already output */
+		for (j = 0; (j < n_alt) && (hyp_diff (alt[j], alt[n_alt])); j++);
+		if (j >= n_alt)	/* New, distinct alternative hypothesis */
+		    n_alt++;
+		else {
+		    search_hyp_free (alt[n_alt]);
+		    alt[n_alt] = NULL;
+		}
 	    }
 #if 0
 	    /* Print path here for debugging */

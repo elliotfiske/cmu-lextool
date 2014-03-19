@@ -70,7 +70,6 @@
  #define popen _popen
  #define pclose _pclose
  #define MAXPATHLEN FILENAME_MAX
- #define strcasecmp stricmp
  #endif
 
 

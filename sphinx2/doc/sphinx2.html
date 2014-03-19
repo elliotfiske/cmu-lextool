@@ -21,6 +21,7 @@ Carnegie Mellon University<br>
 <strong>Copyright (c) 1997-2005 Carnegie Mellon University.</strong>
 <HR>
 This document is not complete, but should be helpful during construction.<br>
+Last updated 2005-01-26.
 <HR>
 </center>
 
@@ -1219,13 +1220,13 @@ Two simple speech decoding applications, implemented with a tty-based interface 
 well as with a Windows interface, are included in directory
 <strong><code>examples:</code></strong>
 <UL>
-<LI><strong><code>sphinx2_ptt:</code></strong>
+<LI><strong><code>sphinx2-ptt:</code></strong>
 demonstrates an application in which the user explicitly indicates the start and
 end of each utterance using the &lt;<code>RETURN</code>&gt; keyboard key.
 (On WindowsNT/Windows95 systems, the ending &lt;<code>RETURN</code>&gt; is not
 used.  Instead, the utterance is terminated after a fixed duration.)
 <p>
-<LI><strong><code>sphinx2_continuous:</code></strong>
+<LI><strong><code>sphinx2-continuous:</code></strong>
 demonstrates the interaction of continuous listening and decoding.  An endless
 audio input stream is automatically segmented into utterances using the continuous
 listening module, and the utterances are decoded.  The timestamps returned by the
@@ -1258,7 +1259,7 @@ To compile Sphinx2 libraries on Windows platforms:
 <UL>
 <LI> Unpack the distribution
 <LI> Load the workspace <strong><code>.\sphinx2.dsw</code></strong> onto Microsoft Visual C++ 6.0 or better.
-<LI> Compile the project <code><strong>sphinx2_continuous</code></strong>, minimally
+<LI> Compile the project <code><strong>sphinx2-continuous</code></strong>, minimally
 <li> On a command prompt (follow the menu "<code>Start</code>" -> "<code>Run</code>" and type  <code><strong>cmd</strong></code>), cd
 to the location where you installed sphinx2 (e.g., <code><strong>c:\sphinx2-0.5</strong></code>) 
 <LI> Still in the command prompt, <code><strong>cd .\win32\batch</code></strong>.
@@ -2237,19 +2238,6 @@ Current dir.
 
 <TR>
 <TD VALIGN=TOP>
-<strong><code>-nbestseg</code></strong>
-</TD>
-<TD VALIGN=TOP>
-If FALSE, nbest hypotheses files contain only the word sequence for each alternative.
-But, if TRUE, each word also includes segmentation and confidence score information.
-</TD>
-<TD VALIGN=TOP>
-<strong><code>FALSE</code></strong>
-</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>
 <strong><code>-phoneconf</code></strong>
 </TD>
 <TD VALIGN=TOP>
@@ -2527,10 +2515,6 @@ Recursive <strong><code>-argfile</code></strong> specifications are not allowed.
 <TR>
 <TD nowrap VALIGN=TOP><LI><A HREF="#sec_cmdline_outputspec">nbestdir</A>:</TD>
 <TD VALIGN=TOP>Directory for writing N-best hypotheses files.</TD>
-</TR>
-<TR>
-<TD nowrap VALIGN=TOP><LI><A HREF="#sec_cmdline_outputspec">nbestseg</A>:</TD>
-<TD VALIGN=TOP>Whether to include segmentation for each nbest hypothesis word</TD>
 </TR>
 <TR>
 <TD nowrap VALIGN=TOP><LI><A HREF="#sec_cmdline_inputdb">ndictfn</A>:</TD>
@@ -2898,7 +2882,7 @@ indicated by a <strong><code>#</code></strong> character in the first column.
 <address><a href="mailto:rkm@cs.cmu.edu">Ravishankar Mosur</a></address>
 <!-- Created: Jan 01, 1997 -->
 <!-- hhmts start -->
-Last modified: Tue Mar 21 16:44:00 EST 2006
+Last modified: Tue May 24 13:12:24 EDT 2005
 <!-- hhmts end -->
 
 </BODY>

@@ -307,7 +307,7 @@ main (int32 argc, char **argv)
 	param_t param;
 	float *mfcp;
 
-	fe_init_params(&param);
+	memset(&param, 0, sizeof(param));
 	param.SAMPLING_RATE = (float)sps;
 
 	if ((fe = fe_init (&param)) == NULL)
@@ -344,9 +344,7 @@ main (int32 argc, char **argv)
 
 	    if (mfcout) {
 		int slop;
-		if (fe_end_utt(fe, mfcbuf[0], &slop) == FE_ZERO_ENERGY_ERROR) {
-		  E_WARN("Some frames with zero energy. Consider using dither\n");
-		}
+		slop = fe_end_utt(fe, mfcbuf[0]);
 		if (slop) {
 		    fwrite (mfcbuf[0], sizeof(float), fe->NUM_CEPSTRA, mfcout);
 		    nc += 1;
@@ -410,9 +408,8 @@ main (int32 argc, char **argv)
 	    tot_ns += k;
 	    
 	    if (mfcout) {
- 	        if (fe_process_utt (fe, adbuf, k, mfcbuf, &k) == FE_ZERO_ENERGY_ERROR) {
-		    E_WARN("File %s has some frames with zero energy. Consider using dither\n", uttid);
-		}
+		
+		k = fe_process_utt (fe, adbuf, k, mfcbuf);
 		nc += k;
 		
 		for (i = 0; i < k; i++)

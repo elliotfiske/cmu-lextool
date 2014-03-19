@@ -86,7 +86,7 @@ $processname = "decode";
 
 $log_dir = "$DEC_CFG_LOG_DIR/$processname";
 mkdir ($log_dir,0777) unless -d $log_dir;
-$result_dir = "$DEC_CFG_RESULT_DIR";
+$result_dir = "$DEC_CFG_BASE_DIR/result";
 mkdir ($result_dir,0777) unless -d $result_dir;
 
 $logfile = "$log_dir/${DEC_CFG_EXPTNAME}-${part}-${npart}.log";
@@ -136,7 +136,7 @@ copy "$DEC_CFG_GIF_DIR/green-ball.gif", "$DEC_CFG_BASE_DIR/.decode.$part.state.g
 open LOG,">$logfile";
 
 ### now actually start  (this will clobber the previous logfile)
-$DECODER = "$DEC_CFG_BIN_DIR/sphinx2_batch";
+$DECODER = "$DEC_CFG_BIN_DIR/sphinx2-batch";
 
 if (open PIPE, "\"$DECODER\" " .
     "-hmmdir \"$hmm_dir\" " .

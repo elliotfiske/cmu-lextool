@@ -38,34 +38,13 @@
  * search.c -- HMM-tree version
  * 
  * HISTORY
- * 
- * 30-Nov-2005	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Modified hyp[] array allocation to recalloc if needed.
- * 		Modified all backtrace functions to fill in as much of search_hyp_t
- * 		structure as possible, in one place.  (Previously this was being
- * 		done, piecemeal, all over the place.)
- * 		Added acoustic confidence scoring to all hypotheses.  (Currently,
- * 		needs compute-all-senones for this to work.)
- * 		Removed hyp_word[] array.
  *
  * $Log$
- * Revision 1.21  2006/01/31  18:40:44  rkm
- * Changed pscr-based phone lattice dump
- * 
- * Revision 1.20  2005/12/13 17:04:14  rkm
- * Added confidence reporting in nbest files; fixed some backtrace bugs
- *
- * Revision 1.19  2005/12/03 17:54:34  rkm
- * Added acoustic confidence scores to hypotheses; and cleaned up backtrace functions
- *
- * Revision 1.18  2005/11/14 15:28:39  rkm
- * Bugfixes: using SIL when context is filler; pruning WORST_SCORE links from dag
- *
- * Revision 1.17  2005/06/07 02:36:02  dhdfu
+ * Revision 1.17  2005/06/07  02:36:02  dhdfu
  * Forward-declaring functions inside functions apparently no longer
  * works in recent GCC versions (this code breaks on 3.3, 4.0).  No good
  * reason for it anyway...
- *
+ * 
  * Revision 1.16  2005/05/24 20:55:24  rkm
  * Added -fsgbfs flag
  *
@@ -444,12 +423,10 @@ static double *phone_perplexity;/* How sharply phones are discriminated/frame */
 static int32 *zeroPermTab;
 
 /* Word-id sequence hypothesized by decoder */
-search_hyp_t *hyp = NULL;	/* no <s>, </s>, or filler words */
-int32 hyp_sz_max = 0;		/* Current allocation size of hyp[] array */
-int32 hyp_sz_cur;		/* #Valid hyp segments in hyp[] array */
-
-static char *hyp_str;		/* hyp as string of words sep. by blanks */
-static int32 hyp_str_max = 0;
+static search_hyp_t hyp[HYP_SZ];	/* no <s>, </s>, or filler words */
+static char hyp_str[4096];		/* hyp as string of words sep. by blanks */
+static int32 hyp_wid[4096];
+static int32 n_hyp_wid;
 
 static int32 HypTotalScore;
 static int32 TotalLangScore;
@@ -464,6 +441,7 @@ static int32 n_1ph_words;		/* #single phone words in dict (total) */
 static int32 n_1ph_LMwords;		/* #single phone dict words also in LM;
 					   these come first in single_phone_wid */
 
+static void seg_back_trace (int32, char const *);
 static void renormalize_scores (int32);
 static void fwdflat_renormalize_scores (int32);
 static int32 renormalized;
@@ -511,9 +489,6 @@ static int32 utt_pscr_valid = FALSE;
 static void topsen_init ( void );
 static void compute_phone_active (int32 topsenscr, int32 npa_th);
 
-static void compute_phone_perplexity( void );
-
-
 /* FIXME: put this in a header file */
 extern void quit (int status, char const *fmt, ...);
 
@@ -540,6 +515,7 @@ typedef struct lastphn_cand_s {
 static lastphn_cand_t *lastphn_cand;
 static int32 n_lastphn_cand;
 
+extern int32 print_back_trace;
 
 #if 0
 /*
@@ -1182,11 +1158,6 @@ void
 save_bwd_ptr (WORD_ID w, int32 score, int32 path, int32 rc)
 {
     int32 _bp_;
-    
-    if (score >= 0) {
-      E_ERROR("save_bwd_ptr(score >= 0; int32 overflow??):  %10d %8d %4d %s\n",
-	      score, path, rc, WordDict->dict_list[w]->word);
-    }
     
     _bp_ = WordLatIdx[w];
     if (_bp_ != NO_BP) {
@@ -1969,7 +1940,7 @@ search_initialize (void)
 #if SEARCH_TRACE_CHAN_DETAILED
     static void load_trace_wordlist ();
 #endif
-    
+
     ForcedRecMode = FALSE;
     
     NumWords =            kb_get_num_words ();
@@ -1996,11 +1967,6 @@ search_initialize (void)
     LeftContextBwdSize =  dict_left_context_bwd_size ();
     RightContextBwd =     dict_right_context_bwd ();
     NumMainDictWords =    dict_get_num_main_words (WordDict);
-    
-    hyp = (search_hyp_t *) CM_calloc (HYP_SZ, sizeof(search_hyp_t));
-    hyp_sz_max = HYP_SZ;
-    hyp_str = (char *) CM_calloc (4096, sizeof(char));
-    hyp_str_max = 4096;
     
     word_chan = (CHAN_T **) CM_calloc (NumWords, sizeof (CHAN_T *));
     WordLatIdx =  (int32 *) CM_calloc (NumWords, sizeof(int32));
@@ -2158,10 +2124,8 @@ int32 search_get_current_startwid ( void )
  */
 void search_set_context (int32 w1, int32 w2)
 {
-#if 0
     context_word[0] = w1;
     context_word[1] = w2;
-#endif
 }
 
 /*
@@ -2181,6 +2145,11 @@ void search_remove_context (search_hyp_t *hyp)
 	for (i = j; hyp[i].wid >= 0; i++)
 	    hyp[i-j] = hyp[i];
 	hyp[i-j].wid = -1;
+
+	/* hyp_wid has EVERYTHING, including the initial <s>; remove context after it */
+	for (i = j+1; i < n_hyp_wid; i++)
+	    hyp[i-j] = hyp[i];
+	n_hyp_wid -= j;
     }
 }
 
@@ -2252,9 +2221,17 @@ search_fwd (float *cep, float *dcep, float *dcep_80ms, float *pcep, float *ddcep
     
     if (! compute_all_senones) {
 	compute_sen_active ();
-	topsen_score[cf] = senscr_active(newscr, cf, cep, dcep, dcep_80ms, pcep, ddcep);
+	topsen_score[cf] = senscr_active(newscr, cep, dcep, dcep_80ms, pcep, ddcep);
     } else {
-	topsen_score[cf] = senscr_all(newscr, cf, cep, dcep, dcep_80ms, pcep, ddcep);
+	topsen_score[cf] = senscr_all(newscr, cep, dcep, dcep_80ms, pcep, ddcep);
+	
+	if (cf < MAX_FRAMES) {
+	  /* Save bestpscr in utt_pscr */
+	  for (i = 0; i < NumCiPhones; i++)
+	    utt_pscr[cf][i] = bestpscr[i];
+	  
+	  utt_pscr_valid = TRUE;
+	}
     }
     n_senone_active_utt += n_senone_active;
     
@@ -2310,7 +2287,6 @@ search_start_fwd (void)
 
     hyp_str[0] = '\0';
     hyp[0].wid = -1;
-    hyp_sz_cur = 0;
     
     if (context_word[0] < 0) {
 	/* Start search with <s>; word_chan[<s>] is permanently allocated */
@@ -2494,305 +2470,7 @@ search_one_ply_fwd (void)
     lm_next_frame ();
 }
 
-
-search_hyp_t *search_hyparray_build_nextptr (search_hyp_t *hyparray, int32 size)
-{
-  int32 i;
-  
-  for (i = 0; i < size-1; i++)
-    hyparray[i].next = &(hyparray[i+1]);
-  
-  if (size > 0) {
-    hyparray[size-1].next = NULL;
-    return hyparray;
-  } else
-    return NULL;
-}
-
-
-/*
- * Remove non-REAL words from hyp[] and compress the remaining array
- */
-search_hyp_t *search_hyp_filter ( void )
-{
-  int32 i, j;
-  
-  for (i = 0, j = 0; i < hyp_sz_cur; i++) {
-    if ((hyp[i].wid >= 0) && (ISA_REAL_WORD(hyp[i].wid))) {	/* Keep this word */
-      if (j < i)
-	hyp[j] = hyp[i];	/* Copy into compressed array */
-      
-      /* Filter exact pronunciation info in hyp[], if specified */
-      if (! query_report_altpron()) {
-	hyp[j].wid = WordDict->dict_list[hyp[j].wid]->fwid;
-	hyp[j].word = WordIdToStr(WordDict, hyp[j].wid);
-      }
-      
-      j++;
-    }
-  }
-  
-  hyp[j].wid = -1;	/* Sentinel */
-  hyp_sz_cur = j;
-  
-  /* Fill in .next ptr for hyp[] entries */
-  return search_hyparray_build_nextptr (hyp, hyp_sz_cur);
-}
-
-
-#if 0
-static void print_partial_back_trace (search_hyp_t *h, int32 n_seg)
-{
-  int32 i;
-  int32 sf, ef;
-  
-  printf("\t%4s %4s %6s %s (%s) (%s)\n",
-	 "SFrm", "Efrm", "Conf", "Word",
-	 "Partial", uttproc_get_uttid());
-  printf("\t---------------------------------------------------------------------\n");
-  
-  sf = (n_seg > 0) ? h[0].sf : 0;
-  ef = (n_seg > 0) ? h[n_seg-1].ef : -1;
-  
-  for (i = 0; i < n_seg; i++) {
-    printf("\t%4d %4d %6.2f %s\n",
-	   h[i].sf, h[i].ef, h[i].conf, h[i].word);
-  }
-  
-  printf("\t---------------------------------------------------------------------\n");
-  printf("\t%4d %4d %6s %s(TOTAL)\n",
-	 sf, ef, "",
-	 uttproc_get_uttid());
-  
-  fflush (stdout);
-}
-#endif
-
-
-static void print_back_trace (search_hyp_t *h, int32 n_seg, char const *pass)
-{
-  int32 i;
-  int32 sf, ef;
-  int32 tot_ascr, tot_lscr;
-  int32 worst_bsdiff, worst_tsdiff;
-  
-  printf("\t%4s %4s %11s %10s %8s %8s %6s %6s %s (%s) (%s)\n",
-	 "SFrm", "Efrm", "AScr", "LScr", "BSDiff", "TSDiffPF",
-	 "Conf", "LatDen", "Word",
-	 pass, uttproc_get_uttid());
-  printf("\t---------------------------------------------------------------------\n");
-  
-  sf = (n_seg > 0) ? h[0].sf : 0;
-  ef = (n_seg > 0) ? h[n_seg-1].ef : -1;
-  tot_ascr = 0;
-  tot_lscr = 0;
-  worst_bsdiff = 0;
-  worst_tsdiff = 0;
-  
-  for (i = 0; i < n_seg; i++) {
-    printf("\t%4d %4d %11d %10d %8d %8d %6.2f %6d %s\n",
-	   h[i].sf, h[i].ef, h[i].ascr, h[i].lscr, h[i].bsdiff, h[i].tsdiff,
-	   h[i].conf, h[i].latden,
-	   h[i].word);
-    
-    tot_ascr += h[i].ascr;
-    tot_lscr += h[i].lscr;
-    if (worst_bsdiff > h[i].bsdiff)
-      worst_bsdiff = h[i].bsdiff;
-    if (worst_tsdiff > h[i].tsdiff)
-      worst_tsdiff = h[i].tsdiff;
-  }
-  
-  printf("\t---------------------------------------------------------------------\n");
-  printf("\t%4d %4d %11d %10d %8d %8d %6s %6s %s(TOTAL)\n",
-	 sf, ef, tot_ascr, tot_lscr, worst_bsdiff, worst_tsdiff,
-	 "", "",
-	 uttproc_get_uttid());
-  
-  fflush (stdout);
-}
-
-
-/*
- * SEG_BACK_TRACE
- * Viterbi result, includes ALL words, including fillers, and exact pronunciation
- * info.  These have to be filtered out subsequently.
- */
-static void
-seg_back_trace (int32 bpidx, char const *pass)
-{
-    static int32 last_score;
-    static int32 last_time;
-    static int32 seg;
-    /* int32 *probs; */
-    int32  l_scr;
-    int32  a_scr;
-    int32  a_scr_norm;		/* time normalized acoustic score */
-    int32  raw_scr;
-    int32  seg_len;
-    int32  tsdiff_norm;
-    int32  f, latden;
-    double perp;
-    
-    if (bpidx != NO_BP) {
-	seg_back_trace (BPTable[bpidx].bp, pass);
-	
-	l_scr = BPTable[bpidx].lscr;
-	raw_scr = BPTable[bpidx].score - last_score;
-	a_scr = raw_scr - l_scr;
-  	seg_len = BPTable[bpidx].frame - last_time;
-	a_scr_norm = ((seg_len == 0) ? 0 : (a_scr / seg_len));
-	tsdiff_norm = ((seg_len == 0) ? 0 :
-		       (a_scr - seg_topsen_score(last_time+1, BPTable[bpidx].frame)) / seg_len);
-	
-	TotalLangScore += l_scr;
-	
-	/* Fill in lattice density and perplexity information for this word */
-	latden = 0;
-	perp = 0.0;
-	for (f = last_time+1; f <= BPTable[bpidx].frame; f++) {
-	    latden += lattice_density[f];
-	    perp += phone_perplexity[f];
-	}
-	if (seg_len > 0) {
-	    latden /= seg_len;
-	    perp /= seg_len;
-	}
-	
-	/*
-	 * Store hypothesis word sequence details.  For now store all words; later
-	 * eliminate "non-REAL" words (<s>, </s>, fillers).
-	 */
-	if (seg >= hyp_sz_max - 1) {	/* 1 for the trailing sentinel */
-	  hyp = (search_hyp_t *) CM_recalloc (hyp, hyp_sz_max + HYP_SZ, sizeof(search_hyp_t));
-	  hyp_sz_max += HYP_SZ;
-	}
-	hyp[seg].word = WordIdToStr(WordDict, BPTable[bpidx].wid);
-	hyp[seg].wid = BPTable[bpidx].wid;
-	hyp[seg].sf = last_time + 1;
-	hyp[seg].ef = BPTable[bpidx].frame;
-	hyp[seg].ascr = a_scr;
-	hyp[seg].lscr = l_scr;
-	hyp[seg].scr = BPTable[bpidx].score;
-	hyp[seg].fsg_state_from = -1;
-	hyp[seg].fsg_state_to = -1;
-	hyp[seg].bsdiff = BPTable[bpidx].score - BestScoreTable[BPTable[bpidx].frame];
-	hyp[seg].tsdiff = tsdiff_norm;
-	hyp[seg].conf = -1.0;	/* Not yet computed */
-	hyp[seg].latden = latden;
-	hyp[seg].phone_perp = perp;
-	seg++;
-	hyp_sz_cur++;
-	hyp[seg].wid = -1;	/* sentinel */
-	
-	last_score = BPTable[bpidx].score;
-	last_time = BPTable[bpidx].frame;
-    }
-    else {
-      TotalLangScore = 0;
-      last_score = 0;
-      last_time = -1;		/* Use -1 to count frame 0 */
-      seg = 0;
-      hyp_sz_cur = 0;
-      hyp[0].wid = -1;
-    }
-}
-
-
-static void
-search_postprocess_bptable (double lwf, char const *pass)
-{
-    /* register int32 idx; */
-    int32 /* i, j, w,*/ cf, nf, f; /*, *awl; */
-    /* ROOT_CHAN_T *rhmm; */
-    /* CHAN_T *hmm, *thmm, **acl; */
-    int32 bp;
-    int32 l_scr;
-    search_hyp_t *hyplist;
-    
-    if (LastFrame < 10) {	/* HACK!!  Hardwired constant 10 */
-	E_WARN("UTTERANCE TOO SHORT; IGNORED\n");
-	LastFrame = 0;
-	
-	return;	
-    }
-    
-    /* Deactivate channels lined up for the next frame */
-    cf = CurrentFrame;
-    nf = cf+1;
-    
-    /*
-     * Print final Path
-     */
-    for (bp = BPTableIdx[cf]; bp < BPIdx; bp++) {
-	if (BPTable[bp].wid == FinishWordId)
-	    break;
-    }
-    if (bp >= BPIdx) {
-	int32 bestbp = 0, bestscore = 0; /* FIXME: good defaults? */
-	E_WARN ("Failed to terminate in final state\n\n");
-
-	/* Find the most recent frame containing the best BP entry */
-	for (f = cf; (f >= 0) && (BPTableIdx[f] == BPIdx); --f);
-	if (f < 0) {
-	    E_WARN ("**EMPTY BPTABLE**\n\n");
-	    return;
-	}
-	
-	bestscore = WORST_SCORE;
-	for (bp = BPTableIdx[f]; bp < BPTableIdx[f+1]; bp++) {
-	    l_scr = lm_tg_score (BPTable[bp].prev_real_fwid,
-				 BPTable[bp].real_fwid,
-				 FinishWordId);
-	    l_scr *= lwf;
-	    
-	    if (BPTable[bp].score+l_scr > bestscore) {
-		bestscore = BPTable[bp].score + l_scr;
-		bestbp = bp;
-	    }
-	}
-	
-	/* Force </s> into bptable */
-	CurrentFrame++;
-	LastFrame++;
-	save_bwd_ptr (FinishWordId, bestscore, bestbp, 0);
-	BPTableIdx[CurrentFrame+1] = BPIdx;
-	bp = BPIdx-1;
-    }
-    HypTotalScore = BPTable[bp].score;
-    
-    /* Compute individual acoustic/LM scores for each word */
-    compute_seg_scores (lwf);
-
-    /* Viterbi back trace */
-    seg_back_trace (bp, pass);
-    
-    /* Fill in .next ptr for hyp[] entries */
-    hyplist = search_hyparray_build_nextptr (hyp, hyp_sz_cur);
-    
-    /* Fill in confidence scores for Viterbi path */
-    search_hyp_conf (hyplist);
-    
-    /* Log detailed back trace, if specified */
-    if (query_back_trace())
-      print_back_trace (hyp, hyp_sz_cur, pass);
-    
-    /* Remove non-REAL words, and maybe pronunciation spec, from hyp[] */
-    hyplist = search_hyp_filter();
-
-#if 0
-    /* Remove context words; OBSOLETE; no longer compatible */
-    search_remove_context (hyp);
-#endif
-
-    /* Generate sentence string */
-    search_hyp_to_str (hyplist);
-
-    E_INFO ("%s: %s (%s %d (A=%d L=%d))\n",
-	    pass, hyp_str, uttproc_get_uttid(),
-	    HypTotalScore, HypTotalScore - TotalLangScore, TotalLangScore);
-}
-
+static void compute_phone_perplexity( void );
 void
 search_finish_fwd (void)
 {
@@ -2895,6 +2573,78 @@ search_finish_fwd (void)
 #endif
 }
 
+void
+search_postprocess_bptable (double lwf, char const *pass)
+{
+    /* register int32 idx; */
+    int32 /* i, j, w,*/ cf, nf, f; /*, *awl; */
+    /* ROOT_CHAN_T *rhmm; */
+    /* CHAN_T *hmm, *thmm, **acl; */
+    int32 bp;
+    int32 l_scr;
+    
+    if (LastFrame < 10) {	/* HACK!!  Hardwired constant 10 */
+	E_WARN("UTTERANCE TOO SHORT; IGNORED\n");
+	LastFrame = 0;
+	
+	return;	
+    }
+    
+    /* Deactivate channels lined up for the next frame */
+    cf = CurrentFrame;
+    nf = cf+1;
+    
+    /*
+     * Print final Path
+     */
+    for (bp = BPTableIdx[cf]; bp < BPIdx; bp++) {
+	if (BPTable[bp].wid == FinishWordId)
+	    break;
+    }
+    if (bp >= BPIdx) {
+	int32 bestbp = 0, bestscore = 0; /* FIXME: good defaults? */
+	E_WARN ("Failed to terminate in final state\n\n");
+
+	/* Find the most recent frame containing the best BP entry */
+	for (f = cf; (f >= 0) && (BPTableIdx[f] == BPIdx); --f);
+	if (f < 0) {
+	    E_WARN ("**EMPTY BPTABLE**\n\n");
+	    return;
+	}
+	
+	bestscore = WORST_SCORE;
+	for (bp = BPTableIdx[f]; bp < BPTableIdx[f+1]; bp++) {
+	    l_scr = lm_tg_score (BPTable[bp].prev_real_fwid,
+				 BPTable[bp].real_fwid,
+				 FinishWordId);
+	    l_scr *= lwf;
+	    
+	    if (BPTable[bp].score+l_scr > bestscore) {
+		bestscore = BPTable[bp].score + l_scr;
+		bestbp = bp;
+	    }
+	}
+	
+	/* Force </s> into bptable */
+	CurrentFrame++;
+	LastFrame++;
+	save_bwd_ptr (FinishWordId, bestscore, bestbp, 0);
+	BPTableIdx[CurrentFrame+1] = BPIdx;
+	bp = BPIdx-1;
+    }
+    HypTotalScore = BPTable[bp].score;
+    
+    compute_seg_scores (lwf);
+
+    seg_back_trace (bp, pass);
+    search_remove_context (hyp);
+    search_hyp_to_str();
+
+    E_INFO ("%s: %s (%s %d (A=%d L=%d))\n",
+	    pass, hyp_str, uttproc_get_uttid(),
+	    HypTotalScore, HypTotalScore - TotalLangScore, TotalLangScore);
+}
+
 void bestpath_search ( void )
 {
     if (! renormalized) {
@@ -2909,22 +2659,21 @@ void bestpath_search ( void )
  * Convert search hypothesis (word-id sequence) to a single string.
  */
 void
-search_hyp_to_str (search_hyp_t *hyplist)
+search_hyp_to_str ( void )
 {
-    int32 k, l;
+    int32 i, k, l;
+    char const *wd;
     
     hyp_str[0] = '\0';
     k = 0;
-    
-    for (; hyplist; hyplist = hyplist->next) {
-	l = strlen (hyplist->word);
+    for (i = 0; hyp[i].wid >= 0; i++) {
+	wd = WordIdToStr (WordDict, hyp[i].wid);
+	l = strlen (wd);
 	
-	if (k+l > hyp_str_max-6) {	/* why 6? just approx. */
-	  hyp_str_max += 4096;
-	  hyp_str = (char *) CM_recalloc (hyp_str, hyp_str_max, sizeof(char));
-	}
+	if (k+l > 4090)
+	    E_FATAL("**ERROR** Increase hyp_str[] size\n");
 	
-	strcpy (hyp_str+k, hyplist->word);
+	strcpy (hyp_str+k, wd);
 	k += l;
 	hyp_str[k] = ' ';
 	k++;
@@ -2943,6 +2692,100 @@ int32 seg_topsen_score (int32 sf, int32 ef)
     return (sum);
 }
 
+/* SEG_BACK_TRACE
+ *-------------------------------------------------------------*
+ * Print32 out the backtrace
+ */
+static void
+seg_back_trace (int32 bpidx, char const *pass)
+{
+    static int32 last_score;
+    static int32 last_time;
+    static int32 seg;
+    /* int32 *probs; */
+    int32  l_scr;
+    int32  a_scr;
+    int32  a_scr_norm;		/* time normalized acoustic score */
+    int32  raw_scr;
+    int32  seg_len;
+    int32  altpron;
+    int32  topsenscr_norm;
+    int32  f, latden;
+    double perp;
+    
+    altpron = query_report_altpron() || ForcedRecMode;
+    
+    if (bpidx != NO_BP) {
+	seg_back_trace (BPTable[bpidx].bp, pass);
+	
+	l_scr = BPTable[bpidx].lscr;
+	raw_scr = BPTable[bpidx].score - last_score;
+	a_scr = raw_scr - l_scr;
+  	seg_len = BPTable[bpidx].frame - last_time;
+	a_scr_norm = ((seg_len == 0) ? 0 : (a_scr / seg_len));
+	topsenscr_norm = ((seg_len == 0) ? 0 :
+			  seg_topsen_score(last_time+1, BPTable[bpidx].frame) / seg_len);
+	
+	TotalLangScore += l_scr;
+	
+	/* Fill in lattice density and perplexity information for this word */
+	latden = 0;
+	perp = 0.0;
+	for (f = last_time+1; f <= BPTable[bpidx].frame; f++) {
+	    latden += lattice_density[f];
+	    perp += phone_perplexity[f];
+	}
+	if (seg_len > 0) {
+	    latden /= seg_len;
+	    perp /= seg_len;
+	}
+	
+	if (print_back_trace)
+	  printf("\t%4d %4d %10d %11d %8d %8d %6d %6.2f %s\n",
+		 last_time + 1,	BPTable[bpidx].frame,
+		 a_scr_norm, a_scr, l_scr,
+		 /* BestScoreTable[BPTable[bpidx].frame] -  BPTable[bpidx].score */
+		 topsenscr_norm,
+		 latden, perp,
+		 WordIdToStr(WordDict, BPTable[bpidx].wid));
+	hyp_wid[n_hyp_wid++] = BPTable[bpidx].wid;
+	
+	/* Store hypothesis word sequence and segmentation */
+	if (ISA_REAL_WORD(BPTable[bpidx].wid)) {
+	    if (seg >= HYP_SZ-1)
+		E_FATAL("**ERROR** Increase HYP_SZ\n");
+	    hyp[seg].wid = altpron ? BPTable[bpidx].wid :
+		WordDict->dict_list[BPTable[bpidx].wid]->fwid;
+	    hyp[seg].sf = uttproc_feat2rawfr(last_time + 1);
+	    hyp[seg].ef = uttproc_feat2rawfr(BPTable[bpidx].frame);
+	    hyp[seg].ascr = a_scr;
+	    hyp[seg].lscr = l_scr;
+	    hyp[seg].latden = latden;
+	    hyp[seg].phone_perp = perp;
+	    seg++;
+	    
+	    hyp[seg].wid = -1;
+        }
+	
+	last_score = BPTable[bpidx].score;
+	last_time = BPTable[bpidx].frame;
+    }
+    else {
+      if (print_back_trace) {
+	printf("\t%4s %4s %10s %11s %8s %8s %6s %6s %s (%s) (%s)\n",
+	       "SFrm", "Efrm", "AScr/Frm", "AScr", "LScr", "BSDiff",
+	       "LatDen", "PhPerp", "Word",
+	       pass, uttproc_get_uttid());
+	printf("\t---------------------------------------------------------------------\n");
+      }
+      TotalLangScore = 0;
+      last_score = 0;
+      last_time = -1;		/* Use -1 to count frame 0 */
+      seg = 0;
+      hyp[0].wid = -1;
+      n_hyp_wid = 0;
+    }
+}
 
 /* PARTIAL_SEG_BACK_TRACE
  *-------------------------------------------------------------*
@@ -2960,33 +2803,23 @@ partial_seg_back_trace (int32 bpidx)
     if (bpidx != NO_BP) {
 	partial_seg_back_trace (BPTable[bpidx].bp);
 	
-	if (seg >= hyp_sz_max - 1) {	/* 1 for the trailing sentinel */
-	  hyp = (search_hyp_t *) CM_recalloc (hyp, hyp_sz_max + HYP_SZ, sizeof(search_hyp_t));
-	  hyp_sz_max += HYP_SZ;
-	}
-	hyp[seg].word = WordIdToStr(WordDict, BPTable[bpidx].wid);
-	hyp[seg].wid = BPTable[bpidx].wid;
-	hyp[seg].sf = last_time + 1;
-	hyp[seg].ef = BPTable[bpidx].frame;
-	hyp[seg].ascr = 0;
-	hyp[seg].lscr = 0;
-	hyp[seg].fsg_state_from = -1;
-	hyp[seg].fsg_state_to = -1;
-	hyp[seg].bsdiff = 0;
-	hyp[seg].tsdiff = 0;
-	hyp[seg].conf = -1.0;	/* Not yet computed */
-	hyp[seg].latden = 0;
-	hyp[seg].phone_perp = 0.0;
-	seg++;
-	hyp_sz_cur++;
-	hyp[seg].wid = -1;	/* sentinel */
+	/* Store hypothesis word sequence and segmentation */
+	if (ISA_REAL_WORD(BPTable[bpidx].wid)) {
+	    if (seg >= HYP_SZ-1)
+		E_FATAL("**ERROR** Increase HYP_SZ\n");
+	    hyp[seg].wid = altpron ?
+		BPTable[bpidx].wid : WordDict->dict_list[BPTable[bpidx].wid]->fwid;
+	    hyp[seg].sf = uttproc_feat2rawfr(last_time + 1);
+	    hyp[seg].ef = uttproc_feat2rawfr(BPTable[bpidx].frame);
+	    seg++;
+	    hyp[seg].wid = -1;
+        }
 	
 	last_time = BPTable[bpidx].frame;
     } else {
 	last_time = -1;		/* Use -1 to count frame 0 */
 	seg = 0;
 	hyp[0].wid = -1;
-	hyp_sz_cur = 0;
     }
 }
 
@@ -3216,7 +3049,6 @@ parse_ref_str (void)
 int32 search_partial_result (int32 *fr, char **res)
 {
     int32 bp, bestscore = 0, bestbp = 0, f; /* FIXME: good defaults? */
-    search_hyp_t *hyplist;
     
     bestscore = WORST_SCORE;
     f = CurrentFrame-1;
@@ -3233,24 +3065,12 @@ int32 search_partial_result (int32 *fr, char **res)
     }
     
     if (f >= 0) {
-	/* Viterbi back trace */
 	partial_seg_back_trace (bestbp);
-	
-	/* Fill in .next ptr for hyp[] entries */
-	hyplist = search_hyparray_build_nextptr (hyp, hyp_sz_cur);
-	
-	/* Fill in confidence scores for Viterbi path */
-	search_hyp_conf (hyplist);
-	
-	/* Remove non-REAL words from hyp[] */
-	hyplist = search_hyp_filter();
-	
-	/* Generate sentence string */
-	search_hyp_to_str (hyplist);
+	search_hyp_to_str();
     } else
 	hyp_str[0] = '\0';
     
-    *fr = CurrentFrame;
+    *fr = uttproc_feat2rawfr(CurrentFrame);
     *res = hyp_str;
     
     return 0;
@@ -3262,7 +3082,7 @@ int32 search_partial_result (int32 *fr, char **res)
  */
 int32 search_result (int32 *fr, char **res)
 {
-    *fr = LastFrame;
+    *fr = uttproc_feat2rawfr(LastFrame);
     *res = hyp_str;
     
     return 0;
@@ -3352,24 +3172,20 @@ search_dump_lattice (char const *file)
 void
 search_dump_lattice_ascii (char const *file)
 {
-    int32 i, j, sf;
+    int32 i, sf;
     FILE *fp;
-    dict_entry_t *de;
-    int32 rcsize;
-    BPTBL_T *bpe;
     
     if ((fp = fopen (file, "w")) == NULL) {
 	E_ERROR("fopen(%s,w) failed\n", file);
 	return;
     }
     
-    fprintf (fp, "%2s %6s %4s %4s %11s %9s %9s %8s %6s %5s %s\n\n",
-	     "OK", "ID", "SF", "EF", "TOTSCR", "ASCR", "TOPSENSCR", "LSCR", "BPID", "WID", "WORD");
+    fprintf (fp, "%6s %4s %4s %11s %9s %9s %8s %6s %5s %s\n\n",
+	     "ID", "SF", "EF", "TOTSCR", "ASCR", "TOPSENSCR", "LSCR", "BPID", "WID", "WORD");
     for (i = 0; i < BPIdx; i++) {
 	sf = (BPTable[i].bp >= 0) ? BPTable[BPTable[i].bp].frame+1 : 0;
 	
-	fprintf (fp, "%2d %6d %4d %4d %11d %9d %9d %8d %6d %5d %s\n",
-		 BPTable[i].valid,
+	fprintf (fp, "%6d %4d %4d %11d %9d %9d %8d %6d %5d %s\n",
 		 i, sf,
 		 BPTable[i].frame,
 		 BPTable[i].score,
@@ -3379,14 +3195,6 @@ search_dump_lattice_ascii (char const *file)
 		 BPTable[i].bp,
 		 BPTable[i].wid,
 		 WordDict->dict_list[BPTable[i].wid]->word);
-	
-	/* Dump the individual right context scores */
-	de = WordDict->dict_list[BPTable[i].wid];
-	bpe = &(BPTable[i]);
-	rcsize = ((de->len != 1) && (de->mpx)) ? RightContextFwdSize[bpe->r_diph] : 1;
-	for (j = bpe->s_idx; j < bpe->s_idx+rcsize; j++) {
-	  fprintf (fp, "\t\t\t\t\t\t\t\t\t\t%10d\n", BScoreStack[j]);
-	}
     }
 
     fclose (fp);
@@ -3928,6 +3736,7 @@ compute_seg_scores (double lwf)
     dict_entry_t *de;
     
     for (bp = 0; bp < BPIdx; bp++) {
+	
 	bpe = &(BPTable[bp]);
 	
         if (bpe->bp == NO_BP) {
@@ -3940,10 +3749,7 @@ compute_seg_scores (double lwf)
 	p_bpe = &(BPTable[bpe->bp]);
 	rcpermtab = (p_bpe->r_diph >= 0) ?
 	    RightContextFwdPerm[p_bpe->r_diph] : zeroPermTab;
-	if (ISA_FILLER_WORD(bpe->wid))
-	  start_score = BScoreStack[p_bpe->s_idx + rcpermtab[SilencePhoneId]];
-	else
-	  start_score = BScoreStack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
+	start_score = BScoreStack[p_bpe->s_idx + rcpermtab[de->ci_phone_ids[0]]];
 	
 	if (bpe->wid == SilenceWordId) {
 	    bpe->lscr = SilenceWordPenalty;
@@ -3954,9 +3760,6 @@ compute_seg_scores (double lwf)
 	    bpe->lscr *= lwf;
 	}
 	bpe->ascr = bpe->score - start_score - bpe->lscr;
-	
-	if (bpe->ascr >= 0)
-	  E_WARN("Segment acoustic score = %d; should be < 0 ??\n", bpe->ascr);
     }
 }
 
@@ -4257,8 +4060,7 @@ search_fwdflat_start ( void )
 
     hyp_str[0] = '\0';
     hyp[0].wid = -1;
-    hyp_sz_cur = 0;
-    
+
     n_fwdflat_chan = 0;
     n_fwdflat_words = 0;
     n_fwdflat_word_transition = 0;
@@ -4281,8 +4083,6 @@ search_fwdflat_start ( void )
 	}
 	expand_word_list[j] = -1;
     }
-    
-    utt_pscr_valid = FALSE;
 }
 
 void
@@ -4293,9 +4093,17 @@ search_fwdflat_frame (float *cep, float *dcep, float *dcep_80ms, float *pcep, fl
     
     if (! compute_all_senones) {
 	compute_fwdflat_senone_active ();
-	senscr_active(distScores, CurrentFrame, cep, dcep, dcep_80ms, pcep, ddcep);
+	senscr_active(distScores, cep, dcep, dcep_80ms, pcep, ddcep);
     } else {
-	senscr_all(distScores, CurrentFrame, cep, dcep, dcep_80ms, pcep, ddcep);
+	senscr_all(distScores, cep, dcep, dcep_80ms, pcep, ddcep);
+	
+	if (CurrentFrame < MAX_FRAMES) {
+	  /* Save bestpscr in utt_pscr */
+	  for (i = 0; i < NumCiPhones; i++)
+	    utt_pscr[CurrentFrame][i] = bestpscr[i];
+	  
+	  utt_pscr_valid = TRUE;
+	}
     }
     n_senone_active_utt += n_senone_active;
 
@@ -4871,93 +4679,6 @@ typedef struct {
 #endif
 
 
-#if 1
-
-/*
- * Dump a "phone lattice" to the given file:
- *   For each frame, determine the CIphones with top scoring senones, threshold
- *   and sort them in descending order.  (Threshold based on topsen_thresh.)
- */
-int32 search_uttpscr2phlat_print (FILE *outfp)
-{
-  int32 nf, sum, prob;
-  int32 f, p, l, k;
-  const char *pstr;
-  int32 ts = Table_Size;
-  int16 *at = Addition_Table;
-  double ent, fprob;
-  
-  if (! utt_pscr_valid)
-    return -1;
-  
-  /* Print header */
-  fprintf(outfp, "  Frm  Entr  PhoneProbs (%s)\n", uttproc_get_uttid());
-  l = 0;
-  for (p = 0; p < NumCiPhones; p++) {
-    pstr = phone_from_id (p);
-    k = strlen(pstr);
-    if (l < k)
-      l = k;
-  }
-  for (; l > 0; --l) {
-    fprintf (outfp, "            ");
-    for (p = 0; p < NumCiPhones; p++) {
-      pstr = phone_from_id (p);
-      k = strlen(pstr);
-      if (l <= k)
-	fprintf (outfp, "  %c", pstr[k-l]);
-      else
-	fprintf (outfp, "   ");
-    }
-    fprintf (outfp, "\n");
-  }
-  fprintf(outfp, "  ---------");
-  for (p = 0; p < NumCiPhones; p++)
-    fprintf (outfp, "---");
-  fprintf (outfp, "\n");
-
-  nf = LastFrame;  /* Strictly, #frames may > LastFrame, but... */
-  
-  for (f = 0; f < nf; f++) {
-    /* Sum up pscr[p] over all CI phones */
-    sum = utt_pscr[f][0];
-    for (p = 1; p < NumCiPhones; p++) {
-      prob = utt_pscr[f][p];
-      FAST_ADD(sum, sum, prob, at, ts);
-    }
-    
-    /* pscr entropy */
-    ent = 0.0;
-    for (p = 0; p < NumCiPhones; p++) {
-      fprob = EXP(utt_pscr[f][p] - sum);
-      ent -= fprob * log(fprob);
-    }
-    
-    fprintf (outfp, "%5d %.3f ", f, ent);
-
-    /* Find prob for each CIphone */ 
-    for (p = 0; p < NumCiPhones; p++) {
-      prob = utt_pscr[f][p] - sum;
-      k = 100.0 * EXP(prob) + 0.5;	/* Scaled to 100 and integerized */
-      assert ((k <= 101) && (k >= 0));
-      if (k > 99)
-	k = 99;
-      fprintf (outfp, " %2d", k);
-    }
-    fprintf (outfp, "\n");
-  }
-  
-  fprintf(outfp, "  ---------");
-  for (p = 0; p < NumCiPhones; p++)
-    fprintf (outfp, "---");
-  fprintf (outfp, "\n");
-  fflush (outfp);
-  
-  return 0;
-}
-
-#else
-
 /*
  * Dump a "phone lattice" to the given file:
  *   For each frame, determine the CIphones with top scoring senones, threshold
@@ -5020,8 +4741,6 @@ int32 search_uttpscr2phlat_print (FILE *outfp)
     return 0;
 }
 
-#endif
-
 
 static void vithist_dump (FILE *fp, vithist_t **vithist, int32 *pid, int32 nfr, int32 n_state)
 {
@@ -5053,15 +4772,11 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
 		  int32 **tmat,		/* Transition prob matrix [from][to] */
 		  int32 *pid,		/* CI-phoneid[0..n_state] */
 		  int32 n_state,	/* #States in graph being searched */
-		  int32 sf,		/* Start frame within utterance */
-		  int32 ef,		/* End frame within utterance */
 		  int32 minseg,		/* Min #frames per phone segment */
 		  double tprob,		/* State transition (exit) probability */
-		  int32 final_state)	/* Nominally, where search should exit;
-					   if -1, can exit anywhere */
+		  int32 final_state)	/* Nominally, where search should exit */
 {
-    int32 i, j, f, lf, nf;
-    int32 tp, newscore, bestscore, bestp, pred_bestp;
+    int32 i, j, f, tp, newscore, bestscore, bestp, pred_bestp, nseg, nfrm;
     search_hyp_t *head, *tmp;
 
 #if 0
@@ -5074,53 +4789,56 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
       return NULL;
 #endif
     
+    /* Strictly, nfrm may be greater than LastFrame, but... */
+    nfrm = LastFrame;
+    
     tp = LOG(tprob);
     
     /* Search */
-    for (f = sf, lf = 0; f <= ef; f++, lf++) {
+    for (f = 0; f < nfrm; f++) {
       /* Update path scores for current frame state scores */
       for (i = 0; i < n_state; i++) {
-	if (vithist[lf][i].valid) {
-	  vithist[lf][i].score += utt_pscr[f][pid[i]];
+	if (vithist[f][i].valid) {
+	  vithist[f][i].score += utt_pscr[f][pid[i]];
 	  
 	  /* Propagate to next frame */
-	  if (minseg <= f - vithist[lf][i].sf + 1) {
+	  if (vithist[f][i].sf <= f-minseg) {
 	    for (j = 0; j < n_state; j++) {
 	      if (tmat[i][j] > WORST_SCORE) {
-		newscore = vithist[lf][i].score + tp + tmat[i][j];
+		newscore = vithist[f][i].score + tp + tmat[i][j];
 		
-		if ((! vithist[lf+1][j].valid) || (vithist[lf+1][j].score < newscore)) {
-		  vithist[lf+1][j].score = newscore;
-		  vithist[lf+1][j].pred = i;
-		  vithist[lf+1][j].sf = f+1;
-		  vithist[lf+1][j].valid = 1;
+		if ((! vithist[f+1][j].valid) || (vithist[f+1][j].score < newscore)) {
+		  vithist[f+1][j].score = newscore;
+		  vithist[f+1][j].pred = i;
+		  vithist[f+1][j].sf = f+1;
+		  vithist[f+1][j].valid = 1;
 		}
 	      }
 	    }
 	  }
-	  if ((! vithist[lf+1][i].valid) || (vithist[lf+1][i].score <= vithist[lf][i].score)) {
-	    vithist[lf+1][i].score = vithist[lf][i].score;
-	    vithist[lf+1][i].pred = i;
-	    vithist[lf+1][i].sf = vithist[lf][i].sf;
-	    vithist[lf+1][i].valid = 1;
+	  if ((! vithist[f+1][i].valid) || (vithist[f+1][i].score <= vithist[f][i].score)) {
+	    vithist[f+1][i].score = vithist[f][i].score;
+	    vithist[f+1][i].pred = i;
+	    vithist[f+1][i].sf = vithist[f][i].sf;
+	    vithist[f+1][i].valid = 1;
 	  }
 	}
       }
     }
-
-    nf = ef - sf + 1;
     
 #if 0
-    vithist_dump (stdout, vithist, pid, nf, n_state);
+    vithist_dump (stdout, vithist, pid, nfrm, n_state);
 #endif
     
     /* Find proper final state to use */
-    if ((final_state < 0) || (vithist[nf-1][final_state].pred < 0)) {
+    if (vithist[nfrm-1][final_state].pred < 0) {
+        assert (vithist[nfrm-1][final_state].valid == 0);
+	
 	bestscore = (int32)0x80000000;
 	bestp = -1;
 	for (i = 0; i < n_state; i++) {
-	    if (vithist[nf-1][i].valid && (vithist[nf-1][i].score > bestscore)) {
-		bestscore = vithist[nf-1][i].score;
+	    if (vithist[nfrm-1][i].valid && (vithist[nfrm-1][i].score > bestscore)) {
+		bestscore = vithist[nfrm-1][i].score;
 		bestp = i;
 	    }
 	}
@@ -5129,10 +4847,8 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
 	    return NULL;
 	}
 	
-	if (final_state >= 0) {
-	  E_ERROR("%s: search_pscr_path() didn't reach final state %d; using state %d\n",
-		  uttproc_get_uttid(), final_state, bestp);
-	}
+	E_ERROR("%s: search_pscr_path() didn't reach final state %d; using state %d\n",
+		uttproc_get_uttid(), final_state, bestp);
 	
 	final_state = bestp;
     }
@@ -5140,19 +4856,20 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
     /* Backtrace.  (Hack!! Misuse of search_hyp_t to store phones, rather than words) */
     head = (search_hyp_t *) listelem_alloc (sizeof(search_hyp_t));
     head->wid = pid[final_state];
-    head->ef = ef;
+    head->ef = nfrm - 1;
     head->next = NULL;
-    head->ascr = vithist[nf-1][final_state].score;	/* Fixed later */
+    head->ascr = vithist[nfrm-1][final_state].score;	/* Fixed later */
+    nseg = 1;
     
     bestp = final_state;
-    for (f = ef-1, lf = nf-2; f >= sf; --f, --lf) {
-	pred_bestp = vithist[lf+1][bestp].pred;
+    for (f = nfrm-2; f >= 0; --f) {
+	pred_bestp = vithist[f+1][bestp].pred;
 	assert (pred_bestp >= 0);
-	assert (vithist[lf][pred_bestp].valid);
+	assert (vithist[f][pred_bestp].valid);
 	
 	if (pred_bestp != bestp) {
 	    head->sf = f+1;
-	    head->ascr -= (vithist[lf][pred_bestp].score + tp);
+	    head->ascr -= (vithist[f][pred_bestp].score + tp);
 	    head->lscr = tmat[pred_bestp][bestp];
 	    head->ascr -= head->lscr;
 	    tmp = (search_hyp_t *) listelem_alloc (sizeof(search_hyp_t));
@@ -5160,12 +4877,14 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
 	    tmp->ef = f;
 	    tmp->next = head;
 	    head = tmp;
-	    head->ascr = vithist[lf][pred_bestp].score;
+	    head->ascr = vithist[f][pred_bestp].score;
 	    head->lscr = 0;
+	    
+	    nseg++;
 	}
 	bestp = pred_bestp;
     }
-    head->sf = sf;
+    head->sf = 0;
     
     return head;
 }
@@ -5173,7 +4892,7 @@ search_pscr_path (vithist_t **vithist,	/* properly initialized */
 static void print_pscr_path (FILE *fp, search_hyp_t *hyp, char const *caption)
 {
     search_hyp_t *h;
-    int32 pathascr, pathlscr, sf, ef, nf;
+    int32 pathascr, pathlscr, nf;
     
     if (! hyp) {
 	E_ERROR("(%s) (%s) : none\n", caption, uttproc_get_uttid());
@@ -5187,10 +4906,6 @@ static void print_pscr_path (FILE *fp, search_hyp_t *hyp, char const *caption)
     fflush (fp);
     
     pathascr = pathlscr = nf = 0;
-    
-    sf = (hyp != NULL) ? hyp->sf : 0;
-    ef = sf;
-    
     for (h = hyp; h; h = h->next) {
 	fprintf (fp, "\t%4d %4d %10d %11d %10d %s\n",
 		 h->sf, h->ef,
@@ -5200,11 +4915,11 @@ static void print_pscr_path (FILE *fp, search_hyp_t *hyp, char const *caption)
 	pathascr += h->ascr;
 	pathlscr += h->lscr;
 	
-	ef = h->ef;
+	nf = h->ef;
 	
 	fflush (fp);
     }
-    nf = ef - sf + 1;
+    nf++;
     
     fprintf (fp, "\t------------------------------------------------------------\n");
     fprintf (fp, "\t%4d %4d %10d %11d %10d %s(TOTAL)\n",
@@ -5251,7 +4966,6 @@ search_hyp_t *search_uttpscr2allphone ( void )
 			     allphone_tmat,
 			     allphone_pid,
 			     NumCiPhones,
-			     0, nfrm - 1,
 			     MIN_ALLPHONE_SEG,
 			     kb_get_pip(),
 			     SilencePhoneId);
@@ -5262,328 +4976,140 @@ search_hyp_t *search_uttpscr2allphone ( void )
 }
 
 
-/* Fraction of phonepairs actually occurring in language */
-#define	_SEARCH_CONF_PHONEPAIR_PROB_	0.75
+#if 0
+/*
+ * Needs to be modified to use phonetp matrix instead of binary yes/no.
+ */
+static search_hyp_t *fwdtree_pscr_path ( void )
+{
+    int32 n_state;
+    int32 i, j, s;
+    dict_entry_t *de;
+    vithist_t **pscr_vithist;
+    char **pscr_tmat;
+    int32 *pscr_pid;
+    search_hyp_t *hyp;
+    
+    n_state = 0;
+    for (i = 0; i < n_hyp_wid; i++) {
+	de = WordDict->dict_list[hyp_wid[i]];
+	n_state += de->len;
+    }
+    
+    pscr_vithist = (vithist_t **) CM_2dcalloc (MAX_FRAMES, n_state,
+					       sizeof(vithist_t));
 
+    pscr_pid = (int32 *) CM_calloc (n_state, sizeof(int32));
+    s = 0;
+    for (i = 0; i < n_hyp_wid; i++) {
+	de = WordDict->dict_list[hyp_wid[i]];
+	for (j = 0; j < de->len; j++)
+	    pscr_pid[s++] = de->ci_phone_ids[j];
+    }
+    
+    pscr_tmat = (char **) CM_2dcalloc (n_state, n_state, sizeof(char));
+    for (i = 1; i < n_state; i++)
+	pscr_tmat[i-1][i] = 1;
+    
+    /* Start search with silencephoneid; all others inactive */
+    for (i = 0; i < n_topsen_frm; i++) {
+	for (j = 0; j < n_state; j++) {
+	    pscr_vithist[i][j].score = WORST_SCORE;
+	    pscr_vithist[i][j].sf = 0;
+	    pscr_vithist[i][j].pred = -1;
+	}
+    }
+    pscr_vithist[0][0].score = 0;
+    
+    hyp = search_pscr_path (pscr_vithist,
+			    pscr_tmat,
+			    pscr_pid,
+			    n_state,
+			    1,
+			    PHONE_TRANS_PROB,
+			    n_state-1);
+    
+    free (pscr_vithist);
+    free (pscr_pid);
+    free (pscr_tmat);
+    
+    print_pscr_path (stdout, hyp, "FwdTree-PSCR");
+    
+    return hyp;
+}
+#endif
 
-#if 1
 
 /*
- * Compute word confidence scores for the entire hypothesis:
- * 
- * For each word, find probs for each phone in pronunciation sequence, and "accumulate"
- * into word_conf (P(word)):
- *   P(phone) = per-frame-acoustic-score(phone) / sum[per-frame-acoustic-score(all phones)]
- *   P(word)  = N-th root (product[P(phones in pronunciation sequence)])
- * 
- * Currently, no prior information is used.
- * 
- * Variations on the above may be tried.  For example, to model the fact
- * that only some phone sequences are allowed in the language.
+ * Obtain phone segmentation for word sequence in hyp_wid, based on pscr
+ * scores.
  */
-void search_hyp_conf (search_hyp_t *hyplist)
+search_hyp_t *search_hyp_pscr_path ( void )
 {
     int32 n_state, nfrm;
-    int32 j, k;
+    int32 i, j, s;
     dict_entry_t *de;
     vithist_t **pseg_vithist;
     int32 **pseg_tmat;
-    search_hyp_t *pseg_hyp, *h, *wh;
-    int32 *phone_score;
-    int32 p, f, t, pseg_nf, n_pseg;
-    double *fprob, total_fprob;
-    double word_conf;
-
-    /* Initialize all confidence scores to unknown */
-    for (wh = hyplist; wh; wh = wh->next)
-      wh->conf = -1.0;
+    int32 *pseg_pid;
+    search_hyp_t *pseg_hyp;
     
-    if (! utt_pscr_valid) {
-      /* Need all senone scores for computing word confidence scores */
-      return;
+    n_state = 0;
+    for (i = 0; i < n_hyp_wid; i++) {
+	de = WordDict->dict_list[hyp_wid[i]];
+	n_state += de->len;
     }
     
-    phone_score = (int32 *) CM_calloc (NumCiPhones, sizeof(int32));
-    fprob = (double *) CM_calloc (NumCiPhones, sizeof(double));
+    pseg_vithist = (vithist_t **) CM_2dcalloc (MAX_FRAMES, n_state,
+					       sizeof(vithist_t));
+
+    pseg_pid = (int32 *) CM_calloc (n_state, sizeof(int32));
+    s = 0;
+    for (i = 0; i < n_hyp_wid; i++) {
+	de = WordDict->dict_list[hyp_wid[i]];
+	for (j = 0; j < de->len; j++)
+	    pseg_pid[s++] = de->ci_phone_ids[j];
+    }
     
-    /* For each word in hypothesis, find phone segmentation using pscr scores */
-    for (wh = hyplist; wh; wh = wh->next) {
-      /* Skip null transitions (FSG-mode) and filler words */
-      if ((wh->wid < 0) || (! (ISA_REAL_WORD(wh->wid))))
-	continue;
-      
-      de = WordDict->dict_list[wh->wid];
-      
-      /* 1-state HMM per phone in pronunciation */
-      n_state = de->len;
-      
-      nfrm = wh->ef - wh->sf + 1;
-      
-      /* Allocate Viterbi search matrix */
-      pseg_vithist = (vithist_t **) CM_2dcalloc (nfrm+1, n_state,
-						 sizeof(vithist_t));
-      
-      /*
-       * Initialize transition matrix to allow only linear path through
-       * pronunciation phone sequence (falign).
-       */
-      pseg_tmat = (int32 **) CM_2dcalloc (n_state, n_state, sizeof(int32));
+    /* Initialize transition matrix to allow only the linear path (falign) */
+    pseg_tmat = (int32 **) CM_2dcalloc (n_state, n_state, sizeof(int32));
+    for (i = 0; i < n_state; i++)
       for (j = 0; j < n_state; j++)
-	for (k = 0; k < n_state; k++)
-	  pseg_tmat[j][k] = WORST_SCORE;
-      for (j = 1; j < n_state; j++)
-	pseg_tmat[j-1][j] = 0;
-
-      /* Start search with the first phone in sequence; all others inactive */
-      for (j = 0; j <= nfrm; j++) {
-	for (k = 0; k < n_state; k++) {
-	  pseg_vithist[j][k].score = WORST_SCORE;
-	  pseg_vithist[j][k].sf = 0;
-	  pseg_vithist[j][k].pred = -1;
-	  pseg_vithist[j][k].valid = 0;
+	pseg_tmat[i][j] = WORST_SCORE;
+    for (i = 1; i < n_state; i++)
+      pseg_tmat[i-1][i] = 0;
+    
+    /* Strictly, nfrm may be greater than LastFrame, but... */
+    nfrm = LastFrame;
+    
+    /* Start search with the first phone in sequence; all others inactive */
+    for (i = 0; i < nfrm; i++) {
+	for (j = 0; j < n_state; j++) {
+	    pseg_vithist[i][j].score = WORST_SCORE;
+	    pseg_vithist[i][j].sf = 0;
+	    pseg_vithist[i][j].pred = -1;
+	    pseg_vithist[i][j].valid = 0;
 	}
-      }
-      pseg_vithist[0][0].score = 0;
-      pseg_vithist[0][0].valid = 1;
-      
-      /* Obtain phone segmentation based on utt_pscr */
-      pseg_hyp = search_pscr_path (pseg_vithist,
-				   pseg_tmat,
-				   de->ci_phone_ids,
-				   n_state,
-				   wh->sf, wh->ef,
-				   1,
-				   kb_get_pip(),
-				   n_state-1);
-
-      /* Initialize product[P(phones in pronunciation sequence)] */
-      word_conf = 1.0;
-      
-      for (h = pseg_hyp, n_pseg = 0; h; h = h->next, n_pseg++) {
-	assert (h->ef >= h->sf);
-	pseg_nf = h->ef - h->sf + 1;
-	
-	/* initialize sum[per-frame-acoustic-score(all phones)] */
-	total_fprob = 0.0;
-	
-	for (p = 0; p < NumCiPhones; p++) {
-	  /* find acoustic-score(phone p) */
-	  t = 0;
-	  for (f = h->sf; f <= h->ef; f++)
-	    t += utt_pscr[f][p];
-	  phone_score[p] = t;
-	  
-	  /* per-frame-acoustic-score(phone p) */
-	  fprob[p] = EXP(phone_score[p] / pseg_nf);
-	  
-	  /* accumulate into sum[per-frame-acoustic-score(all phones)] */
-	  total_fprob += fprob[p];
-	}
-	
-	/* Accumulate product[P(phones in pronunciation sequence)] */
-	word_conf *= (fprob[h->wid] / total_fprob);
-	
-	/*
-	 * Scale factor to account for fact that only some phone sequences
-	 * allowed in language.  (YUCK!! SERIOUS HACK!!)
-	 */
-	if (n_pseg > 0)
-	  word_conf /= _SEARCH_CONF_PHONEPAIR_PROB_;
-	
-#if 0
-	printf ("\t%4d %4d %10d %11d %10d %.2f %s",
-		h->sf, h->ef,
-		h->ascr / pseg_nf,
-		h->ascr, h->lscr,
-		fprob[h->wid] / total_fprob,
-		phone_from_id(h->wid));
-	
-	/* Sort phones by segment score, prune and output */
-	for (j = 0; j < NumCiPhones; j++) {
-	  t = (int32)0x80000000;
-	  for (k = 0; k < NumCiPhones; k++) {
-	    if (phone_score[k] > t) {
-	      t = phone_score[k];
-	      p = k;
-	    }
-	  }
-	  
-	  pfscr = t / pseg_nf;
-	  if (pfscr > (h->ascr / pseg_nf - 20000))
-	    printf (" %s(%d)", phone_from_id(p), pfscr);
-	  
-	  phone_score[p] = (int32)0x80000000;
-	}
-	
-	printf ("\n");
-#endif
-      }
-      
-      if (n_pseg != de->len) {	/* But this should never happen */
-	assert (n_pseg < de->len);
-	wh->conf = 0.0;
-      } else {
-	/* Compute P(word) = N-th root (product[P(phones in pronunciation sequence)]) */
-	wh->conf = exp(log(word_conf) / de->len);
-      }
-      
-#if 0
-      printf ("    %04d %04d %.2f %s\n",
-	      wh->sf, wh->ef, wh->conf, wh->word);
-      
-      print_pscr_path (stdout, pseg_hyp, "Hyp-PSCR");
-#endif
-      search_hyp_free (pseg_hyp);
-      
-      free (pseg_vithist);
-      free (pseg_tmat);
     }
+    pseg_vithist[0][0].score = 0;
+    pseg_vithist[0][0].valid = 1;
     
-    free (phone_score);
-    free (fprob);
+    pseg_hyp = search_pscr_path (pseg_vithist,
+				 pseg_tmat,
+				 pseg_pid,
+				 n_state,
+				 3,
+				 kb_get_pip(),
+				 n_state-1);
+    
+    free (pseg_vithist);
+    free (pseg_pid);
+    free (pseg_tmat);
+    
+    print_pscr_path (stdout, pseg_hyp, "Hyp-PSCR");
+    
+    return pseg_hyp;
 }
-
-#else
-
-static int32 search_word_forward_score (int32 **fwdscr,
-					int32 *pid, int32 plen,
-					int32 sf, int32 ef)
-{
-  int32 p, f, lf;
-  int32 ts = Table_Size;
-  int16 *at = Addition_Table;
-  int32 s1, s2;
-  
-  assert (plen > 0);
-  assert (ef > sf);
-  
-  /*
-   * Initialize forward score lattice with score for first frame
-   */
-  fwdscr[0][0] = utt_pscr[sf][pid[0]];
-  for (p = 1; p < plen; p++)
-    fwdscr[p][0] = WORST_SCORE;
-  
-  /* Update forward score lattice for all remaining frames */
-  for (lf = 1, f = sf+1; f <= ef; f++, lf++) {
-    fwdscr[0][lf] = fwdscr[0][lf-1] + utt_pscr[f][pid[0]];
-    
-    for (p = 1; (p < plen) && (p <= lf); p++) {
-      s1 = fwdscr[p][lf-1] + utt_pscr[f][pid[p]];
-      s2 = fwdscr[p-1][lf-1] + utt_pscr[f][pid[p]];
-      FAST_ADD(s1, s1, s2, at, ts);
-      fwdscr[p][lf] = s1;
-    }
-    
-    for (; p < plen; p++)
-      fwdscr[p][lf] = WORST_SCORE;
-  }
-  
-  return fwdscr[plen-1][ef-sf];
-}
-
-
-/*
- * Return the forward algorithm score for the given segment, using all senones
- * (actually, using best senone per phone, utt_pscr)
- */
-static int32 search_forward_score (int32 sf, int32 ef)
-{
-  int32 p, f;
-  int32 ts = Table_Size;
-  int16 *at = Addition_Table;
-  int32 s1, s2, s;
-  
-  s = 0;
-  
-  for (f = sf; f <= ef; f++) {
-    s1 = utt_pscr[f][0];
-    
-    for (p = 1; p < NumCiPhones; p++) {
-      s2 = utt_pscr[f][p];
-      FAST_ADD(s1, s1, s2, at, ts);
-    }
-    
-    s += s1;
-  }
-  
-  return s;
-}
-
-
-/*
- * Return the viterbi score for the given segment, using all senones (actually,
- * using best senone per phone, utt_pscr)
- */
-static int32 search_allsen_score (int32 sf, int32 ef)
-{
-  int32 p, f;
-  int32 s, s1;
-  
-  s = 0;
-  
-  for (f = sf; f <= ef; f++) {
-    s1 = utt_pscr[f][0];
-    
-    for (p = 1; p < NumCiPhones; p++) {
-      if (utt_pscr[f][p] > s1)
-	s1 = utt_pscr[f][p];
-    }
-    
-    s += s1;
-  }
-  
-  return s;
-}
-
-
-/*
- * For each word in recognition hypothesis, compute its confidence score as
- * the ratio of its forward score (based on uttpscr[]), and the total forward
- * score for any phone sequence.
- */
-void search_hyp_conf ( void )
-{
-  static int32 **fwdscr = NULL;
-  dict_entry_t *de;
-  int32 wd_fwd_scr, seg_fwd_scr, seg_allsen_scr;
-  int32 h;
-  
-  if (fwdscr == NULL) {
-    E_INFO("Using FWDSCORE for confidence estimation\n");
-    fwdscr = (int32 **) CM_2dcalloc (NumCiPhones, MAX_FRAMES, sizeof(int32));
-  }
-  
-  for (h = 0; hyp[h].wid >= 0; h++) {
-    de = WordDict->dict_list[hyp[h].wid];	/* Dictionary entry for word */
-    
-    /* Compute forward log-score for given word (phone seq) and its segment */
-    wd_fwd_scr = search_word_forward_score (fwdscr,
-					    de->ci_phone_ids, de->len,
-					    hyp[h].sf, hyp[h].ef);
-    
-    /* Compute total forward log-score for same segment (any phone sequence) */
-#if 0
-    seg_fwd_scr = search_forward_score (hyp[h].sf, hyp[h].ef);
-    assert (seg_fwd_scr >= wd_fwd_scr);
-#endif
-    seg_allsen_scr = search_allsen_score (hyp[h].sf, hyp[h].ef);
-    
-    /*
-     * Compute word confidence score as the ratio of word forward score and
-     * segment forward score, normalized per frame.
-     */
-#if 0
-    hyp[h].conf = EXP((wd_fwd_scr - seg_fwd_scr) / (hyp[h].ef - hyp[h].sf + 1));
-#endif
-    hyp[h].conf = EXP((wd_fwd_scr - seg_allsen_scr) / (hyp[h].ef - hyp[h].sf + 1));
-    
-    printf ("    %04d %04d %.2f %s\n",
-	    hyp[h].sf, hyp[h].ef, hyp[h].conf, hyp[h].word);
-  }
-}
-
-#endif
 
 
 /*
@@ -5631,35 +5157,35 @@ int32 *search_get_bestpscr ( void )
 }
 
 
+void search_bestpscr2uttpscr (int32 fr)
+{
+  int32 p;
+  
+  if (fr < MAX_FRAMES) {
+    for (p = 0; p < NumCiPhones; p++)
+      utt_pscr[fr][p] = bestpscr[p];
+    
+    utt_pscr_valid = TRUE;
+  }
+}
+
+
 void search_uttpscr_reset ( void )
 {
   utt_pscr_valid = FALSE;
 }
 
 
-void search_uttpscr_set ( void )
+void search_set_hyp_wid (search_hyp_t *h)
 {
-  utt_pscr_valid = TRUE;
-}
-
-
-void search_hyp_list2array (search_hyp_t *h)
-{
-  int32 i;
+  int32 i, j;
   
-  i = 0;
-  for (; h; h = h->next) {
-    if (i >= hyp_sz_max-1) {	/* -1 to allow for final sentinel */
-      hyp = (search_hyp_t *) CM_recalloc (hyp, hyp_sz_max + HYP_SZ, sizeof(search_hyp_t));
-      hyp_sz_max += HYP_SZ;
-    }
-    
-    hyp[i] = *h;
-    i++;
+  /* Bug below: if hyp length exceeds 4096, hyp_wid is silently truncated */
+  j = 0;
+  for (i = 0; (i < 4096) && (h != NULL); i++, h = h->next) {
+    if (h->wid >= 0)	/* FSG may have NULL transitions (wid < 0) */
+      hyp_wid[j++] = h->wid;
   }
   
-  hyp[i].wid = -1;	/* sentinel */
-  hyp_sz_cur = i;
-  
-  search_hyparray_build_nextptr (hyp, hyp_sz_cur);
+  n_hyp_wid = j;
 }

@@ -46,51 +46,14 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.30  2006/02/25  01:18:56  egouvea
- * Sync'ing wiht SphinxTrain.
- * 
- * Added the flag "-seed". If dither is being used and the seed is less
- * than zero, the random number generator is initialized with time(). If
- * it is at least zero, it's initialized with the provided seed. This way
- * we have the benefit of having dither, and the benefit of being
- * repeatable.
- * 
- * This is consistent with what sphinx3 does. Well, almost. The random
- * number generator is still what the compiler provides.
- * 
- * Also, moved fe_init_params to fe_interface.c, so one can initialize a
- * variable of type param_t with meaningful values.
- * 
- * Revision 1.29  2006/02/20 23:59:52  egouvea
- * Moved fe_dither() from the app (wave2feat) to the library, so it can
- * be used by other applications as well. Added "-dither" as an option to
- * sphinx2.
- *
- * Revision 1.28  2005/12/13 17:04:13  rkm
- * Added confidence reporting in nbest files; fixed some backtrace bugs
- *
- * Revision 1.27  2005/12/03 17:54:34  rkm
- * Added acoustic confidence scores to hypotheses; and cleaned up backtrace functions
- *
- * Revision 1.26  2005/10/11 16:59:50  dhdfu
- * Be correct when comparing floating-point literals.
- *
- * Revision 1.25  2005/10/11 16:14:03  dhdfu
- * Oops!  Don't get rid of doublebw.  Also use -1 as the default value
- * for lower filter frequency in case someone thinks that 0Hz is a good
- * idea.
- *
- * Revision 1.24  2005/10/11 13:08:40  dhdfu
- * Change the default FFT size for 8kHz to 512, as that is what Communicator models are.  Add command-line arguments to specify all FE parameters, thus removing the 8 or 16kHz only restriction.  Add default parameters for 11025Hz as well
- *
- * Revision 1.23  2005/09/01 21:09:54  dhdfu
+ * Revision 1.23  2005/09/01  21:09:54  dhdfu
  * Really, actually, truly consolidate byteswapping operations into
  * byteorder.h.  Where unconditional byteswapping is needed, SWAP_INT32()
  * and SWAP_INT16() are to be used.  The WORDS_BIGENDIAN macro from
  * autoconf controls the functioning of the conditional swap macros
  * (SWAP_?[LW]) whose names and semantics have been regularized.
  * Private, adhoc macros have been removed.
- *
+ * 
  * Revision 1.21  2005/05/24 20:55:24  rkm
  * Added -fsgbfs flag
  *
@@ -383,8 +346,6 @@
 #include "cepio.h"
 #include "byteorder.h"
 #include "s2params.h"
-/* just for some params */
-#include "fe.h"
 
 /*
  * #define QUIT(x)		{fprintf x; exit(-1);}
@@ -406,7 +367,6 @@ static int32 phone_conf = 0;
 static char *pscr2lat = NULL;		/* Directory for phone lattice files */
 
 static int32 nbest = 0;			/* #N-best hypotheses to generate/utterance */
-static int32 nbest_seg = FALSE;		/* TRUE => include segmentation in nbest files */
 static char const *nbest_dir = ".";
 static char const *nbest_ext = "hyp";
 
@@ -551,18 +511,6 @@ static char *rawlogdir = NULL;
 static char *mfclogdir = NULL;
 
 static int32 sampling_rate = 16000;
-/* Let all these be uninitialized (to zero) because we may determine
- * them based on sampling_rate if the user has not specified them. */
-static int32 n_mel_filt;
-static float lower_filt = -1.0f; /* Someone might want this to be zero. */
-static float upper_filt = 0.0f;
-static int32 dither = FALSE;
-static int32 seed = SEED;
-static float pre_emphasis_alpha = 0.0f;
-static int32 frame_rate;
-static int32 n_fft;
-static float window_length = 0.0f;
-
 static int32 adc_input = FALSE;	/* TRUE <=> input utterances are raw A/D data */
 static char const *adc_ext = "raw";	/* Default format: raw */
 static int32 adc_endian = 1;	/* Default endian: little */
@@ -594,7 +542,7 @@ static float *cep, *dcep, *dcep_80ms, *pcep, *ddcep;
 static int32 maxwpf = 100000000;	/* Max words recognized per frame */
 static int32 maxhmmpf = 1000000000;	/* Max active HMMs per frame */
 
-static int32 print_back_trace = TRUE;
+int32 print_back_trace = TRUE;
 static int32 print_short_back_trace = FALSE;
 static char *arg_file = NULL;
 int32 verbosity_level = 9;		/* rkm: Was 0 */
@@ -776,9 +724,6 @@ config_t param[] = {
 	{ "NbestCount", "No. N-best Hypotheses", "-nbest",
 		INT, (caddr_t) &nbest }, 
 
-	{ "NbestReportSeg", "Report segmentation in Nbest files", "-nbestseg",
-		BOOL, (caddr_t) &nbest_seg }, 
-
 	{ "NbestExt", "N-best Hypothesis File Extension", "-nbestext",
   	        STRING, (caddr_t) &nbest_ext }, 
 
@@ -914,27 +859,6 @@ config_t param[] = {
 	{ "SamplingRate", "Sampling rate", "-samp",
 		INT, (caddr_t) &sampling_rate }, 
 
-	{ "NumMelFilters", "Number of mel filters", "-nfilt",
-	  INT, (caddr_t) &n_mel_filt },
-	
-	{ "LowerMelFilter", "Lower edge of mel filters", "-lowerf",
-	  FLOAT, (caddr_t) &lower_filt },
-
-	{ "UpperMelFilter", "Upper edge of mel filters", "-upperf",
-	  FLOAT, (caddr_t) &upper_filt },
-
-	{ "PreEmphasisAlpha", "Alpha coefficient for pre-emphasis", "-alpha",
-	  FLOAT, (caddr_t) &pre_emphasis_alpha },
-
-	{ "FrameRate", "Frame rate (number of frames per second)", "-frate",
-	  INT, (caddr_t) &frame_rate },
-
-	{ "NFFT", "Number of points for FFT", "-nfft",
-	  INT, (caddr_t) &n_fft },
-
-	{ "WindowLength", "Window length (in seconds) for FFT", "-wlen",
-	  FLOAT, (caddr_t) &window_length },
-
 	{ "UseADCInput", "Use raw ADC input", "-adcin",
 		BOOL, (caddr_t) &adc_input }, 
 
@@ -949,12 +873,6 @@ config_t param[] = {
 
 	{ "UseDoubleBW", "Double bandwidth mel filter", "-doublebw",
 		BOOL, (caddr_t) &doublebw }, 
-
-	{ "UseDither", "Add dither to the incoming audio", "-dither",
-		BOOL, (caddr_t) &dither }, 
-
-	{ "Seed", "Seed the random number generator when using dither; if less than zero, use own seed", "-seed",
-		INT, (caddr_t) &seed }, 
 
 	{ "RawLogDir", "Log directory for raw output files)", "-rawlogdir",
 		STRING, (caddr_t) &rawlogdir }, 
@@ -2052,15 +1970,9 @@ search_hyp_t *run_sc_utterance (char *mfcfile, int32 sf, int32 ef, char *idspec)
 	    nbestfp = stdout;
 	}
 	for (i = 0; i < n_alt; i++) {
-	  for (h = alt[i]; h; h = h->next) {
-	    if (nbest_seg) {
-	      fprintf (nbestfp, "%s %d %d %.2f ",
-		       h->word, h->sf, h->ef, h->conf);
-	    } else {
-	      fprintf (nbestfp, "%s ", h->word);
-	    }
-	  }
-	  fprintf (nbestfp, "\n");
+	    for (h = alt[i]; h; h = h->next)
+		fprintf (nbestfp, "%s ", h->word);
+	    fprintf (nbestfp, "\n");
 	}
 	if (nbestfp != stdout)
 	    fclose (nbestfp);
@@ -2324,64 +2236,6 @@ int32 set_adc_input (int32 value)
 char const *query_cdcn_file ( void )
 {
     return cdcn_file;
-}
-
-void query_fe_params(param_t *param)
-{
-	param->SAMPLING_RATE = sampling_rate;
-	param->PRE_EMPHASIS_ALPHA = DEFAULT_PRE_EMPHASIS_ALPHA;
-	param->WINDOW_LENGTH = DEFAULT_WINDOW_LENGTH;
-	/* NOTE! This could be 256 for 8000Hz, but that requires that
-	 * the acoustic models be retrained, and most 8k models are
-	 * using 512 points.  So we will use DEFAULT_FFT_SIZE (512)
-	 * everywhere. */
-	param->FFT_SIZE = DEFAULT_FFT_SIZE;
-	param->dither = dither;
-	param->seed = seed;
-	param->doublebw = doublebw;
-	if (verbosity_level < 1) {
- 	    param->verbose = 0;
-	} else {
-	    param->verbose = 1;
-	}
-	/* Provide some defaults based on sampling rate if the user
-	 * hasn't. */
-	switch (sampling_rate) {
-	case 16000:
-		param->FRAME_RATE = 100;
-		param->NUM_FILTERS = DEFAULT_BB_NUM_FILTERS;
-		param->LOWER_FILT_FREQ = DEFAULT_BB_LOWER_FILT_FREQ;
-		param->UPPER_FILT_FREQ = DEFAULT_BB_UPPER_FILT_FREQ;
-		break;
-	case 11025:
-		/* Numbers from CALO project meeting data. */
-		param->FRAME_RATE = 105;
-		param->NUM_FILTERS = 36;
-		param->LOWER_FILT_FREQ = 130;
-		param->UPPER_FILT_FREQ = 5400;
-		break;
-	case 8000:
-		param->FRAME_RATE = 100;
-		param->NUM_FILTERS = DEFAULT_NB_NUM_FILTERS;
-		param->LOWER_FILT_FREQ = DEFAULT_NB_LOWER_FILT_FREQ;
-		param->UPPER_FILT_FREQ = DEFAULT_NB_UPPER_FILT_FREQ;
-		break;
-	}
-
-	if (n_mel_filt != 0)
-		param->NUM_FILTERS = n_mel_filt;
-	if (lower_filt != -1.0f)
-		param->LOWER_FILT_FREQ = lower_filt;
-	if (upper_filt != 0.0f)
-		param->UPPER_FILT_FREQ = upper_filt;
-	if (pre_emphasis_alpha != 0.0f)
-		param->PRE_EMPHASIS_ALPHA = pre_emphasis_alpha;
-	if (window_length != 0.0f)
-		param->WINDOW_LENGTH = window_length;
-	if (frame_rate != 0)
-		param->FRAME_RATE = frame_rate;
-	if (n_fft != 0)
-		param->FFT_SIZE = n_fft;
 }
 
 int32 query_sampling_rate ( void )

@@ -84,7 +84,7 @@ int main (int32 argc, char *argv[])
     assert (adcin);	/* Limited to processing audio input files (not cep) */
     sps = query_sampling_rate();
 
-    fe_init_params(&param);
+    memset(&param, 0, sizeof(param));
     param.SAMPLING_RATE = (float)sps;
 
     if ((fe = fe_init (&param)) == NULL)
@@ -112,13 +112,11 @@ int main (int32 argc, char *argv[])
 	fe_start_utt(fe);
 	nf = 0;
 	while ((k = adc_file_read (adbuf, 4096)) >= 0) {
-	    if (fe_process_utt (fe, adbuf, k, mfcbuf+nf, &k) == FE_ZERO_ENERGY_ERROR) {
-	        E_WARN("Frames with zero energy. Consider using dither\n");
-	    }
+	    k = fe_process_utt (fe, adbuf, k, mfcbuf+nf);
 	    nf += k;
 	    /* WARNING!! No check for mfcbuf overflow */
 	}
-	fe_end_utt(fe, mfcbuf[nf], &k);
+	fe_end_utt(fe, mfcbuf[nf]);
 	fe_close(fe);
 	uttfile_close ();
 	

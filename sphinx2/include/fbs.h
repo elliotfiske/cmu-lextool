@@ -43,22 +43,9 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.15  2005/12/13  17:04:07  rkm
- * Added confidence reporting in nbest files; fixed some backtrace bugs
- * 
- * Revision 1.14  2005/12/03 17:54:34  rkm
- * Added acoustic confidence scores to hypotheses; and cleaned up backtrace functions
- *
- * Revision 1.13  2005/11/03 21:26:09  egouvea
- * Added state-to and state-from to search_hyp_t, and report both in the
- * log output.
- *
- * Revision 1.12  2005/10/11 13:08:40  dhdfu
- * Change the default FFT size for 8kHz to 512, as that is what Communicator models are.  Add command-line arguments to specify all FE parameters, thus removing the 8 or 16kHz only restriction.  Add default parameters for 11025Hz as well
- *
- * Revision 1.11  2005/05/24 20:55:24  rkm
+ * Revision 1.11  2005/05/24  20:55:24  rkm
  * Added -fsgbfs flag
- *
+ * 
  * Revision 1.10  2005/01/26 17:54:51  rkm
  * Added -maxhmmpf absolute pruning parameter in FSG mode
  *
@@ -199,7 +186,6 @@
 #define _FBS_H_
 
 #include "s2types.h"
-#include "fe.h"
 
 /*
  * The decoder is set up to process one finite-duration utterance at a time.  The
@@ -210,29 +196,24 @@
 
 /*
  * Recognition result (hypothesis) with word segmentation information.
- * NOTE: Not all these entries may be filled or available all the time.
+ *
+ * FIXME: should this be in search.h?
  */
 typedef struct search_hyp_s {
-    char const *word;	/* READ-ONLY! Modifying this string will break the decoder! */
+    char const *word;	/* READ-ONLY */
     int32 wid;		/* For internal use of decoder */
     int32 sf, ef;	/* Start, end frames within utterance for this word */
-    int32 ascr;		/* Acoustic score for this word segment */
-    int32 lscr;		/* LM score for this word */
-    int32 scr;		/* Total path score */
-    int32 fsg_state_from;	/* At which this entry starts (FSG mode only) */
-    int32 fsg_state_to;	/* At which this entry terminates (FSG mode only) */
-    int32 bsdiff;	/* Diff between best path score for any word at this end frame,
-			   and path score for this word at this end frame */
-    int32 tsdiff;	/* Diff between ascr and topsen score, per frame of the segment */
-    float32 conf;	/* Confidence measure (roughly prob(correct)) for this word */
+    int32 ascr, lscr;	/* Acoustic, LM scores (not always used!) */
+    int32 fsg_state;	/* At which this entry terminates (FSG mode only) */
+    float conf;		/* Confidence measure (roughly prob(correct)) for this word;
+			   NOT FILLED IN BY THE RECOGNIZER at the moment!! */
+    struct search_hyp_s *next;	/* Next word segment in the hypothesis; NULL if none */
     int32 latden;	/* Average lattice density in segment.  Larger values imply
 			   more confusion and less certainty about the result.  To use
 			   it for rejection, cutoffs must be found independently */
     double phone_perp;	/* Average phone perplexity in segment.  Larger values imply
 			   more confusion and less certainty.  To use it for rejection,
 			   cutoffs must be found independently. */
-    
-    struct search_hyp_s *next;	/* Next word segment in the hypothesis; NULL if none */
 } search_hyp_t;
 
 
@@ -391,16 +372,15 @@ int32 uttproc_restart_utt ( void );
  * Arguments:
  *     sf, ef: Start and end frame range within utterance for generating N-best list.
  *     w1, w2: Two-word context preceding utterance; w2 is the later one.  w1 may be -1
- *		(i.e., non-existent).  w2 must be valid; it can be the word-id for <s>.
- *     On return, *alt_out[i] = i-th hypothesis, a NULL-terminated list of search_hyp_t
- * 		entries for that hypothesis.
- * Return value: #alternative hypotheses returned, may be 0; -1 if error.
+ *             (i.e., non-existent).  w2 must be valid; it can be the word-id for <s>.
+ *     On return, alt_out[i] = i-th hypothesis generated.
+ * Return value: #alternative hypotheses returned; -1 if error.
  */
 int32 search_get_alt (int32 n,			/* In: No. of alternatives to produce */
 		      int32 sf, int32 ef,	/* In: Start/End frame */
 		      int32 w1, int32 w2,	/* In: context words */
-		      search_hyp_t ***alt_out);	/* Out: array of alternatives; each
-						   alternative is NULL-terminated list */
+		      search_hyp_t ***alt_out);	/* Out: array of alternatives */
+
 
 /* Should be called before search_get_alt */
 void search_save_lattice ( void );
@@ -640,9 +620,6 @@ int32 uttproc_set_auto_uttid_prefix (char const *prefix);
 
 
 /*************************** Config queries ***************************/
-
-/* Set up front-end parameters. */
-void query_fe_params(param_t *param);
 
 /* Control file listing files to be processed, one file per utterance */
 char const *query_ctlfile_name ( void );

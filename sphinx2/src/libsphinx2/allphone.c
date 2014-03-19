@@ -40,12 +40,9 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.13  2005/12/13  17:04:13  rkm
- * Added confidence reporting in nbest files; fixed some backtrace bugs
- * 
- * Revision 1.12  2004/12/10 16:48:56  rkm
+ * Revision 1.12  2004/12/10  16:48:56  rkm
  * Added continuous density acoustic model handling
- *
+ * 
  * 
  * 22-Nov-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Modified to use unified semi-continuous/continuous acoustic
@@ -296,6 +293,7 @@ static void allphone_backtrace (int32 bp)
 static void allphone_result ( void )
 {
     int32 i, b, f, sile, bestbp, scr;
+    extern void utt_seghyp_free (search_hyp_t *);
     
     if (n_bp <= 0) {
 	printf ("NO ALIGNMENT\n");
@@ -358,7 +356,7 @@ search_hyp_t *allphone_utt (int32 nfr,
     int32 lastbp, bestbp;
     
     if (allp_seghyp)
-	search_hyp_free (allp_seghyp);
+	utt_seghyp_free (allp_seghyp);
     allp_seghyp = NULL;
     allp_seghyp_tail = NULL;
     
@@ -368,7 +366,7 @@ search_hyp_t *allphone_utt (int32 nfr,
     renorm_scr[0] = 0;
     
     for (f = 0, c = 0, p = 0; f < nfr; f++, c += CEP_SIZE, p += POW_SIZE) {
-	senscr_active (senscr, f, cep+c, dcep+c, dcep_80ms+c, pcep+p, ddcep+c);
+	senscr_active (senscr, cep+c, dcep+c, dcep_80ms+c, pcep+p, ddcep+c);
 
 	if ((bestscr = allphone_eval_ci_chan (f)) <= WORST_SCORE) {
 	    E_ERROR ("POOR MATCH: bestscore= %d\n", bestscr);

@@ -1044,19 +1044,14 @@ int32 lm_read_clm (char const *filename,
 			    model->inclass_ugscore[dictid] =
 				lmclass_getprob(lmclass_word)*lw;
 			}
-		    } else {
-			E_ERROR("'%s' is in LM class definition but not in dictionary\n",
-				lmclass_getword(lmclass_word));
+		    } else
 			notindict++;
-		    }
 		    
 		    lmclass_word = lmclass_nextword (LM_CLASSID_TO_CLASS(model,classid),
 						     lmclass_word);
 		}
-	    } else {
-		E_ERROR("'%s' is in LM unigrams but not in dictionary\n", word_str[i]);
+	    } else
 		notindict++;
-	    }
 	}
     }
     if (maperr)

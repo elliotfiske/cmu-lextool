@@ -39,7 +39,7 @@ my $task = "$s2root/model/lm/turtle";
 die "don't know how to do '$task' and cant find $task directory: $!" 
   unless -d $task;
 
-$pgm = "@prefix@/bin/sphinx2_continuous";
+$pgm = "@prefix@/bin/sphinx2-continuous";
 
 if (! -x $pgm) {
   foreach (@INC) {
@@ -185,7 +185,7 @@ my $what = join " ", ($pgm,
        -cepdir => $cepdir,
        -datadir => $cepdir,
 #       -agcmax => "FALSE",  # only agcmax in batch mode
-#       -agcemax => "FALSE",   # only agcemax in live mode
+       -agcemax => "TRUE",   # only agcemax in live mode
 # language weights, other LM parameters ------------- 
        -langwt => $lw,
        -fwdflatlw => $fwdflatlw,

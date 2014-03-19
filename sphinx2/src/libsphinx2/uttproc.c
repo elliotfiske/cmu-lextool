@@ -38,67 +38,11 @@
  * 
  * HISTORY
  * 
- * 30-Nov-2005	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
- * 		Added acoustic confidence scoring (in search_hyp_t.conf).
- * 		(Currently, needs compute-all-senones for this to work.)
- * 
  * $Log$
- * Revision 1.30  2006/02/25  01:18:56  egouvea
- * Sync'ing wiht SphinxTrain.
- * 
- * Added the flag "-seed". If dither is being used and the seed is less
- * than zero, the random number generator is initialized with time(). If
- * it is at least zero, it's initialized with the provided seed. This way
- * we have the benefit of having dither, and the benefit of being
- * repeatable.
- * 
- * This is consistent with what sphinx3 does. Well, almost. The random
- * number generator is still what the compiler provides.
- * 
- * Also, moved fe_init_params to fe_interface.c, so one can initialize a
- * variable of type param_t with meaningful values.
- * 
- * Revision 1.29  2006/02/17 00:49:58  egouvea
- * Yet another attempt at synchronizing the front end code between
- * SphinxTrain and sphinx2.
- *
- * Added support for warping functions.
- *
- * Replaced some fprintf() followed by exit() with E_WARN and return() in
- * functions that had a non void return type.
- *
- * Set return value to FE_ZERO_ENERGY_ERROR if the energy is zero in a
- * frame, allowing the application to do something (currently, uttproc
- * and raw2cep simply print a message.
- *
- * Warning: the return value in fe_process_utt() and fe_end_utt()
- * required a change in the API (the return value has a different meaning
- * now).
- *
- * Revision 1.28  2006/02/09 22:48:38  egouvea
- * Fixed computation of max file size allowed. It was using FRAME_RATE
- * instead of FRAME_SHIFT (i.e. SAMPLING_RATE / FRAME_RATE) to compute
- * max number of samples from max number of frames.
- *
- * Revision 1.27  2006/01/25 14:43:24  rkm
- * *** empty log message ***
- *
- * Revision 1.26  2005/12/13 17:04:14  rkm
- * Added confidence reporting in nbest files; fixed some backtrace bugs
- *
- * Revision 1.25  2005/12/03 17:54:34  rkm
- * Added acoustic confidence scores to hypotheses; and cleaned up backtrace functions
- *
- * Revision 1.24  2005/11/01 23:30:53  egouvea
- * Replaced explicit assignments with memcpy
- *
- * Revision 1.23  2005/10/11 13:08:40  dhdfu
- * Change the default FFT size for 8kHz to 512, as that is what Communicator models are.  Add command-line arguments to specify all FE parameters, thus removing the 8 or 16kHz only restriction.  Add default parameters for 11025Hz as well
- *
- * Revision 1.22  2005/08/18 22:56:05  egouvea
+ * Revision 1.22  2005/08/18  22:56:05  egouvea
  * Fixed a bug in which the last frame, when running in live mode, was
  * ignored by uttproc_end_utt.
- *
+ * 
  * Revision 1.21  2005/05/24 20:55:24  rkm
  * Added -fsgbfs flag
  *
@@ -369,6 +313,8 @@
 #define MAX_CEP_LEN     (MAX_UTT_LEN*CEP_SIZE)
 #define MAX_POW_LEN     (MAX_UTT_LEN*POW_SIZE)
 
+static int32 frame_spacing;
+
 typedef enum {UTTSTATE_UNDEF=-1,
               UTTSTATE_IDLE=0,
               UTTSTATE_BEGUN=1,
@@ -429,6 +375,8 @@ static char *uttid_prefix = NULL;
 #define UTTIDSIZE       4096
 static int32 uttno;     /* A running sequence number assigned to every utterance.  Used as
                            an id for an utterance if uttid is undefined. */
+
+static search_hyp_t *utt_seghyp = NULL;
 
 static CDCN_type cdcn;
 
@@ -904,17 +852,17 @@ static void uttproc_fsg_search_fwd ( void )
   
   if (query_compute_all_senones()) {
     best = senscr_all(senscore,
-		      fsg_search_frame (fsg_search),
                       cep_buf + search_cep_i,
                       dcep_buf + search_cep_i,
                       dcep_80ms_buf + search_cep_i,
                       pcep_buf + search_pow_i,
                       ddcep_buf + search_cep_i);
+    
+    search_bestpscr2uttpscr (fsg_search->frame);
   } else {
     fsg_search_sen_active(fsg_search);
     
     best = senscr_active(senscore,
-			 fsg_search_frame (fsg_search),
                          cep_buf + search_cep_i,
                          dcep_buf + search_cep_i,
                          dcep_80ms_buf + search_cep_i,
@@ -970,7 +918,7 @@ static int32 uttproc_frame ( void )
     uttproc_partial_result_seg (&frm, &hyp);
     printf ("PARTSEG[%d]:", frm);
     for (; hyp; hyp = hyp->next)
-      printf (" %s %d %d %.2f", hyp->word, hyp->sf, hyp->ef, hyp->conf);
+      printf (" %s %d %d", hyp->word, hyp->sf, hyp->ef);
     printf ("\n");
     fflush (stdout);
   }
@@ -992,7 +940,8 @@ static void fwdflat_search (int32 n_frames)
 
 static void write_results (char const *hyp, int32 aborted)
 {
-    search_hyp_t *hyplist;       /* Hyp with word segmentation information */
+    search_hyp_t *seghyp;       /* Hyp with word segmentation information */
+    int32 i;
     
     /* Check if need to autonumber utterances */
     if (matchfp) {
@@ -1003,13 +952,27 @@ static void write_results (char const *hyp, int32 aborted)
     
     if (matchsegfp) {
         fprintf (matchsegfp, "%s ", uttid);
-        for (hyplist = search_get_hyp (); hyplist; hyplist = hyplist->next) {
-            fprintf (matchsegfp, " %d %d %.2f %s",
-                     hyplist->sf, hyplist->ef, hyplist->conf, hyplist->word);
+        seghyp = search_get_hyp ();
+        for (i = 0; seghyp[i].wid >= 0; i++) {
+            fprintf (matchsegfp, " %d %d %s",
+                     seghyp[i].sf,
+                     (seghyp[i].ef-seghyp[i].sf+1),
+                     kb_get_word_str(seghyp[i].wid));
         }
         fprintf (matchsegfp, "\n");
         fflush (matchsegfp);
     }
+    
+#if 0
+    {
+        char const *dumplatdir;
+        if ((dumplatdir = query_dumplat_dir()) != NULL) {
+            char fplatfile[1024];
+        
+            sprintf (fplatfile, "%s/%s.fplat", dumplatdir, uttid);
+            search_dump_lattice_ascii (fplatfile);
+    }
+#endif /* 0 */
 }
 
 static void uttproc_windup (int32 *fr, char **hyp)
@@ -1037,7 +1000,11 @@ static void uttproc_windup (int32 *fr, char **hyp)
   
   /* Moved out of the above else clause (rkm:2005/03/08) */
   if (query_phone_conf()) {
-    search_hyp_t *pseg, *search_uttpscr2allphone();
+    search_hyp_t *pseg, *search_hyp_pscr_path(), *search_uttpscr2allphone();
+    
+    /* Obtain pscr-based phone segmentation for hypothesis */
+    pseg = search_hyp_pscr_path();
+    search_hyp_free (pseg);
     
     /* Obtain pscr-based allphone segmentation */
     pseg = search_uttpscr2allphone();
@@ -1048,10 +1015,9 @@ static void uttproc_windup (int32 *fr, char **hyp)
   if ((dir = query_pscr2lat()) != NULL) {
     sprintf (filename, "%s/%s.pscrlat", dir, uttid);
     
-    if ((pscrlat_fp = fopen(filename, "w")) == NULL) {
-      E_ERROR("fopen(%s,w) failed; writing to stdout\n", filename);
-      search_uttpscr2phlat_print (stdout);
-    } else {
+    if ((pscrlat_fp = fopen(filename, "w")) == NULL)
+      E_ERROR("fopen(%s,w) failed\n", filename);
+    else {
       search_uttpscr2phlat_print (pscrlat_fp);
       fclose (pscrlat_fp);
     }
@@ -1070,21 +1036,41 @@ static void uttproc_windup (int32 *fr, char **hyp)
  * One time initialization
  */
 
-static fe_t    *fe;
-static param_t fe_param;
+fe_t    *fe;
 
 int32 uttproc_init ( void )
 {
     char const *fn;
+    int32 sps;
+
+    param_t *fe_param;
+    fe_param = CM_calloc(1, sizeof(param_t));
 
     if (uttstate != UTTSTATE_UNDEF) {
         E_ERROR("uttproc_init called when not in UNDEF state\n");
         return -1;
     }
     
-    fe_init_params(&fe_param);
-    query_fe_params(&fe_param);
-    fe = fe_init(&fe_param);
+    sps = query_sampling_rate ();
+
+    if ((sps != 16000) && (sps != 8000))
+        E_FATAL("Sampling rate must be 8000 or 16000, is %d\n", sps);
+    
+
+    frame_spacing = sps/100;
+
+    fe_param->SAMPLING_RATE = (float)sps;
+  /*    fe_param->FRAME_RATE    = frame_spacing; */  /* removed; KAL */
+    fe_param->FRAME_RATE    = 100;
+    fe_param->PRE_EMPHASIS_ALPHA = 0.97f;
+    
+    if ((fe_param->doublebw = query_doublebw()) == TRUE) {
+        E_INFO("Will use double bandwidth in mel filter\n");
+    } else {
+        E_INFO("Will not use double bandwidth in mel filter\n");
+    }
+
+    fe = fe_init(fe_param);
 
     if (!fe) 
       return -1;
@@ -1116,6 +1102,8 @@ int32 uttproc_init ( void )
     utt_ofl = 0;
     uttno = 0;
 
+    free(fe_param);
+    
     /* Initialize the FSG search module */
     {
       char *fsgfile;
@@ -1283,7 +1271,6 @@ int32 uttproc_begin_utt (char const *id)
 int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
 {
     int32 i, k, v;
-    int32 fe_ret;
     
     for (i = 0; i < len; i++) {
         v = raw[i];
@@ -1317,10 +1304,7 @@ int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
     if (utt_ofl)
         return -1;
     
-    /* FRAME_SHIFT is SAMPLING_RATE/FRAME_RATE, thus resulting in
-     * number of sample per frame.
-     */
-    k = (MAX_UTT_LEN - n_rawfr) * fe->FRAME_SHIFT;
+    k = (MAX_UTT_LEN - n_rawfr) * frame_spacing;
     if (len > k) {
         len = k;
         utt_ofl = 1;
@@ -1334,14 +1318,8 @@ int32 uttproc_rawdata (int16 *raw, int32 len, int32 block)
           if ((k = fe_raw2cep (raw, len, mfcbuf + n_rawfr)) < 0)
           return -1;
     */
-    fe_ret = fe_process_utt (fe, raw, len, mfcbuf + n_rawfr, &k);
-    if (fe_ret != FE_SUCCESS) {
-      if (fe_ret == FE_ZERO_ENERGY_ERROR) {
-	E_WARN("uttproc_rawdata processed some frames with zero energy. Consider using dither.\n");
-      } else {
+    if ((k = fe_process_utt (fe, raw, len, mfcbuf + n_rawfr)) < 0)
         return -1;
-      }
-    }
 
     if (mfcfp && (k > 0))
         fwrite (mfcbuf[n_rawfr], sizeof(float), k * CEP_SIZE, mfcfp);
@@ -1435,7 +1413,7 @@ int32 uttproc_end_utt ( void )
     }
 
     if (livemode) {
-        fe_end_utt(fe, leftover_cep, &live_nframe);
+        live_nframe = fe_end_utt(fe, leftover_cep);
         mfc2feat_live_frame (leftover_cep, live_nframe);
     } else {
         mfc2feat_batch (mfcbuf, n_rawfr);
@@ -1444,7 +1422,7 @@ int32 uttproc_end_utt ( void )
          * case the code changes, we can fe_end_utt here for front end
          * cleanups.
          */
-        fe_end_utt(fe, leftover_cep, &live_nframe);
+        fe_end_utt(fe, leftover_cep);
     }
 
     uttstate = nosearch ? UTTSTATE_IDLE : UTTSTATE_ENDED;
@@ -1627,15 +1605,56 @@ void uttproc_align (char *sent)
     time_align_utterance ("alignment", NULL, "<s>", -1, sent, -1, "</s>");
 }
 
+void utt_seghyp_free (search_hyp_t *h)
+{
+    search_hyp_t *tmp;
 
-int32 uttproc_partial_result_seg (int32 *fr, search_hyp_t **hyplist)
+    while (h) {
+        tmp = h->next;
+        listelem_free (h, sizeof(search_hyp_t));
+        h = tmp;
+    }
+}
+
+static void build_utt_seghyp ( void )
+{
+    int32 i;
+    search_hyp_t *seghyp, *last, *new;
+
+    /* Obtain word segmentation result */
+    seghyp = search_get_hyp ();
+
+    /* Fill in missing details and build segmentation linked list */
+    last = NULL;
+    for (i = 0; seghyp[i].wid >= 0; i++) {
+        new = (search_hyp_t *) listelem_alloc (sizeof(search_hyp_t));
+        new->wid = seghyp[i].wid;
+        new->word = kb_get_word_str (new->wid);
+        new->sf = seghyp[i].sf;
+        new->ef = seghyp[i].ef;
+        new->latden = seghyp[i].latden;
+        new->next = NULL;
+
+        if (! last)
+            utt_seghyp = new;
+        else
+            last->next = new;
+        last = new;
+    }
+}
+
+int32 uttproc_partial_result_seg (int32 *fr, search_hyp_t **hyp)
 {
     char *str;
+    
+    /* Free any previous segmentation result */
+    utt_seghyp_free (utt_seghyp);
+    utt_seghyp = NULL;
     
     if ((uttstate != UTTSTATE_BEGUN) && (uttstate != UTTSTATE_ENDED)) {
         E_ERROR("uttproc_partial_result called outside utterance\n");
         *fr = -1;
-        *hyplist = NULL;
+        *hyp = NULL;
         return -1;
     }
 
@@ -1645,25 +1664,27 @@ int32 uttproc_partial_result_seg (int32 *fr, search_hyp_t **hyplist)
     } else
       search_partial_result (fr, &str); /* Internally makes partial result */
     
-    *hyplist = search_get_hyp();
-    if ((*hyplist)->wid < 0)
-      *hyplist = NULL;
+    build_utt_seghyp();
+    *hyp = utt_seghyp;
     
     return 0;
 }
 
-int32 uttproc_result_seg (int32 *fr, search_hyp_t **hyplist, int32 block)
+int32 uttproc_result_seg (int32 *fr, search_hyp_t **hyp, int32 block)
 {
     char *str;
     int32 res;
     
+    /* Free any previous segmentation result */
+    utt_seghyp_free (utt_seghyp);
+    utt_seghyp = NULL;
+    
     if ((res = uttproc_result (fr, &str, block)) != 0)
         return res;     /* Not done yet; or ERROR */
-    
-    *hyplist = search_get_hyp();
-    if ((*hyplist)->wid < 0)
-      *hyplist = NULL;
-    
+
+    build_utt_seghyp();
+    *hyp = utt_seghyp;
+
     return 0;
 }
 

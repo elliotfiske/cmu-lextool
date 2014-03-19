@@ -44,25 +44,9 @@
  * HISTORY
  * 
  * $Log$
- * Revision 1.8  2005/12/07  23:04:39  rkm
- * Moved __FSG_DBG__ definition to include/word_fsg.h
- * 
- * Revision 1.7  2005/12/07 22:54:45  rkm
- * Changed word transition (FSGmode) to use regular beam
- *
- * Revision 1.6  2005/12/03 17:54:34  rkm
- * Added acoustic confidence scores to hypotheses; and cleaned up backtrace functions
- *
- * Revision 1.5  2005/11/04 18:27:02  egouvea
- * Added state-from and state-to to fsg_history_dump()
- *
- * Revision 1.4  2005/11/03 21:26:09  egouvea
- * Added state-to and state-from to search_hyp_t, and report both in the
- * log output.
- *
- * Revision 1.3  2004/12/10 16:48:56  rkm
+ * Revision 1.3  2004/12/10  16:48:56  rkm
  * Added continuous density acoustic model handling
- *
+ * 
  * 
  * 25-Feb-2004	M K Ravishankar (rkm@cs.cmu.edu) at Carnegie Mellon University
  * 		Started..
@@ -77,6 +61,9 @@
 #include <kb.h>
 #include <phone.h>
 #include <search.h>
+
+
+#define __FSG_DBG__	0
 
 
 fsg_history_t *fsg_history_init (word_fsg_t *fsg)
@@ -266,13 +253,9 @@ int32 fsg_history_entry_hyp_extract (fsg_history_t *h, int32 id,
   hyp->wid = word_fsglink_wid(fl);
   hyp->word = (hyp->wid >= 0) ? kb_get_word_str(hyp->wid) : "";
   hyp->ef = entry->frame;
-  hyp->scr = entry->score;
   hyp->lscr = word_fsglink_logs2prob(fl);
-  hyp->fsg_state_from = word_fsglink_from_state(fl);
-  hyp->fsg_state_to = word_fsglink_to_state(fl);
-  hyp->bsdiff = 0;		/* Not known */
-  hyp->tsdiff = 0;		/* Not known */
-  hyp->conf = 0.0;		/* Not known yet */
+  hyp->fsg_state = word_fsglink_to_state(fl);
+  hyp->conf = 0.0;		/* Not known */
   hyp->latden = 0;		/* Not known */
   hyp->phone_perp = 0.0;	/* Not known */
   
@@ -299,7 +282,7 @@ int32 fsg_history_entry_hyp_extract (fsg_history_t *h, int32 id,
 
 void fsg_history_dump (fsg_history_t *h, char const *uttid, FILE *fp)
 {
-  int32 i, nf;
+  int32 i, r, nf;
   fsg_hist_entry_t *entry;
   word_fsglink_t *fl;
   search_hyp_t hyp;
@@ -307,9 +290,9 @@ void fsg_history_dump (fsg_history_t *h, char const *uttid, FILE *fp)
   fprintf (fp, "# Hist-Begin %s\n", uttid ? uttid : "");
   fprintf (fp, "# Dummy root entry ID = 0\n");
   
-  fprintf (fp, "# %5s %5s %5s %7s %11s %10s %11s %8s %8s %6s %6s %4s %8s\n",
+  fprintf (fp, "# %5s %5s %5s %7s %11s %10s %11s %8s %8s %6s %4s %8s\n",
 	   "Index", "SFrm", "EFrm", "Pred", "PathScr", "Lscr", "Ascr", "Ascr/Frm", "A-BS/Frm",
-	   "SrcSt", "DstSt", "LC", "RC-set");
+	   "FsgSt", "LC", "RC-set");
   
   for (i = 1; i < fsg_history_n_entries(h); i++) {
     entry = fsg_history_entry_get (h, i);
@@ -318,7 +301,7 @@ void fsg_history_dump (fsg_history_t *h, char const *uttid, FILE *fp)
       nf = hyp.ef - hyp.sf + 1;
       fl = entry->fsglink;
       
-      fprintf (fp, "%7d %5d %5d %7d %11d %10d %11d %8d %8d %6d %6d %4d ",
+      fprintf (fp, "%7d %5d %5d %7d %11d %10d %11d %8d %8d %6d %4d ",
 	       i,
 	       hyp.sf, hyp.ef,
 	       entry->pred,
@@ -326,11 +309,12 @@ void fsg_history_dump (fsg_history_t *h, char const *uttid, FILE *fp)
 	       hyp.lscr, hyp.ascr,
 	       (hyp.wid >= 0) ? hyp.ascr/nf : 0,
 	       (hyp.wid >= 0) ? (seg_topsen_score(hyp.sf, hyp.ef) - hyp.ascr) / nf : 0,
-	       word_fsglink_from_state(fl),
 	       word_fsglink_to_state(fl),
 	       entry->lc);
       
-      fsg_pnode_ctxt_dump (fp, &(entry->rc));
+      for (r = FSG_PNODE_CTXT_BVSZ-1; r > 0; r--)
+	fprintf (fp, "%08x.", entry->rc.bv[r]);
+      fprintf (fp, "%08x", entry->rc.bv[0]);
       
       fprintf (fp, "  %s\n", hyp.word);
     }

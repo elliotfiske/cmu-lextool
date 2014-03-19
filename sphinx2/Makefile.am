@@ -7,7 +7,6 @@ SUBDIRS = src \
 EXTRA_DIST = sphinx2.spec \
 		autogen.sh \
 	sphinx2.dsw \
-	sphinx2.pc.in \
 	win32/batch/sphinx2-align.bat \
 	win32/batch/sphinx2-phone.bat \
 	win32/batch/sphinx2-simple.bat \
@@ -54,13 +53,9 @@ EXTRA_DIST = sphinx2.spec \
         win32/msdev/libsphinx2ad/libsphinx2ad.dsp \
         win32/msdev/libsphinx2fe/libsphinx2fe.dsp
 
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = sphinx2.pc
-CLEANFILES = sphinx2.pc
-
-check:
-	$(LIBTOOL) --mode=execute src/examples/sphinx2_continuous \
-		-verbose 9 -adcin TRUE -adcext 16k -dither TRUE \
+test:
+	$(LIBTOOL) --mode=execute src/examples/sphinx2-continuous \
+		-verbose 9 -adcin TRUE -adcext 16k \
 		-ctlfn $(top_srcdir)/model/lm/turtle/turtle.ctl \
 		-ctloffset 0 -ctlcount 100000000 \
 		-datadir $(top_srcdir)/model/lm/turtle \

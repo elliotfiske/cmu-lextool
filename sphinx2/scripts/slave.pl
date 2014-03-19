@@ -69,7 +69,7 @@ for (my $i = 1; $i <= $DEC_CFG_NPART; $i++) {
 &compute_acc();
 
 sub compute_acc {
-  $result_dir = "$DEC_CFG_RESULT_DIR";
+  $result_dir = "$DEC_CFG_BASE_DIR/result";
   $match_file = "$result_dir/${DEC_CFG_EXPTNAME}.match";
 
   &concat_hyp($match_file);
@@ -128,12 +128,7 @@ sub condition_text {
     $text =~ s/\(\d+\)\b/ /g;
     my $file = <LIST>;
     @path = split /[\\\/]/, $file;
-    my $user;
-    if ($#path > 0) {
-      $user = $path[$#path - 1];
-    } else {
-      $user = "user";
-    }
+    my $user = $path[$#path - 1];
     print OUT "$text ($user-$id)\n";
   }
   close(LIST);
@@ -155,7 +150,7 @@ sub align_hyp {
     my $error = 0;
     open (REF, "<$ref") or die "Can't open $ref\n";
     open (HYP, "<$hyp") or die "Can't open $hyp\n";
-    my $outfile = "$DEC_CFG_RESULT_DIR/${DEC_CFG_EXPTNAME}.align";
+    my $outfile = "$DEC_CFG_BASE_DIR/result/${DEC_CFG_EXPTNAME}.align";
     open (OUT, "> $outfile") or die "Can't open $outfile for writing\n";
     while (my $refline = <REF>) {
       $count++;
@@ -190,12 +185,12 @@ sub align_hyp {
 	    (sprintf " (%d/%d)\n", $error, $count);
     close(OUT);
   } elsif ($align =~ m/sclite/i) {
-    my $outfile = "$DEC_CFG_RESULT_DIR/${DEC_CFG_EXPTNAME}.align";
+    my $outfile = "$DEC_CFG_BASE_DIR/result/${DEC_CFG_EXPTNAME}.align";
     my ($word_total, $word_err, $sent_total, $sent_err);
     open (OUT, "> $outfile") or die "Can't open $outfile for writing\n";
     if (open (PIPE, "\"$align\" " .
 	  "-i rm " .
-	  "-o rsum pralign dtl stdout " .
+	  "-o rsum stdout " .
 	  "-f 0 " .
 	  "-r \"$ref\" " .
 	  "-h \"$hyp\" 2>&1 |")) {
@@ -228,7 +223,7 @@ sub align_hyp {
     &DEC_HTML_Print ("\t" . &DEC_ImgSrc("$DEC_CFG_BASE_DIR/.align.state.gif") . " ");   
     &DEC_Log("SENTENCE ERROR: " . (sprintf "%.3f%", $ser) . 
 	    (sprintf " (%d/%d)", $sent_err, $sent_total) .
-	    "   WORD ERROR RATE: " . (sprintf "%.3f%", $wer) . 
+	    "   WORD_ACCURACY: " . (sprintf "%.3f%", $wer) . 
 	    (sprintf " (%d/%d) ", $word_err, $word_total));
     &DEC_HTML_Print (&DEC_FormatURL("$outfile", "Log File"));
     &DEC_Log("\n");
