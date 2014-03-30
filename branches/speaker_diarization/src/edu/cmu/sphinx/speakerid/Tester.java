@@ -112,9 +112,31 @@ public class Tester {
      * @param speakersCount
      *            number of speakers
      */
-    public static void testDistinctSpeakerIdentification(int vectorSize, int vectorsCount, int speakersCount) {
+    public static boolean testDistinctSpeakerIdentification(int vectorSize, int vectorsCount, int speakersCount) {
         ArrayList<float[]> ret = generateDistinctSpeakers(vectorSize, vectorsCount, speakersCount);
-        printIntervals(new SpeakerIdentification().cluster(ret));
+        ArrayList<SpeakerCluster> speakers = (new SpeakerIdentification().cluster(ret));
+        if (speakers.size() != speakersCount) return false;
+        
+        int startTime = 0;
+        for (SpeakerCluster spk : speakers) {
+            ArrayList<Segment> segmentsOriginal = spk.getSpeakerIntervals();
+            if (segmentsOriginal.size() != 1) return false; 
+            Segment ref = new Segment(startTime, vectorsCount * 10);
+            startTime += vectorsCount * 10;
+            if (Math.abs(segmentsOriginal.get(0).getStartTime() - ref.getStartTime()) > 250)
+                return false;
+            else if (Math.abs(segmentsOriginal.get(0).getLength() - ref.getLength()) > 250)
+                return false;
+        }
+        return true;
+    }
+
+    @Test
+    public void testForDistinctSpeakerIdentification() {   
+        Assert.assertEquals(true, testDistinctSpeakerIdentification(Segment.FEATURES_SIZE, 550, 4));
+        Assert.assertEquals(true, testDistinctSpeakerIdentification(Segment.FEATURES_SIZE, 878, 10));
+        Assert.assertEquals(true, testDistinctSpeakerIdentification(Segment.FEATURES_SIZE, 550, 6));
+        Assert.assertEquals(true, testDistinctSpeakerIdentification(Segment.FEATURES_SIZE, 1000, 5));
     }
 
     @Test
