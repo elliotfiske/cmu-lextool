@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 public class Tester {
 
     /**
@@ -89,7 +92,7 @@ public class Tester {
         FileWriter fr = new FileWriter(ofName);
         int idx = 0;
         for (SpeakerCluster spk : speakers) {
-            idx ++;
+            idx++;
             ArrayList<Segment> segments = spk.getSpeakerIntervals();
             for (Segment seg : segments)
                 fr.write(fileName + " " + 1 + " " + seg.getStartTime() / 10 + " " + seg.getLength() / 10
@@ -114,6 +117,14 @@ public class Tester {
         printIntervals(new SpeakerIdentification().cluster(ret));
     }
 
+    @Test
+    public void testRepeatedSpeakerIdentification() {
+        Assert.assertTrue(testRepeatedSpeakerIdentification(Segment.FEATURES_SIZE, 600, 3, 2));
+        Assert.assertTrue(testRepeatedSpeakerIdentification(Segment.FEATURES_SIZE, 600, 5, 4));
+        Assert.assertTrue(testRepeatedSpeakerIdentification(Segment.FEATURES_SIZE, 700, 3, 5));
+        Assert.assertTrue(testRepeatedSpeakerIdentification(Segment.FEATURES_SIZE, 800, 1, 1));
+    }
+
     /**
      * Test method for SpeakerIdentification, based on artificial input with
      * repeated speakers
@@ -127,13 +138,32 @@ public class Tester {
      * @param repeatFactor
      *            number of times the input should be repeated
      */
-    public static void testRepeatedSpeakerIdentification(int vectorSize, int vectorCount, int speakersCount,
+    public boolean testRepeatedSpeakerIdentification(int vectorSize, int vectorCount, int speakersCount,
             int repeatFactor) {
         ArrayList<float[]> lst = new ArrayList<float[]>();
         ArrayList<float[]> aux = generateDistinctSpeakers(vectorSize, vectorCount, speakersCount);
+        ArrayList<SpeakerCluster> speakers;
         for (int i = 0; i < repeatFactor; i++)
             lst.addAll(aux);
-        printIntervals(new SpeakerIdentification().cluster(lst));
+        speakers = new SpeakerIdentification().cluster(lst);
+        if (speakers.size() != speakersCount)
+            return false;
+        int spkIdx = 0;
+        for (SpeakerCluster spk : speakers) {
+            ArrayList<Segment> segments = spk.getSpeakerIntervals();
+            if (segments.size() != repeatFactor)
+                return false;
+            int segIdx = 0;
+            for (Segment s : segments) {
+                int refStart = spkIdx * 10 * vectorCount + (segIdx++) * speakersCount * vectorCount * 10;
+                if (Math.abs(s.getStartTime() - refStart) > 250)
+                    return false;
+                if (Math.abs(s.getLength() - vectorCount * 10) > 250)
+                    return false;
+            }
+            spkIdx++;
+        }
+        return true;
     }
 
     /**
@@ -146,17 +176,5 @@ public class Tester {
         ArrayList<SpeakerCluster> speakers = (new SpeakerIdentification().cluster(inputFile));
         printIntervals(speakers);
         printSpeakerIntervals(speakers, inputFile);
-    }
-
-    /**
-     * @param args
-     *            -i input file name
-     */
-    public static void main(String[] args) throws IOException {
-        String inputFile = null;
-        for (int i = 0; i < args.length; i++)
-            if (args[i].equals("-i"))
-                inputFile = args[++i];
-        testSpeakerIdentification(inputFile);
     }
 }

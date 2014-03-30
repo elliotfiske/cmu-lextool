@@ -29,11 +29,6 @@ public class Segment implements Comparable<Segment> {
         this.length = length;
     }
 
-    public Segment(int startTime, int length, float[] features) {
-        this.startTime = startTime;
-        this.length = length;
-    }
-
     public Segment() {
         this.startTime = this.length = 0;
     }
