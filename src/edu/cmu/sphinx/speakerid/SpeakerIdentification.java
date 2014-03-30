@@ -149,7 +149,7 @@ public class SpeakerIdentification implements Identification {
     private LinkedList<Integer> getAllChangingPoints(Array2DRowRealMatrix features) {
         LinkedList<Integer> ret = new LinkedList<Integer>();
         ret.add(0);
-        int framesCount = features.getRowDimension(), step = 500;
+        int framesCount = features.getRowDimension(), step = 200;
         int start = 0, end = step, cp;
         while (end < framesCount) {
             cp = getPoint(start, end - start + 1, step / 20, features);
@@ -157,10 +157,8 @@ public class SpeakerIdentification implements Identification {
                 start = cp;
                 end = start + step;
                 ret.add(cp);
-            } else {
-                start += 50;
-                end += 50;
-            }
+            } else 
+                end += step;
         }
         ret.add(framesCount);
         return ret;
