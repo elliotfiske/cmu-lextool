@@ -175,9 +175,12 @@ if ($problems eq 0) { print "no problems encountered!\n"; }
 # print out the phone counts
 print "symbol occurence statistics:\n";
 $last = "";
+my $sum = 0; my $vow = 0;
 foreach (sort keys %phone) {
-    if ( substr($_,0,2) eq substr($last,0,2) ) { print "\t| "; } else { print "\n  "; }
-    print "$_\t$phone{$_}";
+    if ( substr($_,0,2) eq substr($last,0,2) ) { print "\t| "; $vow = 1;}
+    elsif ($vow) { print "\t= ",$sum,"\n"; $sum = 0; $vow = 0}
+    else { print "\n"; }
+    print "$_\t$phone{$_}"; if ($vow) { $sum += int($phone{$_}); }
     $last = $_;
 }
 print "\n";
