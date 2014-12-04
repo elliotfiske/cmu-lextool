@@ -26,6 +26,10 @@ public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScorePr
     public SearchState getState() {
         return this;
     }
+    
+    public int getBaseId() {
+    	return unit.getBaseID();
+    }
 
     public float getProbability() {
         return getLanguageProbability() + getInsertionProbability();

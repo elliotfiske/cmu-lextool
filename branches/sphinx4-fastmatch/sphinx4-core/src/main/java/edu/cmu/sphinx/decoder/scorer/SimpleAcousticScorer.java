@@ -36,7 +36,7 @@ public class SimpleAcousticScorer extends ConfigurableAdapter implements Acousti
      */
     @S4Component(type = ScoreNormalizer.class, mandatory = false)
     public final static String SCORE_NORMALIZER = "scoreNormalizer";
-    private ScoreNormalizer scoreNormalizer;
+    protected ScoreNormalizer scoreNormalizer;
 
     private Boolean useSpeechSignals;
 
@@ -96,7 +96,7 @@ public class SimpleAcousticScorer extends ConfigurableAdapter implements Acousti
         }
     }
 
-    private Data getNextData() {
+    protected Data getNextData() {
         Data data = frontEnd.getData();
 
         // reconfigure the scorer for the coming data stream
