@@ -16,11 +16,8 @@ package edu.cmu.sphinx.decoder.search;
 
 import edu.cmu.sphinx.decoder.pruner.Pruner;
 import edu.cmu.sphinx.decoder.scorer.AcousticScorer;
-import edu.cmu.sphinx.decoder.scorer.QueuedAcousticScorer;
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.linguist.*;
-import edu.cmu.sphinx.linguist.allphone.PhoneHmmSearchState;
-import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.StatisticsVariable;
@@ -50,10 +47,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      */
     @S4Component(type = Linguist.class)
     public final static String PROP_LINGUIST = "linguist";
-    
-    /** The property that defines the name of the linguist to be used for fast match. */
-    @S4Component(mandatory = false, type = Linguist.class)
-    public final static String PROP_FASTMATCH_LINGUIST = "fastmatchLinguist";
 
     /**
      * The property that defines the name of the linguist to be used by this
@@ -92,10 +85,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     /** The property that defines the type of active list to use */
     @S4Component(type = ActiveListManager.class)
     public final static String PROP_ACTIVE_LIST_MANAGER = "activeListManager";
-    
-    /** The property that defines the type active list factory for fast match */
-    @S4Component(mandatory = false, type = ActiveListFactory.class)
-    public final static String PROP_FM_ACTIVE_LIST_FACTORY = "fastmatchActiveListFactory";
 
     /** The property for checking if the order of states is valid. */
     @S4Boolean(defaultValue = false)
@@ -112,87 +101,56 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      */
     @S4Double(defaultValue = 0)
     public final static String PROP_ACOUSTIC_LOOKAHEAD_FRAMES = "acousticLookaheadFrames";
-    
-    @S4Double(defaultValue = 1.0)
-    public final static String PROP_LOOKAHEAD_PENALTY_WEIGHT = "lookaheadPenaltyWeight";
 
     /** The property that specifies the relative beam width */
     @S4Double(defaultValue = 0.0)
     // TODO: this should be a more meaningful default e.g. the common 1E-80
     public final static String PROP_RELATIVE_BEAM_WIDTH = "relativeBeamWidth";
-    
-    /**
-     * The property that control whether to use lookahead heuristic
-     */
-    @S4Boolean(defaultValue = false)
-    public final static String PROP_DO_LOOKAHEAD = "doLookahead";
-
-    /**
-     * The property that controls size of lookahead window.
-     * Acceptable values are in range [1..10].
-     */
-    @S4Integer(defaultValue = 1)
-    public final static String PROP_LOOKAHEAD_WINDOW = "lookaheadWindow";
 
     // -----------------------------------
     // Configured Subcomponents
     // -----------------------------------
-    private Linguist linguist; // Provides grammar/language info
-    protected Linguist fastmatchLinguist; // Provides phones info for fastmatch
-    private Pruner pruner; // used to prune the active list
-    private AcousticScorer scorer; // used to score the active list
+    protected Linguist linguist; // Provides grammar/language info
+    protected Pruner pruner; // used to prune the active list
+    protected AcousticScorer scorer; // used to score the active list
     private ActiveListManager activeListManager;
-    private ActiveListFactory fastmatchActiveListFactory;
     private LogMath logMath;
 
     // -----------------------------------
     // Configuration data
     // -----------------------------------
-    private Logger logger;
-    private boolean showTokenCount;
+    protected Logger logger;
+    protected boolean showTokenCount;
     private boolean checkStateOrder;
     private int growSkipInterval;
-    private float relativeBeamWidth;
-    private float acousticLookaheadFrames;
+    protected float relativeBeamWidth;
+    protected float acousticLookaheadFrames;
     private int maxLatticeEdges = 100;
 
     // -----------------------------------
     // Instrumentation
     // -----------------------------------
-    private Timer scoreTimer;
-    private Timer pruneTimer;
-    private Timer growTimer;
-    private StatisticsVariable totalTokensScored;
-    private StatisticsVariable curTokensScored;
-    private StatisticsVariable tokensCreated;
+    protected Timer scoreTimer;
+    protected Timer pruneTimer;
+    protected Timer growTimer;
+    protected StatisticsVariable totalTokensScored;
+    protected StatisticsVariable curTokensScored;
+    protected StatisticsVariable tokensCreated;
     private long tokenSum;
     private int tokenCount;
 
     // -----------------------------------
-    // Lookahead data
-    // -----------------------------------
-    private boolean doLookahead;
-    private int lookaheadWindow;
-    private float lookaheadWeight;
-    private HashMap<Integer, Float> penalties;
-    private LinkedList<FrameCiScores> ciScores;
-    
-    // -----------------------------------
     // Working data
     // -----------------------------------
-    private int currentFrameNumber; // the current frame number
-    private int currentFastMatchFrameNumber; // the current frame number for lookahead matching
+    protected int currentFrameNumber; // the current frame number
     protected ActiveList activeList; // the list of active tokens
-    protected ActiveList fastmatchActiveList; // the list of active tokens for fast match
-    private List<Token> resultList; // the current set of results
+    protected List<Token> resultList; // the current set of results
     protected Map<SearchState, Token> bestTokenMap;
-    protected Map<SearchState, Token> fastMatchBestTokenMap;
-    private AlternateHypothesisManager loserManager;
+    protected AlternateHypothesisManager loserManager;
     private int numStateOrder;
     // private TokenTracker tokenTracker;
     // private TokenTypeTracker tokenTypeTracker;
-    private boolean delayStreamEnd;
-    private boolean streamPause;
+    protected boolean streamEnd;
 
     /**
      * 
@@ -209,32 +167,21 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      * @param acousticLookaheadFrames
      * @param keepAllTokens
      */
-    public WordPruningBreadthFirstSearchManager(Linguist linguist, Linguist fastmatchLinguist, Pruner pruner, AcousticScorer scorer,
-            ActiveListManager activeListManager, ActiveListFactory fastmatchActiveListFactory, boolean showTokenCount, double relativeWordBeamWidth, int growSkipInterval,
-            boolean checkStateOrder, boolean buildWordLattice, boolean doLookahead, int lookaheadWindow, float lookaheadWeight, int maxLatticeEdges, float acousticLookaheadFrames,
+    public WordPruningBreadthFirstSearchManager(Linguist linguist, Pruner pruner, AcousticScorer scorer,
+            ActiveListManager activeListManager, boolean showTokenCount, double relativeWordBeamWidth, int growSkipInterval,
+            boolean checkStateOrder, boolean buildWordLattice, int maxLatticeEdges, float acousticLookaheadFrames,
             boolean keepAllTokens) {
 
         this.logger = Logger.getLogger(getClass().getName());
         this.logMath = LogMath.getLogMath();
         this.linguist = linguist;
-        this.fastmatchLinguist = fastmatchLinguist;
         this.pruner = pruner;
         this.scorer = scorer;
         this.activeListManager = activeListManager;
-        this.fastmatchActiveListFactory = fastmatchActiveListFactory;
         this.showTokenCount = showTokenCount;
         this.growSkipInterval = growSkipInterval;
         this.checkStateOrder = checkStateOrder;
         this.buildWordLattice = buildWordLattice;
-        this.doLookahead = doLookahead;
-        this.lookaheadWindow = lookaheadWindow;
-        if (doLookahead && (lookaheadWindow < 1 || lookaheadWindow > 10))
-        	throw new IllegalArgumentException("Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
-        if (doLookahead && !(scorer instanceof QueuedAcousticScorer))
-        	throw new IllegalArgumentException("To do lookahead, AcousticScorer should be instance of QueuedAcousticScorer");
-        this.lookaheadWeight = lookaheadWeight;
-        this.ciScores = new LinkedList<FrameCiScores>();
-        this.penalties = new HashMap<Integer, Float>();
         this.maxLatticeEdges = maxLatticeEdges;
         this.acousticLookaheadFrames = acousticLookaheadFrames;
         this.keepAllTokens = keepAllTokens;
@@ -261,24 +208,12 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         logger = ps.getLogger();
 
         linguist = (Linguist) ps.getComponent(PROP_LINGUIST);
-        fastmatchLinguist = (Linguist) ps.getComponent(PROP_FASTMATCH_LINGUIST);
         pruner = (Pruner) ps.getComponent(PROP_PRUNER);
         scorer = (AcousticScorer) ps.getComponent(PROP_SCORER);
         activeListManager = (ActiveListManager) ps.getComponent(PROP_ACTIVE_LIST_MANAGER);
-        fastmatchActiveListFactory = (ActiveListFactory) ps.getComponent(PROP_FM_ACTIVE_LIST_FACTORY);
         showTokenCount = ps.getBoolean(PROP_SHOW_TOKEN_COUNT);
         growSkipInterval = ps.getInt(PROP_GROW_SKIP_INTERVAL);
-        doLookahead = ps.getBoolean(PROP_DO_LOOKAHEAD);
-        lookaheadWindow = ps.getInt(PROP_LOOKAHEAD_WINDOW);
-        if (doLookahead && (lookaheadWindow < 1 || lookaheadWindow > 10))
-        	throw new PropertyException(WordPruningBreadthFirstSearchManager.class.getName(), PROP_LOOKAHEAD_WINDOW, 
-        			"Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
-        if (doLookahead && !(scorer instanceof QueuedAcousticScorer))
-        	throw new PropertyException(WordPruningBreadthFirstSearchManager.class.getName(), PROP_SCORER,
-        			"To do lookahead, AcousticScorer should be instance of QueuedAcousticScorer");
-        lookaheadWeight = ps.getFloat(PROP_LOOKAHEAD_PENALTY_WEIGHT);
-        ciScores = new LinkedList<FrameCiScores>();
-        penalties = new HashMap<Integer, Float>();
+
         checkStateOrder = ps.getBoolean(PROP_CHECK_STATE_ORDER);
         maxLatticeEdges = ps.getInt(PROP_MAX_LATTICE_EDGES);
         acousticLookaheadFrames = ps.getFloat(PROP_ACOUSTIC_LOOKAHEAD_FRAMES);
@@ -348,15 +283,13 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     public Result recognize(int nFrames) {
         boolean done = false;
         Result result = null;
-        delayStreamEnd = false;
+        streamEnd = false;
 
         for (int i = 0; i < nFrames && !done; i++) {
-            if (doLookahead && !streamPause)
-            	fastMatchRecognize();
-        	done = recognize();
+            done = recognize();
         }
 
-        if (!delayStreamEnd) {
+        if (!streamEnd) {
             result = new Result(loserManager, activeList, resultList, currentFrameNumber, done, linguist.getSearchGraph()
                     .getWordTokenFirst());
         }
@@ -367,19 +300,8 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         }
         return result;
     }
-    
-    private void fastMatchRecognize() {
-    	boolean more = scoreFastMatchTokens();
-    	
-    	if (more) {
-    		pruneFastMatchBranches();
-    		currentFastMatchFrameNumber++;
-    		createFastMatchBestTokenMap();
-    		growFastmatchBranches();
-    	}
-    }
-    
-    private boolean recognize() {
+
+    protected boolean recognize() {
 
         activeList = activeListManager.getEmittingList();
         boolean more = scoreTokens();
@@ -408,17 +330,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     /**
      * creates a new best token map with the best size
      */
-    protected void createFastMatchBestTokenMap() {
-        int mapSize = fastmatchActiveList.size() * 10;
-        if (mapSize == 0) {
-            mapSize = 1;
-        }
-        fastMatchBestTokenMap = new HashMap<SearchState, Token>(mapSize);
-    }    
-    
-    /**
-     * creates a new best token map with the best size
-     */
     protected void createBestTokenMap() {
         int mapSize = activeList.size() * 10;
         if (mapSize == 0) {
@@ -442,7 +353,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     protected void localStart() {
         SearchGraph searchGraph = linguist.getSearchGraph();
         currentFrameNumber = 0;
-        currentFastMatchFrameNumber = 0;
         curTokensScored.value = 0;
         numStateOrder = searchGraph.getNumStateOrder();
         activeListManager.setNumStateOrder(numStateOrder);
@@ -450,23 +360,11 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
             loserManager = new AlternateHypothesisManager(maxLatticeEdges);
         }
 
-        if (doLookahead) {
-        	//prepare fast match active list
-        	fastmatchActiveList = fastmatchActiveListFactory.newInstance();
-            SearchState fmState = fastmatchLinguist.getSearchGraph().getInitialState();
-            fastmatchActiveList.add(new Token(fmState, currentFastMatchFrameNumber));
-            createFastMatchBestTokenMap();
-            growFastmatchBranches();
-            streamPause = false;
-            for (int i = 0; (i < lookaheadWindow) && !streamPause; i++)
-            	fastMatchRecognize();
-        }
-        
         SearchState state = searchGraph.getInitialState();
 
         activeList = activeListManager.getEmittingList();
         activeList.add(new Token(state, currentFrameNumber));
-        
+
         clearCollectors();
 
         growBranches();
@@ -479,41 +377,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     protected void localStop() {
         // tokenTracker.stopUtterance();
     }
-    
-    /**
-     * Goes through the fast match active list of tokens and expands each token, 
-     * finding the set of successor tokens until all the successor tokens are emitting tokens.
-     */
-    protected void growFastmatchBranches() {
-        growTimer.start();
-        ActiveList oldActiveList = fastmatchActiveList;
-        fastmatchActiveList = fastmatchActiveListFactory.newInstance();
-        float fastmathThreshold = oldActiveList.getBeamThreshold();
-        float[] frameCiScores = new float[100];
-        Arrays.fill(frameCiScores, -Float.MAX_VALUE);
-        float frameMaxCiScore = -Float.MAX_VALUE;
-        for (Token token : oldActiveList) {
-        	float tokenScore = token.getScore();
-        	if (tokenScore < fastmathThreshold)
-        		continue;
-        	//TODO do we need phone insertion probability, i.e. threshold WordSearchStates?
-            //filling max ci scores array that will be used in general search token score composing
-        	if (token.getSearchState() instanceof PhoneHmmSearchState) {
-            	int baseId = ((PhoneHmmSearchState)token.getSearchState()).getBaseId();
-            	if (frameCiScores[baseId] < tokenScore)
-            		frameCiScores[baseId] = tokenScore;
-            	if (frameMaxCiScore < tokenScore)
-            		frameMaxCiScore = tokenScore;
-            }
-        	collectFastMatchSuccessorTokens(token);
-        }
-        ciScores.add(new FrameCiScores(frameCiScores, frameMaxCiScore));
-        penalties.clear();
-        if (ciScores.size() > lookaheadWindow)
-        	ciScores.poll();
-        growTimer.stop();
-    }
-    
+
     /**
      * Goes through the active list of tokens and expands each token, finding
      * the set of successor tokens until all the successor tokens are emitting
@@ -527,13 +391,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
                     + activeList.getBestScore() + " tok " + activeList.getBestToken());
         }
         for (Token token : activeList) {
-        	Float penalty = 0.0f;
-        	if (doLookahead && token.getSearchState() instanceof LexTreeHMMState) {
-        		int baseId = ((LexTreeHMMState)token.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
-        		if ((penalty = penalties.get(baseId)) == null)
-        			penalty = updateLookaheadPenalty(baseId);
-        	}
-            if (token.getScore() + (penalty * lookaheadWeight) >= relativeBeamThreshold && allowExpansion(token)) {
+            if (token.getScore() >= relativeBeamThreshold && allowExpansion(token)) {
                 collectSuccessorTokens(token);
             }
         }
@@ -556,13 +414,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
             }
             float relativeBeamThreshold = bestScore + relativeBeamWidth;
             for (Token t : activeList) {
-            	Float penalty = 0.0f;
-            	if (doLookahead && t.getSearchState() instanceof LexTreeHMMState) {
-            		int baseId = ((LexTreeHMMState)t.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
-            		if ((penalty = penalties.get(baseId)) == null)
-            			penalty = updateLookaheadPenalty(baseId);
-            	}
-            	if (t.getScore() + t.getAcousticScore() * acousticLookaheadFrames + (penalty * lookaheadWeight) > relativeBeamThreshold)
+                if (t.getScore() + t.getAcousticScore() * acousticLookaheadFrames > relativeBeamThreshold)
                     collectSuccessorTokens(t);
             }
             growTimer.stop();
@@ -585,33 +437,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         }
     }
 
-    protected boolean scoreFastMatchTokens() {
-    	boolean moreTokens;
-        scoreTimer.start();
-        Data data = ((QueuedAcousticScorer)scorer).calculateScores(fastmatchActiveList.getTokens(), true);
-        scoreTimer.stop();
-        
-        Token bestToken = null;
-        if (data instanceof Token) {
-            bestToken = (Token) data;
-        } else {
-            streamPause = true;
-        }
-
-        moreTokens = (bestToken != null);
-        fastmatchActiveList.setBestToken(bestToken);
-        
-        // monitorWords(activeList);
-        monitorStates(fastmatchActiveList);
-
-        // System.out.println("BEST " + bestToken);
-
-        curTokensScored.value += fastmatchActiveList.size();
-        totalTokensScored.value += fastmatchActiveList.size();
-    	
-        return moreTokens;
-    }
-    
     /**
      * Calculate the acoustic scores for the active list. The active list should
      * contain only emitting tokens.
@@ -629,7 +454,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         if (data instanceof Token) {
             bestToken = (Token) data;
         } else if (data == null) {
-            delayStreamEnd = true;
+            streamEnd = true;
         }
 
         moreTokens = (bestToken != null);
@@ -693,7 +518,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      * @param activeList
      *            the active list of states
      */
-    private void monitorStates(ActiveList activeList) {
+    protected void monitorStates(ActiveList activeList) {
 
         tokenSum += activeList.size();
         tokenCount++;
@@ -703,24 +528,13 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         }
     }
 
-    /** Removes unpromising branches from the fast match active list */
-    protected void pruneFastMatchBranches() {
-        pruneTimer.start();
-        fastmatchActiveList = pruner.prune(fastmatchActiveList);
-        pruneTimer.stop();
-    }
-    
     /** Removes unpromising branches from the active list */
     protected void pruneBranches() {
         pruneTimer.start();
         activeList = pruner.prune(activeList);
         pruneTimer.stop();
     }
-    
-    protected Token getFastMatchBestToken(SearchState state) {
-    	return fastMatchBestTokenMap.get(state);
-    }
-    
+
     /**
      * Gets the best token for this state
      * 
@@ -732,10 +546,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
         return bestTokenMap.get(state);
     }
 
-    protected void setFastMatchBestToken(Token token, SearchState state) {
-    	fastMatchBestTokenMap.put(state, token);
-    }
-    
     /**
      * Sets the best token for a given state
      * 
@@ -765,63 +575,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
                     + " order: " + toState.getOrder());
         }
     }
-    
-    protected void collectFastMatchSuccessorTokens(Token token) {
-        SearchState state = token.getSearchState();
-        SearchStateArc[] arcs = state.getSuccessors();
-        // For each successor
-        // calculate the entry score for the token based upon the
-        // predecessor token score and the transition probabilities
-        // if the score is better than the best score encountered for
-        // the SearchState and frame then create a new token, add
-        // it to the lattice and the SearchState.
-        // If the token is an emitting token add it to the list,
-        // otherwise recursively collect the new tokens successors.
-        for (SearchStateArc arc : arcs) {
-            SearchState nextState = arc.getState();
-            // We're actually multiplying the variables, but since
-            // these come in log(), multiply gets converted to add
-            float logEntryScore = token.getScore() + arc.getProbability();
-            Token predecessor = getResultListPredecessor(token);
-            
-            // if not emitting, check to see if we've already visited
-            // this state during this frame. Expand the token only if we
-            // haven't visited it already. This prevents the search
-            // from getting stuck in a loop of states with no
-            // intervening emitting nodes. This can happen with nasty
-            // jsgf grammars such as ((foo*)*)*
-            if (!nextState.isEmitting()) {
-                Token newToken = new Token(predecessor, nextState, logEntryScore,
-                        arc.getInsertionProbability(),
-                        arc.getLanguageProbability(), 
-                        currentFastMatchFrameNumber);
-                tokensCreated.value++;
-                if (!isVisited(newToken)) {
-                	collectFastMatchSuccessorTokens(newToken);
-                }
-                continue;
-            }
-            
-            Token bestToken = getFastMatchBestToken(nextState);
-            if (bestToken == null) {        
-                Token newToken = new Token(predecessor, nextState, logEntryScore,
-                        arc.getInsertionProbability(),
-                        arc.getLanguageProbability(), 
-                        currentFastMatchFrameNumber);
-                tokensCreated.value++;
-                setFastMatchBestToken(newToken, nextState);
-                fastmatchActiveList.add(newToken);
-            } else {
-                if (bestToken.getScore() <= logEntryScore) {
-                    bestToken.update(predecessor, nextState, logEntryScore,
-                            arc.getInsertionProbability(),
-                            arc.getLanguageProbability(), 
-                            currentFastMatchFrameNumber);
-                }
-            }
-        }
-    }
-    
+
     /**
      * Collects the next set of emitting tokens from a token and accumulates
      * them in the active or result lists
@@ -903,18 +657,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
             }
         }
     }
-    
-    private Float updateLookaheadPenalty(int baseId) {
-    	Float penalty = -Float.MAX_VALUE;
-    	for (FrameCiScores frameCiScores : ciScores) {
-    		float diff = frameCiScores.scores[baseId] - frameCiScores.maxScore;
-    		if (diff > penalty)
-    			penalty = diff;
-    	}
-    	penalties.put(baseId, penalty);
-    	return penalty;
-    }
-    
+
     /**
      * Determines whether or not we've visited the state associated with this
      * token since the previous frame.
@@ -922,7 +665,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      * @param t
      * @return true if we've visited the search state since the last frame
      */
-    private boolean isVisited(Token t) {
+    protected boolean isVisited(Token t) {
         SearchState curState = t.getSearchState();
 
         t = t.getPredecessor();
@@ -956,7 +699,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      * Counts all the tokens in the active list (and displays them). This is an
      * expensive operation.
      */
-    private void showTokenCount() {
+    protected void showTokenCount() {
         Set<Token> tokenSet = new HashSet<Token>();
 
         for (Token token : activeList) {
@@ -1043,16 +786,6 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      */
     public StatisticsVariable getTokensCreated() {
         return tokensCreated;
-    }
-    
-    private class FrameCiScores {
-    	public final float[] scores;
-    	public final float maxScore;
-    	
-    	public FrameCiScores(float[] scores, float maxScore) {
-    		this.scores = scores;
-    		this.maxScore = maxScore;
-    	}
     }
 
 }

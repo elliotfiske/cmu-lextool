@@ -57,9 +57,25 @@
   <component name="wordPruningSearchManager"
     type="edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstSearchManager">
     <property name="linguist" value="lexTreeLinguist"/>
+    <property name="pruner" value="trivialPruner"/>
+    <property name="scorer" value="trivialScorer"/>
+    <property name="activeListManager" value="activeListManager"/>
+
+    <property name="growSkipInterval" value="0"/>
+
+    <property name="buildWordLattice" value="true"/>
+    <property name="keepAllTokens" value="true"/>
+
+    <property name="acousticLookaheadFrames" value="1.7"/>
+    <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+  </component>
+
+  <component name="wordPruningLookaheadSearchManager"
+    type="edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstLookaheadSearchManager">
+    <property name="linguist" value="lexTreeLinguist"/>
     <property name="fastmatchLinguist" value="allphoneLinguist"/>
     <property name="pruner" value="trivialPruner"/>
-    <property name="scorer" value="queuedScorer"/>
+    <property name="scorer" value="trivialScorer"/>
     <property name="activeListManager" value="activeListManager"/>
     <property name="fastmatchActiveListFactory" value="activeList"/>
 
@@ -68,7 +84,6 @@
 
     <property name="buildWordLattice" value="true"/>
     <property name="keepAllTokens" value="true"/>
-    <property name="doLookahead" value="true"/>
 
     <property name="lookaheadPenaltyWeight" value="3.5"/>
     <property name="acousticLookaheadFrames" value="1.7"/>
@@ -110,11 +125,6 @@
 
   <component name="trivialScorer"
     type="edu.cmu.sphinx.decoder.scorer.SimpleAcousticScorer">
-    <property name="frontend" value="liveFrontEnd"/>
-  </component>
-  
-  <component name="queuedScorer"
-    type="edu.cmu.sphinx.decoder.scorer.QueuedAcousticScorer">
     <property name="frontend" value="liveFrontEnd"/>
   </component>
 

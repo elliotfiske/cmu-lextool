@@ -155,7 +155,8 @@ public class Context {
             throw new IllegalArgumentException(
                 "Unknown format extension: " + path);
         }
-        setLocalProperty("decoder->searchManager", "wordPruningSearchManager");
+        //wordPruningSearchManager is default one in config.xml
+        //setLocalProperty("decoder->searchManager", "wordPruningSearchManager");
     }
 
 
