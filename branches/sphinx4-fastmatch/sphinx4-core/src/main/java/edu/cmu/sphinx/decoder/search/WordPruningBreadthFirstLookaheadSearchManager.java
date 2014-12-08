@@ -24,6 +24,8 @@ import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.linguist.Linguist;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.SearchStateArc;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.Loader;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader;
 import edu.cmu.sphinx.linguist.allphone.PhoneHmmSearchState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
 import edu.cmu.sphinx.result.Result;
@@ -41,13 +43,17 @@ import edu.cmu.sphinx.util.props.S4Integer;
  */
 
 public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBreadthFirstSearchManager {
-    
+
+    /** The property that to get direct access to gau for score caching control. */
+    @S4Component(type = Loader.class)
+    public final static String PROP_LOADER = "loader";
+
     /** The property that defines the name of the linguist to be used for fast match. */
-    @S4Component(mandatory = false, type = Linguist.class)
+    @S4Component(type = Linguist.class)
     public final static String PROP_FASTMATCH_LINGUIST = "fastmatchLinguist";
     
     /** The property that defines the type active list factory for fast match */
-    @S4Component(mandatory = false, type = ActiveListFactory.class)
+    @S4Component(type = ActiveListFactory.class)
     public final static String PROP_FM_ACTIVE_LIST_FACTORY = "fastmatchActiveListFactory";
     
     @S4Double(defaultValue = 1.0)
@@ -64,6 +70,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
     // Configured Subcomponents
     // -----------------------------------
     private Linguist fastmatchLinguist; // Provides phones info for fastmatch
+    private Loader loader;
     private ActiveListFactory fastmatchActiveListFactory;
 
     // -----------------------------------
@@ -97,7 +104,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
      * @param acousticLookaheadFrames
      * @param keepAllTokens
      */
-    public WordPruningBreadthFirstLookaheadSearchManager(Linguist linguist, Linguist fastmatchLinguist, Pruner pruner, AcousticScorer scorer,
+    public WordPruningBreadthFirstLookaheadSearchManager(Linguist linguist, Linguist fastmatchLinguist, Loader loader, Pruner pruner, AcousticScorer scorer,
             ActiveListManager activeListManager, ActiveListFactory fastmatchActiveListFactory, boolean showTokenCount, double relativeWordBeamWidth, int growSkipInterval,
             boolean checkStateOrder, boolean buildWordLattice, int lookaheadWindow, float lookaheadWeight, int maxLatticeEdges, float acousticLookaheadFrames,
             boolean keepAllTokens) {
@@ -105,6 +112,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
     	super(linguist, pruner, scorer, activeListManager, showTokenCount, relativeWordBeamWidth, growSkipInterval,
                 checkStateOrder, buildWordLattice, maxLatticeEdges, acousticLookaheadFrames, keepAllTokens);
         
+    	this.loader = loader;
     	this.fastmatchLinguist = fastmatchLinguist;
         this.fastmatchActiveListFactory = fastmatchActiveListFactory;
         this.lookaheadWindow = lookaheadWindow;
@@ -113,6 +121,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         	throw new IllegalArgumentException("Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
         this.ciScores = new LinkedList<FrameCiScores>();
         this.penalties = new HashMap<Integer, Float>();
+        if (loader instanceof Sphinx3Loader && ((Sphinx3Loader) loader).hasTiedMixtures())
+        	((Sphinx3Loader) loader).setGauScoresQueueLength(lookaheadWindow + 2);        
     }
 
     public WordPruningBreadthFirstLookaheadSearchManager() {
@@ -132,6 +142,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
 
         fastmatchLinguist = (Linguist) ps.getComponent(PROP_FASTMATCH_LINGUIST);
         fastmatchActiveListFactory = (ActiveListFactory) ps.getComponent(PROP_FM_ACTIVE_LIST_FACTORY);
+        loader = (Loader) ps.getComponent(PROP_LOADER);
         lookaheadWindow = ps.getInt(PROP_LOOKAHEAD_WINDOW);
         lookaheadWeight = ps.getFloat(PROP_LOOKAHEAD_PENALTY_WEIGHT);
         if (lookaheadWindow < 1 || lookaheadWindow > 10)
@@ -139,6 +150,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         			"Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
         ciScores = new LinkedList<FrameCiScores>();
         penalties = new HashMap<Integer, Float>();
+        if (loader instanceof Sphinx3Loader && ((Sphinx3Loader) loader).hasTiedMixtures())
+            ((Sphinx3Loader) loader).setGauScoresQueueLength(lookaheadWindow + 2); 
     }
 
     /**
@@ -201,6 +214,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
     @Override
     protected void localStart() {	
     	currentFastMatchFrameNumber = 0;
+        if (loader instanceof Sphinx3Loader && ((Sphinx3Loader) loader).hasTiedMixtures())
+            ((Sphinx3Loader) loader).clearGauScores();
     	//prepare fast match active list
     	fastmatchActiveList = fastmatchActiveListFactory.newInstance();
         SearchState fmInitState = fastmatchLinguist.getSearchGraph().getInitialState();

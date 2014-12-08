@@ -27,7 +27,7 @@
   </component>
 
   <component name="decoder" type="edu.cmu.sphinx.decoder.Decoder">
-    <property name="searchManager" value="wordPruningSearchManager"/>
+    <property name="searchManager" value="wordPruningLookaheadSearchManager"/>
   </component>
 
   <component name="alignerSearchManager"
@@ -74,6 +74,7 @@
     type="edu.cmu.sphinx.decoder.search.WordPruningBreadthFirstLookaheadSearchManager">
     <property name="linguist" value="lexTreeLinguist"/>
     <property name="fastmatchLinguist" value="allphoneLinguist"/>
+    <property name="loader" value="acousticModelLoader"/>
     <property name="pruner" value="trivialPruner"/>
     <property name="scorer" value="trivialScorer"/>
     <property name="activeListManager" value="activeListManager"/>

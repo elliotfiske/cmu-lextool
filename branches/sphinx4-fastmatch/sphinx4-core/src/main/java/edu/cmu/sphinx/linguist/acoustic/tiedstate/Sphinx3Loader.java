@@ -194,6 +194,7 @@ public class Sphinx3Loader implements Loader {
     protected Pool<float[]> varianceTransformationVectorPool;
 
     protected float[][] transformMatrix;
+    private MixtureComponentSet[] phoneticTiedMixtures;
     protected Pool<Senone> senonePool;
 
     private Map<String, Unit> contextIndependentUnits;
@@ -562,7 +563,7 @@ public class Sphinx3Loader implements Loader {
         float[] varianceTransformationVector = varianceTransformationVectorPool == null ? null
                 : varianceTransformationVectorPool.get(0);
         
-        MixtureComponentSet[] phoneticTiedMixtures = new MixtureComponentSet[numBase];
+        phoneticTiedMixtures = new MixtureComponentSet[numBase];
         for (int i = 0; i < numBase; i++) {
             ArrayList<PrunableMixtureComponent[]> mixtureComponents = new ArrayList<PrunableMixtureComponent[]>();
             for (int j = 0; j < numStreams; j++) {
@@ -1221,6 +1222,20 @@ public class Sphinx3Loader implements Loader {
         dis.close();
         return result;
     }
+    
+    public void clearGauScores() {
+        if (phoneticTiedMixtures == null)
+            return;
+        for (MixtureComponentSet mixture : phoneticTiedMixtures)
+            mixture.clearStoredScores();
+    }
+    
+    public void setGauScoresQueueLength(int scoresQueueLen) {
+        if (phoneticTiedMixtures == null)
+            return;
+        for (MixtureComponentSet mixture : phoneticTiedMixtures)
+            mixture.setScoreQueueLength(scoresQueueLen);
+    }
 
     public Pool<float[]> getMeansPool() {
         return meansPool;
@@ -1257,7 +1272,7 @@ public class Sphinx3Loader implements Loader {
     public float[][] getTransformMatrix() {
         return transformMatrix;
     }
-
+    
     public Pool<Senone> getSenonePool() {
         return senonePool;
     }
