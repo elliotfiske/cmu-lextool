@@ -24,10 +24,13 @@ import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.linguist.Linguist;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.SearchStateArc;
+import edu.cmu.sphinx.linguist.WordSearchState;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Loader;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.Sphinx3Loader;
 import edu.cmu.sphinx.linguist.allphone.PhoneHmmSearchState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
+import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeNonEmittingHMMState;
+import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeWordState;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
@@ -170,10 +173,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         for (int i = 0; i < nFrames && !done; i++) {
             if (!fastmatchStreamEnd)
             	fastMatchRecognize();
-            if (fastmatchStreamEnd) {
-            	penalties.clear();
-            	ciScores.poll();
-            }
+            penalties.clear();
+            ciScores.poll();
         	done = recognize();
         }
 
@@ -227,7 +228,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         createFastMatchBestTokenMap();
         growFastmatchBranches();
         fastmatchStreamEnd = false;
-        for (int i = 0; (i < lookaheadWindow) && !fastmatchStreamEnd; i++)
+        for (int i = 0; (i < lookaheadWindow - 1) && !fastmatchStreamEnd; i++)
         	fastMatchRecognize();
         
         super.localStart();
@@ -262,70 +263,36 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         	collectFastMatchSuccessorTokens(token);
         }
         ciScores.add(new FrameCiScores(frameCiScores, frameMaxCiScore));
-        penalties.clear();
-        if (ciScores.size() > lookaheadWindow)
-        	ciScores.poll();
         growTimer.stop();
     }
     
-    /**
-     * Goes through the active list of tokens and expands each token, finding
-     * the set of successor tokens until all the successor tokens are emitting
-     * tokens.
-     */
-    @Override
-    protected void growBranches() {
-        growTimer.start();
-        float relativeBeamThreshold = activeList.getBeamThreshold();
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine("Frame: " + currentFrameNumber + " thresh : " + relativeBeamThreshold + " bs "
-                    + activeList.getBestScore() + " tok " + activeList.getBestToken());
-        }
-        for (Token token : activeList) {
-        	Float penalty = 0.0f;
-        	if (token.getSearchState() instanceof LexTreeHMMState && !ciScores.isEmpty()) {
-        		int baseId = ((LexTreeHMMState)token.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
-        		if ((penalty = penalties.get(baseId)) == null)
-        			penalty = updateLookaheadPenalty(baseId);
-        	}
-            if (token.getScore() + (penalty * lookaheadWeight) >= relativeBeamThreshold && allowExpansion(token)) {
-                collectSuccessorTokens(token);
-            }
-        }
-        growTimer.stop();
-    }
-
-    /**
-     * Grows the emitting branches. This version applies a simple acoustic
-     * lookahead based upon the rate of change in the current acoustic score.
-     */
     @Override
     protected void growEmittingBranches() {
-        if (acousticLookaheadFrames > 0F) {
-            growTimer.start();
-            float bestScore = -Float.MAX_VALUE;
-            for (Token t : activeList) {
-                float score = t.getScore() + t.getAcousticScore() * acousticLookaheadFrames;
-                if (score > bestScore) {
-                    bestScore = score;
-                }
-            }
-            float relativeBeamThreshold = bestScore + relativeBeamWidth;
-            for (Token t : activeList) {
-            	Float penalty = 0.0f;
-            	if (t.getSearchState() instanceof LexTreeHMMState && !ciScores.isEmpty()) {
-            		int baseId = ((LexTreeHMMState)t.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
-            		if ((penalty = penalties.get(baseId)) == null)
-            			penalty = updateLookaheadPenalty(baseId);
-            	}
-            	if (t.getScore() + t.getAcousticScore() * acousticLookaheadFrames + (penalty * lookaheadWeight) > relativeBeamThreshold)
-                    collectSuccessorTokens(t);
-            }
-            growTimer.stop();
-        } else {
-            growBranches();
-        }
-    }
+    	if (acousticLookaheadFrames > 0F) {
+    		growTimer.start();
+    		float bestScore = -Float.MAX_VALUE;
+    		for (Token t : activeList) {
+    			float score = t.getScore() + t.getAcousticScore() * acousticLookaheadFrames;
+    			if (score > bestScore) {
+    				bestScore = score;
+    			}
+    		}
+    		float relativeBeamThreshold = bestScore + relativeBeamWidth;
+    		for (Token t : activeList) {
+    		Float penalty = 0.0f;
+    		if (t.getSearchState() instanceof LexTreeHMMState) {
+    			int baseId = ((LexTreeHMMState)t.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
+    			if ((penalty = penalties.get(baseId)) == null)
+    				penalty = updateLookaheadPenalty(baseId);
+    		}
+    		if (t.getScore() + t.getAcousticScore() * acousticLookaheadFrames + penalty * lookaheadWeight / 3 > relativeBeamThreshold)
+    			collectSuccessorTokens(t);
+    		}
+    		growTimer.stop();
+    	} else {
+    		growBranches();
+    	}
+	}
     
     protected boolean scoreFastMatchTokens() {
     	boolean moreTokens;
@@ -426,7 +393,106 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         }
     }
     
+    /**
+     * Collects the next set of emitting tokens from a token and accumulates
+     * them in the active or result lists
+     * 
+     * @param token
+     *            the token to collect successors from be immediately expanded
+     *            are placed. Null if we should always expand all nodes.
+     */
+    @Override
+    protected void collectSuccessorTokens(Token token) {
+
+        // tokenTracker.add(token);
+        // tokenTypeTracker.add(token);
+
+        // If this is a final state, add it to the final list
+
+        if (token.isFinal()) {
+            resultList.add(getResultListPredecessor(token));
+            return;
+        }
+
+        // if this is a non-emitting token and we've already
+        // visited the same state during this frame, then we
+        // are in a grammar loop, so we don't continue to expand.
+        // This check only works properly if we have kept all of the
+        // tokens (instead of skipping the non-word tokens).
+        // Note that certain linguists will never generate grammar loops
+        // (lextree linguist for example). For these cases, it is perfectly
+        // fine to disable this check by setting keepAllTokens to false
+
+        if (!token.isEmitting() && (keepAllTokens && isVisited(token))) {
+            return;
+        }
+        
+        SearchState state = token.getSearchState();
+        SearchStateArc[] arcs = state.getSuccessors();
+        Token predecessor = getResultListPredecessor(token);
+
+        // For each successor
+        // calculate the entry score for the token based upon the
+        // predecessor token score and the transition probabilities
+        // if the score is better than the best score encountered for
+        // the SearchState and frame then create a new token, add
+        // it to the lattice and the SearchState.
+        // If the token is an emitting token add it to the list,
+        // otherwise recursively collect the new tokens successors.
+        
+        float tokenScore = token.getScore();
+        float beamThreshold = activeList.getBeamThreshold();
+        for (SearchStateArc arc : arcs) {
+            SearchState nextState = arc.getState();
+            
+            //prune states using lookahead heuristics
+            if (state instanceof LexTreeNonEmittingHMMState || state instanceof LexTreeWordState) {
+            	if (nextState instanceof LexTreeHMMState) {
+            		Float penalty;
+            		int baseId = ((LexTreeHMMState)nextState).getHMMState().getHMM().getBaseUnit().getBaseID();
+            		if ((penalty = penalties.get(baseId)) == null)
+            		    penalty = updateLookaheadPenalty(baseId);
+            		if ((tokenScore + lookaheadWeight * penalty) < beamThreshold)
+            			continue;
+            	}
+            }
+            
+            if (checkStateOrder) {
+                checkStateOrder(state, nextState);
+            }
+
+            // We're actually multiplying the variables, but since
+            // these come in log(), multiply gets converted to add
+            float logEntryScore = tokenScore + arc.getProbability();
+            
+            Token bestToken = getBestToken(nextState);
+
+            if (bestToken == null) {
+                Token newBestToken = new Token(predecessor, nextState, logEntryScore, arc.getInsertionProbability(),
+                        arc.getLanguageProbability(), currentFrameNumber);
+                tokensCreated.value++;
+                setBestToken(newBestToken, nextState);
+                activeListAdd(newBestToken);
+            } else if (bestToken.getScore() < logEntryScore) {
+                // System.out.println("Updating " + bestToken + " with " +
+                // newBestToken);
+                Token oldPredecessor = bestToken.getPredecessor();
+                bestToken.update(predecessor, nextState, logEntryScore, arc.getInsertionProbability(),
+                        arc.getLanguageProbability(), currentFrameNumber);
+                if (buildWordLattice && nextState instanceof WordSearchState) {
+                    loserManager.addAlternatePredecessor(bestToken, oldPredecessor);
+                }
+            } else if (buildWordLattice && nextState instanceof WordSearchState) {
+                if (predecessor != null) {
+                    loserManager.addAlternatePredecessor(bestToken, predecessor);
+                }
+            }
+        }
+    }
+    
     private Float updateLookaheadPenalty(int baseId) {
+    	if (ciScores.isEmpty())
+    		return 0.0f;
     	float penalty = -Float.MAX_VALUE;
     	for (FrameCiScores frameCiScores : ciScores) {
     		float diff = frameCiScores.scores[baseId] - frameCiScores.maxScore;

@@ -86,7 +86,7 @@
     <property name="buildWordLattice" value="true"/>
     <property name="keepAllTokens" value="true"/>
 
-    <property name="lookaheadPenaltyWeight" value="3.5"/>
+    <property name="lookaheadPenaltyWeight" value="10.0"/>
     <property name="acousticLookaheadFrames" value="1.7"/>
     <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
   </component>

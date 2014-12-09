@@ -121,7 +121,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     // -----------------------------------
     protected Logger logger;
     protected boolean showTokenCount;
-    private boolean checkStateOrder;
+    protected boolean checkStateOrder;
     private int growSkipInterval;
     protected float relativeBeamWidth;
     protected float acousticLookaheadFrames;
@@ -564,7 +564,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
      * @param fromState
      * @param toState
      */
-    private void checkStateOrder(SearchState fromState, SearchState toState) {
+    protected void checkStateOrder(SearchState fromState, SearchState toState) {
         if (fromState.getOrder() == numStateOrder - 1) {
             return;
         }
