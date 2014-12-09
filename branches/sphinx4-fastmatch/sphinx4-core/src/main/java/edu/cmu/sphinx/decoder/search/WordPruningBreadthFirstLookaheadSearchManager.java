@@ -170,6 +170,10 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         for (int i = 0; i < nFrames && !done; i++) {
             if (!fastmatchStreamEnd)
             	fastMatchRecognize();
+            if (fastmatchStreamEnd) {
+            	penalties.clear();
+            	ciScores.poll();
+            }
         	done = recognize();
         }
 
@@ -279,7 +283,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         }
         for (Token token : activeList) {
         	Float penalty = 0.0f;
-        	if (token.getSearchState() instanceof LexTreeHMMState) {
+        	if (token.getSearchState() instanceof LexTreeHMMState && !ciScores.isEmpty()) {
         		int baseId = ((LexTreeHMMState)token.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
         		if ((penalty = penalties.get(baseId)) == null)
         			penalty = updateLookaheadPenalty(baseId);
@@ -309,7 +313,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
             float relativeBeamThreshold = bestScore + relativeBeamWidth;
             for (Token t : activeList) {
             	Float penalty = 0.0f;
-            	if (t.getSearchState() instanceof LexTreeHMMState) {
+            	if (t.getSearchState() instanceof LexTreeHMMState && !ciScores.isEmpty()) {
             		int baseId = ((LexTreeHMMState)t.getSearchState()).getHMMState().getHMM().getBaseUnit().getBaseID();
             		if ((penalty = penalties.get(baseId)) == null)
             			penalty = updateLookaheadPenalty(baseId);
