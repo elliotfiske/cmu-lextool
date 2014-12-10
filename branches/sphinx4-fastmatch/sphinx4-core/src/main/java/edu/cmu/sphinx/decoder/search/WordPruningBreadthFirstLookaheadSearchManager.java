@@ -31,6 +31,7 @@ import edu.cmu.sphinx.linguist.allphone.PhoneHmmSearchState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeHMMState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeNonEmittingHMMState;
 import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeWordState;
+import edu.cmu.sphinx.linguist.lextree.LexTreeLinguist.LexTreeEndUnitState;
 import edu.cmu.sphinx.result.Result;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
@@ -439,14 +440,17 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         // it to the lattice and the SearchState.
         // If the token is an emitting token add it to the list,
         // otherwise recursively collect the new tokens successors.
-        
+
         float tokenScore = token.getScore();
         float beamThreshold = activeList.getBeamThreshold();
+        boolean stateProducesPhoneHmms = state instanceof LexTreeNonEmittingHMMState 
+                                         || state instanceof LexTreeWordState
+                                         || state instanceof LexTreeEndUnitState;
         for (SearchStateArc arc : arcs) {
             SearchState nextState = arc.getState();
-            
+
             //prune states using lookahead heuristics
-            if (state instanceof LexTreeNonEmittingHMMState || state instanceof LexTreeWordState) {
+            if (stateProducesPhoneHmms) {
             	if (nextState instanceof LexTreeHMMState) {
             		Float penalty;
             		int baseId = ((LexTreeHMMState)nextState).getHMMState().getHMM().getBaseUnit().getBaseID();
