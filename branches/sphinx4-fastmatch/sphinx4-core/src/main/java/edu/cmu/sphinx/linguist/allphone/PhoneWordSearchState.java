@@ -5,26 +5,26 @@ import java.util.Iterator;
 
 import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.WordSearchState;
-import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.acoustic.HMMPosition;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.dictionary.Pronunciation;
 import edu.cmu.sphinx.linguist.dictionary.Word;
+import edu.cmu.sphinx.util.LogMath;
 
 public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements WordSearchState {
     
-    public PhoneWordSearchState(Unit unit, AcousticModel model) {
-        super(unit, model);
+    public PhoneWordSearchState(Unit unit, AllphoneLinguist linguist, float insertionProb, float languageProb) {
+        super(unit, linguist, insertionProb, languageProb);
     }
     
     public SearchStateArc[] getSuccessors() {
         ArrayList<SearchStateArc> result = new ArrayList<SearchStateArc>();
-        Iterator<Unit> iter = acousticModel.getContextIndependentUnitIterator();
+        Iterator<Unit> iter = linguist.getAcousticModel().getContextIndependentUnitIterator();
         while( iter.hasNext()) {
             Unit ciUnit = iter.next();
-            HMMState hmmState = acousticModel.lookupNearestHMM(ciUnit, HMMPosition.UNDEFINED, true).getInitialState();
-            result.add(new PhoneHmmSearchState(ciUnit, hmmState, acousticModel));
+            HMMState hmmState = linguist.getAcousticModel().lookupNearestHMM(ciUnit, HMMPosition.UNDEFINED, true).getInitialState();
+            result.add(new PhoneHmmSearchState(ciUnit, hmmState, linguist, linguist.getPhoneInsertionProb(), LogMath.LOG_ONE));
         }
         return result.toArray(new SearchStateArc[result.size()]);
     }

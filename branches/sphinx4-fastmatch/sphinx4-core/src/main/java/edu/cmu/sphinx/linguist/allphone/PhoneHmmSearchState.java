@@ -5,22 +5,25 @@ import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.WordSequence;
-import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.acoustic.HMMStateArc;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
-import edu.cmu.sphinx.util.LogMath;
 
 public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScoreProvider {
 
     private Unit unit;
     private HMMState state;
-    private AcousticModel acousticModel;
+    private AllphoneLinguist linguist;
     
-    public PhoneHmmSearchState(Unit unit, HMMState hmmState, AcousticModel model) {
+    private float insertionProb;
+    private float languageProb;
+    
+    public PhoneHmmSearchState(Unit unit, HMMState hmmState, AllphoneLinguist linguist, float insertionProb, float languageProb) {
         this.unit = unit;
         this.state = hmmState;
-        this.acousticModel = model;
+        this.linguist = linguist;
+        this.insertionProb = insertionProb;
+        this.languageProb = languageProb;
     }
 
     public SearchState getState() {
@@ -36,11 +39,11 @@ public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScorePr
     }
 
     public float getLanguageProbability() {
-        return LogMath.LOG_ONE;
+        return languageProb;
     }
 
     public float getInsertionProbability() {
-        return LogMath.LOG_ONE;
+        return insertionProb;
     }
 
     /* If we are final, transfer to all possible phones, otherwise
@@ -49,13 +52,13 @@ public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScorePr
     public SearchStateArc[] getSuccessors() {
         if (state.isExitState()) {
             SearchStateArc[] result = new SearchStateArc[1];
-            result[0] = new PhoneNonEmittingSearchState(unit, acousticModel);
+            result[0] = new PhoneNonEmittingSearchState(unit, linguist, insertionProb, languageProb);
             return result;
         } else {
             HMMStateArc successors[] = state.getSuccessors();
             SearchStateArc[] results = new SearchStateArc[successors.length];
             for (int i = 0; i < successors.length; i++) {
-                results[i] = new PhoneHmmSearchState(unit, successors[i].getHMMState(), acousticModel);
+                results[i] = new PhoneHmmSearchState(unit, successors[i].getHMMState(), linguist, insertionProb, languageProb);
             }
             return results;
         }
