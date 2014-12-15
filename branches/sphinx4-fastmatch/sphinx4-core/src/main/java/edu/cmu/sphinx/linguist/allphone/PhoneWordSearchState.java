@@ -1,13 +1,13 @@
 package edu.cmu.sphinx.linguist.allphone;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.WordSearchState;
-import edu.cmu.sphinx.linguist.acoustic.HMMPosition;
-import edu.cmu.sphinx.linguist.acoustic.HMMState;
+import edu.cmu.sphinx.linguist.acoustic.HMM;
+import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
+import edu.cmu.sphinx.linguist.acoustic.UnitManager;
 import edu.cmu.sphinx.linguist.dictionary.Pronunciation;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.util.LogMath;
@@ -20,12 +20,15 @@ public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements
     
     public SearchStateArc[] getSuccessors() {
         ArrayList<SearchStateArc> result = new ArrayList<SearchStateArc>();
-        Iterator<Unit> iter = linguist.getAcousticModel().getContextIndependentUnitIterator();
-        while( iter.hasNext()) {
-            Unit ciUnit = iter.next();
-            HMMState hmmState = linguist.getAcousticModel().lookupNearestHMM(ciUnit, HMMPosition.UNDEFINED, true).getInitialState();
-            result.add(new PhoneHmmSearchState(ciUnit, hmmState, linguist, linguist.getPhoneInsertionProb(), LogMath.LOG_ONE));
-        }
+        int base = unit.getBaseID();
+        int rc = UnitManager.SILENCE.getBaseID();
+        if (unit.isFiller())
+            base = rc;
+        if (unit.isContextDependent())
+            rc = ((LeftRightContext)unit.getContext()).getRightContext()[0].getBaseID();
+        ArrayList<HMM> successors = linguist.useContextDependentPhones() ? linguist.getCDSuccessors(base, rc) : linguist.getCISuccessors();
+        for (HMM successor : successors)
+            result.add(new PhoneHmmSearchState(successor.getUnit(), successor.getInitialState(), linguist, linguist.getPhoneInsertionProb(), LogMath.LOG_ONE));
         return result.toArray(new SearchStateArc[result.size()]);
     }
 
@@ -52,7 +55,8 @@ public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements
         if (!(obj instanceof PhoneWordSearchState))
             return false;
         boolean haveSameBaseId = ((PhoneWordSearchState)obj).unit.getBaseID() == unit.getBaseID();
-        return haveSameBaseId;
+        boolean haveSameContex = ((PhoneWordSearchState)obj).unit.getContext().equals(unit.getContext());
+        return haveSameBaseId && haveSameContex;
     }
     
     @Override

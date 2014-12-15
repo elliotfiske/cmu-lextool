@@ -74,7 +74,8 @@ public class PhoneNonEmittingSearchState implements SearchState, SearchStateArc 
         if (!(obj instanceof PhoneNonEmittingSearchState))
             return false;
         boolean haveSameBaseId = ((PhoneNonEmittingSearchState)obj).unit.getBaseID() == unit.getBaseID();
-        return haveSameBaseId;
+        boolean haveSameContex = ((PhoneNonEmittingSearchState)obj).unit.getContext().equals(unit.getContext());
+        return haveSameBaseId && haveSameContex;
     }
     
     @Override

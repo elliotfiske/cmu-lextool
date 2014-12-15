@@ -7,7 +7,10 @@ import edu.cmu.sphinx.linguist.SearchStateArc;
 import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.acoustic.HMMStateArc;
+import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
 
 public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScoreProvider {
 
@@ -106,13 +109,24 @@ public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScorePr
     public boolean equals(Object obj) {
         if (!(obj instanceof PhoneHmmSearchState))
             return false;
-        boolean haveSameBaseId = ((PhoneHmmSearchState)obj).unit.getBaseID() == unit.getBaseID();
-        boolean haveSameHmmState = ((PhoneHmmSearchState)obj).state.getState() == state.getState();
-        return haveSameBaseId && haveSameHmmState;
+        Senone[] otherSenones = ((SenoneHMM)((PhoneHmmSearchState)obj).state.getHMM()).getSenoneSequence().getSenones();
+        Senone[] thisSenones = ((SenoneHMM)state.getHMM()).getSenoneSequence().getSenones();
+        if (otherSenones.length != thisSenones.length)
+        	return false;
+        for (int i = 0; i < thisSenones.length; i++) {
+            if (otherSenones[i] != thisSenones[i])
+                return false;
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return unit.getBaseID() * 37 + state.getState();
+        int baseHash = unit.getBaseID() * 37 + state.getState();
+        if (unit.isContextDependent()) {
+            baseHash += ((LeftRightContext)unit.getContext()).getLeftContext()[0].getBaseID() * 37;
+            baseHash += ((LeftRightContext)unit.getContext()).getRightContext()[0].getBaseID() * 37;
+        }
+        return baseHash;
     }
 }
