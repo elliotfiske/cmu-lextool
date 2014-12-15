@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.logging.Level;
 
 import edu.cmu.sphinx.decoder.pruner.Pruner;
 import edu.cmu.sphinx.decoder.scorer.AcousticScorer;
@@ -64,6 +63,13 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
     public final static String PROP_LOOKAHEAD_PENALTY_WEIGHT = "lookaheadPenaltyWeight";
 
     /**
+     * The property that sets the minimum score relative to the maximum score in the phone list for pruning. Words with a
+     * score less than relativeBeamWidth * maximumScore will be pruned from the list
+     */
+    @S4Double(defaultValue = 1e-12)
+    public final static String PROP_FM_RELATIVE_PHONE_BEAM_WIDTH = "fastmatchRelativePhoneBeamWidth";
+
+    /**
      * The property that controls size of lookahead window.
      * Acceptable values are in range [1..10].
      */
@@ -82,6 +88,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
     // -----------------------------------
     private int lookaheadWindow;
     private float lookaheadWeight;
+    private float logFastmatchRelativePhoneBeamWidth;
     private HashMap<Integer, Float> penalties;
     private LinkedList<FrameCiScores> ciScores;
     
@@ -109,8 +116,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
      * @param keepAllTokens
      */
     public WordPruningBreadthFirstLookaheadSearchManager(Linguist linguist, Linguist fastmatchLinguist, Loader loader, Pruner pruner, AcousticScorer scorer,
-            ActiveListManager activeListManager, ActiveListFactory fastmatchActiveListFactory, boolean showTokenCount, double relativeWordBeamWidth, int growSkipInterval,
-            boolean checkStateOrder, boolean buildWordLattice, int lookaheadWindow, float lookaheadWeight, int maxLatticeEdges, float acousticLookaheadFrames,
+            ActiveListManager activeListManager, ActiveListFactory fastmatchActiveListFactory, boolean showTokenCount, double relativeWordBeamWidth, double fastmatchRelativePhoneBeamWidth, 
+            int growSkipInterval, boolean checkStateOrder, boolean buildWordLattice, int lookaheadWindow, float lookaheadWeight, int maxLatticeEdges, float acousticLookaheadFrames,
             boolean keepAllTokens) {
     	
     	super(linguist, pruner, scorer, activeListManager, showTokenCount, relativeWordBeamWidth, growSkipInterval,
@@ -122,7 +129,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         this.lookaheadWindow = lookaheadWindow;
         this.lookaheadWeight = lookaheadWeight;
         if (lookaheadWindow < 1 || lookaheadWindow > 10)
-        	throw new IllegalArgumentException("Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
+            throw new IllegalArgumentException("Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
+        this.logFastmatchRelativePhoneBeamWidth = logMath.linearToLog(fastmatchRelativePhoneBeamWidth);
         this.ciScores = new LinkedList<FrameCiScores>();
         this.penalties = new HashMap<Integer, Float>();
         if (loader instanceof Sphinx3Loader && ((Sphinx3Loader) loader).hasTiedMixtures())
@@ -150,8 +158,10 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         lookaheadWindow = ps.getInt(PROP_LOOKAHEAD_WINDOW);
         lookaheadWeight = ps.getFloat(PROP_LOOKAHEAD_PENALTY_WEIGHT);
         if (lookaheadWindow < 1 || lookaheadWindow > 10)
-        	throw new PropertyException(WordPruningBreadthFirstLookaheadSearchManager.class.getName(), PROP_LOOKAHEAD_WINDOW, 
-        			"Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
+            throw new PropertyException(WordPruningBreadthFirstLookaheadSearchManager.class.getName(), PROP_LOOKAHEAD_WINDOW, 
+                "Unsupported lookahead window size: " + lookaheadWindow + ". Value in range [1..10] is expected");
+        double fastmatchRelativePhoneBeamWidth = ps.getDouble(PROP_FM_RELATIVE_PHONE_BEAM_WIDTH);
+        this.logFastmatchRelativePhoneBeamWidth = logMath.linearToLog(fastmatchRelativePhoneBeamWidth);
         ciScores = new LinkedList<FrameCiScores>();
         penalties = new HashMap<Integer, Float>();
         if (loader instanceof Sphinx3Loader && ((Sphinx3Loader) loader).hasTiedMixtures())
@@ -244,6 +254,7 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         ActiveList oldActiveList = fastmatchActiveList;
         fastmatchActiveList = fastmatchActiveListFactory.newInstance();
         float fastmathThreshold = oldActiveList.getBeamThreshold();
+        float fastmatchWordThreshold = oldActiveList.getBestScore() + logFastmatchRelativePhoneBeamWidth;
         //TODO more precise range of baseIds, remove magic number
         float[] frameCiScores = new float[100];
         Arrays.fill(frameCiScores, -Float.MAX_VALUE);
@@ -252,7 +263,8 @@ public class WordPruningBreadthFirstLookaheadSearchManager extends WordPruningBr
         	float tokenScore = token.getScore();
         	if (tokenScore < fastmathThreshold)
         		continue;
-        	//TODO do we need phone insertion probability, i.e. threshold WordSearchStates?
+            if (token.getSearchState() instanceof WordSearchState && token.getScore() < fastmatchWordThreshold)
+                continue;
             //filling max ci scores array that will be used in general search token score composing
         	if (token.getSearchState() instanceof PhoneHmmSearchState) {
             	int baseId = ((PhoneHmmSearchState)token.getSearchState()).getBaseId();

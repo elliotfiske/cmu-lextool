@@ -78,7 +78,7 @@
     <property name="pruner" value="trivialPruner"/>
     <property name="scorer" value="trivialScorer"/>
     <property name="activeListManager" value="activeListManager"/>
-    <property name="fastmatchActiveListFactory" value="activeList"/>
+    <property name="fastmatchActiveListFactory" value="fastmatchActiveList"/>
 
     <property name="growSkipInterval" value="0"/>
     <property name="lookaheadWindow" value="5"/>
@@ -89,12 +89,19 @@
     <property name="lookaheadPenaltyWeight" value="10.0"/>
     <property name="acousticLookaheadFrames" value="1.7"/>
     <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+    <property name="fastmatchRelativePhoneBeamWidth" value="1e-12"/>
   </component>
 
   <component name="activeList"
     type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
     <property name="absoluteBeamWidth" value="${absoluteBeamWidth}"/>
     <property name="relativeBeamWidth" value="${relativeBeamWidth}"/>
+  </component>
+  
+  <component name="fastmatchActiveList"
+    type="edu.cmu.sphinx.decoder.search.PartitionActiveListFactory">
+    <property name="absoluteBeamWidth" value="${absoluteBeamWidth}"/>
+    <property name="relativeBeamWidth" value="1e-12"/>
   </component>
 
   <component name="activeListManager"
@@ -144,6 +151,8 @@
   <component name="allphoneLinguist"
     type="edu.cmu.sphinx.linguist.allphone.AllphoneLinguist">
     <property name="acousticModel" value="acousticModel"/>
+    <property name="useContextDependentPhones" value="false"/>
+    <property name="phoneInsertionProbability" value="0.05"/>
   </component>
   
   <component name="flatLinguist"

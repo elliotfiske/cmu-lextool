@@ -114,7 +114,7 @@ public class WordPruningBreadthFirstSearchManager extends TokenSearchManager {
     protected Pruner pruner; // used to prune the active list
     protected AcousticScorer scorer; // used to score the active list
     private ActiveListManager activeListManager;
-    private LogMath logMath;
+    protected LogMath logMath;
 
     // -----------------------------------
     // Configuration data
