@@ -131,7 +131,7 @@ public class AllphoneLinguist implements Linguist {
                     leftContextSilHMMs.add(hmm);
                     continue;
                 }
-                Unit base = hmm.getUnit();
+                Unit base = hmm.getUnit().getBaseUnit();
                 HashMap<Unit, ArrayList<HMM>> lcSuccessors; 
                 if ((lcSuccessors = cdHMMs.get(lc)) == null) {
                     lcSuccessors = new HashMap<Unit, ArrayList<HMM>>();
