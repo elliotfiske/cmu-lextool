@@ -9,7 +9,6 @@ import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.acoustic.HMMStateArc;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
-import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneSequence;
 
 public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScoreProvider {
 
@@ -108,9 +107,10 @@ public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScorePr
     public boolean equals(Object obj) {
         if (!(obj instanceof PhoneHmmSearchState))
             return false;
-        SenoneSequence otherSenoneSeq = ((SenoneHMM)((PhoneHmmSearchState)obj).state.getHMM()).getSenoneSequence();
-        SenoneSequence thisSenoneSeq = ((SenoneHMM)state.getHMM()).getSenoneSequence();
-        return otherSenoneSeq.equals(thisSenoneSeq);
+        boolean haveSameBaseId = ((PhoneHmmSearchState)obj).unit.getBaseID() == unit.getBaseID();
+        boolean haveSameContex = ((PhoneHmmSearchState)obj).unit.getContext().equals(unit.getContext());
+        boolean haveSameState = ((PhoneHmmSearchState)obj).state.getState() == state.getState();
+        return haveSameBaseId && haveSameContex && haveSameState;
     }
 
     @Override
