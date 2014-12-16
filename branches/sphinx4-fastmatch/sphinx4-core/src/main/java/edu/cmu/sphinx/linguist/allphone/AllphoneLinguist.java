@@ -10,6 +10,7 @@ import edu.cmu.sphinx.linguist.SearchGraph;
 import edu.cmu.sphinx.linguist.acoustic.AcousticModel;
 import edu.cmu.sphinx.linguist.acoustic.HMM;
 import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
+import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.acoustic.UnitManager;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
@@ -43,7 +44,7 @@ public class AllphoneLinguist implements Linguist {
     private ArrayList<HMM> ciHMMs;
     private ArrayList<HMM> fillerHMMs;
     private ArrayList<HMM> leftContextSilHMMs;
-    private HashMap<Integer, HashMap<Integer, ArrayList<HMM>>> cdHMMs;
+    private HashMap<Unit, HashMap<Unit, ArrayList<HMM>>> cdHMMs;
     private float pip;
     private boolean useCD;
     
@@ -94,10 +95,10 @@ public class AllphoneLinguist implements Linguist {
         return ciHMMs;
     }
     
-    public ArrayList<HMM> getCDSuccessors(int lc, int base) {
-        if (lc == UnitManager.SILENCE.getBaseID())
+    public ArrayList<HMM> getCDSuccessors(Unit lc, Unit base) {
+        if (lc.isFiller())
             return leftContextSilHMMs;
-        if (base == UnitManager.SILENCE.getBaseID())
+        if (base == UnitManager.SILENCE)
             return fillerHMMs;
         return cdHMMs.get(lc).get(base);
     }
@@ -113,7 +114,7 @@ public class AllphoneLinguist implements Linguist {
     }
     
     private void createContextDependentSuccessors() {
-        cdHMMs = new HashMap<Integer, HashMap<Integer, ArrayList<HMM>>>();
+        cdHMMs = new HashMap<Unit, HashMap<Unit, ArrayList<HMM>>>();
         fillerHMMs = new ArrayList<HMM>();
         leftContextSilHMMs = new ArrayList<HMM>();
         Iterator<HMM> hmmIter = acousticModel.getHMMIterator();
@@ -125,21 +126,21 @@ public class AllphoneLinguist implements Linguist {
             }
             if (hmm.getUnit().isContextDependent()) {
                 LeftRightContext context = (LeftRightContext)hmm.getUnit().getContext();
-                int lc = context.getLeftContext()[0].getBaseID();
-                if (lc == UnitManager.SILENCE.getBaseID()) {
+                Unit lc = context.getLeftContext()[0];
+                if (lc == UnitManager.SILENCE) {
                     leftContextSilHMMs.add(hmm);
                     continue;
                 }
-                int baseId = hmm.getUnit().getBaseID();
-                HashMap<Integer, ArrayList<HMM>> lcSuccessors; 
+                Unit base = hmm.getUnit();
+                HashMap<Unit, ArrayList<HMM>> lcSuccessors; 
                 if ((lcSuccessors = cdHMMs.get(lc)) == null) {
-                    lcSuccessors = new HashMap<Integer, ArrayList<HMM>>();
+                    lcSuccessors = new HashMap<Unit, ArrayList<HMM>>();
                     cdHMMs.put(lc, lcSuccessors);
                 }
                 ArrayList<HMM> lcBaseSuccessors;
-                if ((lcBaseSuccessors = lcSuccessors.get(baseId)) == null) {
+                if ((lcBaseSuccessors = lcSuccessors.get(base)) == null) {
                     lcBaseSuccessors = new ArrayList<HMM>();
-                    lcSuccessors.put(baseId, lcBaseSuccessors);
+                    lcSuccessors.put(base, lcBaseSuccessors);
                 }
                 lcBaseSuccessors.add(hmm);
             }

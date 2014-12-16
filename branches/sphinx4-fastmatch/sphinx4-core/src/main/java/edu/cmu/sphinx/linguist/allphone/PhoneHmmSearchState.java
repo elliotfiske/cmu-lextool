@@ -1,5 +1,7 @@
 package edu.cmu.sphinx.linguist.allphone;
 
+import java.util.Random;
+
 import edu.cmu.sphinx.decoder.scorer.ScoreProvider;
 import edu.cmu.sphinx.frontend.Data;
 import edu.cmu.sphinx.linguist.SearchState;
@@ -9,8 +11,8 @@ import edu.cmu.sphinx.linguist.acoustic.HMMState;
 import edu.cmu.sphinx.linguist.acoustic.HMMStateArc;
 import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
-import edu.cmu.sphinx.linguist.acoustic.tiedstate.Senone;
 import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneSequence;
 
 public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScoreProvider {
 
@@ -109,24 +111,14 @@ public class PhoneHmmSearchState implements SearchState, SearchStateArc, ScorePr
     public boolean equals(Object obj) {
         if (!(obj instanceof PhoneHmmSearchState))
             return false;
-        Senone[] otherSenones = ((SenoneHMM)((PhoneHmmSearchState)obj).state.getHMM()).getSenoneSequence().getSenones();
-        Senone[] thisSenones = ((SenoneHMM)state.getHMM()).getSenoneSequence().getSenones();
-        if (otherSenones.length != thisSenones.length)
-        	return false;
-        for (int i = 0; i < thisSenones.length; i++) {
-            if (otherSenones[i] != thisSenones[i])
-                return false;
-        }
-        return true;
+        SenoneSequence otherSenoneSeq = ((SenoneHMM)((PhoneHmmSearchState)obj).state.getHMM()).getSenoneSequence();
+        SenoneSequence thisSenoneSeq = ((SenoneHMM)state.getHMM()).getSenoneSequence();
+        boolean result = otherSenoneSeq.equals(thisSenoneSeq);
+        return result;
     }
 
     @Override
     public int hashCode() {
-        int baseHash = unit.getBaseID() * 37 + state.getState();
-        if (unit.isContextDependent()) {
-            baseHash += ((LeftRightContext)unit.getContext()).getLeftContext()[0].getBaseID() * 37;
-            baseHash += ((LeftRightContext)unit.getContext()).getRightContext()[0].getBaseID() * 37;
-        }
-        return baseHash;
+        return ((SenoneHMM)state.getHMM()).getSenoneSequence().hashCode() + state.getState() * 37;
     }
 }

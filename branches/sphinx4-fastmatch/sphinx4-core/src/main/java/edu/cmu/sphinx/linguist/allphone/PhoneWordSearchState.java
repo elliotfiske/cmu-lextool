@@ -20,13 +20,10 @@ public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements
     
     public SearchStateArc[] getSuccessors() {
         ArrayList<SearchStateArc> result = new ArrayList<SearchStateArc>();
-        int base = unit.getBaseID();
-        int rc = UnitManager.SILENCE.getBaseID();
-        if (unit.isFiller())
-            base = rc;
+        Unit rc = UnitManager.SILENCE;
         if (unit.isContextDependent())
-            rc = ((LeftRightContext)unit.getContext()).getRightContext()[0].getBaseID();
-        ArrayList<HMM> successors = linguist.useContextDependentPhones() ? linguist.getCDSuccessors(base, rc) : linguist.getCISuccessors();
+            rc = ((LeftRightContext)unit.getContext()).getRightContext()[0];
+        ArrayList<HMM> successors = linguist.useContextDependentPhones() ? linguist.getCDSuccessors(unit, rc) : linguist.getCISuccessors();
         for (HMM successor : successors)
             result.add(new PhoneHmmSearchState(successor.getUnit(), successor.getInitialState(), linguist, linguist.getPhoneInsertionProb(), LogMath.LOG_ONE));
         return result.toArray(new SearchStateArc[result.size()]);
@@ -61,6 +58,6 @@ public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements
     
     @Override
     public int hashCode() {
-        return unit.getBaseID() * 37;
+    	return unit.getContext().hashCode() * 91 + unit.getBaseID();
     }
 }

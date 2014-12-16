@@ -80,6 +80,6 @@ public class PhoneNonEmittingSearchState implements SearchState, SearchStateArc 
     
     @Override
     public int hashCode() {
-        return unit.getBaseID() * 37;
+        return unit.getContext().hashCode() * 91 + unit.getBaseID();
     }
 }
