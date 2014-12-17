@@ -26,7 +26,7 @@ public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements
             rc = ((LeftRightContext)unit.getContext()).getRightContext()[0];
         ArrayList<HMM> successors = linguist.useContextDependentPhones() ? linguist.getCDSuccessors(base, rc) : linguist.getCISuccessors();
         for (HMM successor : successors)
-            result.add(new PhoneHmmSearchState(successor.getUnit(), successor.getInitialState(), linguist, linguist.getPhoneInsertionProb(), LogMath.LOG_ONE));
+            result.add(new PhoneHmmSearchState(successor.getInitialState(), linguist, linguist.getPhoneInsertionProb(), LogMath.LOG_ONE));
         return result.toArray(new SearchStateArc[result.size()]);
     }
 
@@ -47,7 +47,11 @@ public class PhoneWordSearchState extends PhoneNonEmittingSearchState implements
     public boolean isWordStart() {
         return false;
     }
-    
+
+    public int getOrder() {
+        return 1;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof PhoneWordSearchState))

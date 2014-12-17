@@ -12,6 +12,8 @@ import edu.cmu.sphinx.linguist.acoustic.HMM;
 import edu.cmu.sphinx.linguist.acoustic.LeftRightContext;
 import edu.cmu.sphinx.linguist.acoustic.Unit;
 import edu.cmu.sphinx.linguist.acoustic.UnitManager;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneHMM;
+import edu.cmu.sphinx.linguist.acoustic.tiedstate.SenoneSequence;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
@@ -44,6 +46,7 @@ public class AllphoneLinguist implements Linguist {
     private ArrayList<HMM> ciHMMs;
     private ArrayList<HMM> fillerHMMs;
     private ArrayList<HMM> leftContextSilHMMs;
+    private HashMap<SenoneSequence, ArrayList<Unit>> senonesToUnits;
     private HashMap<Unit, HashMap<Unit, ArrayList<HMM>>> cdHMMs;
     private float pip;
     private boolean useCD;
@@ -103,23 +106,44 @@ public class AllphoneLinguist implements Linguist {
         return cdHMMs.get(lc).get(base);
     }
 
+    public ArrayList<Unit> getUnits(SenoneSequence senoneSeq) {
+        return senonesToUnits.get(senoneSeq);
+    }
+
     private void createContextIndependentSuccessors() {
         Iterator<HMM> hmmIter = acousticModel.getHMMIterator();
         ciHMMs = new ArrayList<HMM>();
+        senonesToUnits = new HashMap<SenoneSequence, ArrayList<Unit>>();
         while (hmmIter.hasNext()) {
             HMM hmm = hmmIter.next();
-            if (!hmm.getUnit().isContextDependent())
+            if (!hmm.getUnit().isContextDependent()) {
+                ArrayList<Unit> sameSenonesUnits;
+                SenoneSequence senoneSeq = ((SenoneHMM)hmm).getSenoneSequence();
+                if ((sameSenonesUnits = senonesToUnits.get(senoneSeq)) == null) {
+                    sameSenonesUnits = new ArrayList<Unit>();
+                    senonesToUnits.put(senoneSeq, sameSenonesUnits);
+                }
+                sameSenonesUnits.add(hmm.getUnit());
                 ciHMMs.add(hmm);
+            }
         }
     }
     
     private void createContextDependentSuccessors() {
         cdHMMs = new HashMap<Unit, HashMap<Unit, ArrayList<HMM>>>();
+        senonesToUnits = new HashMap<SenoneSequence, ArrayList<Unit>>();
         fillerHMMs = new ArrayList<HMM>();
         leftContextSilHMMs = new ArrayList<HMM>();
         Iterator<HMM> hmmIter = acousticModel.getHMMIterator();
         while (hmmIter.hasNext()) {
             HMM hmm = hmmIter.next();
+            ArrayList<Unit> sameSenonesUnits;
+            SenoneSequence senoneSeq = ((SenoneHMM)hmm).getSenoneSequence();
+            if ((sameSenonesUnits = senonesToUnits.get(senoneSeq)) == null) {
+                sameSenonesUnits = new ArrayList<Unit>();
+                senonesToUnits.put(senoneSeq, sameSenonesUnits);
+            }
+            sameSenonesUnits.add(hmm.getUnit());
             if (hmm.getUnit().isFiller()) {
                 fillerHMMs.add(hmm);
                 continue;

@@ -17,7 +17,7 @@ public class AllphoneSearchGraph implements SearchGraph {
     
     public SearchState getInitialState() {
         HMMState silHmmState = linguist.getAcousticModel().lookupNearestHMM(UnitManager.SILENCE, HMMPosition.UNDEFINED, true).getInitialState();
-        return new PhoneHmmSearchState(UnitManager.SILENCE, silHmmState, linguist, LogMath.LOG_ONE, LogMath.LOG_ONE);
+        return new PhoneHmmSearchState(silHmmState, linguist, LogMath.LOG_ONE, LogMath.LOG_ONE);
     }
 
     public int getNumStateOrder() {
