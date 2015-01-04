@@ -38,11 +38,12 @@
 
 # do a sanity check on a dictionary (# of tabs, duplicates)
 #
-# [21oct98] (air) Created
-# [30oct98] (air) expanded functionality: check for phonetic symbols
-# [03feb99] (air) bug fix; added noise symbols to check
+# [21oct98]  (air) Created
+# [30oct98]  (air) expanded functionality: check for phonetic symbols
+# [03feb99]  (air) bug fix; added noise symbols to check
 # [20010623] (air) added cmd-line flags; word/pron bound now \s+
 # [20080422] (air) fixed for DOS eol's, also noisefile now properly optional
+# [20141225] (air) minor updates. NOTE: This script is *NECESSARY*; it's the final check
 
 #
 # correct dictionary format is:   ^WORD\tW ER DD\n$
@@ -75,7 +76,6 @@ open(DICT,$dictfile) ||die("$dictfile not found!\n");
 # go through dict, do tests
 %dict = (); $last = ""; my ($lead, $trail); $word_cnt = 0;
 while (<DICT>) {
-    chomp;  #    s/^\s*(.+?)\s*$/$1/;
     s/[\r\n]+//g;
     if ( /^;;;/ ) { next; }
     $line = $_;
@@ -103,17 +103,16 @@ while (<DICT>) {
 close(DICT);
 
 # check for duplicates entries
+my $dupFlag = 0;
 foreach $x (keys %dict) {
-    if ($dict{$x}>1) { print "ERROR: $x occurs ", $dict{$x}, " times!\n"; $ErrFlag++;}
+    if ($dict{$x}>1) { print "ERROR: $x occurs ", $dict{$x}, " times!\n"; $ErrFlag++; $dupFlag++;}
 }
+if ( $dupFlag > 0 ) { print STDERR "Found $dupFlag duplicates!\n"; }
 
-print STDERR "..processed $word_cnt words\n";
+print STDERR "Processed $word_cnt words\n";
 if ($ErrFlag > 0) {
     print STDERR "..$ErrFlag error(s) found\n";
     exit 1;
 }
-
-# print out the phone counts
-# foreach (sort keys %phone) { print STDERR "$_\t$phone{$_}\n"; }
 
 #
