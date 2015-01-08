@@ -12,8 +12,6 @@ The process is the following:
 1a) As a first pass, check your work by doing a svn diff with the previous version
  - be sure you still agree with your changes
 
-1c) Run scan_dict.pl to find format problems in the dictionary
-
 2) When ready, run scripts/test_cmudict.pl
  EG: ./scripts/test_cmudict.pl -p cmudict.0.7a.symbols cmudict.0.7a
  - this checks for collation order, legal entry format and phonetic symbols
