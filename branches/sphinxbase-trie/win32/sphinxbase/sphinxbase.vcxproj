@@ -18,7 +18,6 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2F025EAD-99BD-40F5-B2CC-F0A28CAD7F2D}</ProjectGuid>
     <RootNamespace>sphinxbase</RootNamespace>
@@ -163,11 +162,17 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_parser.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_scanner.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm3g_model.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_bits.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp32.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_set.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_trie.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\bio.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\bitvec.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\blas_lite.c" />
@@ -188,7 +193,9 @@
     <ClCompile Include="..\..\src\libsphinxbase\util\matrix.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\mmio.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\pio.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\util\priority_queue.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\profile.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\util\qsort_ext.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\sbthread.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\slamch.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\slapack_lite.c" />
@@ -226,7 +233,9 @@
     <ClInclude Include="..\..\include\sphinxbase\ngram_model.h" />
     <ClInclude Include="..\..\include\sphinxbase\pio.h" />
     <ClInclude Include="..\..\include\sphinxbase\prim_type.h" />
+    <ClInclude Include="..\..\include\sphinxbase\priority_queue.h" />
     <ClInclude Include="..\..\include\sphinxbase\profile.h" />
+    <ClInclude Include="..\..\include\sphinxbase\qsort_ext.h" />
     <ClInclude Include="..\..\include\sphinxbase\sbthread.h" />
     <ClInclude Include="..\..\include\sphinxbase\sphinxbase_export.h" />
     <ClInclude Include="..\..\include\sphinxbase\strfuncs.h" />
@@ -244,10 +253,17 @@
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_inverse_linear.h" />
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_piecewise_linear.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm3g_model.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_bits.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_internal.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_set.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_trie.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />

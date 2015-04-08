@@ -122,13 +122,18 @@ ngram_type_to_str(int type)
                   logmath_t *lmath)
  {
      ngram_model_t *model = NULL;
-
+     uint8 use_trie = cmd_ln_boolean_r(config, "-lm_trie");
      switch (file_type) {
      case NGRAM_AUTO: {
-         if ((model = ngram_model_arpa_read(config, file_name, lmath)) != NULL)
-             break;
-         if ((model = ngram_model_dmp_read(config, file_name, lmath)) != NULL)
-             break;
+         if (use_trie) {
+             if ((model = ngram_model_trie_read_arpa(config, file_name, lmath)) != NULL)
+                 break;
+         } else {
+             if ((model = ngram_model_arpa_read(config, file_name, lmath)) != NULL)
+                 break;
+             if ((model = ngram_model_dmp_read(config, file_name, lmath)) != NULL)
+                 break;
+         }
          return NULL;
      }
      case NGRAM_ARPA:
@@ -185,8 +190,8 @@ ngram_type_to_str(int type)
      return -1;
  }
 
- int32
- ngram_model_init(ngram_model_t *base,
+int32
+ngram_model_init(ngram_model_t *base,
                   ngram_funcs_t *funcs,
                   logmath_t *lmath,
                   int32 n, int32 n_unigram)
@@ -196,7 +201,7 @@ ngram_type_to_str(int type)
      base->n = n;
      /* If this was previously initialized... */
     if (base->n_counts == NULL)
-        base->n_counts = ckd_calloc(3, sizeof(*base->n_counts));
+        base->n_counts = (uint64 *)ckd_calloc(n, sizeof(*base->n_counts));
     /* Don't reset weights if logmath object hasn't changed. */
     if (base->lmath != lmath) {
         /* Set default values for weights. */
@@ -218,10 +223,10 @@ ngram_type_to_str(int type)
                 base->word_str[i] = NULL;
             }
         }
-        base->word_str = ckd_realloc(base->word_str, n_unigram * sizeof(char *));
+        base->word_str = (char **)ckd_realloc(base->word_str, n_unigram * sizeof(char *));
+    } else {
+        base->word_str = (char **)ckd_calloc(n_unigram, sizeof(char *));
     }
-    else
-        base->word_str = ckd_calloc(n_unigram, sizeof(char *));
     /* NOTE: They are no longer case-insensitive since we are allowing
      * other encodings for word strings.  Beware. */
     if (base->wid)
