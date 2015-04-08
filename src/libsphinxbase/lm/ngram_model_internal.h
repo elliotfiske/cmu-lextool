@@ -54,7 +54,7 @@
  */
 struct ngram_model_s {
     int refcount;       /**< Reference count */
-    int32 *n_counts;    /**< Counts for 1, 2, 3, ... grams */
+    uint64 *n_counts;    /**< Counts for 1, 2, 3, ... grams */
     int32 n_1g_alloc;   /**< Number of allocated word strings (for new word addition) */
     int32 n_words;      /**< Number of actual word strings (NOT the same as the
                              number of unigrams, due to class words). */
@@ -221,6 +221,14 @@ ngram_model_init(ngram_model_t *model,
 ngram_model_t *ngram_model_arpa_read(cmd_ln_t *config,
 				     const char *file_name,
 				     logmath_t *lmath);
+
+/**
+ * Read N-Gram model from and ARPABO text file and locate it in trie structure
+ */
+ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config, 
+                                          const char *path,
+                                          logmath_t *lmath);
+
 /**
  * Read an N-Gram model from a Sphinx .DMP binary file.
  */
