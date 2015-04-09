@@ -66,7 +66,7 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint64 m
     base_init(&longest->base, base_mem, max_vocab, quant_bits);
 }
 
-bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
+static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
 {
     uint64 at_pointer;
     uint64 next;
@@ -89,7 +89,7 @@ bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_o
     return adress;
 }
 
-bit_adress_t longest_insert(longest_t *longest, word_idx index)
+static bit_adress_t longest_insert(longest_t *longest, word_idx index)
 {
     uint64 at_pointer;
     bit_adress_t adress;
@@ -103,48 +103,7 @@ bit_adress_t longest_insert(longest_t *longest, word_idx index)
     return adress;
 }
 
-bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *range, uint64 *ptr)
-{
-    uint64 at_pointer;
-    uint64  bit_offset;
-    bit_adress_t adress;
-
-    //finding BitPacked with uniform find
-    if (!lm_trie_find(&calc_pivot32, (void *)middle->base.base, middle->base.total_bits, middle->base.word_bits, middle->base.word_mask, range->begin - 1, (uint64)0, range->end, middle->base.max_vocab, word, &at_pointer)) {
-        adress.base = NULL;
-        adress.offset = 0;
-        return adress;
-    }
-    *ptr = at_pointer;
-    at_pointer *= middle->base.total_bits;
-    at_pointer += middle->base.word_bits;
-    //bhiksha read next
-    bit_offset = at_pointer + middle->quant_bits;
-    range->begin = read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
-    range->end = read_int57(middle->base.base, bit_offset + middle->base.total_bits, middle->next_mask.bits, middle->next_mask.mask);
-    adress.base = middle->base.base;
-    adress.offset = at_pointer;
-    return adress;
-}
-
-bit_adress_t longest_find(longest_t *longest, word_idx word, node_range_t *range)
-{
-    uint64 at_pointer;
-    bit_adress_t adress;
-
-    //finding BitPacked with uniform find
-    if (!lm_trie_find(&calc_pivot32, (void *)longest->base.base, longest->base.total_bits, longest->base.word_bits, longest->base.word_mask, range->begin - 1, (uint64)0, range->end, longest->base.max_vocab, word, &at_pointer)) {
-        adress.base = NULL;
-        adress.offset = 0;
-        return adress;
-    }
-    at_pointer = at_pointer * longest->base.total_bits + longest->base.word_bits;
-    adress.base = longest->base.base;
-    adress.offset = at_pointer;
-    return adress;
-}
-
-void middle_finish_loading(middle_t *middle, uint64 next_end)
+static void middle_finish_loading(middle_t *middle, uint64 next_end)
 {
     uint64 last_next_write = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
     write_int57(middle->base.base, last_next_write, middle->next_mask.bits, next_end);

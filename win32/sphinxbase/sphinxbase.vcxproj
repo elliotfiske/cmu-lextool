@@ -167,6 +167,7 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_bits.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp32.c" />
