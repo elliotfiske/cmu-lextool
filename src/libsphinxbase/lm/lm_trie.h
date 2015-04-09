@@ -56,4 +56,6 @@ void lm_trie_write_bin(lm_trie_t *trie, FILE *fb);
 
 lm_trie_t* lm_trie_read_bin(FILE *fb, uint64* counts, int order, int quant_type);
 
+void lm_trie_free(lm_trie_t *trie);
+
 #endif /* __LM_TRIE_H__ */

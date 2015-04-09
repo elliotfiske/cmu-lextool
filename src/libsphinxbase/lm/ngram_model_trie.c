@@ -227,8 +227,10 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
 
 #include "lm_trie_query.c"
 
-static void ngram_model_trie_free(ngram_model_t *model)
+static void ngram_model_trie_free(ngram_model_t *base)
 {
+    ngram_model_trie_t *model = (ngram_model_trie_t *)base;
+    lm_trie_free(model->trie);
 }
 
 static int trie_apply_weights(ngram_model_t *model, float32 lw, float32 wip, float32 uw)
