@@ -27,9 +27,11 @@ libsphinxutil_la_SOURCES = \
 	mmio.c \
 	pio.c \
 	matrix.c \
+	priority_queue.c \
 	profile.c \
 	sbthread.c \
 	strfuncs.c \
+	qsort_ext.c \
 	$(LAPACK_LITE_SRCS)
 
 EXTRA_DIST = \

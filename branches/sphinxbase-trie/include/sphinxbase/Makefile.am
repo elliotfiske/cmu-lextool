@@ -31,8 +31,10 @@ pkginclude_HEADERS =				\
 	pio.h					\
 	yin.h					\
 	prim_type.h				\
+	priority_queue.h		\
 	profile.h				\
 	sbthread.h				\
 	sphinxbase_export.h			\
-	strfuncs.h
+	strfuncs.h				\
+	qsort_ext.h
 
