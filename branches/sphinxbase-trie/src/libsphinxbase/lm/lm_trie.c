@@ -231,6 +231,7 @@ static void lm_trie_map_mem(lm_trie_t *trie, lm_trie_quant_type_t quant_type, ui
         middle_init(middle_ptr, middle_starts[i-2], lm_trie_quant_msize(quant_type), counts[i-1], counts[0], counts[i], 
             (i == order - 1) ? (void *)trie->longest : (void *)&trie->middle_begin[i-1]);
     }
+    ckd_free(middle_starts);
     longest_init(trie->longest, mem_ptr, lm_trie_quant_lsize(quant_type), counts[0]);
 }
 
@@ -289,75 +290,11 @@ void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int
 //    tsearch_init(search, quant_type, counts, order);
 //    return search;
 //}
-//
-//static void copy_remaining_history(const word_idx *from, state_t *out_state)
-//{
-//    const word_idx *in;
-//    word_idx *out = &out_state->words[1];
-//    const word_idx *in_end = &from[out_state->length - 1];
-//    for (in = from; in < in_end; in++, out++) *out = *in;
-//}
-//
-//static void resume_score(tsearch_t *search, const word_idx *hist_iter, const word_idx *const context_rend, int order_minus_2, int max_order, node_range_t *node, float *backoff_out, int *next_use, score_return_t *ret)
-//{
-//    bit_adress_t adress;
-//    for (; ; ++order_minus_2, ++hist_iter, ++backoff_out) {
-//        if (hist_iter == context_rend) return;
-//        if (ret->independent_left) return;
-//        if (order_minus_2 == max_order - 2) break;
-//
-//        adress = middle_find(&search->middle_begin[order_minus_2], *hist_iter, node, &ret->extend_left);
-//        ret->independent_left = (adress.base == NULL) || (node->begin == node->end);
-//
-//        //didn't find entry
-//        if (adress.base == NULL) return;
-//        *backoff_out = quant_read_middle_backoff(search->quant, adress, order_minus_2);
-//        ret->prob = quant_read_middle_prob(search->quant, adress, order_minus_2);
-//        ret->rest = ret->prob; //TODO why do we need ret->rest?
-//        ret->ngram_length = order_minus_2 + 2;
-//        if (has_extension(*backoff_out)) {
-//            *next_use = ret->ngram_length;
-//        }
-//    }
-//    ret->independent_left = TRUE;
-//    adress = longest_find(search->longest, *hist_iter, node);
-//    if (adress.base != NULL) {
-//        ret->prob = quant_read_longest_prob(search->quant, adress);
-//        ret->rest = ret->prob;
-//        ret->ngram_length = max_order;
-//    }
-//}
-//
-//static prob_bo_t* lookup_unigram(unigram_t *unigram, word_idx word, node_range_t* next, uint8 *independent_left, uint64 *extend_left)
-//{
-//    prob_bo_t *weights = unigram_find(unigram, word, next);
-//    *extend_left = (uint64)(word);
-//    *independent_left = (next->begin == next->end);
-//    return weights;
-//}
-//
-//score_return_t score_except_backoff(tsearch_t *search,
-//                                    int max_order,
-//                                    const word_idx *const context_rbegin, 
-//                                    const word_idx *const context_rend,
-//                                    const word_idx new_word,
-//                                    state_t *out_state)
-//{
-//    score_return_t ret;
-//    node_range_t node;
-//    prob_bo_t *weights = lookup_unigram(search->unigrams, new_word, &node, &ret.independent_left, &ret.extend_left);
-//    // ret.ngram_length contains the last known non-blank ngram length.
-//    ret.ngram_length = 1;
-//    out_state->backoff[0] = weights->backoff;
-//    ret.prob = weights->prob;
-//    ret.rest = weights->prob;
-//
-//    // This is the length of the context that should be used for continuation to the right.
-//    out_state->length = has_extension(out_state->backoff[0]) ? 1 : 0;
-//    // We'll write the word anyway since it will probably be used and does no harm being there.  
-//    out_state->words[0] = new_word;
-//    if (context_rbegin == context_rend) return ret;
-//    resume_score(search, context_rbegin, context_rend, 0, max_order, &node, &out_state->backoff[1], &out_state->length, &ret);
-//    copy_remaining_history(context_rbegin, out_state);
-//    return ret;
-//}
+
+void lm_trie_free(lm_trie_t *trie)
+{
+    ckd_free(trie->mem);
+    ckd_free(trie->middle_begin);
+    ckd_free(trie->longest);
+    ckd_free(trie);
+}
