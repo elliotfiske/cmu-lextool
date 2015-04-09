@@ -17,6 +17,8 @@ static ngram_funcs_t ngram_model_trie_funcs;
 struct ngram_model_trie_s {
     ngram_model_t base;  /**< Base ngram_model_t structure */
     lm_trie_t *trie;     /**< Trie structure that stores ngram relations and weights */
+    int32 log_wip;       /**< To avoid calculating it on every score query */
+    float32 lw;          /**< Language weight to apply on scores */
 };
 
 /*
@@ -136,6 +138,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     lm_ngram_t **raw_ngrams;
     int32 is_pipe;
     uint64 counts[MAX_NGRAM_ORDER];
+    float32 wip; //TODO uw
     int order;
     int i;
 
@@ -177,6 +180,13 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
     lm_trie_build(model->trie, raw_ngrams, counts, order);
     lm_ngrams_raw_free(raw_ngrams, counts, order);
+    wip = 1.0;
+    model->lw = 1.0;
+    if (cmd_ln_exists_r(config, "-wip"))
+        wip = cmd_ln_float32_r(config, "-wip");
+    if (cmd_ln_exists_r(config, "-lw"))
+        model->lw = cmd_ln_float32_r(config, "-lw");
+    model->log_wip = logmath_log(base->lmath, wip);
 
     lineiter_free(li);
     fclose_comp(fp, is_pipe);
@@ -214,44 +224,8 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
 //    fclose(fb);
 //    return model;
 //}
-//
-//static void null_context_state(state_t *state)
-//{
-//    int i;
-//
-//    state->length = 0;
-//    for (i = 0; i < MAX_NGRAM_ORDER; i++) {
-//        state->backoff[i] = 0.f;
-//        state->words[i] = 0;
-//    }
-//}
-//
-//static score_return_t full_score_return(tsearch_t *search, int max_order, const state_t *in_state, const word_idx new_word, state_t *out_state)
-//{
-//    const float *i;
-//    score_return_t ret = score_except_backoff(search, max_order, in_state->words, in_state->words + in_state->length, new_word, out_state);
-//    for (i = in_state->backoff + ret.ngram_length - 1; i < in_state->backoff + in_state->length; ++i) {
-//        ret.prob += *i;
-//    }
-//    return ret;
-//}
-//
-//float score(ngram_model_trie_t *model, const char*const *words, int32 n)
-//{
-//    int32 i;
-//    state_t state, out;
-//    score_return_t ret;
-//    float total = 0.0f;
-//
-//    null_context_state(&state);
-//    for (i = 0; i < n; i++) {
-//        word_idx vocab = svocab_index(model->vocab, words[i]);
-//        ret = full_score_return(model->search, model->order, &state, vocab, &out);
-//        total += ret.prob;
-//        state = out;
-//    }
-//    return total;
-//}
+
+#include "lm_trie_query.c"
 
 static void ngram_model_trie_free(ngram_model_t *model)
 {
@@ -262,9 +236,28 @@ static int trie_apply_weights(ngram_model_t *model, float32 lw, float32 wip, flo
     return 0;
 }
 
-static int32 lm_trie_score(ngram_model_t *model, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
+static int32 apply_weights(ngram_model_trie_t *model, float score)
 {
-    return 0;
+    return (int32)(score * model->lw + model->log_wip);
+}
+
+static int32 ngram_model_trie_score(ngram_model_t *base, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
+{
+    int32 i;
+    float score;
+    ngram_model_trie_t *model = (ngram_model_trie_t *)base;
+
+    if (n_hist > model->base.n - 1)
+        n_hist = model->base.n - 1;
+    for (i = 0; i < n_hist; i++) {
+        if (hist[i] < 0) {
+            n_hist = i;
+            break;
+        }
+    }
+
+    score = lm_trie_score(model->trie, model->base.n, wid, hist, n_hist, n_used);
+    return apply_weights(model, score);
 }
 
 static int32 lm_trie_raw_score(ngram_model_t *model, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
@@ -311,9 +304,9 @@ static void lm_trie_iter_free(ngram_iter_t *iter)
 }
 
 static ngram_funcs_t ngram_model_trie_funcs = {
-    ngram_model_trie_free,          /* free */
-    trie_apply_weights, /* apply_weights */
-    lm_trie_score,            /* score */
+    ngram_model_trie_free,    /* free */
+    trie_apply_weights,       /* apply_weights */
+    ngram_model_trie_score,   /* score */
     lm_trie_raw_score,        /* raw_score */
     lm_trie_add_ug,           /* add_ug */
     lm_trie_flush,            /* flush */
