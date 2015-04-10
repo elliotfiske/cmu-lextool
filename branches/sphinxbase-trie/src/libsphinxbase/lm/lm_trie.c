@@ -244,6 +244,8 @@ lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int o
     //TODO uint64 to size_t cast
     trie->mem = (uint8 *)ckd_calloc((size_t)trie->mem_size, sizeof(*trie->mem));
     lm_trie_map_mem(trie, quant_type, counts, order);
+    memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
+    memset(trie->backoff, 0, sizeof(trie->backoff));
     return trie;
 }
 
