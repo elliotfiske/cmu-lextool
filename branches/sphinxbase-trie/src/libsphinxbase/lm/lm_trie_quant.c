@@ -30,14 +30,29 @@ static void bins_create(bins_t *bins, uint8 bits, float *begin)
     bins->end = bins->begin + (1ULL << bits);
 }
 
-static uint64 bins_encode(bins_t *bins, float value, size_t reserved)
+static float* lower_bound(float *first, const float *last, float val)
 {
-    float *above;
-    for (above = bins->begin + reserved; above != bins->end; above++) {
-        if (*above > value) {
-            break;
+    int count, step;
+    float *it;
+
+    count = last - first;
+    while (count > 0) {
+        it = first;
+        step = count / 2;
+        it += step;
+        if (*it < val) {
+            first  = ++it;
+            count -= step + 1;
+        } else {
+            count = step;
         }
     }
+    return first;
+}
+
+static uint64 bins_encode(bins_t *bins, float value, size_t reserved)
+{
+    float *above = lower_bound(bins->begin + reserved, bins->end, value);
     if (above == bins->begin + reserved) return reserved;
     if (above == bins->end) return bins->end - bins->begin - 1;
     return above - bins->begin - (value - *(above - 1) < *above - value);
