@@ -51,13 +51,14 @@ typedef struct lm_trie_s {
     word_idx prev_hist[MAX_NGRAM_ORDER - 1];
 }lm_trie_t;
 
-lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int order);
+/**
+ * Creates lm_trie structure. Fills it if binary file with correspondent data is provided
+ */
+lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int order, FILE *fp);
 
 void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order);
 
-void lm_trie_write_bin(lm_trie_t *trie, FILE *fb);
-
-lm_trie_t* lm_trie_read_bin(FILE *fb, uint64* counts, int order, int quant_type);
+void lm_trie_write_bin(lm_trie_t *trie, FILE *fp);
 
 void lm_trie_free(lm_trie_t *trie);
 

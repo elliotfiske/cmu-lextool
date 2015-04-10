@@ -86,8 +86,8 @@ ngram_file_name_to_type(const char *file_name)
      /* We use strncmp because there might be a .gz on the end. */
      if (0 == strncmp_nocase(ext, ".ARPA", 5))
          return NGRAM_ARPA;
-     if (0 == strncmp_nocase(ext, ".DMP", 4))
-         return NGRAM_DMP;
+     if (0 == strncmp_nocase(ext, ".DMP", 4) || 0 == strncmp_nocase(ext, ".BIN", 4))
+         return NGRAM_BIN;
      return NGRAM_INVALID;
  }
 
@@ -96,8 +96,8 @@ ngram_str_to_type(const char *str_name)
 {
     if (0 == strcmp_nocase(str_name, "arpa"))
         return NGRAM_ARPA;
-    if (0 == strcmp_nocase(str_name, "dmp"))
-        return NGRAM_DMP;
+    if (0 == strcmp_nocase(str_name, "dmp") || 0 == strcmp_nocase(str_name, "bin"))
+        return NGRAM_BIN;
     return NGRAM_INVALID;
 }
 
@@ -107,8 +107,8 @@ ngram_type_to_str(int type)
     switch (type) {
     case NGRAM_ARPA:
         return "arpa";
-    case NGRAM_DMP:
-        return "dmp";
+    case NGRAM_BIN:
+        return "dmp/bin";
     default:
         return NULL;
     }
@@ -126,6 +126,8 @@ ngram_type_to_str(int type)
      switch (file_type) {
      case NGRAM_AUTO: {
          if (use_trie) {
+             if ((model = ngram_model_trie_read_bin(config, file_name, lmath)) != NULL)
+                 break;
              if ((model = ngram_model_trie_read_arpa(config, file_name, lmath)) != NULL)
                  break;
          } else {
@@ -137,10 +139,18 @@ ngram_type_to_str(int type)
          return NULL;
      }
      case NGRAM_ARPA:
-         model = ngram_model_arpa_read(config, file_name, lmath);
+         if (use_trie) {
+            model = ngram_model_trie_read_arpa(config, file_name, lmath);
+         } else {
+            model = ngram_model_arpa_read(config, file_name, lmath);
+         }
          break;
-     case NGRAM_DMP:
-         model = ngram_model_dmp_read(config, file_name, lmath);
+     case NGRAM_BIN:
+         if (use_trie) {
+             model = ngram_model_trie_read_bin(config, file_name, lmath);
+         } else {
+            model = ngram_model_dmp_read(config, file_name, lmath);
+         }
          break;
      default:
          E_ERROR("language model file type not supported\n");
@@ -179,9 +189,19 @@ ngram_type_to_str(int type)
          return ngram_model_write(model, file_name, file_type);
      }
      case NGRAM_ARPA:
-         return ngram_model_arpa_write(model, file_name);
-     case NGRAM_DMP:
-         return ngram_model_dmp_write(model, file_name);
+         if (model->is_lm_trie) {
+             E_ERROR("Writing trie LM in arpa format not implemented yet\n");
+             return -1;
+         } else {
+             return ngram_model_arpa_write(model, file_name);
+         }
+         
+     case NGRAM_BIN:
+         if (model->is_lm_trie) {
+             return ngram_model_trie_write_bin(model, file_name);
+         } else {
+             return ngram_model_dmp_write(model, file_name);
+         }
      default:
          E_ERROR("language model file type not supported\n");
          return -1;
@@ -199,6 +219,7 @@ ngram_model_init(ngram_model_t *base,
      base->refcount = 1;
      base->funcs = funcs;
      base->n = n;
+     base->is_lm_trie = FALSE;
      /* If this was previously initialized... */
     if (base->n_counts == NULL)
         base->n_counts = (uint64 *)ckd_calloc(n, sizeof(*base->n_counts));
@@ -564,7 +585,7 @@ ngram_model_get_size(ngram_model_t *model)
   return 0;
 }
 
-int32 const *
+uint64 const *
 ngram_model_get_counts(ngram_model_t *model)
 {
   if (model != NULL)

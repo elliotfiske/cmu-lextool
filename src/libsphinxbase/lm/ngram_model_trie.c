@@ -174,12 +174,9 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     for (i = 0; i < order; i++) {
         base->n_counts[i] = counts[i];
     }
+    base->is_lm_trie = TRUE;
+    base->writable = TRUE;
 
-    model->trie = lm_trie_create(QUANT_16, counts, order);
-    read_1grams_arpa(&li, counts[0], base, model->trie->unigrams);
-    raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
-    lm_trie_build(model->trie, raw_ngrams, counts, order);
-    lm_ngrams_raw_free(raw_ngrams, counts, order);
     wip = 1.0;
     model->lw = 1.0;
     if (cmd_ln_exists_r(config, "-wip"))
@@ -188,42 +185,144 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
         model->lw = cmd_ln_float32_r(config, "-lw");
     model->log_wip = logmath_log(base->lmath, wip);
 
+    model->trie = lm_trie_create(QUANT_16, counts, order, NULL);
+    read_1grams_arpa(&li, counts[0], base, model->trie->unigrams);
+    raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
+    lm_trie_build(model->trie, raw_ngrams, counts, order);
+    lm_ngrams_raw_free(raw_ngrams, counts, order);
+
     lineiter_free(li);
     fclose_comp(fp, is_pipe);
 
     return base;
 }
 
-//void write_bin(ngram_model_trie_t *model, const char *path)
-//{
-//    FILE *fb = fopen(path, "wb");
-//    int i, quant_type;
-//    fwrite(&model->order, sizeof(model->order), 1, fb);
-//    for (i = 0; i < model->order; i++) {
-//        fwrite(&model->counts[i], sizeof(uint64), 1, fb);
-//    }
-//    quant_type = tsearch_quant_type(model->search);
-//    fwrite(&quant_type, sizeof(quant_type), 1, fb);
-//    svocab_write_bin(model->vocab, fb);
-//    tsearch_write_bin(model->search, fb);
-//    fclose(fb);
-//}
-//
-//ngram_model_trie_t* read_bin(const char *path)
-//{
-//    int i, quant_type;
-//    FILE *fb = fopen(path, "rb");
-//    ngram_model_trie_t *model = (ngram_model_trie_t *)ckd_calloc(1, sizeof(*model));
-//    fread(&model->order, sizeof(model->order), 1, fb);
-//    for (i = 0; i < model->order; i++) {
-//        fread(&model->counts[i], sizeof(uint64), 1, fb);
-//    }
-//    fread(&quant_type, sizeof(quant_type), 1, fb);
-//    model->vocab = svocab_read_bin(fb, model->counts[0]);
-//    model->search = tsearch_read_bin(fb, model->counts, model->order, quant_type);
-//    fclose(fb);
-//    return model;
-//}
+static void read_word_str(ngram_model_t *base, FILE *fp)
+{
+    uint64 i, j, k;
+    char *tmp_word_str;
+    /* read ascii word strings */
+    base->writable = TRUE;
+    fread(&k, sizeof(k), 1, fp);
+    //TODO size_t to uint64 cast
+    tmp_word_str = (char *)ckd_calloc((size_t)k, 1);
+    fread(tmp_word_str, 1, (size_t)k, fp);
+
+    /* First make sure string just read contains n_counts[0] words (PARANOIA!!) */
+    for (i = 0, j = 0; i < k; i++)
+        if (tmp_word_str[i] == '\0')
+            j++;
+    if (j != base->n_counts[0]) {
+        E_ERROR("Error reading word strings (%d doesn't match n_unigrams %d)\n", j, base->n_counts[0]);
+    }
+
+    /* Break up string just read into words */
+    j = 0;
+    for (i = 0; i < base->n_counts[0]; i++) {
+        base->word_str[i] = ckd_salloc(tmp_word_str + j);
+        if (hash_table_enter(base->wid, base->word_str[i],
+                                 (void *)(long)i) != (void *)(long)i) {
+            E_WARN("Duplicate word in dictionary: %s\n", base->word_str[i]);
+        }
+        j += strlen(base->word_str[i]) + 1;
+    }
+    free(tmp_word_str);
+}
+
+ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config, 
+                                          const char *path,
+                                          logmath_t *lmath)
+{
+    int32 is_pipe;
+    FILE *fp;
+    size_t hdr_size;
+    char *hdr;
+    int cmp_res;
+    uint8 i, order;
+    int quant_type_int;
+    lm_trie_quant_type_t quant_type;
+    uint64 counts[MAX_NGRAM_ORDER];
+    float32 wip;
+    ngram_model_trie_t *model;
+    ngram_model_t *base;
+
+    if ((fp = fopen_comp(path, "rb", &is_pipe)) == NULL) {
+        E_ERROR("File %s not found\n", path);
+        return NULL;
+    }
+    hdr_size = strlen(trie_hdr);
+    hdr = (char *)ckd_calloc(hdr_size + 1, sizeof(*hdr));
+    fread(hdr, sizeof(*hdr), hdr_size, fp);
+    cmp_res = strcmp(hdr, trie_hdr);
+    ckd_free(hdr);
+    if (cmp_res) {
+        fclose_comp(fp, is_pipe);
+        return NULL;
+    }
+    model = (ngram_model_trie_t *)ckd_calloc(1, sizeof(*model));
+    base = &model->base;
+    fread(&order, sizeof(order), 1, fp);
+    for (i = 0; i < order; i++) {
+        fread(&counts[i], sizeof(counts[i]), 1, fp);
+    }
+    ngram_model_init(base, &ngram_model_trie_funcs, lmath, order, (int32)counts[0]);
+    for (i = 0; i < order; i++) {
+        base->n_counts[i] = counts[i];
+    }
+    base->is_lm_trie = TRUE;
+
+    wip = 1.0;
+    model->lw = 1.0;
+    if (cmd_ln_exists_r(config, "-wip"))
+        wip = cmd_ln_float32_r(config, "-wip");
+    if (cmd_ln_exists_r(config, "-lw"))
+        model->lw = cmd_ln_float32_r(config, "-lw");
+    model->log_wip = logmath_log(base->lmath, wip);
+
+    fread(&quant_type_int, sizeof(quant_type_int), 1, fp);
+    quant_type = (lm_trie_quant_type_t)quant_type_int;
+    model->trie = lm_trie_create(quant_type, counts, order, fp);
+    read_word_str(base, fp);
+    fclose_comp(fp, is_pipe);
+
+    return base;
+}
+
+static void write_word_str(FILE *fp, ngram_model_t *model)
+{
+    uint64 i, k;
+
+    k = 0;
+    for (i = 0; i < model->n_counts[0]; i++)
+        k += strlen(model->word_str[i]) + 1;
+    fwrite(&k, sizeof(k), 1, fp);
+    for (i = 0; i < model->n_counts[0]; i++)
+        fwrite(model->word_str[i], 1,
+               strlen(model->word_str[i]) + 1, fp);
+}
+
+int ngram_model_trie_write_bin(ngram_model_t *base,
+                               const char *path)
+{
+    int i;
+    int32 is_pipe;
+    ngram_model_trie_t *model = (ngram_model_trie_t *)base;
+    FILE *fp = fopen_comp(path, "wb", &is_pipe);
+    if (!fp) {
+        E_ERROR("Unable to open %s to write binary trie LM\n", path);
+        return -1;
+    }
+
+    fwrite(trie_hdr, sizeof(*trie_hdr), strlen(trie_hdr), fp);
+    fwrite(&model->base.n, sizeof(model->base.n), 1, fp);
+    for (i = 0; i < model->base.n; i++) {
+        fwrite(&model->base.n_counts[i], sizeof(model->base.n_counts[i]), 1, fp);
+    }
+    lm_trie_write_bin(model->trie, fp);
+    write_word_str(fp, base);
+    fclose_comp(fp, is_pipe);
+    return 0;
+}
 
 #include "lm_trie_query.c"
 

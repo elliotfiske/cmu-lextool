@@ -235,7 +235,7 @@ static void lm_trie_map_mem(lm_trie_t *trie, lm_trie_quant_type_t quant_type, ui
     longest_init(trie->longest, mem_ptr, lm_trie_quant_lsize(quant_type), counts[0]);
 }
 
-lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int order)
+lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int order, FILE *fp)
 {
     lm_trie_t* trie;
 
@@ -243,6 +243,9 @@ lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int o
     trie->mem_size = lm_trie_size(quant_type, counts, order);
     //TODO uint64 to size_t cast
     trie->mem = (uint8 *)ckd_calloc((size_t)trie->mem_size, sizeof(*trie->mem));
+    if (fp) {
+        fread(trie->mem, 1, (size_t)trie->mem_size, fp);
+    }
     lm_trie_map_mem(trie, quant_type, counts, order);
     memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
     memset(trie->backoff, 0, sizeof(trie->backoff));
@@ -275,23 +278,13 @@ void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int
     }
 }
 
-//void lm_trie_write_bin(lm_trie_t *trie, FILE *fb)
-//{
-//    //uint64 to size_t convertion
-//    fwrite(trie->mem, 1, (size_t)trie->mem_size, fb);
-//}
-//
-//tsearch_t* tsearch_read_bin(FILE *fb, uint64* counts, int order, int quant_type_int)
-//{
-//    quant_type_t quant_type = (quant_type_t)quant_type_int;
-//    tsearch_t *search = (tsearch_t *)ckd_calloc(1, sizeof(*search));
-//    search->mem_size = tsearch_size(quant_type, counts, order);
-//    //TODO cast from uint64 to size_t
-//    search->mem = (uint8 *)ckd_calloc((size_t)search->mem_size, sizeof(*search->mem));
-//    fread(search->mem, 1, (size_t)search->mem_size, fb);
-//    tsearch_init(search, quant_type, counts, order);
-//    return search;
-//}
+void lm_trie_write_bin(lm_trie_t *trie, FILE *fp)
+{
+    int quant_type = lm_trie_quant_type(trie->quant);
+    fwrite(&quant_type, sizeof(quant_type), 1, fp);
+    //uint64 to size_t convertion
+    fwrite(trie->mem, 1, (size_t)trie->mem_size, fp);
+}
 
 void lm_trie_free(lm_trie_t *trie)
 {
