@@ -46,6 +46,9 @@ typedef struct lm_trie_s {
     middle_t *middle_end;
     longest_t *longest;
     lm_trie_quant_t *quant;
+
+    float backoff[MAX_NGRAM_ORDER];
+    word_idx prev_hist[MAX_NGRAM_ORDER - 1];
 }lm_trie_t;
 
 lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int order);
