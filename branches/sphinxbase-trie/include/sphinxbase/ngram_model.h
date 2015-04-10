@@ -77,8 +77,7 @@ typedef enum ngram_file_type_e {
     NGRAM_INVALID = -1, /**< Not a valid file type. */
     NGRAM_AUTO,  /**< Determine file type automatically. */
     NGRAM_ARPA,  /**< ARPABO text format (the standard). */
-    NGRAM_DMP,   /**< Sphinx .DMP format. */
-    NGRAM_DMP32, /**< Sphinx .DMP32 format (NOT SUPPORTED) */
+    NGRAM_BIN,   /**< Sphinx .DMP format. */
 } ngram_file_type_t;
 
 #define NGRAM_INVALID_WID -1 /**< Impossible word ID */
@@ -355,7 +354,7 @@ int32 ngram_model_get_size(ngram_model_t *model);
  * Get the counts of the various N-grams in the model.
  */
 SPHINXBASE_EXPORT
-int32 const *ngram_model_get_counts(ngram_model_t *model);
+uint64 const *ngram_model_get_counts(ngram_model_t *model);
 
 /**
  * M-gram iterator object.
