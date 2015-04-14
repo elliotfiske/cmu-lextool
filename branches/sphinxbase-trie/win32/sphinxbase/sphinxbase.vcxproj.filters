@@ -125,9 +125,6 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp32.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_set.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -186,6 +183,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\util\priority_queue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

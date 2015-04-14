@@ -247,12 +247,6 @@ int ngram_model_trie_write_bin(ngram_model_t *model,
 ngram_model_t *ngram_model_dmp_read(cmd_ln_t *config,
 				    const char *file_name,
 				    logmath_t *lmath);
-/**
- * Read an N-Gram model from a Sphinx .DMP32 binary file.
- */
-ngram_model_t *ngram_model_dmp32_read(cmd_ln_t *config,
-				     const char *file_name,
-				     logmath_t *lmath);
 
 /**
  * Write an N-Gram model to an ARPABO text file.
