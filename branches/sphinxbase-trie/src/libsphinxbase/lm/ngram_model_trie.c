@@ -14,13 +14,6 @@
 static const char trie_hdr[] = "Trie Language Model";
 static ngram_funcs_t ngram_model_trie_funcs;
 
-struct ngram_model_trie_s {
-    ngram_model_t base;  /**< Base ngram_model_t structure */
-    lm_trie_t *trie;     /**< Trie structure that stores ngram relations and weights */
-    int32 log_wip;       /**< To avoid calculating it on every score query */
-    float32 lw;          /**< Language weight to apply on scores */
-};
-
 /*
  * Read and return #unigrams, #bigrams, #trigrams as stated in input file.
  */
