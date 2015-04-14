@@ -60,6 +60,7 @@ static void resume_score(lm_trie_t *trie, int32* hist_iter, int max_order, int32
     for (;;order_minus_2++, hist_iter++) {
         if (hist_iter == hist_end) return;
         if (independent_left) return;
+        if (order_minus_2 == max_order - 2) break;
 
         adress = middle_find(&trie->middle_begin[order_minus_2], *hist_iter, node);
         independent_left = (adress.base == NULL) || (node->begin == node->end);
