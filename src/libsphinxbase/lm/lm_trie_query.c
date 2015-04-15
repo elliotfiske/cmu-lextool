@@ -3,14 +3,6 @@
 #include "lm_trie_find.h"
 #include "lm_trie_quant.h"
 
-static unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next)
-{
-    unigram_t *ptr = &u[word];
-    next->begin = ptr->next;
-    next->end = (ptr+1)->next;
-    return ptr;
-}
-
 static bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *range)
 {
     uint64 at_pointer;

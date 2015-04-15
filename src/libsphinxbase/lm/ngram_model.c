@@ -190,8 +190,7 @@ ngram_type_to_str(int type)
      }
      case NGRAM_ARPA:
          if (model->is_lm_trie) {
-             E_ERROR("Writing trie LM in arpa format not implemented yet\n");
-             return -1;
+             return ngram_model_trie_write_arpa(model, file_name);
          } else {
              return ngram_model_arpa_write(model, file_name);
          }
