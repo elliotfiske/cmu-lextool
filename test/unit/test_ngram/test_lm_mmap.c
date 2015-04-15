@@ -52,7 +52,7 @@ main(int argc, char *argv[])
 	ngram_model_free(model);
 
 	/* Read a language model (this will mmap) */
-	model = ngram_model_read(config, LMDIR "/100.arpa.DMP", NGRAM_DMP, lmath);
+	model = ngram_model_read(config, LMDIR "/100.arpa.DMP", NGRAM_BIN, lmath);
 	TEST_ASSERT(model);
 	TEST_EQUAL(ngram_wid(model, "<UNK>"), 0);
 	TEST_EQUAL(strcmp(ngram_word(model, 0), "<UNK>"), 0);
