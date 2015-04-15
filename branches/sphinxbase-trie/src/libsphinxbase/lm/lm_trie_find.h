@@ -4,6 +4,17 @@
 #include <stdio.h>
 #include <sphinxbase/prim_type.h>
 
+#include "lm_trie.h"
+
+static unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next)
+{
+    unigram_t *ptr = &u[word];
+    next->begin = ptr->next;
+    next->end = (ptr+1)->next;
+    return ptr;
+}
+
+
 //__inline static size_t calc_pivot64(uint64 off, uint64 range, uint64 width)
 //{
 //    size_t ret = (size_t)((float)(off) / (float)(range) * (float)(width));

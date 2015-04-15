@@ -232,6 +232,12 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
                                           logmath_t *lmath);
 
 /**
+ * Write N-Gram model stored in trie structure in ARPABO format
+ */
+int ngram_model_trie_write_arpa(ngram_model_t *base,
+                                const char *path);
+
+/**
  * Read N-Gram model from and binary file and locate it in trie structure
  */
 ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config, 
