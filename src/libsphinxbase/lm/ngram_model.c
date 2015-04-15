@@ -122,7 +122,10 @@ ngram_type_to_str(int type)
                   logmath_t *lmath)
  {
      ngram_model_t *model = NULL;
-     uint8 use_trie = cmd_ln_boolean_r(config, "-lm_trie");
+     uint8 use_trie = FALSE;
+     if (cmd_ln_exists_r(config, "-lm_trie")) {
+         use_trie = cmd_ln_boolean_r(config, "-lm_trie");
+     }
      switch (file_type) {
      case NGRAM_AUTO: {
          if (use_trie) {
