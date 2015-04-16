@@ -133,6 +133,8 @@ ngram_type_to_str(int type)
                  break;
              if ((model = ngram_model_trie_read_arpa(config, file_name, lmath)) != NULL)
                  break;
+             if ((model = ngram_model_trie_read_dmp(config, file_name, lmath)) != NULL)
+                 break;
          } else {
              if ((model = ngram_model_arpa_read(config, file_name, lmath)) != NULL)
                  break;
@@ -150,7 +152,10 @@ ngram_type_to_str(int type)
          break;
      case NGRAM_BIN:
          if (use_trie) {
-             model = ngram_model_trie_read_bin(config, file_name, lmath);
+             if ((model = ngram_model_trie_read_bin(config, file_name, lmath)) != NULL)
+                 break;
+             if ((model = ngram_model_trie_read_dmp(config, file_name, lmath)) != NULL)
+                 break;
          } else {
             model = ngram_model_dmp_read(config, file_name, lmath);
          }

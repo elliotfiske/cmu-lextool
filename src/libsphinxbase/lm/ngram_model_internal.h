@@ -248,6 +248,13 @@ int ngram_model_trie_write_bin(ngram_model_t *model,
                                const char *path);
 
 /**
+ * Read N-Gram model from DMP file and locate it in trie structure
+ */
+ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
+                                         const char *file_name,
+                                         logmath_t *lmath);
+
+/**
  * Read an N-Gram model from a Sphinx .DMP binary file.
  */
 ngram_model_t *ngram_model_dmp_read(cmd_ln_t *config,
