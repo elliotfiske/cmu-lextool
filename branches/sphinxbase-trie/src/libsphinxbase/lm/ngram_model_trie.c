@@ -6,11 +6,13 @@
 #include <sphinxbase/strfuncs.h>
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/qsort_ext.h>
+#include <sphinxbase/byteorder.h>
 
 #include "ngram_model_trie.h"
 #include "lm_trie_find.h"
 
 static const char trie_hdr[] = "Trie Language Model";
+static const char dmp_hdr[] = "Darpa Trigram LM";
 static ngram_funcs_t ngram_model_trie_funcs;
 
 /*
@@ -313,7 +315,7 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
 
 static void read_word_str(ngram_model_t *base, FILE *fp)
 {
-    uint64 i, j, k;
+    int32 i, j, k;
     char *tmp_word_str;
     /* read ascii word strings */
     base->writable = TRUE;
@@ -404,7 +406,7 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
 
 static void write_word_str(FILE *fp, ngram_model_t *model)
 {
-    uint64 i, k;
+    int32 i, k;
 
     k = 0;
     for (i = 0; i < model->n_counts[0]; i++)
@@ -436,6 +438,247 @@ int ngram_model_trie_write_bin(ngram_model_t *base,
     write_word_str(fp, base);
     fclose_comp(fp, is_pipe);
     return 0;
+}
+
+typedef union {
+    float32 f;
+    int32 l;
+} dmp_weight_t;
+
+static void read_dmp_weight_array(FILE *fp, logmath_t *lmath, uint8 do_swap, int32 counts, lm_ngram_t *raw_ngrams, int weight_idx)
+{
+    int32 i, k;
+    dmp_weight_t *tmp_weight_arr;
+
+    fread(&k, sizeof(k), 1, fp);
+    if (do_swap) SWAP_INT32(&k);
+    tmp_weight_arr = (dmp_weight_t *)ckd_calloc(k, sizeof(*tmp_weight_arr));
+    fread(tmp_weight_arr, sizeof(*tmp_weight_arr), k, fp);
+    for (i = 0; i < k; i++) {
+        if (do_swap) SWAP_INT32(&tmp_weight_arr[i].l);
+        /* Convert values to log. */
+        tmp_weight_arr[i].f = logmath_log10_to_log_float(lmath, tmp_weight_arr[i].f);
+    }
+    //replace indexes with real probs in raw bigrams
+    for (i = 0; i < counts; i++) {
+        raw_ngrams[i].weights[weight_idx] = tmp_weight_arr[(int)raw_ngrams[i].weights[weight_idx]].f;
+    }
+    ckd_free(tmp_weight_arr);
+}
+
+ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
+                                         const char *file_name,
+                                         logmath_t *lmath)
+{
+    uint8 do_swap;
+    int32 is_pipe;
+    int32 j, k, prev_idx;
+    int32 vn, ts;
+    int32 counts[3]; //max order of dmp LM is 3
+    uint64 counts_64[3];
+    uint16 *bigrams_next;
+    int i;
+    float32 wip;
+    char str[1024];
+    FILE *fp;
+    ngram_model_trie_t *model;
+    ngram_model_t *base;
+    lm_ngram_t **raw_ngrams;
+
+    if ((fp = fopen_comp(file_name, "rb", &is_pipe)) == NULL) {
+        E_ERROR("Dump file %s not found\n", file_name);
+        return NULL;
+    }
+
+    do_swap = FALSE;
+    fread(&k, sizeof(k), 1, fp);
+    if (k != strlen(dmp_hdr)+1) {
+        SWAP_INT32(&k);
+        if (k != strlen(dmp_hdr)+1) {
+            E_ERROR("Wrong magic header size number %x: %s is not a dump file\n", k, file_name);
+            return NULL;
+        }
+        do_swap = 1;
+    }
+    if (fread(str, 1, k, fp) != (size_t) k) {
+        E_ERROR("Cannot read header\n");
+        return NULL;
+    }
+    if (strncmp(str, dmp_hdr, k) != 0) {
+        E_ERROR("Wrong header %s: %s is not a dump file\n", dmp_hdr);
+        return NULL;
+    }
+
+    if (fread(&k, sizeof(k), 1, fp) != 1)
+        return NULL;
+    if (do_swap) SWAP_INT32(&k);
+    if (fread(str, 1, k, fp) != (size_t) k) {
+        E_ERROR("Cannot read LM filename in header\n");
+        return NULL;
+    }
+
+    /* read version#, if present (must be <= 0) */
+    if (fread(&vn, sizeof(vn), 1, fp) != 1)
+        return NULL;
+    if (do_swap) SWAP_INT32(&vn);
+    if (vn <= 0) {
+        /* read and don't compare timestamps (we don't care) */
+        if (fread(&ts, sizeof(ts), 1, fp) != 1)
+            return NULL;
+        if (do_swap) SWAP_INT32(&ts);
+
+        /* read and skip format description */
+        for (;;) {
+            if (fread(&k, sizeof(k), 1, fp) != 1)
+                return NULL;
+            if (do_swap) SWAP_INT32(&k);
+            if (k == 0)
+                break;
+            if (fread(str, 1, k, fp) != (size_t) k) {
+                E_ERROR("Failed to read word\n");
+                return NULL;
+            }
+        }
+        /* read model->ucount */
+        if (fread(&counts[0], sizeof(counts[0]), 1, fp) != 1)
+            return NULL;
+        if (do_swap) SWAP_INT32(&counts[0]);
+    }
+    else {
+        counts[0] = vn;
+    }
+    /* read model->bcount, tcount */
+    if (fread(&counts[1], sizeof(counts[1]), 1, fp) != 1)
+        return NULL;
+    if (do_swap) SWAP_INT32(&counts[1]);
+    if (fread(&counts[2], sizeof(counts[2]), 1, fp) != 1)
+        return NULL;
+    if (do_swap) SWAP_INT32(&counts[2]);
+    E_INFO("ngrams 1=%d, 2=%d, 3=%d\n", counts[0], counts[1], counts[2]);
+
+    model = (ngram_model_trie_t *)ckd_calloc(1, sizeof(*model));
+    base = &model->base;
+    ngram_model_init(base, &ngram_model_trie_funcs, lmath, 3, (int32)counts[0]);
+    for (i = 0; i < 3; i++) {
+        base->n_counts[i] = counts[i];
+    }
+    base->is_lm_trie = TRUE;
+
+    wip = 1.0;
+    model->lw = 1.0;
+    if (cmd_ln_exists_r(config, "-wip"))
+        wip = cmd_ln_float32_r(config, "-wip");
+    if (cmd_ln_exists_r(config, "-lw"))
+        model->lw = cmd_ln_float32_r(config, "-lw");
+    model->log_wip = logmath_log(base->lmath, wip);
+
+    for (i = 0; i < 3; i++) {
+        counts_64[i] = (uint64)counts[i];
+    }
+
+    model->trie = lm_trie_create(QUANT_16, counts_64, 3, NULL);
+    //read unigrams. no tricks here
+    for (j = 0; j <= counts[0]; j++) {
+        int32 bigrams;
+        dmp_weight_t weight;
+        /* Skip over the mapping ID, we don't care about it. */
+        fread(&bigrams, sizeof(int32), 1, fp);
+        /* Read the weights from actual unigram structure. */
+        fread(&weight, sizeof(weight), 1, fp);
+        if (do_swap) SWAP_INT32(&weight.l);
+        weight.f = logmath_log10_to_log_float(lmath, weight.f);
+        model->trie->unigrams[j].prob = weight.f;
+        fread(&weight, sizeof(weight), 1, fp);
+        if (do_swap) SWAP_INT32(&weight.l);
+        weight.f = logmath_log10_to_log_float(lmath, weight.f);
+        model->trie->unigrams[j].bo = weight.f;
+        //store pointer to dmp next to recognize wid
+        fread(&bigrams, sizeof(int32), 1, fp);
+        if (do_swap) SWAP_INT32(&bigrams);
+        model->trie->unigrams[j].next = (uint64)bigrams;
+    }
+
+    raw_ngrams = (lm_ngram_t **)ckd_calloc(2, sizeof(*raw_ngrams));
+    //read bigrams
+    raw_ngrams[0] = (lm_ngram_t *)ckd_calloc(counts[1] + 1, sizeof(*raw_ngrams[0]));
+    bigrams_next = (uint16 *)ckd_calloc(counts[1] + 1, sizeof(*bigrams_next));
+    prev_idx = 1;
+    for (j = 0; j <= counts[1]; j++) {
+        uint16 wid, prob_idx, bo_idx;
+        lm_ngram_t *raw_ngram = &raw_ngrams[0][j];
+
+        fread(&wid, sizeof(wid), 1, fp);
+        if (do_swap) SWAP_INT16(&wid);
+        raw_ngram->words = (word_idx *)ckd_calloc(2, sizeof(*raw_ngram->words));
+        raw_ngram->words[0] = (word_idx)wid;
+        while (j == model->trie->unigrams[prev_idx].next) {
+            prev_idx++;
+        }
+        raw_ngram->words[1] = (word_idx)prev_idx - 1;
+        raw_ngram->weights = (float *)ckd_calloc(2, sizeof(*raw_ngram->weights));
+        fread(&prob_idx, sizeof(prob_idx), 1, fp);
+        if (do_swap) SWAP_INT16(&prob_idx);
+        raw_ngram->weights[0] = prob_idx + 0.5f; //keep index in float. ugly but avoiding using extra memory
+        fread(&bo_idx, sizeof(bo_idx), 1, fp);
+        if (do_swap) SWAP_INT16(&bo_idx);
+        raw_ngram->weights[1] = bo_idx + 0.5f; //keep index in float. ugly but avoiding using extra memory
+        fread(&bigrams_next[j], sizeof(bigrams_next[j]), 1, fp);
+        if (do_swap) SWAP_INT16(&bigrams_next[j]);
+    }
+    //read trigrams
+    raw_ngrams[1] = (lm_ngram_t *)ckd_calloc(counts[2], sizeof(*raw_ngrams[1]));
+    prev_idx = 1;
+    for (j = 0; j < counts[2]; j++) {
+        uint16 wid, prob_idx;
+        lm_ngram_t *raw_ngram = &raw_ngrams[1][j];
+
+        fread(&wid, sizeof(wid), 1, fp);
+        if (do_swap) SWAP_INT16(&wid);
+        raw_ngram->words = (word_idx *)ckd_calloc(3, sizeof(*raw_ngram->words));
+        raw_ngram->words[0] = (word_idx)wid;
+        while (j == bigrams_next[prev_idx]) {
+            prev_idx++;
+        }
+        raw_ngram->words[1] = raw_ngrams[0][prev_idx - 1].words[0];
+        raw_ngram->words[2] = raw_ngrams[0][prev_idx - 1].words[1];
+        raw_ngram->weights = (float *)ckd_calloc(1, sizeof(*raw_ngram->weights));
+        fread(&prob_idx, sizeof(prob_idx), 1, fp);
+        if (do_swap) SWAP_INT16(&prob_idx);
+        raw_ngram->weights[0] = prob_idx + 0.5f; //keep index in float. ugly but avoiding using extra memory
+    }
+    ckd_free(bigrams_next);
+
+    //TODO handle cases n_bigrams, n_trigrams == 0
+    //read prob2
+    read_dmp_weight_array(fp, lmath, do_swap, counts[1], raw_ngrams[0], 0);
+    //read bo2
+    read_dmp_weight_array(fp, lmath, do_swap, counts[1], raw_ngrams[0], 1);
+    //read prob3
+    read_dmp_weight_array(fp, lmath, do_swap, counts[2], raw_ngrams[1], 0);
+
+    //sort raw unigrams for reverse trie
+    i = 2; //set order
+    ngram_comparator(NULL, &i);
+    qsort(raw_ngrams[0], counts[1], sizeof(*raw_ngrams[0]), &ngram_comparator);
+    i = 3; //set order
+    ngram_comparator(NULL, &i);
+    qsort(raw_ngrams[1], counts[2], sizeof(*raw_ngrams[1]), &ngram_comparator);
+
+    //build reversed trie
+    lm_trie_build(model->trie, raw_ngrams, counts_64, 3);
+    //free raw ngrams
+    lm_ngrams_raw_free(raw_ngrams, counts_64, 3);
+
+    /* skip tseg_base size and tseg_base */
+    fread(&k, sizeof(k), 1, fp);
+    if (do_swap) SWAP_INT32(&k);
+    fseek(fp, k * sizeof(int32), SEEK_CUR);
+
+    /* read ascii word strings */
+    read_word_str(base, fp);
+
+    fclose_comp(fp, is_pipe);
+    return base;
 }
 
 #include "lm_trie_query.c"
