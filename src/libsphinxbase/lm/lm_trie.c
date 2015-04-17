@@ -291,5 +291,6 @@ void lm_trie_free(lm_trie_t *trie)
     ckd_free(trie->mem);
     ckd_free(trie->middle_begin);
     ckd_free(trie->longest);
+    ckd_free(trie->quant);
     ckd_free(trie);
 }
