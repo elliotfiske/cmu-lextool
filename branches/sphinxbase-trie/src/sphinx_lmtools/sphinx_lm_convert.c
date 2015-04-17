@@ -200,9 +200,21 @@ main(int argc, char *argv[])
 
         /* That's all folks! */
         ngram_model_free(lm);
+        if (lmath) {
+            logmath_free(lmath);
+        }
+        if (config) {
+            cmd_ln_free_r(config);
+        }
 	return 0;
 
 error_out:
         ngram_model_free(lm);
+        if (lmath) {
+            logmath_free(lmath);
+        }
+        if (config) {
+            cmd_ln_free_r(config);
+        }
 	return 1;
 }
