@@ -40,7 +40,7 @@ static int ngram_comparator(const void *first_void, const void *second_void)
         if (*first < *second) return -1;
         if (*first > *second) return 1;
     }
-    return 1;
+    return 0;
 }
 
 lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint64 *counts, int order);
