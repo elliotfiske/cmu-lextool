@@ -103,6 +103,11 @@ lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *l
     return raw_ngrams;
 }
 
+void lm_ngrams_raw_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order)
+{
+    memcpy(fixed_counts, counts, order * sizeof(*fixed_counts));
+}
+
 void lm_ngrams_raw_free(lm_ngram_t **raw_ngrams, uint64 *counts, int order)
 {
     uint64 num;

@@ -163,9 +163,9 @@ uint8 lm_trie_quant_to_train(lm_trie_quant_t *quant)
     return quant->quant_type > 0;
 }
 
-int lm_trie_quant_type(lm_trie_quant_t *quant)
+lm_trie_quant_type_t lm_trie_quant_type(lm_trie_quant_t *quant)
 {
-    return (int)quant->quant_type;
+    return quant->quant_type;
 }
 
 static int weights_comparator(const void *a, const void *b)

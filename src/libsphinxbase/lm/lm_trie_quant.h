@@ -41,7 +41,7 @@ uint8 lm_trie_quant_to_train(lm_trie_quant_t *quant);
 /**
  * Gets quantizing type. Casts enum to int and returns it
  */
-int lm_trie_quant_type(lm_trie_quant_t *quant);
+lm_trie_quant_type_t lm_trie_quant_type(lm_trie_quant_t *quant);
 
 /**
  * Trains prob and backoff quantizer for specified ngram order on provided raw ngram list

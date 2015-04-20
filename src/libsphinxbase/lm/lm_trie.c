@@ -206,17 +206,42 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     ckd_free(raw_ngrams_ptr);
 }
 
-static void lm_trie_map_mem(lm_trie_t *trie, lm_trie_quant_type_t quant_type, uint64 *counts, int order)
+lm_trie_t* lm_trie_create()
+{
+    lm_trie_t* trie;
+
+    trie = (lm_trie_t *)ckd_calloc(1, sizeof(*trie));
+    memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
+    memset(trie->backoff, 0, sizeof(trie->backoff));
+    return trie;
+}
+
+void lm_trie_alloc_misc(lm_trie_t *trie, uint64 unigram_count, lm_trie_quant_type_t quant_type, int order)
 {
     uint8 *mem_ptr;
-    uint8 **middle_starts;
-    int i;
-
-    mem_ptr = trie->mem;
+    trie->misc_mem_size = lm_trie_quant_size(quant_type, order) + unigram_size(unigram_count);
+    trie->misc_mem = (uint8 *)ckd_calloc((size_t)trie->misc_mem_size, sizeof(*trie->misc_mem));
+    mem_ptr = trie->misc_mem;
     trie->quant = lm_trie_quant_create(quant_type, mem_ptr, order);
     mem_ptr += lm_trie_quant_size(quant_type, order);
     trie->unigrams = (unigram_t *)mem_ptr;
-    mem_ptr += unigram_size(counts[0]);
+}
+
+void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order)
+{
+    int i;
+    lm_trie_quant_type_t quant_type;
+    uint8 *mem_ptr;
+    uint8 **middle_starts;
+
+    quant_type = lm_trie_quant_type(trie->quant);
+    trie->ngram_mem_size = 0;
+    for (i = 1; i < order - 1; i++) {
+        trie->ngram_mem_size += middle_size(lm_trie_quant_msize(quant_type), counts[i], counts[0], counts[i+1]);
+    }
+    trie->ngram_mem_size += longest_size(lm_trie_quant_lsize(quant_type), counts[order - 1], counts[0]);
+    trie->ngram_mem = (uint8 *)ckd_calloc((size_t)trie->ngram_mem_size, sizeof(*trie->ngram_mem));
+    mem_ptr = trie->ngram_mem;
     trie->middle_begin = (middle_t *)ckd_calloc(order - 2, sizeof(*trie->middle_begin));
     trie->middle_end = trie->middle_begin + (order - 2);
     middle_starts = (uint8 **)ckd_calloc(order - 2, sizeof(*middle_starts));
@@ -233,23 +258,6 @@ static void lm_trie_map_mem(lm_trie_t *trie, lm_trie_quant_type_t quant_type, ui
     }
     ckd_free(middle_starts);
     longest_init(trie->longest, mem_ptr, lm_trie_quant_lsize(quant_type), counts[0]);
-}
-
-lm_trie_t* lm_trie_create(lm_trie_quant_type_t quant_type, uint64 *counts, int order, FILE *fp)
-{
-    lm_trie_t* trie;
-
-    trie = (lm_trie_t *)ckd_calloc(1, sizeof(*trie));
-    trie->mem_size = lm_trie_size(quant_type, counts, order);
-    //TODO uint64 to size_t cast
-    trie->mem = (uint8 *)ckd_calloc((size_t)trie->mem_size, sizeof(*trie->mem));
-    if (fp) {
-        fread(trie->mem, 1, (size_t)trie->mem_size, fp);
-    }
-    lm_trie_map_mem(trie, quant_type, counts, order);
-    memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
-    memset(trie->backoff, 0, sizeof(trie->backoff));
-    return trie;
 }
 
 void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order)
@@ -283,12 +291,20 @@ void lm_trie_write_bin(lm_trie_t *trie, FILE *fp)
     int quant_type = lm_trie_quant_type(trie->quant);
     fwrite(&quant_type, sizeof(quant_type), 1, fp);
     //uint64 to size_t convertion
-    fwrite(trie->mem, 1, (size_t)trie->mem_size, fp);
+    fwrite(trie->misc_mem, 1, (size_t)trie->misc_mem_size, fp);
+    fwrite(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
+}
+
+void lm_trie_read_bin(lm_trie_t *trie, FILE *fp)
+{
+    fread(trie->misc_mem, 1, (size_t)trie->misc_mem_size, fp);
+    fread(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
 }
 
 void lm_trie_free(lm_trie_t *trie)
 {
-    ckd_free(trie->mem);
+    ckd_free(trie->ngram_mem);
+    ckd_free(trie->misc_mem);
     ckd_free(trie->middle_begin);
     ckd_free(trie->longest);
     ckd_free(trie->quant);
