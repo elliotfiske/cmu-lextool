@@ -181,7 +181,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     lm_trie_alloc_misc(model->trie, counts[0], QUANT_16, order);
     read_1grams_arpa(&li, counts[0], base, model->trie->unigrams);
     raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
-    lm_ngrams_raw_fix_counts(raw_ngrams, counts, fixed_counts, order);
+    lm_trie_fix_counts(raw_ngrams, counts, fixed_counts, order);
     for (i = 0; i < order; i++) {
         base->n_counts[i] = fixed_counts[i];
     }
@@ -689,7 +689,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     i = 3; //set order
     ngram_comparator(NULL, &i);
     qsort(raw_ngrams[1], (size_t)counts[2], sizeof(*raw_ngrams[1]), &ngram_comparator);
-    lm_ngrams_raw_fix_counts(raw_ngrams, counts, fixed_counts, 3);
+    lm_trie_fix_counts(raw_ngrams, counts, fixed_counts, 3);
 
     //build reversed trie
     for (i = 0; i < 3; i++) {

@@ -152,12 +152,14 @@ static uint64 unigram_next(lm_trie_t *trie, int order)
 static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order)
 {
     word_idx unigram_idx = 0;
+    word_idx *words;
     const word_idx unigram_count = (word_idx)counts[0];
     priority_queue_t *grams = priority_queue_create(order, &gram_compare);
     gram_t *gram;
     uint64 *raw_ngrams_ptr;
     int i;
-    
+
+    words = (word_idx *)ckd_calloc(order, sizeof(*words)); //for blanks catching
     gram = (gram_t *)ckd_calloc(1, sizeof(*gram));
     gram->order = 1;
     gram->instance.words = &unigram_idx;
@@ -175,12 +177,27 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
         gram_t *top = (gram_t *)priority_queue_poll(grams);
         if (top->order == 1) {
             trie->unigrams[unigram_idx].next = unigram_next(trie, order);
+            words[0] = unigram_idx;
             if (++unigram_idx == unigram_count + 1) {
                 ckd_free(top);
                 break;
             }
             priority_queue_add(grams, top);
         } else {
+            for (i = 0; i < top->order - 1; i++) {
+                if (words[i] != top->instance.words[i]) {
+                    //need to insert dummy suffixes to make ngram of higher order reachable
+                    int j;
+                    assert(i > 0); //unigrams are not pruned without removing ngrams that contains them
+                    for (j = i; j < top->order - 1; j++) {
+                        middle_t *middle = &trie->middle_begin[j - 1];
+                        bit_adress_t adress = middle_insert(middle, top->instance.words[j], j + 1, order);
+                        //write dummy prob and backoff
+                        lm_trie_quant_mwrite(trie->quant, adress, j - 1, -FLOAT_INF, 0.0f);
+                    }
+                }
+            }
+            memcpy(words, top->instance.words, top->order * sizeof(*words));
             if (top->order == order) {
                 float *weights = top->instance.weights;
                 bit_adress_t adress = longest_insert(trie->longest, top->instance.words[top->order - 1]);
@@ -204,6 +221,7 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     assert(priority_queue_size(grams) == 0);
     priority_queue_free(grams, NULL);
     ckd_free(raw_ngrams_ptr);
+    ckd_free(words);
 }
 
 lm_trie_t* lm_trie_create()
@@ -225,6 +243,57 @@ void lm_trie_alloc_misc(lm_trie_t *trie, uint64 unigram_count, lm_trie_quant_typ
     trie->quant = lm_trie_quant_create(quant_type, mem_ptr, order);
     mem_ptr += lm_trie_quant_size(quant_type, order);
     trie->unigrams = (unigram_t *)mem_ptr;
+}
+
+void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order)
+{
+    priority_queue_t *grams = priority_queue_create(order - 1, &gram_compare);
+    uint64 raw_ngram_ptrs[MAX_NGRAM_ORDER - 1];
+    word_idx words[MAX_NGRAM_ORDER];
+    int i;
+
+    memset(words, -1, sizeof(words)); //since we have unsigned word idx that will give us unreachable MAX_WORD_IDX
+    memcpy(fixed_counts, counts, order * sizeof(*fixed_counts));
+    for (i = 2; i <= order; ++i) {
+        gram_t *tmp_gram = (gram_t *)ckd_calloc(1, sizeof(*tmp_gram));
+        tmp_gram->order = i;
+        raw_ngram_ptrs[i-2] = 0;
+        tmp_gram->instance = raw_ngrams[i - 2][raw_ngram_ptrs[i-2]];
+        priority_queue_add(grams, tmp_gram);
+    }
+
+    for (;;) {
+        uint8 to_increment = TRUE;
+        gram_t *top;
+        if (priority_queue_size(grams) == 0) {
+            break;
+        }
+        top = (gram_t *)priority_queue_poll(grams);
+        if (top->order == 2) {
+            memcpy(words, top->instance.words, 2 * sizeof(*words));
+        } else {
+            for (i = 0; i < top->order - 1; i++) {
+                if (words[i] != top->instance.words[i]) {
+                    int num;
+                    num = (i == 0) ? 1 : i;
+                    memcpy(words, top->instance.words, (num + 1) * sizeof(*words));
+                    fixed_counts[num]++;
+                    to_increment = FALSE;
+                    break;
+                }
+            }
+            words[top->order - 1] = top->instance.words[top->order - 1];
+        }
+        if (to_increment) {
+            raw_ngram_ptrs[top->order - 2]++;
+        }
+        if (raw_ngram_ptrs[top->order - 2] < counts[top->order - 1]) {
+            top->instance = raw_ngrams[top->order-2][raw_ngram_ptrs[top->order - 2]];
+            priority_queue_add(grams, top);
+        } else {
+            ckd_free(top);
+        }
+    }
 }
 
 void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order)

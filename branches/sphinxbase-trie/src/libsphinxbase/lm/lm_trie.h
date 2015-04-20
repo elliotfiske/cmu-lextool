@@ -60,6 +60,8 @@ lm_trie_t* lm_trie_create();
 
 void lm_trie_alloc_misc(lm_trie_t *trie, uint64 unigram_count, lm_trie_quant_type_t quant_type, int order);
 
+void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order);
+
 void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order);
 
 void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order);

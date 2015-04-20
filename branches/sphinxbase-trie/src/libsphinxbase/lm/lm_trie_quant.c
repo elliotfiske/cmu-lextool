@@ -184,7 +184,7 @@ static void make_bins(float *values, uint64 values_num, float *centers, uint32 b
         finish = values + (values_num * (uint64)(i + 1) / bins);
         if (finish == start) {
             // zero length bucket.
-            *centers = i ? *(centers - 1) : -FLOAT_NEG_INF;
+            *centers = i ? *(centers - 1) : -FLOAT_INF;
         } else {
             float sum = 0.0f;
             float *ptr;
