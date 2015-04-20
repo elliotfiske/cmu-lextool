@@ -4,7 +4,7 @@
 #define MAX_NGRAM_ORDER 5
 #define NO_EXTENSIONS_BACKOFF (-0.0f)
 #define K_SIGN_BIT (0x80000000)
-#define FLOAT_NEG_INF (0x7f800000)
+#define FLOAT_INF (0x7f800000)
 
 /**
  * TODO This one is used widely. Where I should locate it?
