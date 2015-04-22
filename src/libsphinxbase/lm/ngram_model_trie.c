@@ -585,7 +585,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         if (do_swap) SWAP_INT16(&wid);
         raw_ngram->words = (word_idx *)ckd_calloc(2, sizeof(*raw_ngram->words));
         raw_ngram->words[0] = (word_idx)wid;
-        while (j == model->trie->unigrams[ngram_idx].next) {
+        while (ngram_idx < counts[0] && j == model->trie->unigrams[ngram_idx].next) {
             ngram_idx++;
         }
         raw_ngram->words[1] = (word_idx)ngram_idx - 1;
@@ -599,7 +599,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         fread(&bigrams_next[j], sizeof(bigrams_next[j]), 1, fp);
         if (do_swap) SWAP_INT16(&bigrams_next[j]);
     }
-    assert(ngram_idx == counts[0] + 1);
+    assert(ngram_idx == counts[0]);
     //read trigrams
     raw_ngrams[1] = (lm_ngram_t *)ckd_calloc((size_t)counts[2], sizeof(*raw_ngrams[1]));
     for (j = 0; j < (int32)counts[2]; j++) {
