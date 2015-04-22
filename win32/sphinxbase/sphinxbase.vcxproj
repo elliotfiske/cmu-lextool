@@ -259,6 +259,7 @@
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_query.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_internal.h" />

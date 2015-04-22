@@ -10,6 +10,7 @@
 
 #include "ngram_model_trie.h"
 #include "lm_trie_find.h"
+#include "lm_trie_query.h"
 
 static const char trie_hdr[] = "Trie Language Model";
 static const char dmp_hdr[] = "Darpa Trigram LM";
@@ -708,8 +709,6 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     fclose_comp(fp, is_pipe);
     return base;
 }
-
-#include "lm_trie_query.c"
 
 static void ngram_model_trie_free(ngram_model_t *base)
 {

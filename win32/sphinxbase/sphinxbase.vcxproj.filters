@@ -376,6 +376,9 @@
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_query.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />
