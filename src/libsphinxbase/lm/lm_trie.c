@@ -312,6 +312,9 @@ void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_c
             ckd_free(top);
         }
     }
+
+    assert(priority_queue_size(grams) == 0);
+    priority_queue_free(grams, NULL);
 }
 
 void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order)
