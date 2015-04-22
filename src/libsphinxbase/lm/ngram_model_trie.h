@@ -10,8 +10,6 @@
 typedef struct ngram_model_trie_s {
     ngram_model_t base;  /**< Base ngram_model_t structure */
     lm_trie_t *trie;     /**< Trie structure that stores ngram relations and weights */
-    int32 log_wip;       /**< To avoid calculating it on every score query */
-    float32 lw;          /**< Language weight to apply on scores */
 }ngram_model_trie_t;
 
 #endif /* __NGRAM_MODEL_TRIE_H__ */
