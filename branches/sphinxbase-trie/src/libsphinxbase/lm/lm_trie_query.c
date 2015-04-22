@@ -1,5 +1,5 @@
 
-#include "lm_trie.h"
+#include "lm_trie_query.h"
 #include "lm_trie_find.h"
 #include "lm_trie_quant.h"
 
@@ -188,7 +188,7 @@ static void update_backoff(lm_trie_t *trie, int32 *hist, int32 n_hist)
     memcpy(trie->prev_hist, hist, n_hist * sizeof(*hist));
 }
 
-static float lm_trie_score(lm_trie_t *trie, int order, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
+float lm_trie_score(lm_trie_t *trie, int order, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
 {
     if (n_hist < order - 1) {
         return lm_trie_nobo_score(trie, wid, hist, order, n_hist, n_used);

@@ -35,6 +35,7 @@ noinst_HEADERS = ngram_model_internal.h		\
 	lm_trie_find.h				\
 	lm_trie_misc.h				\
 	lm_trie_quant.h				\
+	lm_trie_query.h				\
 	jsgf_internal.h				\
 	jsgf_scanner.h				\
 	jsgf_parser.h
