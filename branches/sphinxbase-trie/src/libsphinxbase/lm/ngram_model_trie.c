@@ -730,7 +730,7 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     model->trie->unigrams = (unigram_t *)ckd_realloc(model->trie->unigrams,
                                  sizeof(*model->trie->unigrams) * (base->n_1g_alloc + 1));
     memset(model->trie->unigrams + (base->n_counts[0] + 1), 0,
-           (size_t)(base->n_1g_alloc + 1 - base->n_counts[0]) * sizeof(*model->trie->unigrams));
+           (size_t)(base->n_1g_alloc - base->n_counts[0]) * sizeof(*model->trie->unigrams));
     /* FIXME: we really ought to update base->log_uniform *and*
      * renormalize all the other unigrams.  This is really slow, so I
      * will probably just provide a function to renormalize after
