@@ -153,6 +153,7 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
 {
     word_idx unigram_idx = 0;
     word_idx *words;
+    float *probs;
     const word_idx unigram_count = (word_idx)counts[0];
     priority_queue_t *grams = priority_queue_create(order, &gram_compare);
     gram_t *gram;
@@ -160,6 +161,7 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     int i;
 
     words = (word_idx *)ckd_calloc(order, sizeof(*words)); //for blanks catching
+    probs = (float *)ckd_calloc(order - 1, sizeof(*probs));    //for blanks prob generating
     gram = (gram_t *)ckd_calloc(1, sizeof(*gram));
     gram->order = 1;
     gram->instance.words = &unigram_idx;
@@ -178,6 +180,7 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
         if (top->order == 1) {
             trie->unigrams[unigram_idx].next = unigram_next(trie, order);
             words[0] = unigram_idx;
+            probs[0] = trie->unigrams[unigram_idx].prob;
             if (++unigram_idx == unigram_count + 1) {
                 ckd_free(top);
                 break;
@@ -192,8 +195,10 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
                     for (j = i; j < top->order - 1; j++) {
                         middle_t *middle = &trie->middle_begin[j - 1];
                         bit_adress_t adress = middle_insert(middle, top->instance.words[j], j + 1, order);
-                        //write dummy prob and backoff
-                        lm_trie_quant_mwrite(trie->quant, adress, j - 1, -FLOAT_INF, 0.0f);
+                        //calculate prob for blank
+                        float calc_prob = probs[j - 1] + trie->unigrams[top->instance.words[j]].bo;
+                        probs[j] = calc_prob;
+                        lm_trie_quant_mwrite(trie->quant, adress, j - 1, calc_prob, 0.0f);
                     }
                 }
             }
@@ -207,6 +212,7 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
                 middle_t *middle = &trie->middle_begin[top->order - 2];
                 bit_adress_t adress = middle_insert(middle, top->instance.words[top->order - 1], top->order, order);
                 //write prob and backoff
+                probs[top->order - 1] = weights[0];
                 lm_trie_quant_mwrite(trie->quant, adress, top->order - 2, weights[0], weights[1]);
             }
             raw_ngrams_ptr[top->order - 2]++;
@@ -222,6 +228,7 @@ static void recursice_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     priority_queue_free(grams, NULL);
     ckd_free(raw_ngrams_ptr);
     ckd_free(words);
+    ckd_free(probs);
 }
 
 lm_trie_t* lm_trie_create()
