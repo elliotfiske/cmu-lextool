@@ -50,7 +50,6 @@ static void resume_score(lm_trie_t *trie, int32* hist_iter, int max_order, int32
     uint8 independent_left = (node->begin == node->end);
 
     for (;;order_minus_2++, hist_iter++) {
-        float tmp_prob;
         if (hist_iter == hist_end) return;
         if (independent_left) return;
         if (order_minus_2 == max_order - 2) break;
@@ -60,11 +59,8 @@ static void resume_score(lm_trie_t *trie, int32* hist_iter, int max_order, int32
 
         //didn't find entry
         if (adress.base == NULL) return;
-        tmp_prob =  lm_trie_quant_mpread(trie->quant, adress, order_minus_2);
-        if (tmp_prob != -FLOAT_INF) {
-            *prob = tmp_prob;
-            *n_used = order_minus_2 + 2;
-        }
+        *prob =  lm_trie_quant_mpread(trie->quant, adress, order_minus_2);
+        *n_used = order_minus_2 + 2;
     }
 
     adress = longest_find(trie->longest, *hist_iter, node);
@@ -90,7 +86,6 @@ static float score_except_backoff(lm_trie_t *trie, int32 wid, int32 *hist, int m
 
 static uint8 fast_make_node(lm_trie_t *trie, int32 *begin, int32 *end, node_range_t *node) {
     int32 *it;
-    bit_adress_t adress;
     assert(begin != end);
     unigram_find(trie->unigrams, *begin, node);
     if (node->begin == node->end) {
@@ -98,13 +93,10 @@ static uint8 fast_make_node(lm_trie_t *trie, int32 *begin, int32 *end, node_rang
     }
 
     for (it = begin + 1; it < end; ++it) {
-        adress = middle_find(&trie->middle_begin[it - begin - 1], *it, node);
+        bit_adress_t adress = middle_find(&trie->middle_begin[it - begin - 1], *it, node);
         if (node->begin == node->end || adress.base == NULL) {
             return FALSE;
         }
-    }
-    if (lm_trie_quant_mpread(trie->quant, adress, it-begin-1) == -FLOAT_INF) {
-        return FALSE;
     }
     return TRUE;
 }
@@ -154,21 +146,15 @@ static float lm_trie_hist_score(lm_trie_t *trie, int32 wid, int32 *hist, int32 n
             }
             return prob;
         } else {
-            float tmp_prob = lm_trie_quant_mpread(trie->quant, adress, i);
-            if (tmp_prob != -FLOAT_INF) {
-                prob = tmp_prob;
-                *n_used = i + 2;
-            }
+            (*n_used)++;
+            prob = lm_trie_quant_mpread(trie->quant, adress, i);
         }
     }
     adress = longest_find(trie->longest, hist[n_hist - 1], &node);
     if (adress.base == NULL) {
-        for (j = *n_used - 1; j <= n_hist - 1; j++) {
-            prob += trie->backoff[j];
-        }
-        return prob;
+        return prob + trie->backoff[n_hist - 1];
     } else {
-        *n_used = n_hist + 1;
+        (*n_used)++;
         return lm_trie_quant_lpread(trie->quant, adress);
     }
 }
