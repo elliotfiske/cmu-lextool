@@ -496,7 +496,6 @@ float64
 logmath_log_float_to_log10(logmath_t *lmath, float log_p)
 {
     int i;
-    float64 res = (float64)log_p;
     for (i = 0; i < lmath->t.shift; i++) {
         log_p *= 2;
     }
