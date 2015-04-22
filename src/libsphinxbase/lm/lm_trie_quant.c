@@ -50,28 +50,15 @@ static float* lower_bound(float *first, const float *last, float val)
     return first;
 }
 
-static uint64 bins_encode(bins_t *bins, float value, size_t reserved)
+static uint64 bins_encode(bins_t *bins, float value)
 {
-    float *above = lower_bound(bins->begin + reserved, bins->end, value);
-    if (above == bins->begin + reserved) return reserved;
+    float *above = lower_bound(bins->begin, bins->end, value);
+    if (above == bins->begin) return 0;
     if (above == bins->end) return bins->end - bins->begin - 1;
     return above - bins->begin - (value - *(above - 1) < *above - value);
 }
 
-static uint64 bins_encode_prob(bins_t *bins, float value) 
-{
-    return bins_encode(bins, value, 0);
-}
-
-static uint64 bins_encode_backoff(bins_t *bins, float value) 
-{
-    if (value == 0.0) {
-        return has_extension(value) ? 1 : 0;
-    }
-    return bins_encode(bins, value, 2);
-}
-
-__inline static float bins_decode(bins_t *bins, size_t off) 
+static float bins_decode(bins_t *bins, size_t off) 
 { 
     return bins->begin[off]; 
 }
@@ -220,9 +207,7 @@ void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint64 counts, lm_ng
 
     make_bins(probs, prob_num, quant->tables[order - 2][0].begin, 1ULL << quant->prob_bits);
     centers = quant->tables[order - 2][1].begin;
-    *(centers++) = -0.0f;
-    *(centers++) = 0.0f;
-    make_bins(backoffs, backoff_num, centers, (1ULL << quant->bo_bits) - 2);
+    make_bins(backoffs, backoff_num, centers, (1ULL << quant->bo_bits));
     ckd_free(probs);
     ckd_free(backoffs);
 }
@@ -255,7 +240,7 @@ void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bit_adress_t adress, int order
         break;
     case QUANT_16:
         write_int57(adress.base, adress.offset, quant->prob_bits + quant->bo_bits, 
-                    (bins_encode_prob(&quant->tables[order_minus_2][0], prob) << quant->bo_bits) | bins_encode_backoff(&quant->tables[order_minus_2][1], backoff));
+                    (bins_encode(&quant->tables[order_minus_2][0], prob) << quant->bo_bits) | bins_encode(&quant->tables[order_minus_2][1], backoff));
         break;
     //TODO implement different quantatization stages
     default:
@@ -270,7 +255,7 @@ void lm_trie_quant_lwrite(lm_trie_quant_t *quant, bit_adress_t adress, float pro
         write_nonposfloat31(adress.base, adress.offset, prob);
         break;
     case QUANT_16:
-        write_int25(adress.base, adress.offset, quant->prob_bits, (uint32)bins_encode_prob(quant->longest, prob));
+        write_int25(adress.base, adress.offset, quant->prob_bits, (uint32)bins_encode(quant->longest, prob));
         break;
     //TODO implement different quantatization stages
     default:
