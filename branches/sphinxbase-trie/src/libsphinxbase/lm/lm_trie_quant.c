@@ -17,7 +17,8 @@ struct lm_trie_quant_s {
     lm_trie_quant_type_t quant_type;
     bins_t tables[MAX_NGRAM_ORDER - 1][2];
     bins_t *longest;
-    uint8 *actual_base;
+    uint8 *mem;
+    size_t mem_size;
     uint8 prob_bits;
     uint8 bo_bits;
     uint64 prob_mask;
@@ -63,7 +64,7 @@ static float bins_decode(bins_t *bins, size_t off)
     return bins->begin[off]; 
 }
 
-static uint64 lm_trie_quant_apply_size(int order, int prob_bits, int bo_bits) 
+static uint64 quant_apply_size(int order, int prob_bits, int bo_bits) 
 {
       uint64 longest_table = ((uint64)(1) << (uint64)(16)) * sizeof(float);
       uint64 middle_table = ((uint64)(1) << (uint64)(16)) * sizeof(float) + longest_table;
@@ -71,13 +72,13 @@ static uint64 lm_trie_quant_apply_size(int order, int prob_bits, int bo_bits)
       return (order - 2) * middle_table + longest_table;
 }
 
-uint64 lm_trie_quant_size(lm_trie_quant_type_t quant_type, int order)
+static uint64 quant_size(lm_trie_quant_type_t quant_type, int order)
 {
     switch (quant_type) {
     case NO_QUANT:
-        return 8;
+        return 0;
     case QUANT_16:
-        return lm_trie_quant_apply_size(order, 16, 16);
+        return quant_apply_size(order, 16, 16);
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");
@@ -85,41 +86,14 @@ uint64 lm_trie_quant_size(lm_trie_quant_type_t quant_type, int order)
     }
 }
 
-uint8 lm_trie_quant_msize(lm_trie_quant_type_t quant_type)
-{
-    switch (quant_type) {
-    case NO_QUANT:
-        return 63;
-    case QUANT_16:
-        return 32; //16 bits for prob + 16 bits for bo
-    //TODO implement different quantatization stages
-    default:
-        E_INFO("Unsupported quantatization type\n");
-        return 0;
-    }
-}
-
-uint8 lm_trie_quant_lsize(lm_trie_quant_type_t quant_type)
-{
-    switch (quant_type) {
-    case NO_QUANT:
-        return 31;
-    case QUANT_16:
-        return 16; //16 bits for probs
-    //TODO implement different quantatization stages
-    default:
-        E_INFO("Unsupported quantatization type\n");
-        return 0;
-    }
-}
-
-lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, uint8 *mem, int order)
+lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, int order)
 {
     float *start;
     int i;
     lm_trie_quant_t *quant = (lm_trie_quant_t *)ckd_calloc(1, sizeof(*quant));
     quant->quant_type = quant_type;
-    quant->actual_base = mem;
+    quant->mem_size = (size_t)quant_size(quant_type, order);
+    quant->mem = (uint8 *)ckd_calloc(quant->mem_size, sizeof(*quant->mem));
     switch (quant_type) {
     case NO_QUANT:
         return quant;
@@ -133,7 +107,7 @@ lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, uint8 *me
         E_INFO("Unsupported quantization type\n");
         return quant;
     }
-    start = (float *)(quant->actual_base);
+    start = (float *)(quant->mem);
     for (i = 0; i < order - 2; i++) {
         bins_create(&quant->tables[i][0], quant->prob_bits, start);
         start += (1ULL << quant->prob_bits);
@@ -145,14 +119,67 @@ lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, uint8 *me
     return quant;
 }
 
+
+lm_trie_quant_t* lm_trie_quant_read_bin(FILE *fp, int order)
+{
+    int quant_type_int;
+    lm_trie_quant_type_t quant_type;
+    lm_trie_quant_t *quant;
+
+    fread(&quant_type_int, sizeof(quant_type_int), 1, fp);
+    quant_type = (lm_trie_quant_type_t)quant_type_int;
+    quant = lm_trie_quant_create(quant_type, order);
+    fread(quant->mem, sizeof(*quant->mem), quant->mem_size, fp);
+
+    return quant;
+}
+
+void lm_trie_quant_write_bin(lm_trie_quant_t *quant, FILE *fp)
+{
+    int quant_type_int = (int)quant->quant_type;
+
+    fwrite(&quant_type_int, sizeof(quant_type_int), 1, fp);
+    fwrite(quant->mem, sizeof(*quant->mem), quant->mem_size, fp); 
+}
+
+void lm_trie_quant_free(lm_trie_quant_t *quant)
+{
+    if (quant->mem)
+        ckd_free(quant->mem);
+    ckd_free(quant);
+}
+
+uint8 lm_trie_quant_msize(lm_trie_quant_t *quant)
+{
+    switch (quant->quant_type) {
+    case NO_QUANT:
+        return 63;
+    case QUANT_16:
+        return 32; //16 bits for prob + 16 bits for bo
+    //TODO implement different quantatization stages
+    default:
+        E_INFO("Unsupported quantatization type\n");
+        return 0;
+    }
+}
+
+uint8 lm_trie_quant_lsize(lm_trie_quant_t *quant)
+{
+    switch (quant->quant_type) {
+    case NO_QUANT:
+        return 31;
+    case QUANT_16:
+        return 16; //16 bits for probs
+    //TODO implement different quantatization stages
+    default:
+        E_INFO("Unsupported quantatization type\n");
+        return 0;
+    }
+}
+
 uint8 lm_trie_quant_to_train(lm_trie_quant_t *quant)
 {
     return quant->quant_type > 0;
-}
-
-lm_trie_quant_type_t lm_trie_quant_type(lm_trie_quant_t *quant)
-{
-    return quant->quant_type;
 }
 
 static int weights_comparator(const void *a, const void *b)
