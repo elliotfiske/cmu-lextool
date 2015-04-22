@@ -12,36 +12,42 @@ typedef enum lm_trie_quant_type_e {
 } lm_trie_quant_type_t;
 
 /**
- * Memory required to store quantizing info
+ * Create qunatizing
  */
-uint64 lm_trie_quant_size(lm_trie_quant_type_t quant_type, int order);
+lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, int order);
+
+
+/**
+ * Write quant data to binary file
+ */
+lm_trie_quant_t* lm_trie_quant_read_bin(FILE *fp, int order);
+
+/**
+ * Write quant data to binary file
+ */
+void lm_trie_quant_write_bin(lm_trie_quant_t *quant, FILE *fp);
+
+/**
+ * Free quant
+ */
+void lm_trie_quant_free(lm_trie_quant_t *quant);
 
 /**
  * Memory required for storing weights of middle-order ngrams.
  * Both backoff and probability should be stored
  */
-uint8 lm_trie_quant_msize(lm_trie_quant_type_t quant_type);
+uint8 lm_trie_quant_msize(lm_trie_quant_t *quant);
 
 /**
  * Memory required for storing weights of largest-order ngrams.
  * Only probability should be stored
  */
-uint8 lm_trie_quant_lsize(lm_trie_quant_type_t quant_type);
-
-/**
- * Create qunatizing in provided memory
- */
-lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, uint8 *mem, int order);
+uint8 lm_trie_quant_lsize(lm_trie_quant_t *quant);
 
 /**
  * Checks whether quantizing should be trained
  */
 uint8 lm_trie_quant_to_train(lm_trie_quant_t *quant);
-
-/**
- * Gets quantizing type. Casts enum to int and returns it
- */
-lm_trie_quant_type_t lm_trie_quant_type(lm_trie_quant_t *quant);
 
 /**
  * Trains prob and backoff quantizer for specified ngram order on provided raw ngram list

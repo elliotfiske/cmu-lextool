@@ -39,8 +39,6 @@ typedef struct longest_s {
 }longest_t;
 
 typedef struct lm_trie_s {
-    uint8 *misc_mem;         /**< Contains quantatization data and unigrams */
-    uint64 misc_mem_size;
     uint8 *ngram_mem;
     uint64 ngram_mem_size;
     unigram_t *unigrams;
@@ -56,20 +54,18 @@ typedef struct lm_trie_s {
 /**
  * Creates lm_trie structure. Fills it if binary file with correspondent data is provided
  */
-lm_trie_t* lm_trie_create();
+lm_trie_t* lm_trie_create(uint64 unigram_count, lm_trie_quant_type_t quant_type, int order);
 
-void lm_trie_alloc_misc(lm_trie_t *trie, uint64 unigram_count, lm_trie_quant_type_t quant_type, int order);
+lm_trie_t* lm_trie_read_bin(uint64* counts, int order, FILE *fp);
+
+void lm_trie_write_bin(lm_trie_t *trie, uint64 unigram_count, FILE *fp);
+
+void lm_trie_free(lm_trie_t *trie);
 
 void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order);
 
 void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order);
 
 void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order);
-
-void lm_trie_write_bin(lm_trie_t *trie, FILE *fp);
-
-void lm_trie_read_bin(lm_trie_t *trie, FILE *fp);
-
-void lm_trie_free(lm_trie_t *trie);
 
 #endif /* __LM_TRIE_H__ */

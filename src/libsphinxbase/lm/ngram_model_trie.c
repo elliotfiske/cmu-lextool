@@ -169,8 +169,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     base->is_lm_trie = TRUE;
     base->writable = TRUE;
 
-    model->trie = lm_trie_create();
-    lm_trie_alloc_misc(model->trie, counts[0], QUANT_16, order);
+    model->trie = lm_trie_create(counts[0], QUANT_16, order);
     read_1grams_arpa(&li, counts[0], base, model->trie->unigrams);
     raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
     lm_trie_fix_counts(raw_ngrams, counts, fixed_counts, order);
@@ -351,8 +350,6 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     char *hdr;
     int cmp_res;
     uint8 i, order;
-    int quant_type_int;
-    lm_trie_quant_type_t quant_type;
     uint64 counts[MAX_NGRAM_ORDER];
     ngram_model_trie_t *model;
     ngram_model_t *base;
@@ -382,12 +379,7 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     }
     base->is_lm_trie = TRUE;
 
-    fread(&quant_type_int, sizeof(quant_type_int), 1, fp);
-    quant_type = (lm_trie_quant_type_t)quant_type_int;
-    model->trie = lm_trie_create();
-    lm_trie_alloc_misc(model->trie, counts[0], quant_type, order);
-    lm_trie_alloc_ngram(model->trie, counts, order);
-    lm_trie_read_bin(model->trie, fp);
+    model->trie = lm_trie_read_bin(counts, order, fp);
     read_word_str(base, fp);
     fclose_comp(fp, is_pipe);
 
@@ -424,7 +416,7 @@ int ngram_model_trie_write_bin(ngram_model_t *base,
     for (i = 0; i < model->base.n; i++) {
         fwrite(&model->base.n_counts[i], sizeof(model->base.n_counts[i]), 1, fp);
     }
-    lm_trie_write_bin(model->trie, fp);
+    lm_trie_write_bin(model->trie, base->n_counts[0], fp);
     write_word_str(fp, base);
     fclose_comp(fp, is_pipe);
     return 0;
@@ -558,8 +550,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, 3, (int32)counts[0]);
     base->is_lm_trie = TRUE;
 
-    model->trie = lm_trie_create();
-    lm_trie_alloc_misc(model->trie, counts[0], QUANT_16, 3);
+    model->trie = lm_trie_create(counts[0], QUANT_16, 3);
     //read unigrams. no tricks here
     for (j = 0; j <= (int32)counts[0]; j++) {
         int32 bigrams;
@@ -727,9 +718,38 @@ static int32 lm_trie_raw_score(ngram_model_t *model, int32 wid, int32 *hist, int
     return 0;
 }
 
-static int32 lm_trie_add_ug(ngram_model_t *model, int32 wid, int32 lweight)
+static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
 {
-    return 0;
+    float score = (float)lweight;
+    ngram_model_trie_t *model = (ngram_model_trie_t *)base;
+
+    /* This would be very bad if this happened! */
+    assert(!NGRAM_IS_CLASSWID(wid));
+
+    /* Reallocate unigram array. */
+    model->trie->unigrams = (unigram_t *)ckd_realloc(model->trie->unigrams,
+                                 sizeof(*model->trie->unigrams) * (base->n_1g_alloc + 1));
+    memset(model->trie->unigrams + (base->n_counts[0] + 1), 0,
+           (size_t)(base->n_1g_alloc + 1 - base->n_counts[0]) * sizeof(*model->trie->unigrams));
+    /* FIXME: we really ought to update base->log_uniform *and*
+     * renormalize all the other unigrams.  This is really slow, so I
+     * will probably just provide a function to renormalize after
+     * adding unigrams, for anyone who really cares. */
+    model->trie->unigrams[wid + 1].next = model->trie->unigrams[wid].next;
+    model->trie->unigrams[wid].prob = score;
+    /* This unigram by definition doesn't participate in any bigrams,
+     * so its backoff weight is undefined and next pointer same as in finish unigram*/
+    model->trie->unigrams[wid].bo = 0;
+    /* Finally, increase the unigram count */
+    ++base->n_counts[0];
+    /* FIXME: Note that this can actually be quite bogus due to the
+     * presence of class words.  If wid falls outside the unigram
+     * count, increase it to compensate, at the cost of no longer
+     * really knowing how many unigrams we have :( */
+    if (wid >= base->n_counts[0])
+        base->n_counts[0] = wid + 1;
+
+    return weight_score(base, score);
 }
 
 static void lm_trie_flush(ngram_model_t *model)
