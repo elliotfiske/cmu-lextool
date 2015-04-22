@@ -115,15 +115,6 @@ static size_t unigram_size(uint64 count)
     return (size_t)(count + 1) * sizeof(unigram_t);
 }
 
-static uint64 lm_trie_size(lm_trie_quant_type_t quant_type, uint64 *counts, int order)
-{
-    int i;
-    uint64 res = lm_trie_quant_size(quant_type, order) + unigram_size(counts[0]);
-    for (i = 1; i < order - 1; i++)
-        res += middle_size(lm_trie_quant_msize(quant_type), counts[i], counts[0], counts[i+1]);
-    return res + longest_size(lm_trie_quant_lsize(quant_type), counts[order - 1], counts[0]);
-}
-
 int gram_compare(void *a_raw, void *b_raw)
 {
     gram_t *a = (gram_t *)a_raw;

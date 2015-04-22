@@ -6,35 +6,9 @@
 
 #include "lm_trie.h"
 
-static unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next)
-{
-    unigram_t *ptr = &u[word];
-    next->begin = ptr->next;
-    next->end = (ptr+1)->next;
-    return ptr;
-}
-
-
-//__inline static size_t calc_pivot64(uint64 off, uint64 range, uint64 width)
-//{
-//    size_t ret = (size_t)((float)(off) / (float)(range) * (float)(width));
-//    // Cap for floating point rounding
-//    return (ret < width) ? ret : (size_t)width - 1;
-//}
-
-__inline static size_t calc_pivot32(uint64 off, uint64 range, uint64 width)
-{
-    return (size_t)((off * width) / (range + 1));
-}
-
-//uint8 lm_trie_find_ptr(
-//    size_t (*calc_pivot)(uint64 off, uint64 range, uint64 width),
-//    uint64 *before_it, uint64 before_v,
-//    uint64 *after_it, uint64 after_v,
-//    uint64 key, const uint64 **out);
+unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next);
 
 uint8 lm_trie_find(
-    size_t (*calc_pivot)(uint64 off, uint64 range, uint64 width),
     void *base, uint8 total_bits, uint8 key_bits, uint64 key_mask,
     uint64 before_it, uint64 before_v,
     uint64 after_it, uint64 after_v,
