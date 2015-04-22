@@ -134,7 +134,6 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     int32 is_pipe;
     uint64 counts[MAX_NGRAM_ORDER];
     uint64 fixed_counts[MAX_NGRAM_ORDER];
-    float32 wip; //TODO uw
     int order;
     int i;
 
@@ -169,14 +168,6 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, order, (int32)counts[0]);
     base->is_lm_trie = TRUE;
     base->writable = TRUE;
-
-    wip = 1.0;
-    model->lw = 1.0;
-    if (cmd_ln_exists_r(config, "-wip"))
-        wip = cmd_ln_float32_r(config, "-wip");
-    if (cmd_ln_exists_r(config, "-lw"))
-        model->lw = cmd_ln_float32_r(config, "-lw");
-    model->log_wip = logmath_log(base->lmath, wip);
 
     model->trie = lm_trie_create();
     lm_trie_alloc_misc(model->trie, counts[0], QUANT_16, order);
@@ -363,7 +354,6 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     int quant_type_int;
     lm_trie_quant_type_t quant_type;
     uint64 counts[MAX_NGRAM_ORDER];
-    float32 wip;
     ngram_model_trie_t *model;
     ngram_model_t *base;
 
@@ -391,14 +381,6 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
         base->n_counts[i] = counts[i];
     }
     base->is_lm_trie = TRUE;
-
-    wip = 1.0;
-    model->lw = 1.0;
-    if (cmd_ln_exists_r(config, "-wip"))
-        wip = cmd_ln_float32_r(config, "-wip");
-    if (cmd_ln_exists_r(config, "-lw"))
-        model->lw = cmd_ln_float32_r(config, "-lw");
-    model->log_wip = logmath_log(base->lmath, wip);
 
     fread(&quant_type_int, sizeof(quant_type_int), 1, fp);
     quant_type = (lm_trie_quant_type_t)quant_type_int;
@@ -491,7 +473,6 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     int32 *tseg_base;
     uint16 *bigrams_next;
     int i;
-    float32 wip;
     char str[1024];
     FILE *fp;
     ngram_model_trie_t *model;
@@ -576,14 +557,6 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     base = &model->base;
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, 3, (int32)counts[0]);
     base->is_lm_trie = TRUE;
-
-    wip = 1.0;
-    model->lw = 1.0;
-    if (cmd_ln_exists_r(config, "-wip"))
-        wip = cmd_ln_float32_r(config, "-wip");
-    if (cmd_ln_exists_r(config, "-lw"))
-        model->lw = cmd_ln_float32_r(config, "-lw");
-    model->log_wip = logmath_log(base->lmath, wip);
 
     model->trie = lm_trie_create();
     lm_trie_alloc_misc(model->trie, counts[0], QUANT_16, 3);
@@ -716,14 +689,18 @@ static void ngram_model_trie_free(ngram_model_t *base)
     lm_trie_free(model->trie);
 }
 
-static int trie_apply_weights(ngram_model_t *model, float32 lw, float32 wip, float32 uw)
+static int trie_apply_weights(ngram_model_t *base, float32 lw, float32 wip, float32 uw)
 {
+    //just update weights that are going to be used on score calculation
+    base->lw = lw;
+    base->log_wip = logmath_log(base->lmath, wip);
     return 0;
 }
 
-static int32 apply_weights(ngram_model_trie_t *model, float score)
+static int32 weight_score(ngram_model_t *base, float score)
 {
-    return (int32)(score * model->lw + model->log_wip);
+    //TODO uniform and unigram weights are ommitted
+    return (int32)(score * base->lw + base->log_wip);
 }
 
 static int32 ngram_model_trie_score(ngram_model_t *base, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
@@ -742,7 +719,7 @@ static int32 ngram_model_trie_score(ngram_model_t *base, int32 wid, int32 *hist,
     }
 
     score = lm_trie_score(model->trie, model->base.n, wid, hist, n_hist, n_used);
-    return apply_weights(model, score);
+    return weight_score(base, score);
 }
 
 static int32 lm_trie_raw_score(ngram_model_t *model, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
