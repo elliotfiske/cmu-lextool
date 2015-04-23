@@ -5,7 +5,6 @@
 #include <sphinxbase/pio.h>
 #include <sphinxbase/strfuncs.h>
 #include <sphinxbase/ckd_alloc.h>
-#include <sphinxbase/qsort_ext.h>
 #include <sphinxbase/byteorder.h>
 
 #include "ngram_model_trie.h"
@@ -112,8 +111,6 @@ static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base,
             base->word_str[i] = ckd_salloc(wptr[1]);
         }
     }
-    //finished loading unigrams, time to sort them and their names
-    qsort2((void *)base->word_str, unigrams, (size_t)count, sizeof(char *), sizeof(unigram_t), &string_comparator);
     //fill hash-table that maps unigram names to their word ids
     for (i = 0; i < count; i++) {
         if ((hash_table_enter(base->wid, base->word_str[i], (void *)(long)i)) != (void *)(long)i) {

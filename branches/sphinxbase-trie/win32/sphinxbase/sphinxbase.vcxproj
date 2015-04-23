@@ -192,7 +192,6 @@
     <ClCompile Include="..\..\src\libsphinxbase\util\pio.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\priority_queue.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\profile.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\util\qsort_ext.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\sbthread.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\slamch.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\slapack_lite.c" />
@@ -232,7 +231,6 @@
     <ClInclude Include="..\..\include\sphinxbase\prim_type.h" />
     <ClInclude Include="..\..\include\sphinxbase\priority_queue.h" />
     <ClInclude Include="..\..\include\sphinxbase\profile.h" />
-    <ClInclude Include="..\..\include\sphinxbase\qsort_ext.h" />
     <ClInclude Include="..\..\include\sphinxbase\sbthread.h" />
     <ClInclude Include="..\..\include\sphinxbase\sphinxbase_export.h" />
     <ClInclude Include="..\..\include\sphinxbase\strfuncs.h" />

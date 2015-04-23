@@ -31,7 +31,6 @@ libsphinxutil_la_SOURCES = \
 	profile.c \
 	sbthread.c \
 	strfuncs.c \
-	qsort_ext.c \
 	$(LAPACK_LITE_SRCS)
 
 EXTRA_DIST = \

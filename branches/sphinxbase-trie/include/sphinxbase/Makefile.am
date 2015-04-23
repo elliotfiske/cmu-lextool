@@ -35,6 +35,5 @@ pkginclude_HEADERS =				\
 	profile.h				\
 	sbthread.h				\
 	sphinxbase_export.h			\
-	strfuncs.h				\
-	qsort_ext.h
+	strfuncs.h
 

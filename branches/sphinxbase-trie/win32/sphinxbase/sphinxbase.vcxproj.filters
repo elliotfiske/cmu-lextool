@@ -167,9 +167,6 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\util\qsort_ext.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -344,9 +341,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\sphinxbase\qsort_ext.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h">
