@@ -657,18 +657,15 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     for (i = 0; i < 3; i++) {
         base->n_counts[i] = fixed_counts[i];
     }
-
-    /* read ascii word strings */
-    read_word_str(base, fp);
-    /* sort unigrams and word strings in alphabet order*/
-    qsort2((void *)base->word_str, model->trie->unigrams, (size_t)fixed_counts[0], sizeof(char *), sizeof(unigram_t), &string_comparator);
-
     lm_trie_alloc_ngram(model->trie, fixed_counts, 3);
     lm_trie_build(model->trie, raw_ngrams, counts, 3);
 
     //free raw ngrams
     counts[1]++;
     lm_ngrams_raw_free(raw_ngrams, counts, 3);
+
+    /* read ascii word strings */
+    read_word_str(base, fp);
 
     fclose_comp(fp, is_pipe);
     return base;
