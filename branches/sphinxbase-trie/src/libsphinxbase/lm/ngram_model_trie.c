@@ -735,6 +735,10 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
      * renormalize all the other unigrams.  This is really slow, so I
      * will probably just provide a function to renormalize after
      * adding unigrams, for anyone who really cares. */
+    /* This could be simplified but then we couldn't do it in logmath */
+    lweight += base->log_uniform + base->log_uw;
+    score = (float)logmath_add(base->lmath, lweight,
+                        base->log_uniform + base->log_uniform_weight);
     model->trie->unigrams[wid + 1].next = model->trie->unigrams[wid].next;
     model->trie->unigrams[wid].prob = score;
     /* This unigram by definition doesn't participate in any bigrams,
