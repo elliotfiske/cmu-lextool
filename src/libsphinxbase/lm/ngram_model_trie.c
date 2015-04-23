@@ -166,7 +166,6 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
 
     base = &model->base;
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, order, (int32)counts[0]);
-    base->is_lm_trie = TRUE;
     base->writable = TRUE;
 
     model->trie = lm_trie_create(counts[0], QUANT_16, order);
@@ -377,7 +376,6 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     for (i = 0; i < order; i++) {
         base->n_counts[i] = counts[i];
     }
-    base->is_lm_trie = TRUE;
 
     model->trie = lm_trie_read_bin(counts, order, fp);
     read_word_str(base, fp);
@@ -548,7 +546,6 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     model = (ngram_model_trie_t *)ckd_calloc(1, sizeof(*model));
     base = &model->base;
     ngram_model_init(base, &ngram_model_trie_funcs, lmath, 3, (int32)counts[0]);
-    base->is_lm_trie = TRUE;
 
     model->trie = lm_trie_create(counts[0], QUANT_16, 3);
     //read unigrams. no tricks here

@@ -4,7 +4,6 @@ AM_YFLAGS = -d
 BUILT_SOURCES = jsgf_parser.h jsgf_parser.c
 
 libsphinxlm_la_SOURCES =			\
-	lm3g_model.c				\
 	lm_ngrams_raw.c				\
 	lm_trie.c					\
 	lm_trie_bits.c				\
@@ -12,8 +11,6 @@ libsphinxlm_la_SOURCES =			\
 	lm_trie_quant.c				\
 	lm_trie_query.c				\
 	ngram_model.c				\
-	ngram_model_arpa.c			\
-	ngram_model_dmp.c			\
 	ngram_model_set.c			\
 	ngram_model_trie.c			\
 	fsg_model.c				\
@@ -24,11 +21,8 @@ libsphinxlm_la_SOURCES =			\
 libsphinxlm_la_LIBADD = $(LIBICONV)
 
 noinst_HEADERS = ngram_model_internal.h		\
-	ngram_model_dmp.h			\
 	ngram_model_set.h			\
-	ngram_model_arpa.h			\
 	ngram_model_trie.h			\
-	lm3g_model.h				\
 	lm_ngrams_raw.h				\
 	lm_trie.h					\
 	lm_trie_bits.h				\
@@ -47,5 +41,4 @@ AM_CFLAGS =-I$(top_srcdir)/include/sphinxbase \
 # Nobody has the version of Flex needed to regenerate the scanner, so
 # we can't give it a name that would induce Make to try to build it.
 # Hence the underscore.  Sorry folks.
-EXTRA_DIST = _jsgf_scanner.l \
-	lm3g_templates.c
+EXTRA_DIST = _jsgf_scanner.l

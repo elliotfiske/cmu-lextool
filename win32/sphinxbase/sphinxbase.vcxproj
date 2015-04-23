@@ -161,16 +161,13 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_parser.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_scanner.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm3g_model.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_bits.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_set.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_trie.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\bio.c" />
@@ -252,7 +249,6 @@
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_affine.h" />
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_inverse_linear.h" />
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_piecewise_linear.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm3g_model.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_bits.h" />
@@ -260,8 +256,6 @@
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_query.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_internal.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_set.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_trie.h" />
