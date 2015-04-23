@@ -104,9 +104,6 @@
     <ClCompile Include="..\..\src\libsphinxbase\util\listelem_alloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm3g_model.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\util\logmath.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -117,12 +114,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_set.c">
@@ -286,9 +277,6 @@
     <ClInclude Include="..\..\include\sphinxbase\listelem_alloc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm3g_model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\sphinxbase\logmath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -302,12 +290,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\sphinxbase\ngram_model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_arpa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_dmp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_internal.h">

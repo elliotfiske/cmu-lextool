@@ -122,44 +122,25 @@ ngram_type_to_str(int type)
                   logmath_t *lmath)
  {
      ngram_model_t *model = NULL;
-     uint8 use_trie = FALSE;
-     if (cmd_ln_exists_r(config, "-lm_trie")) {
-         use_trie = cmd_ln_boolean_r(config, "-lm_trie");
-     }
      switch (file_type) {
      case NGRAM_AUTO: {
-         if (use_trie) {
-             if ((model = ngram_model_trie_read_bin(config, file_name, lmath)) != NULL)
-                 break;
-             if ((model = ngram_model_trie_read_arpa(config, file_name, lmath)) != NULL)
-                 break;
-             if ((model = ngram_model_trie_read_dmp(config, file_name, lmath)) != NULL)
-                 break;
-         } else {
-             if ((model = ngram_model_arpa_read(config, file_name, lmath)) != NULL)
-                 break;
-             if ((model = ngram_model_dmp_read(config, file_name, lmath)) != NULL)
-                 break;
-         }
+         if ((model = ngram_model_trie_read_bin(config, file_name, lmath)) != NULL)
+             break;
+         if ((model = ngram_model_trie_read_arpa(config, file_name, lmath)) != NULL)
+             break;
+         if ((model = ngram_model_trie_read_dmp(config, file_name, lmath)) != NULL)
+             break;
          return NULL;
      }
      case NGRAM_ARPA:
-         if (use_trie) {
-            model = ngram_model_trie_read_arpa(config, file_name, lmath);
-         } else {
-            model = ngram_model_arpa_read(config, file_name, lmath);
-         }
+         model = ngram_model_trie_read_arpa(config, file_name, lmath);
          break;
      case NGRAM_BIN:
-         if (use_trie) {
-             if ((model = ngram_model_trie_read_bin(config, file_name, lmath)) != NULL)
-                 break;
-             if ((model = ngram_model_trie_read_dmp(config, file_name, lmath)) != NULL)
-                 break;
-         } else {
-            model = ngram_model_dmp_read(config, file_name, lmath);
-         }
-         break;
+         if ((model = ngram_model_trie_read_bin(config, file_name, lmath)) != NULL)
+             break;
+         if ((model = ngram_model_trie_read_dmp(config, file_name, lmath)) != NULL)
+             break;
+         return NULL;
      default:
          E_ERROR("language model file type not supported\n");
          return NULL;
@@ -197,18 +178,9 @@ ngram_type_to_str(int type)
          return ngram_model_write(model, file_name, file_type);
      }
      case NGRAM_ARPA:
-         if (model->is_lm_trie) {
-             return ngram_model_trie_write_arpa(model, file_name);
-         } else {
-             return ngram_model_arpa_write(model, file_name);
-         }
-         
+         return ngram_model_trie_write_arpa(model, file_name);
      case NGRAM_BIN:
-         if (model->is_lm_trie) {
-             return ngram_model_trie_write_bin(model, file_name);
-         } else {
-             return ngram_model_dmp_write(model, file_name);
-         }
+         return ngram_model_trie_write_bin(model, file_name);
      default:
          E_ERROR("language model file type not supported\n");
          return -1;
@@ -226,7 +198,6 @@ ngram_model_init(ngram_model_t *base,
      base->refcount = 1;
      base->funcs = funcs;
      base->n = n;
-     base->is_lm_trie = FALSE;
      /* If this was previously initialized... */
     if (base->n_counts == NULL)
         base->n_counts = (uint64 *)ckd_calloc(n, sizeof(*base->n_counts));

@@ -59,7 +59,6 @@ struct ngram_model_s {
     int32 n_words;      /**< Number of actual word strings (NOT the same as the
                              number of unigrams, due to class words). */
 
-    uint8 is_lm_trie;   /**< Whether this is LM trie */
     uint8 n;            /**< This is an n-gram model (1, 2, 3, ...). */
     uint8 n_classes;    /**< Number of classes (maximum 128) */
     uint8 writable;     /**< Are word strings writable? */
