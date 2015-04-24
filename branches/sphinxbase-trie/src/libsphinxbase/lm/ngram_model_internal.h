@@ -67,9 +67,8 @@ struct ngram_model_s {
     logmath_t *lmath;   /**< Log-math object */
     float32 lw;         /**< Language model scaling factor */
     int32 log_wip;      /**< Log of word insertion penalty */
-    int32 log_uw;       /**< Log of unigram weight */
+    uint64 us_wid;      /**< Word ID of <s> (utterance start), to avoid applying uniform prob to it's score */
     int32 log_uniform;  /**< Log of uniform (0-gram) probability */
-    int32 log_uniform_weight; /**< Log of uniform weight (i.e. 1 - unigram weight) */
     int32 log_zero;     /**< Zero probability, cached here for quick lookup */
     char **word_str;    /**< Unigram names */
     hash_table_t *wid;  /**< Mapping of unigram names to word IDs. */
@@ -118,8 +117,7 @@ typedef struct ngram_funcs_s {
      */
     int (*apply_weights)(ngram_model_t *model,
                          float32 lw,
-                         float32 wip,
-                         float32 uw);
+                         float32 wip);
     /**
      * Implementation-specific function for querying language model score.
      */

@@ -150,16 +150,13 @@ ngram_type_to_str(int type)
      if (config) {
          float32 lw = 1.0;
          float32 wip = 1.0;
-         float32 uw = 1.0;
 
          if (cmd_ln_exists_r(config, "-lw"))
              lw = cmd_ln_float32_r(config, "-lw");
          if (cmd_ln_exists_r(config, "-wip"))
              wip = cmd_ln_float32_r(config, "-wip");
-         if (cmd_ln_exists_r(config, "-uw"))
-             uw = cmd_ln_float32_r(config, "-uw");
 
-         ngram_model_apply_weights(model, lw, wip, uw);
+         ngram_model_apply_weights(model, lw, wip);
      }
 
      return model;
@@ -206,9 +203,7 @@ ngram_model_init(ngram_model_t *base,
         /* Set default values for weights. */
         base->lw = 1.0;
         base->log_wip = 0; /* i.e. 1.0 */
-        base->log_uw = 0;  /* i.e. 1.0 */
         base->log_uniform = logmath_log(lmath, 1.0 / n_unigram);
-        base->log_uniform_weight = logmath_get_zero(lmath);
         base->log_zero = logmath_get_zero(lmath);
         base->lmath = lmath;
     }
@@ -351,17 +346,15 @@ ngram_model_casefold(ngram_model_t *model, int kase)
 
 int
 ngram_model_apply_weights(ngram_model_t *model,
-                          float32 lw, float32 wip, float32 uw)
+                          float32 lw, float32 wip)
 {
-    return (*model->funcs->apply_weights)(model, lw, wip, uw);
+    return (*model->funcs->apply_weights)(model, lw, wip);
 }
 
 float32
-ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip,
-                        int32 *out_log_uw)
+ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip)
 {
     if (out_log_wip) *out_log_wip = model->log_wip;
-    if (out_log_uw) *out_log_uw = model->log_uw;
     return model->lw;
 }
 
