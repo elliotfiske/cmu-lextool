@@ -187,15 +187,15 @@ static int weights_comparator(const void *a, const void *b)
     return (int)(*(float *)a - *(float *)b);
 }
 
-static void make_bins(float *values, uint64 values_num, float *centers, uint32 bins)
+static void make_bins(float *values, uint32 values_num, float *centers, uint32 bins)
 {
     float *finish, *start;
     uint32 i;
-    //TODO uint64 to size_t cast
-    qsort(values, (size_t)values_num, sizeof(*values), &weights_comparator);
+
+    qsort(values, values_num, sizeof(*values), &weights_comparator);
     start = values;
     for (i = 0; i < bins; i++, centers++, start = finish) {
-        finish = values + (values_num * (uint64)(i + 1) / bins);
+        finish = values + (values_num * (i + 1) / bins);
         if (finish == start) {
             // zero length bucket.
             *centers = i ? *(centers - 1) : -FLOAT_INF;
@@ -210,18 +210,17 @@ static void make_bins(float *values, uint64 values_num, float *centers, uint32 b
     }
 }
 
-void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint64 counts, lm_ngram_t* raw_ngrams)
+void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, lm_ngram_t* raw_ngrams)
 {
     float *probs;
     float *backoffs;
     float *centers;
-    uint64 backoff_num;
-    uint64 prob_num;
+    uint32 backoff_num;
+    uint32 prob_num;
     lm_ngram_t *raw_ngrams_end;
 
-    //TODO uint64 to size_t casts
-    probs = (float *)ckd_calloc((size_t)counts, sizeof(*probs));
-    backoffs = (float *)ckd_calloc((size_t)counts, sizeof(*backoffs));
+    probs = (float *)ckd_calloc(counts, sizeof(*probs));
+    backoffs = (float *)ckd_calloc(counts, sizeof(*backoffs));
     raw_ngrams_end = raw_ngrams + counts;
 
     for (backoff_num = 0, prob_num = 0; raw_ngrams != raw_ngrams_end; raw_ngrams++) {
@@ -239,14 +238,13 @@ void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint64 counts, lm_ng
     ckd_free(backoffs);
 }
 
-void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint64 counts, lm_ngram_t* raw_ngrams)
+void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, lm_ngram_t* raw_ngrams)
 {
     float *probs;
-    uint64 prob_num;
+    uint32 prob_num;
     lm_ngram_t *raw_ngrams_end;
 
-    //TODO uint64 to size_t cast
-    probs = (float *)ckd_calloc((size_t)counts, sizeof(*probs));
+    probs = (float *)ckd_calloc(counts, sizeof(*probs));
     raw_ngrams_end = raw_ngrams + counts;
 
     for (prob_num = 0; raw_ngrams != raw_ngrams_end; raw_ngrams++) {

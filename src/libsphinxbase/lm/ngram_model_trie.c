@@ -39,7 +39,7 @@ static int read_counts_arpa(lineiter_t **li, uint32* counts, int* order)
     prev_ngram = 0;
     *order = 0;
     while ((*li = lineiter_next(*li))) {
-        if (sscanf((*li)->buf, "ngram %d=%lld", &ngram, &ngram_cnt) != 2)
+        if (sscanf((*li)->buf, "ngram %d=%d", &ngram, &ngram_cnt) != 2)
             break;
         if (ngram != prev_ngram + 1) {
             E_ERROR("Ngram counts in LM file is not in order. %d goes after %d\n", ngram, prev_ngram);
@@ -140,6 +140,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     int order;
     int i;
 
+    E_INFO("Trying to read LM in arpa format\n");
     if ((fp = fopen_comp(path, "r", &is_pipe)) == NULL) {
         E_ERROR("File %s not found\n", path);
         return NULL;
@@ -154,11 +155,10 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
         fclose_comp(fp, is_pipe);
         return NULL;
     }
-    //TODO kenlm checks for counts overflow on 32 bit machines here
 
     E_INFO("LM of order %d\n", order);
     for (i = 0; i < order; i++) {
-        E_INFO("#%d-grams: %lld\n", i+1, counts[i]);
+        E_INFO("#%d-grams: %d\n", i+1, counts[i]);
     }
 
     base = &model->base;
@@ -321,7 +321,6 @@ static void read_word_str(ngram_model_t *base, FILE *fp)
     /* read ascii word strings */
     base->writable = TRUE;
     fread(&k, sizeof(k), 1, fp);
-    //TODO size_t to uint64 cast
     tmp_word_str = (char *)ckd_calloc((size_t)k, 1);
     fread(tmp_word_str, 1, (size_t)k, fp);
 
@@ -360,6 +359,7 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     ngram_model_trie_t *model;
     ngram_model_t *base;
 
+    E_INFO("Trying to read LM in trie binary format\n");
     if ((fp = fopen_comp(path, "rb", &is_pipe)) == NULL) {
         E_ERROR("File %s not found\n", path);
         return NULL;
@@ -370,6 +370,7 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     cmp_res = strcmp(hdr, trie_hdr);
     ckd_free(hdr);
     if (cmp_res) {
+        E_INFO("Header doesn't match\n");
         fclose_comp(fp, is_pipe);
         return NULL;
     }
@@ -477,6 +478,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     ngram_model_t *base;
     lm_ngram_t **raw_ngrams;
 
+    E_INFO("Trying to read LM in DMP format\n");
     if ((fp = fopen_comp(file_name, "rb", &is_pipe)) == NULL) {
         E_ERROR("Dump file %s not found\n", file_name);
         return NULL;
@@ -549,7 +551,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         return NULL;
     if (do_swap) SWAP_INT32(&count);
     counts[2] = count;
-    E_INFO("ngrams 1=%lld, 2=%lld, 3=%lld\n", counts[0], counts[1], counts[2]);
+    E_INFO("ngrams 1=%d, 2=%d, 3=%d\n", counts[0], counts[1], counts[2]);
 
     model = (ngram_model_trie_t *)ckd_calloc(1, sizeof(*model));
     base = &model->base;
