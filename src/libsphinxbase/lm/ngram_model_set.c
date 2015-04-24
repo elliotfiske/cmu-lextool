@@ -666,14 +666,14 @@ ngram_model_set_map_words(ngram_model_t *base,
 
 static int
 ngram_model_set_apply_weights(ngram_model_t *base, float32 lw,
-                              float32 wip, float32 uw)
+                              float32 wip)
 {
     ngram_model_set_t *set = (ngram_model_set_t *)base;
     int32 i;
 
     /* Apply weights to each sub-model. */
     for (i = 0; i < set->n_models; ++i)
-        ngram_model_apply_weights(set->lms[i], lw, wip, uw);
+        ngram_model_apply_weights(set->lms[i], lw, wip);
     return 0;
 }
 

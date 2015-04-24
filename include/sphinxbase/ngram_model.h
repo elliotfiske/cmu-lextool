@@ -184,23 +184,21 @@ int ngram_model_casefold(ngram_model_t *model, int kase);
  * values we actually need.  Call ngram_prob() if you want the "raw"
  * N-Gram probability estimate.
  *
- * To remove all weighting, call ngram_apply_weights(model, 1.0, 1.0, 1.0).
+ * To remove all weighting, call ngram_apply_weights(model, 1.0, 1.0).
  */
 SPHINXBASE_EXPORT
 int ngram_model_apply_weights(ngram_model_t *model,
-                              float32 lw, float32 wip, float32 uw);
+                              float32 lw, float32 wip);
 
 /**
  * Get the current weights from a language model.
  *
  * @param model The model in question.
  * @param out_log_wip Output: (optional) logarithm of word insertion penalty.
- * @param out_log_uw Output: (optional) logarithm of unigram weight.
  * @return language weight.
  */
 SPHINXBASE_EXPORT
-float32 ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip,
-                                int32 *out_log_uw);
+float32 ngram_model_get_weights(ngram_model_t *model, int32 *out_log_wip);
 
 /**
  * Get the score (scaled, interpolated log-probability) for a general
