@@ -735,7 +735,6 @@ static int32 ngram_model_trie_score(ngram_model_t *base, int32 wid, int32 *hist,
 
 static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
 {
-    float score = (float)lweight;
     ngram_model_trie_t *model = (ngram_model_trie_t *)base;
 
     /* This would be very bad if this happened! */
@@ -747,8 +746,9 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     memset(model->trie->unigrams + (base->n_counts[0] + 1), 0,
            (size_t)(base->n_1g_alloc - base->n_counts[0]) * sizeof(*model->trie->unigrams));
     ++base->n_counts[0];
+    lweight += logmath_log(base->lmath, 1.0 / base->n_counts[0]);
     model->trie->unigrams[wid + 1].next = model->trie->unigrams[wid].next;
-    model->trie->unigrams[wid].prob = score;
+    model->trie->unigrams[wid].prob = (float)lweight;
     /* This unigram by definition doesn't participate in any bigrams,
      * so its backoff weight is undefined and next pointer same as in finish unigram*/
     model->trie->unigrams[wid].bo = 0;
