@@ -227,8 +227,7 @@ void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, lm_ng
         float *weights = raw_ngrams->weights;
         probs[prob_num++] = *weights; //first goes prob
         weights++; //increment to backoff
-        if (*weights != 0.0)
-            backoffs[backoff_num++] = *weights;
+        backoffs[backoff_num++] = *weights;
     }
 
     make_bins(probs, prob_num, quant->tables[order - 2][0].begin, 1ULL << quant->prob_bits);
