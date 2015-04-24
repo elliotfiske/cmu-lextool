@@ -91,7 +91,6 @@ typedef enum ngram_file_type_e {
  *  - -mmap (boolean) whether to use memory-mapped I/O
  *  - -lw (float32) language weight to apply to the model
  *  - -wip (float32) word insertion penalty to apply to the model
- *  - -uw (float32) unigram weight to apply to the model
  *
  * @param file_name path to the file to read.
  * @param file_type type of the file, or NGRAM_AUTO to determine automatically.
