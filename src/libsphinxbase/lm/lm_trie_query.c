@@ -150,12 +150,14 @@ static float lm_trie_hist_score(lm_trie_t *trie, int32 wid, int32 *hist, int32 n
             prob = lm_trie_quant_mpread(trie->quant, adress, i);
         }
     }
-    adress = longest_find(trie->longest, hist[n_hist - 1], &node);
-    if (adress.base == NULL) {
-        return prob + trie->backoff[n_hist - 1];
-    } else {
-        (*n_used)++;
-        return lm_trie_quant_lpread(trie->quant, adress);
+    if (n_hist > 0) {
+        adress = longest_find(trie->longest, hist[n_hist - 1], &node);
+        if (adress.base == NULL) {
+            return prob + trie->backoff[n_hist - 1];
+        } else {
+            (*n_used)++;
+            return lm_trie_quant_lpread(trie->quant, adress);
+        }
     }
 }
 
