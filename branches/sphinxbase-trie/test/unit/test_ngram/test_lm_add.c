@@ -21,7 +21,7 @@ run_tests(logmath_t *lmath, ngram_model_t *model)
 	score = ngram_score(model, "quux", NULL);
 	TEST_EQUAL_LOG(score, logmath_log(lmath, 0.5/400.0)); /* #unigrams */
 
-	ngram_model_apply_weights(model, 1.0, 1.0, 0.9);
+	ngram_model_apply_weights(model, 1.0, 1.0);
 	score = ngram_score(model, "quux", NULL);
 	TEST_EQUAL_LOG(score, logmath_log(lmath, 0.5/400.0*0.9 + 1.0/400.0*0.1));
 
