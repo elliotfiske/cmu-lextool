@@ -351,7 +351,7 @@ int32 ngram_model_get_size(ngram_model_t *model);
  * Get the counts of the various N-grams in the model.
  */
 SPHINXBASE_EXPORT
-uint64 const *ngram_model_get_counts(ngram_model_t *model);
+uint32 const *ngram_model_get_counts(ngram_model_t *model);
 
 /**
  * M-gram iterator object.

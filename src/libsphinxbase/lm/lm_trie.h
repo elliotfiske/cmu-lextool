@@ -9,21 +9,21 @@
 typedef struct unigram_s {
     float prob;
     float bo;
-    uint64 next;
+    uint32 next;
 }unigram_t;
 
 typedef struct node_range_s {
-    uint64 begin;
-    uint64 end;
+    uint32 begin;
+    uint32 end;
 }node_range_t;
 
 typedef struct base_s {
     uint8 word_bits;
     uint8 total_bits;
-    uint64 word_mask;
+    uint32 word_mask;
     uint8 *base;
-    uint64 insert_index;
-    uint64 max_vocab;
+    uint32 insert_index;
+    uint32 max_vocab;
 }base_t;
 
 typedef struct middle_s {
@@ -40,7 +40,7 @@ typedef struct longest_s {
 
 typedef struct lm_trie_s {
     uint8 *ngram_mem;
-    uint64 ngram_mem_size;
+    size_t ngram_mem_size;
     unigram_t *unigrams;
     middle_t *middle_begin;
     middle_t *middle_end;
@@ -54,18 +54,18 @@ typedef struct lm_trie_s {
 /**
  * Creates lm_trie structure. Fills it if binary file with correspondent data is provided
  */
-lm_trie_t* lm_trie_create(uint64 unigram_count, lm_trie_quant_type_t quant_type, int order);
+lm_trie_t* lm_trie_create(uint32 unigram_count, lm_trie_quant_type_t quant_type, int order);
 
-lm_trie_t* lm_trie_read_bin(uint64* counts, int order, FILE *fp);
+lm_trie_t* lm_trie_read_bin(uint32* counts, int order, FILE *fp);
 
-void lm_trie_write_bin(lm_trie_t *trie, uint64 unigram_count, FILE *fp);
+void lm_trie_write_bin(lm_trie_t *trie, uint32 unigram_count, FILE *fp);
 
 void lm_trie_free(lm_trie_t *trie);
 
-void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order);
+void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint32 *counts, uint32 *fixed_counts, int order);
 
-void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order);
+void lm_trie_alloc_ngram(lm_trie_t *trie, uint32 *counts, int order);
 
-void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order);
+void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int order);
 
 #endif /* __LM_TRIE_H__ */

@@ -54,7 +54,7 @@
  */
 struct ngram_model_s {
     int refcount;       /**< Reference count */
-    uint64 *n_counts;    /**< Counts for 1, 2, 3, ... grams */
+    uint32 *n_counts;    /**< Counts for 1, 2, 3, ... grams */
     int32 n_1g_alloc;   /**< Number of allocated word strings (for new word addition) */
     int32 n_words;      /**< Number of actual word strings (NOT the same as the
                              number of unigrams, due to class words). */

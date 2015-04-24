@@ -3,7 +3,7 @@
 
 #include "lm_trie_bits.h"
 
-uint8 required_bits(uint64 max_value)
+uint8 required_bits(uint32 max_value)
 {
     uint8 res;
 
@@ -13,7 +13,7 @@ uint8 required_bits(uint64 max_value)
     return res;
 }
 
-void bit_mask_from_max(bit_mask_t *bit_mask, uint64 max_value)
+void bit_mask_from_max(bit_mask_t *bit_mask, uint32 max_value)
 {
     bit_mask->bits = required_bits(max_value);
     bit_mask->mask = (1ULL << bit_mask->bits) - 1;

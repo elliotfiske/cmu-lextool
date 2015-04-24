@@ -197,7 +197,7 @@ ngram_model_init(ngram_model_t *base,
      base->n = n;
      /* If this was previously initialized... */
     if (base->n_counts == NULL)
-        base->n_counts = (uint64 *)ckd_calloc(n, sizeof(*base->n_counts));
+        base->n_counts = (uint32 *)ckd_calloc(n, sizeof(*base->n_counts));
     /* Don't reset weights if logmath object hasn't changed. */
     if (base->lmath != lmath) {
         /* Set default values for weights. */
@@ -505,7 +505,7 @@ ngram_prob(ngram_model_t *model, const char *const *words, int32 n)
     uint32 i;
 
     ctx_id = (int32 *)ckd_calloc(n - 1, sizeof(*ctx_id));
-    for (i = 1; i < n; ++i)
+    for (i = 1; i < (uint32)n; ++i)
       ctx_id[i - 1] = ngram_wid(model, words[i]);
 
     wid = ngram_wid(model, *words);
@@ -555,7 +555,7 @@ ngram_model_get_size(ngram_model_t *model)
   return 0;
 }
 
-uint64 const *
+uint32 const *
 ngram_model_get_counts(ngram_model_t *model)
 {
   if (model != NULL)

@@ -100,7 +100,7 @@ static void lm_ngrams_raw_read_order(lm_ngram_t **raw_ngrams, lineiter_t **li, h
     qsort(*raw_ngrams, (size_t)count, sizeof(lm_ngram_t), &ngram_comparator);
 }
 
-lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint64 *counts, int order)
+lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint32 *counts, int order)
 {
     lm_ngram_t **raw_ngrams;
     int order_it;
@@ -127,14 +127,9 @@ lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *l
     return raw_ngrams;
 }
 
-void lm_ngrams_raw_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order)
+void lm_ngrams_raw_free(lm_ngram_t **raw_ngrams, uint32 *counts, int order)
 {
-    memcpy(fixed_counts, counts, order * sizeof(*fixed_counts));
-}
-
-void lm_ngrams_raw_free(lm_ngram_t **raw_ngrams, uint64 *counts, int order)
-{
-    uint64 num;
+    uint32 num;
     int order_it;
 
     for (order_it = 0; order_it < order - 1; order_it++) {

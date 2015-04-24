@@ -17,33 +17,33 @@ typedef struct gram_s {
     int order;
 }gram_t;
 
-static uint64 base_size(uint64 entries, uint64 max_vocab, uint8 remaining_bits)
+static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
 {
     uint8 total_bits = required_bits(max_vocab) + remaining_bits;
     // Extra entry for next pointer at the end.  
     // +7 then / 8 to round up bits and convert to bytes
-    // +sizeof(uint64_t) so that ReadInt57 etc don't go segfault.  
+    // +sizeof(uint32) so that ReadInt57 etc don't go segfault.  
     // Note that this waste is O(order), not O(number of ngrams).
     return ((1 + entries) * total_bits + 7) / 8 + sizeof(uint64);
 }
 
-uint64 middle_size(uint8 quant_bits, uint64 entries, uint64 max_vocab, uint64 max_ptr)
+uint32 middle_size(uint8 quant_bits, uint32 entries, uint32 max_vocab, uint32 max_ptr)
 {
     return base_size(entries, max_vocab, quant_bits + required_bits(max_ptr));
 }
 
-uint64 longest_size(uint8 quant_bits, uint64 entries, uint64 max_vocab)
+uint32 longest_size(uint8 quant_bits, uint32 entries, uint32 max_vocab)
 {
     return base_size(entries, max_vocab, quant_bits);
 }
 
-static void base_init(base_t *base, void *base_mem, uint64 max_vocab, uint8 remaining_bits)
+static void base_init(base_t *base, void *base_mem, uint32 max_vocab, uint8 remaining_bits)
 {
     bit_packing_sanity();
     base->word_bits = required_bits(max_vocab);
-    base->word_mask = (1ULL << base->word_bits) - 1ULL;
-    if (base->word_bits > 57)
-        E_ERROR("Sorry, word indices more than %llu are not implemented.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1ULL << 57));
+    base->word_mask = (1U << base->word_bits) - 1U;
+    if (base->word_bits > 31)
+        E_ERROR("Sorry, word indices more than %d are not implemented.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U << 31));
     base->total_bits = base->word_bits + remaining_bits;
 
     base->base = (uint8 *)base_mem;
@@ -51,17 +51,17 @@ static void base_init(base_t *base, void *base_mem, uint64 max_vocab, uint8 rema
     base->max_vocab = max_vocab;
 }
 
-void middle_init(middle_t *middle, void *base_mem, uint8 quant_bits, uint64 entries, uint64 max_vocab, uint64 max_next, void *next_source)
+void middle_init(middle_t *middle, void *base_mem, uint8 quant_bits, uint32 entries, uint32 max_vocab, uint32 max_next, void *next_source)
 {
     middle->quant_bits = quant_bits;
     bit_mask_from_max(&middle->next_mask, max_next);
     middle->next_source = next_source;
-    if (entries + 1 >= (1ULL << 57) || (max_next >= (1ULL << 57)))
-        E_ERROR("Sorry, this does not support more than %llu n-grams of a particular order.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1ULL << 57));
+    if (entries + 1 >= (1U << 31) || (max_next >= (1U << 31)))
+        E_ERROR("Sorry, this does not support more than %d n-grams of a particular order.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U < 32));
     base_init(&middle->base, base_mem, max_vocab, quant_bits + middle->next_mask.bits);
 }
 
-void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint64 max_vocab)
+void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint32 max_vocab)
 {
     base_init(&longest->base, base_mem, max_vocab, quant_bits);
 }
@@ -69,10 +69,10 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint64 m
 static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
 {
     uint64 at_pointer;
-    uint64 next;
+    uint32 next;
     bit_adress_t adress;
     assert(word <= middle->base.word_mask);
-    at_pointer = middle->base.insert_index * middle->base.total_bits;
+    at_pointer = (uint64)middle->base.insert_index * middle->base.total_bits;
     write_int57(middle->base.base, at_pointer, middle->base.word_bits, word);
     at_pointer += middle->base.word_bits;
     adress.base = middle->base.base;
@@ -129,12 +129,12 @@ int gram_compare(void *a_raw, void *b_raw)
     return b->order - a->order;
 }
 
-static uint64 unigram_next(lm_trie_t *trie, int order)
+static uint32 unigram_next(lm_trie_t *trie, int order)
 {
     return order == 2 ? trie->longest->base.insert_index : trie->middle_begin->base.insert_index;
 }
 
-static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order)
+static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int order)
 {
     word_idx unigram_idx = 0;
     word_idx *words;
@@ -142,7 +142,7 @@ static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     const word_idx unigram_count = (word_idx)counts[0];
     priority_queue_t *grams = priority_queue_create(order, &gram_compare);
     gram_t *gram;
-    uint64 *raw_ngrams_ptr;
+    uint32 *raw_ngrams_ptr;
     int i;
 
     words = (word_idx *)ckd_calloc(order, sizeof(*words)); //for blanks catching
@@ -151,7 +151,7 @@ static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     gram->order = 1;
     gram->instance.words = &unigram_idx;
     priority_queue_add(grams, gram);
-    raw_ngrams_ptr = (uint64 *)ckd_calloc(order - 1, sizeof(*raw_ngrams_ptr));
+    raw_ngrams_ptr = (uint32 *)ckd_calloc(order - 1, sizeof(*raw_ngrams_ptr));
     for (i = 2; i <= order; ++i) {
         gram_t *tmp_gram = (gram_t *)ckd_calloc(1, sizeof(*tmp_gram));
         tmp_gram->order = i;
@@ -216,46 +216,46 @@ static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *c
     ckd_free(probs);
 }
 
-static lm_trie_t* lm_trie_init(uint64 unigram_count)
+static lm_trie_t* lm_trie_init(uint32 unigram_count)
 {
     lm_trie_t* trie;
 
     trie = (lm_trie_t *)ckd_calloc(1, sizeof(*trie));
     memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
     memset(trie->backoff, 0, sizeof(trie->backoff));
-    trie->unigrams = (unigram_t *)ckd_calloc((size_t)(unigram_count + 1), sizeof(*trie->unigrams));
+    trie->unigrams = (unigram_t *)ckd_calloc((unigram_count + 1), sizeof(*trie->unigrams));
     trie->ngram_mem = NULL;
     return trie;
 }
 
-lm_trie_t* lm_trie_create(uint64 unigram_count, lm_trie_quant_type_t quant_type, int order)
+lm_trie_t* lm_trie_create(uint32 unigram_count, lm_trie_quant_type_t quant_type, int order)
 {
     lm_trie_t* trie = lm_trie_init(unigram_count);
     trie->quant = (order > 1) ? lm_trie_quant_create(quant_type, order) : 0;
     return trie;
 }
 
-lm_trie_t* lm_trie_read_bin(uint64 *counts, int order, FILE *fp)
+lm_trie_t* lm_trie_read_bin(uint32 *counts, int order, FILE *fp)
 {
     lm_trie_t* trie = lm_trie_init(counts[0]);
     trie->quant = (order > 1) ? lm_trie_quant_read_bin(fp, order) : NULL;
-    fread(trie->unigrams, sizeof(*trie->unigrams), (size_t)(counts[0] + 1), fp);
+    fread(trie->unigrams, sizeof(*trie->unigrams), (counts[0] + 1), fp);
     if (order > 1) {
         lm_trie_alloc_ngram(trie, counts, order);
-        fread(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
+        fread(trie->ngram_mem, 1, trie->ngram_mem_size, fp);
     }
     return trie;
 }
 
-void lm_trie_write_bin(lm_trie_t *trie, uint64 unigram_count, FILE *fp)
+void lm_trie_write_bin(lm_trie_t *trie, uint32 unigram_count, FILE *fp)
 {
 
     if (trie->quant)
         lm_trie_quant_write_bin(trie->quant, fp);
     //uint64 to size_t convertion
-    fwrite(trie->unigrams, sizeof(*trie->unigrams), (size_t)(unigram_count + 1), fp);
+    fwrite(trie->unigrams, sizeof(*trie->unigrams), (unigram_count + 1), fp);
     if (trie->ngram_mem)
-        fwrite(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
+        fwrite(trie->ngram_mem, 1, trie->ngram_mem_size, fp);
 }
 
 void lm_trie_free(lm_trie_t *trie)
@@ -271,10 +271,10 @@ void lm_trie_free(lm_trie_t *trie)
     ckd_free(trie);
 }
 
-void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_counts, int order)
+void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint32 *counts, uint32 *fixed_counts, int order)
 {
     priority_queue_t *grams = priority_queue_create(order - 1, &gram_compare);
-    uint64 raw_ngram_ptrs[MAX_NGRAM_ORDER - 1];
+    uint32 raw_ngram_ptrs[MAX_NGRAM_ORDER - 1];
     word_idx words[MAX_NGRAM_ORDER];
     int i;
 
@@ -325,7 +325,7 @@ void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint64 *counts, uint64 *fixed_c
     priority_queue_free(grams, NULL);
 }
 
-void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order)
+void lm_trie_alloc_ngram(lm_trie_t *trie, uint32 *counts, int order)
 {
     int i;
     uint8 *mem_ptr;
@@ -336,7 +336,7 @@ void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order)
         trie->ngram_mem_size += middle_size(lm_trie_quant_msize(trie->quant), counts[i], counts[0], counts[i+1]);
     }
     trie->ngram_mem_size += longest_size(lm_trie_quant_lsize(trie->quant), counts[order - 1], counts[0]);
-    trie->ngram_mem = (uint8 *)ckd_calloc((size_t)trie->ngram_mem_size, sizeof(*trie->ngram_mem));
+    trie->ngram_mem = (uint8 *)ckd_calloc(trie->ngram_mem_size, sizeof(*trie->ngram_mem));
     mem_ptr = trie->ngram_mem;
     trie->middle_begin = (middle_t *)ckd_calloc(order - 2, sizeof(*trie->middle_begin));
     trie->middle_end = trie->middle_begin + (order - 2);
@@ -356,7 +356,7 @@ void lm_trie_alloc_ngram(lm_trie_t *trie, uint64 *counts, int order)
     longest_init(trie->longest, mem_ptr, lm_trie_quant_lsize(trie->quant), counts[0]);
 }
 
-void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint64 *counts, int order)
+void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int order)
 {
     int i;
     if (lm_trie_quant_to_train(trie->quant)) {

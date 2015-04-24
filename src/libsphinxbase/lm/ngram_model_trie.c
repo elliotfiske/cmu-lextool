@@ -18,11 +18,11 @@ static ngram_funcs_t ngram_model_trie_funcs;
 /*
  * Read and return #unigrams, #bigrams, #trigrams as stated in input file.
  */
-static int read_counts_arpa(lineiter_t **li, uint64* counts, int* order)
+static int read_counts_arpa(lineiter_t **li, uint32* counts, int* order)
 {
     int i;
     int32 ngram, prev_ngram;
-    uint64 ngram_cnt;
+    uint32 ngram_cnt;
 
     /* skip file until past the '\data\' marker */
     while (*li) {
@@ -80,9 +80,9 @@ int string_comparator(const void *a, const void *b)
     return strcmp(*ia, *ib);
 } 
 
-static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base, unigram_t *unigrams, uint8 with_bo)
+static void read_1grams_arpa(lineiter_t **li, uint32 count, ngram_model_t *base, unigram_t *unigrams, uint8 with_bo)
 {
-    uint64 i;
+    uint32 i;
     int n;
     int n_parts;
     char *wptr[3];
@@ -135,8 +135,8 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     ngram_model_t *base;
     lm_ngram_t **raw_ngrams;
     int32 is_pipe;
-    uint64 counts[MAX_NGRAM_ORDER];
-    uint64 fixed_counts[MAX_NGRAM_ORDER];
+    uint32 counts[MAX_NGRAM_ORDER];
+    uint32 fixed_counts[MAX_NGRAM_ORDER];
     int order;
     int i;
 
@@ -186,7 +186,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     return base;
 }
 
-static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ngrams, uint64 *raw_ngram_idx, uint64 *counts, node_range_t range, word_idx *hist, int n_hist, int order, int max_order) 
+static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ngrams, uint32 *raw_ngram_idx, uint32 *counts, node_range_t range, word_idx *hist, int n_hist, int order, int max_order) 
 {
     if (n_hist > 0 && range.begin == range.end) {
         return;
@@ -200,7 +200,7 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ng
             fill_raw_ngram(trie, lmath, raw_ngrams, raw_ngram_idx, counts, node, hist, 1, order, max_order);
         }
     } else if (n_hist < order - 1) {
-        uint64 ptr;
+        uint32 ptr;
         middle_t *middle = &trie->middle_begin[n_hist - 1];
         for (ptr = range.begin; ptr < range.end; ptr++) {
             node_range_t node;
@@ -208,9 +208,9 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ng
             word_idx new_word = (word_idx)read_int57(middle->base.base, bit_offset, middle->base.word_bits, middle->base.word_mask);
             hist[n_hist] = new_word;
             bit_offset += middle->base.word_bits + middle->quant_bits;
-            node.begin = read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
+            node.begin = (uint32)read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
             bit_offset = (ptr + 1) * middle->base.total_bits + middle->base.word_bits + middle->quant_bits;
-            node.end = read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
+            node.end = (uint32)read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
             fill_raw_ngram(trie, lmath, raw_ngrams, raw_ngram_idx, counts, node, hist, n_hist + 1, order, max_order);
         }
     } else {
@@ -252,7 +252,8 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ng
 int ngram_model_trie_write_arpa(ngram_model_t *base,
                                const char *path)
 {
-    int i, j;
+    int i;
+    uint32 j;
     ngram_model_trie_t *model = (ngram_model_trie_t *)base;
     FILE *fp = fopen(path, "w");
     if (!fp) {
@@ -279,8 +280,8 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
     if (base->n > 1) {
         for (i = 2; i <= base->n; ++i) {
             lm_ngram_t *raw_ngrams = (lm_ngram_t *)ckd_calloc((size_t)base->n_counts[i - 1], sizeof(*raw_ngrams));
-            uint64 raw_ngram_idx;
-            uint64 j;
+            uint32 raw_ngram_idx;
+            uint32 j;
             word_idx hist[MAX_NGRAM_ORDER];
             node_range_t range;
             raw_ngram_idx = 0;
@@ -314,7 +315,8 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
 
 static void read_word_str(ngram_model_t *base, FILE *fp)
 {
-    int32 i, j, k;
+    int32 k;
+    uint32 i, j;
     char *tmp_word_str;
     /* read ascii word strings */
     base->writable = TRUE;
@@ -324,7 +326,7 @@ static void read_word_str(ngram_model_t *base, FILE *fp)
     fread(tmp_word_str, 1, (size_t)k, fp);
 
     /* First make sure string just read contains n_counts[0] words (PARANOIA!!) */
-    for (i = 0, j = 0; i < k; i++)
+    for (i = 0, j = 0; i < (uint32)k; i++)
         if (tmp_word_str[i] == '\0')
             j++;
     if (j != base->n_counts[0]) {
@@ -354,7 +356,7 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     char *hdr;
     int cmp_res;
     uint8 i, order;
-    uint64 counts[MAX_NGRAM_ORDER];
+    uint32 counts[MAX_NGRAM_ORDER];
     ngram_model_trie_t *model;
     ngram_model_t *base;
 
@@ -391,7 +393,8 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
 
 static void write_word_str(FILE *fp, ngram_model_t *model)
 {
-    int32 i, k;
+    int32 k;
+    uint32 i;
 
     k = 0;
     for (i = 0; i < model->n_counts[0]; i++)
@@ -459,12 +462,12 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
 {
     uint8 do_swap;
     int32 is_pipe;
-    int32 j, k;
-    int32 ngram_idx;
+    int32 k;
+    uint32 j, ngram_idx;
     int32 vn, ts;
     int32 count;
-    uint64 counts[3];
-    uint64 fixed_counts[3];
+    uint32 counts[3];
+    uint32 fixed_counts[3];
     int32 *tseg_base;
     uint16 *bigrams_next;
     int i, order;
@@ -645,13 +648,13 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
             tseg_base = (int32 *)ckd_calloc(k, sizeof(int32));
             fread(tseg_base, sizeof(int32), k, fp);
             if (do_swap) {
-                for (j = 0; j < k; j++) {
+                for (j = 0; j < (uint32)k; j++) {
                     SWAP_INT32(&tseg_base[j]);
                 }
             }
             ngram_idx = 0;
             for (j = 1; j <= counts[1]; j++) {
-                int32 next_ngram_idx = tseg_base[j >> BIGRAM_SEGMENT_SIZE] + bigrams_next[j];
+                uint32 next_ngram_idx = (uint32)(tseg_base[j >> BIGRAM_SEGMENT_SIZE] + bigrams_next[j]);
                 while (ngram_idx < next_ngram_idx) {
                     raw_ngrams[1][ngram_idx].words[1] = raw_ngrams[0][j - 1].words[0];
                     raw_ngrams[1][ngram_idx].words[2] = raw_ngrams[0][j - 1].words[1];
@@ -757,7 +760,7 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
      * presence of class words.  If wid falls outside the unigram
      * count, increase it to compensate, at the cost of no longer
      * really knowing how many unigrams we have :( */
-    if (wid >= base->n_counts[0])
+    if ((uint32)wid >= base->n_counts[0])
         base->n_counts[0] = wid + 1;
 
     return (int32)weight_score(base, lweight);
