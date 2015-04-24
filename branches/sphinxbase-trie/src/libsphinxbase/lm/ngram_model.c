@@ -203,7 +203,7 @@ ngram_model_init(ngram_model_t *base,
         /* Set default values for weights. */
         base->lw = 1.0;
         base->log_wip = 0; /* i.e. 1.0 */
-        base->log_uniform = logmath_log(lmath, 1.0 / n_unigram);
+        base->log_uniform = 0; /* this one is set in apply_weights */
         base->log_zero = logmath_get_zero(lmath);
         base->lmath = lmath;
     }
