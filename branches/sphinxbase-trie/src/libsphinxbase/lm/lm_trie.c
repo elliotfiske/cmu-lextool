@@ -103,9 +103,9 @@ static bit_adress_t longest_insert(longest_t *longest, word_idx index)
     return adress;
 }
 
-static void middle_finish_loading(middle_t *middle, uint64 next_end)
+static void middle_finish_loading(middle_t *middle, uint32 next_end)
 {
-    uint64 last_next_write = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
+    uint64 last_next_write = (uint64)(middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
     write_int57(middle->base.base, last_next_write, middle->next_mask.bits, next_end);
 }
 
@@ -252,7 +252,6 @@ void lm_trie_write_bin(lm_trie_t *trie, uint32 unigram_count, FILE *fp)
 
     if (trie->quant)
         lm_trie_quant_write_bin(trie->quant, fp);
-    //uint64 to size_t convertion
     fwrite(trie->unigrams, sizeof(*trie->unigrams), (unigram_count + 1), fp);
     if (trie->ngram_mem)
         fwrite(trie->ngram_mem, 1, trie->ngram_mem_size, fp);
