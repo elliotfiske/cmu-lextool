@@ -367,7 +367,6 @@ void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int
         lm_trie_quant_train_prob(trie->quant, order, counts[order - 1], raw_ngrams[order - 2]);
     }
     E_INFO("Building LM trie\n");
-    //TODO casting uint64 to word_idx
     recursive_insert(trie, raw_ngrams, counts, order);
     /* Set ending offsets so the last entry will be sized properly */
     // Last entry for unigrams was already set.  
