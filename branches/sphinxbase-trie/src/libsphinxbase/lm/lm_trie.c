@@ -224,41 +224,49 @@ static lm_trie_t* lm_trie_init(uint64 unigram_count)
     memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
     memset(trie->backoff, 0, sizeof(trie->backoff));
     trie->unigrams = (unigram_t *)ckd_calloc((size_t)(unigram_count + 1), sizeof(*trie->unigrams));
+    trie->ngram_mem = NULL;
     return trie;
 }
 
 lm_trie_t* lm_trie_create(uint64 unigram_count, lm_trie_quant_type_t quant_type, int order)
 {
     lm_trie_t* trie = lm_trie_init(unigram_count);
-    trie->quant = lm_trie_quant_create(quant_type, order);
+    trie->quant = (order > 1) ? lm_trie_quant_create(quant_type, order) : 0;
     return trie;
 }
 
 lm_trie_t* lm_trie_read_bin(uint64 *counts, int order, FILE *fp)
 {
     lm_trie_t* trie = lm_trie_init(counts[0]);
-    trie->quant = lm_trie_quant_read_bin(fp, order);
+    trie->quant = (order > 1) ? lm_trie_quant_read_bin(fp, order) : NULL;
     fread(trie->unigrams, sizeof(*trie->unigrams), (size_t)(counts[0] + 1), fp);
-    lm_trie_alloc_ngram(trie, counts, order);
-    fread(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
+    if (order > 1) {
+        lm_trie_alloc_ngram(trie, counts, order);
+        fread(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
+    }
     return trie;
 }
 
 void lm_trie_write_bin(lm_trie_t *trie, uint64 unigram_count, FILE *fp)
 {
 
-    lm_trie_quant_write_bin(trie->quant, fp);
+    if (trie->quant)
+        lm_trie_quant_write_bin(trie->quant, fp);
     //uint64 to size_t convertion
     fwrite(trie->unigrams, sizeof(*trie->unigrams), (size_t)(unigram_count + 1), fp);
-    fwrite(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
+    if (trie->ngram_mem)
+        fwrite(trie->ngram_mem, 1, (size_t)trie->ngram_mem_size, fp);
 }
 
 void lm_trie_free(lm_trie_t *trie)
 {
-    ckd_free(trie->ngram_mem);
-    ckd_free(trie->middle_begin);
-    ckd_free(trie->longest);
-    lm_trie_quant_free(trie->quant);
+    if (trie->ngram_mem) {
+        ckd_free(trie->ngram_mem);
+        ckd_free(trie->middle_begin);
+        ckd_free(trie->longest);
+    }
+    if (trie->quant)
+        lm_trie_quant_free(trie->quant);
     ckd_free(trie->unigrams);
     ckd_free(trie);
 }
