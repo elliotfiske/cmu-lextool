@@ -88,7 +88,6 @@ static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base,
     char *wptr[3];
 
     n_parts = with_bo ? 3 : 2;
-    base->us_wid = -1;
     for (i = 0; i < count; i++) {
         *li = lineiter_next(*li);
         if (*li == NULL) {
@@ -116,14 +115,7 @@ static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base,
             }
             //TODO classify float with fpclassify and warn if bad value occurred
             base->word_str[i] = ckd_salloc(wptr[1]);
-            if (strcmp(wptr[1], "<s>") == 0) {
-                base->us_wid = i;
-            }
         }
-    }
-    //check if utterance start symbol is found
-    if (base->us_wid == -1) {
-        E_WARN("Service word '<s>' for utterance start is not found\n");
     }
     //fill hash-table that maps unigram names to their word ids
     for (i = 0; i < count; i++) {
@@ -323,7 +315,6 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
 static void read_word_str(ngram_model_t *base, FILE *fp)
 {
     int32 i, j, k;
-    int32 us_wid;
     char *tmp_word_str;
     /* read ascii word strings */
     base->writable = TRUE;
@@ -351,10 +342,6 @@ static void read_word_str(ngram_model_t *base, FILE *fp)
         j += strlen(base->word_str[i]) + 1;
     }
     free(tmp_word_str);
-    base->us_wid = hash_table_lookup_int32(base->wid, "<s>", &us_wid) == -1 ? -1 : us_wid;
-    if (base->us_wid == -1) {
-        E_WARN("Service word '<s>' for utterance start is not found\n");
-    }
 }
 
 ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config, 
@@ -716,15 +703,11 @@ static int trie_apply_weights(ngram_model_t *base, float32 lw, float32 wip)
     //just update weights that are going to be used on score calculation
     base->lw = lw;
     base->log_wip = logmath_log(base->lmath, wip);
-    base->log_uniform = logmath_log(base->lmath, 1.0 / base->n_counts[0]);
     return 0;
 }
 
-static int32 weight_score(ngram_model_t *base, int32 score, uint32 apply_uniform)
+static int32 weight_score(ngram_model_t *base, int32 score)
 {
-    if (apply_uniform) {
-         score = logmath_add(base->lmath, score, base->log_uniform);
-    }
     return (int32)(score * base->lw + base->log_wip);
 }
 
@@ -747,7 +730,7 @@ static int32 ngram_model_trie_raw_score(ngram_model_t *base, int32 wid, int32 *h
 
 static int32 ngram_model_trie_score(ngram_model_t *base, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
 {
-    return weight_score(base, ngram_model_trie_raw_score(base, wid, hist, n_hist, n_used), (n_hist == 0 && wid != base->us_wid));
+    return weight_score(base, ngram_model_trie_raw_score(base, wid, hist, n_hist, n_used));
 }
 
 static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
@@ -764,7 +747,6 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     memset(model->trie->unigrams + (base->n_counts[0] + 1), 0,
            (size_t)(base->n_1g_alloc - base->n_counts[0]) * sizeof(*model->trie->unigrams));
     ++base->n_counts[0];
-    /* Need to call apply_weights to calculate new uniform_weight */
     model->trie->unigrams[wid + 1].next = model->trie->unigrams[wid].next;
     model->trie->unigrams[wid].prob = score;
     /* This unigram by definition doesn't participate in any bigrams,
@@ -778,7 +760,7 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     if (wid >= base->n_counts[0])
         base->n_counts[0] = wid + 1;
 
-    return (int32)weight_score(base, (int32)score, TRUE);
+    return (int32)weight_score(base, (int32)score);
 }
 
 static void lm_trie_flush(ngram_model_t *model)
