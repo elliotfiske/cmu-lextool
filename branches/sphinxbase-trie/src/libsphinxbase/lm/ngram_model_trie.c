@@ -204,18 +204,18 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ng
         middle_t *middle = &trie->middle_begin[n_hist - 1];
         for (ptr = range.begin; ptr < range.end; ptr++) {
             node_range_t node;
-            uint32 bit_offset = ptr * middle->base.total_bits;
-            word_idx new_word = read_int31(middle->base.base, bit_offset, middle->base.word_bits, middle->base.word_mask);
+            uint64 bit_offset = ptr * middle->base.total_bits;
+            word_idx new_word = (word_idx)read_int57(middle->base.base, bit_offset, middle->base.word_bits, middle->base.word_mask);
             hist[n_hist] = new_word;
             bit_offset += middle->base.word_bits + middle->quant_bits;
-            node.begin = read_int31(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
+            node.begin = (uint32)read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
             bit_offset = (ptr + 1) * middle->base.total_bits + middle->base.word_bits + middle->quant_bits;
-            node.end = read_int31(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
+            node.end = (uint32)read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
             fill_raw_ngram(trie, lmath, raw_ngrams, raw_ngram_idx, counts, node, hist, n_hist + 1, order, max_order);
         }
     } else {
         bit_adress_t adress;
-        uint32 ptr;
+        uint64 ptr;
         float prob, backoff;
         int i;
         assert(n_hist == order - 1);
@@ -224,15 +224,15 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ng
             raw_ngram->weights = (float *)ckd_calloc(order == max_order ? 1 : 2, sizeof(*raw_ngram->weights));
             if (order == max_order) {
                 longest_t *longest = trie->longest; //access
-                uint32 bit_offset = ptr * longest->base.total_bits;
-                hist[n_hist] = read_int31(longest->base.base, bit_offset, longest->base.word_bits, longest->base.word_mask);
+                uint64 bit_offset = ptr * longest->base.total_bits;
+                hist[n_hist] = (word_idx)read_int57(longest->base.base, bit_offset, longest->base.word_bits, longest->base.word_mask);
                 adress.base = longest->base.base;
                 adress.offset = bit_offset + longest->base.word_bits;
                 prob = lm_trie_quant_lpread(trie->quant, adress);
             } else {
                 middle_t *middle =  &trie->middle_begin[n_hist - 1];
-                uint32 bit_offset = ptr * middle->base.total_bits;
-                hist[n_hist] = read_int31(middle->base.base, bit_offset, middle->base.word_bits, middle->base.word_mask);
+                uint64 bit_offset = ptr * middle->base.total_bits;
+                hist[n_hist] = (word_idx)read_int57(middle->base.base, bit_offset, middle->base.word_bits, middle->base.word_mask);
                 adress.base = middle->base.base;
                 adress.offset = bit_offset + middle->base.word_bits;
                 prob = lm_trie_quant_mpread(trie->quant, adress, n_hist - 1);

@@ -51,7 +51,7 @@ static float* lower_bound(float *first, const float *last, float val)
     return first;
 }
 
-static uint32 bins_encode(bins_t *bins, float value)
+static uint64 bins_encode(bins_t *bins, float value)
 {
     float *above = lower_bound(bins->begin, bins->end, value);
     if (above == bins->begin) return 0;
@@ -264,7 +264,7 @@ void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bit_adress_t adress, int order
         write_float32(adress.base, adress.offset + 31, backoff);
         break;
     case QUANT_16:
-        write_int31(adress.base, adress.offset, quant->prob_bits + quant->bo_bits, 
+        write_int57(adress.base, adress.offset, quant->prob_bits + quant->bo_bits, 
                     (bins_encode(&quant->tables[order_minus_2][0], prob) << quant->bo_bits) | bins_encode(&quant->tables[order_minus_2][1], backoff));
         break;
     //TODO implement different quantatization stages

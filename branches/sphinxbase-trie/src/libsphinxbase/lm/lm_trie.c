@@ -24,7 +24,7 @@ static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
     // +7 then / 8 to round up bits and convert to bytes
     // +sizeof(uint32) so that ReadInt57 etc don't go segfault.  
     // Note that this waste is O(order), not O(number of ngrams).
-    return ((1 + entries) * total_bits + 7) / 8 + sizeof(uint32);
+    return ((1 + entries) * total_bits + 7) / 8 + sizeof(uint64);
 }
 
 uint32 middle_size(uint8 quant_bits, uint32 entries, uint32 max_vocab, uint32 max_ptr)
@@ -68,12 +68,12 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint32 m
 
 static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
 {
-    uint32 at_pointer;
+    uint64 at_pointer;
     uint32 next;
     bit_adress_t adress;
     assert(word <= middle->base.word_mask);
-    at_pointer = middle->base.insert_index * middle->base.total_bits;
-    write_int31(middle->base.base, at_pointer, middle->base.word_bits, word);
+    at_pointer = (uint64)middle->base.insert_index * middle->base.total_bits;
+    write_int57(middle->base.base, at_pointer, middle->base.word_bits, word);
     at_pointer += middle->base.word_bits;
     adress.base = middle->base.base;
     adress.offset = at_pointer;
@@ -83,19 +83,19 @@ static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, in
     } else {
         next = ((middle_t *)middle->next_source)->base.insert_index;
     }
-
-    write_int31(middle->base.base, at_pointer, middle->next_mask.bits, next);
+    //bhiksha write next
+    write_int57(middle->base.base, at_pointer, middle->next_mask.bits, next);
     middle->base.insert_index++;
     return adress;
 }
 
 static bit_adress_t longest_insert(longest_t *longest, word_idx index)
 {
-    uint32 at_pointer;
+    uint64 at_pointer;
     bit_adress_t adress;
     assert(index <= longest->base.word_mask);
     at_pointer = longest->base.insert_index * longest->base.total_bits;
-    write_int31(longest->base.base, at_pointer, longest->base.word_bits, index);
+    write_int57(longest->base.base, at_pointer, longest->base.word_bits, index);
     at_pointer += longest->base.word_bits;
     longest->base.insert_index++;
     adress.offset = at_pointer;
@@ -103,10 +103,10 @@ static bit_adress_t longest_insert(longest_t *longest, word_idx index)
     return adress;
 }
 
-static void middle_finish_loading(middle_t *middle, uint32 next_end)
+static void middle_finish_loading(middle_t *middle, uint64 next_end)
 {
-    uint32 last_next_write = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
-    write_int31(middle->base.base, last_next_write, middle->next_mask.bits, next_end);
+    uint64 last_next_write = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
+    write_int57(middle->base.base, last_next_write, middle->next_mask.bits, next_end);
 }
 
 int gram_compare(void *a_raw, void *b_raw)
