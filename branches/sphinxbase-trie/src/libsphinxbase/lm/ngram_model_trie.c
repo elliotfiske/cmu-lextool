@@ -143,6 +143,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     li = lineiter_start(fp);
     /* Read n-gram counts from file */
     if (read_counts_arpa(&li, counts, &order) == -1) {
+        ckd_free(model);
         lineiter_free(li);
         fclose_comp(fp, is_pipe);
         return NULL;
@@ -151,6 +152,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
 
     if (order < 2) {
         E_ERROR("This ngram implementation assumes at least a bigram model\n");
+        ckd_free(model);
         lineiter_free(li);
         fclose_comp(fp, is_pipe);
         return NULL;
