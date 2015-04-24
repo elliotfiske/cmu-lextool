@@ -716,6 +716,7 @@ static int trie_apply_weights(ngram_model_t *base, float32 lw, float32 wip)
     //just update weights that are going to be used on score calculation
     base->lw = lw;
     base->log_wip = logmath_log(base->lmath, wip);
+    base->log_uniform = logmath_log(base->lmath, 1.0 / base->n_counts[0]);
     return 0;
 }
 
@@ -763,7 +764,7 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     memset(model->trie->unigrams + (base->n_counts[0] + 1), 0,
            (size_t)(base->n_1g_alloc - base->n_counts[0]) * sizeof(*model->trie->unigrams));
     ++base->n_counts[0];
-    base->log_uniform = logmath_log(base->lmath, 1.0 / base->n_counts[0]);
+    /* Need to call apply_weights to calculate new uniform_weight */
     model->trie->unigrams[wid + 1].next = model->trie->unigrams[wid].next;
     model->trie->unigrams[wid].prob = score;
     /* This unigram by definition doesn't participate in any bigrams,
