@@ -746,7 +746,7 @@ static int32 ngram_model_trie_raw_score(ngram_model_t *base, int32 wid, int32 *h
 
 static int32 ngram_model_trie_score(ngram_model_t *base, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
 {
-    return weight_score(base, ngram_model_trie_raw_score(base, wid, hist, n_hist, n_used), (n_hist == 0 && wid == base->us_wid));
+    return weight_score(base, ngram_model_trie_raw_score(base, wid, hist, n_hist, n_used), (n_hist == 0 && wid != base->us_wid));
 }
 
 static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
