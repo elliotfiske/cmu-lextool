@@ -80,12 +80,14 @@ int string_comparator(const void *a, const void *b)
     return strcmp(*ia, *ib);
 } 
 
-static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base, unigram_t *unigrams)
+static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base, unigram_t *unigrams, uint8 with_bo)
 {
     uint64 i;
     int n;
+    int n_parts;
     char *wptr[3];
 
+    n_parts = with_bo ? 3 : 2;
     for (i = 0; i < count; i++) {
         *li = lineiter_next(*li);
         if (*li == NULL) {
@@ -93,7 +95,7 @@ static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base,
             break;
         }
         string_trim((*li)->buf, STRING_BOTH);
-        if ((n = str2words((*li)->buf, wptr, 3)) < 3) {
+        if ((n = str2words((*li)->buf, wptr, 3)) < n_parts) {
             if ((*li)->buf[0] != '\0')
                 E_WARN("Format error; unigram ignored: %s\n", (*li)->buf);
             continue;
@@ -105,8 +107,12 @@ static void read_1grams_arpa(lineiter_t **li, uint64 count, ngram_model_t *base,
                 E_WARN("Unigram [%s] has positive probability. Zeroize\n", wptr[1]);
                 unigram->prob = 0;
             }
-            unigram->bo = (float)atof_c(wptr[2]);
-            unigram->bo = logmath_log10_to_log_float(base->lmath, unigram->bo);
+            if (with_bo) {
+                unigram->bo = (float)atof_c(wptr[2]);
+                unigram->bo = logmath_log10_to_log_float(base->lmath, unigram->bo);
+            } else {
+                unigram->bo = 0.0f;
+            }
             //TODO classify float with fpclassify and warn if bad value occurred
             base->word_str[i] = ckd_salloc(wptr[1]);
         }
@@ -160,7 +166,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     base->writable = TRUE;
 
     model->trie = lm_trie_create(counts[0], QUANT_16, order);
-    read_1grams_arpa(&li, counts[0], base, model->trie->unigrams);
+    read_1grams_arpa(&li, counts[0], base, model->trie->unigrams, (order > 1) ? TRUE : FALSE);
     if (order > 1) {
         raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
         lm_trie_fix_counts(raw_ngrams, counts, fixed_counts, order);
