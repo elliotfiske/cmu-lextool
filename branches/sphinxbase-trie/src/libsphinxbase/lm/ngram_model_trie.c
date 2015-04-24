@@ -760,7 +760,7 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     if (wid >= base->n_counts[0])
         base->n_counts[0] = wid + 1;
 
-    return (int32)weight_score(base, (int32)score);
+    return (int32)weight_score(base, lweight);
 }
 
 static void lm_trie_flush(ngram_model_t *model)
