@@ -148,11 +148,11 @@ typedef struct bit_adress_s {
     uint64 offset;
 }bit_adress_t;
 
-void bit_mask_from_max(bit_mask_t *bit_mask, uint64 max_value);
+void bit_mask_from_max(bit_mask_t *bit_mask, uint32 max_value);
 
 // Return bits required to store integers upto max_value.  Not the most
 // efficient implementation, but this is only called a few times to size tries. 
-uint8 required_bits(uint64 max_value);
+uint8 required_bits(uint32 max_value);
 
 void bit_packing_sanity();
 

@@ -19,8 +19,8 @@ static bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *r
     at_pointer += middle->base.word_bits;
     //bhiksha read next
     bit_offset = at_pointer + middle->quant_bits;
-    range->begin = read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
-    range->end = read_int57(middle->base.base, bit_offset + middle->base.total_bits, middle->next_mask.bits, middle->next_mask.mask);
+    range->begin = (uint32)read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
+    range->end = (uint32)read_int57(middle->base.base, bit_offset + middle->base.total_bits, middle->next_mask.bits, middle->next_mask.mask);
     adress.base = middle->base.base;
     adress.offset = at_pointer;
     return adress;
