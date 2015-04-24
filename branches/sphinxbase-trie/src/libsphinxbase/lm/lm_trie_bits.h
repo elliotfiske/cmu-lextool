@@ -42,51 +42,51 @@ __inline static uint8 bit_pack_shift(uint8 bit, uint8 length)
 #if BYTE_ORDER == LITTLE_ENDIAN
   return bit;
 #elif BYTE_ORDER == BIG_ENDIAN
-  return 64 - length - bit;
+  return 32 - length - bit;
 #else
 #error "Bit packing code isn't written for your byte order."
 #endif
 }
 
-__inline static uint64 read_off(const void *base, uint64 bit_off) 
+__inline static uint32 read_off(const void *base, uint32 bit_off) 
 {
 #if defined(__arm) || defined(__arm__)
   const uint8 *base_off = (const uint8 *)(base) + (bit_off >> 3);
-  uint64 value64;
-  memcpy(&value64, base_off, sizeof(value64));
-  return value64;
+  uint32 value32;
+  memcpy(&value32, base_off, sizeof(value32));
+  return value32;
 #else
-  return *(const uint64*)((const uint8 *)(base) + (bit_off >> 3));
+  return *(const uint32*)((const uint8 *)(base) + (bit_off >> 3));
 #endif
 }
 
-/* Pack integers up to 57 bits using their least significant digits. 
+/* Pack integers up to 32 bits using their least significant digits. 
  * The length is specified using mask:
- * Assumes mask == (1 << length) - 1 where length <= 57.   
+ * Assumes mask == (1 << length) - 1 where length <= 31.   
  */
-__inline static uint64 read_int57(const void *base, uint64 bit_off, uint8 length, uint64 mask) 
+__inline static uint32 read_int31(const void *base, uint32 bit_off, uint8 length, uint32 mask) 
 {
   return (read_off(base, bit_off) >> bit_pack_shift(bit_off & 7, length)) & mask;
 }
 
-/* Assumes value < (1 << length) and length <= 57.
+/* Assumes value < (1 << length) and length <= 31.
  * Assumes the memory is zero initially. 
  */
-__inline static void write_int57(void *base, uint64 bit_off, uint8 length, uint64 value) 
+__inline static void write_int31(void *base, uint32 bit_off, uint8 length, uint32 value) 
 {
 #if defined(__arm) || defined(__arm__)
   uint8 *base_off = (uint8 *)(base) + (bit_off >> 3);
-  uint64 value64;
-  memcpy(&value64, base_off, sizeof(value64));
-  value64 |= (value << bit_pack_shift(bit_off & 7, length));
-  memcpy(base_off, &value64, sizeof(value64));
+  uint32 value32;
+  memcpy(&value32, base_off, sizeof(value32));
+  value32 |= (value << bit_pack_shift(bit_off & 7, length));
+  memcpy(base_off, &value32, sizeof(value32));
 #else
   *(uint64 *)((uint8 *)(base) + (bit_off >> 3)) |= 
     (value << bit_pack_shift(bit_off & 7, length));
 #endif
 }
 
-__inline static float read_nonposfloat31(const void *base, uint64 bit_off) {
+__inline static float read_nonposfloat31(const void *base, uint32 bit_off) {
     float_enc encoded;
     encoded.i = (uint32)(read_off(base, bit_off) >> bit_pack_shift(bit_off & 7, 31));
     // Sign bit set means negative.  
@@ -94,23 +94,23 @@ __inline static float read_nonposfloat31(const void *base, uint64 bit_off) {
     return encoded.f;
 }
 
-__inline static void write_nonposfloat31(void *base, uint64 bit_off, float value) {
+__inline static void write_nonposfloat31(void *base, uint32 bit_off, float value) {
     float_enc encoded;
     encoded.f = value;
     encoded.i &= ~K_SIGN_BIT;
-    write_int57(base, bit_off, 31, encoded.i);
+    write_int31(base, bit_off, 31, encoded.i);
 }
 
-__inline static float read_float32(const void *base, uint64 bit_off) {
+__inline static float read_float32(const void *base, uint32 bit_off) {
     float_enc encoded;
     encoded.i = (uint32)(read_off(base, bit_off) >> bit_pack_shift(bit_off & 7, 32));
     return encoded.f;
 }
 
-__inline static void write_float32(void *base, uint64 bit_off, float value) {
+__inline static void write_float32(void *base, uint32 bit_off, float value) {
     float_enc encoded;
     encoded.f = value;
-    write_int57(base, bit_off, 32, encoded.i);
+    write_int31(base, bit_off, 32, encoded.i);
 }
 
 /* Same caveats as above, but for a 25 bit limit. */
@@ -140,12 +140,12 @@ __inline static void write_int25(void *base, uint64 bit_off, uint8 length, uint3
 
 typedef struct bit_mask_s {
     uint8 bits;
-    uint64 mask;
+    uint32 mask;
 }bit_mask_t;
 
 typedef struct bit_adress_s {
     void *base;
-    uint64 offset;
+    uint32 offset;
 }bit_adress_t;
 
 void bit_mask_from_max(bit_mask_t *bit_mask, uint32 max_value);
