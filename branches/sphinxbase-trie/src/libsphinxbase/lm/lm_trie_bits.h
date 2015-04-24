@@ -81,7 +81,7 @@ __inline static void write_int31(void *base, uint32 bit_off, uint8 length, uint3
   value32 |= (value << bit_pack_shift(bit_off & 7, length));
   memcpy(base_off, &value32, sizeof(value32));
 #else
-  *(uint64 *)((uint8 *)(base) + (bit_off >> 3)) |= 
+  *(uint32 *)((uint8 *)(base) + (bit_off >> 3)) |= 
     (value << bit_pack_shift(bit_off & 7, length));
 #endif
 }
