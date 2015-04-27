@@ -537,7 +537,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         if (fread(&count, sizeof(count), 1, fp) != 1)
             return NULL;
         if (do_swap) SWAP_INT32(&count);
-        counts[0] = (uint64)count;
+        counts[0] = count;
     }
     else {
         counts[0] = vn;
@@ -546,7 +546,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     if (fread(&count, sizeof(count), 1, fp) != 1)
         return NULL;
     if (do_swap) SWAP_INT32(&count);
-    counts[1] = (uint64)count;
+    counts[1] = count;
     if (fread(&count, sizeof(count), 1, fp) != 1)
         return NULL;
     if (do_swap) SWAP_INT32(&count);
@@ -582,7 +582,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         //store pointer to dmp next to recognize wid
         fread(&bigrams, sizeof(int32), 1, fp);
         if (do_swap) SWAP_INT32(&bigrams);
-        model->trie->unigrams[j].next = (uint64)bigrams;
+        model->trie->unigrams[j].next = bigrams;
     }
 
     if (order > 1) {

@@ -79,10 +79,10 @@ static void read_ngram_instance(lineiter_t **li, hash_table_t *wid, logmath_t *l
     }
 }
 
-static void lm_ngrams_raw_read_order(lm_ngram_t **raw_ngrams, lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint64 count, int order, int order_max)
+static void lm_ngrams_raw_read_order(lm_ngram_t **raw_ngrams, lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint32 count, int order, int order_max)
 {
     char expected_header[20];
-    uint64 i;
+    uint32 i;
 
     sprintf(expected_header, "\\%d-grams:", order);
     while ((*li = lineiter_next(*li))) {
@@ -90,14 +90,14 @@ static void lm_ngrams_raw_read_order(lm_ngram_t **raw_ngrams, lineiter_t **li, h
         if (strcmp((*li)->buf, expected_header) == 0)
             break;
     }
-    *raw_ngrams = (lm_ngram_t *)ckd_calloc((size_t)count, sizeof(lm_ngram_t));
+    *raw_ngrams = (lm_ngram_t *)ckd_calloc(count, sizeof(lm_ngram_t));
     for (i = 0; i < count; i++) {
         read_ngram_instance(li, wid, lmath, order, order_max, &((*raw_ngrams)[i]));
     }
 
     //sort raw ngrams that was read
     ngram_comparator(NULL, &order); //setting up order in comparator
-    qsort(*raw_ngrams, (size_t)count, sizeof(lm_ngram_t), &ngram_comparator);
+    qsort(*raw_ngrams, count, sizeof(lm_ngram_t), &ngram_comparator);
 }
 
 lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint32 *counts, int order)
