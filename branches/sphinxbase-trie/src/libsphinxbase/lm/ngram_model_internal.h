@@ -146,42 +146,6 @@ typedef struct ngram_funcs_s {
      */
     int32 (*add_ug)(ngram_model_t *model,
                     int32 wid, int32 lweight);
-    /**
-     * Implementation-specific function for purging N-Gram cache
-     */
-    void (*flush)(ngram_model_t *model);
-
-    /**
-     * Implementation-specific function for iterating.
-     */
-    ngram_iter_t * (*iter)(ngram_model_t *model, int32 wid, int32 *history, int32 n_hist);
-
-    /**
-     * Implementation-specific function for iterating.
-     */
-    ngram_iter_t * (*mgrams)(ngram_model_t *model, int32 m);
-
-    /**
-     * Implementation-specific function for iterating.
-     */
-    ngram_iter_t * (*successors)(ngram_iter_t *itor);
-
-    /**
-     * Implementation-specific function for iterating.
-     */
-    int32 const * (*iter_get)(ngram_iter_t *itor,
-                              int32 *out_score,
-                              int32 *out_bowt);
-
-    /**
-     * Implementation-specific function for iterating.
-     */
-    ngram_iter_t * (*iter_next)(ngram_iter_t *itor);
-
-    /**
-     * Implementation-specific function for iterating.
-     */
-    void (*iter_free)(ngram_iter_t *itor);
 } ngram_funcs_t;
 
 /**

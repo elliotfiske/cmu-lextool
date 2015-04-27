@@ -238,14 +238,6 @@ ngram_model_retain(ngram_model_t *model)
     return model;
 }
 
-
-void
-ngram_model_flush(ngram_model_t *model)
-{
-    if (model->funcs && model->funcs->flush)
-        (*model->funcs->flush)(model);
-}
-
 int
 ngram_model_free(ngram_model_t *model)
 {
@@ -561,98 +553,6 @@ ngram_model_get_counts(ngram_model_t *model)
   if (model != NULL)
     return model->n_counts;
   return NULL;
-}
-
-void
-ngram_iter_init(ngram_iter_t *itor, ngram_model_t *model,
-                int m, int successor)
-{
-    itor->model = model;
-    itor->wids = ckd_calloc(model->n, sizeof(*itor->wids));
-    itor->m = m;
-    itor->successor = successor;
-}
-
-ngram_iter_t *
-ngram_model_mgrams(ngram_model_t *model, int m)
-{
-    ngram_iter_t *itor;
-    /* The fact that m=n-1 is not exactly obvious.  Prevent accidents. */
-    if (m >= model->n)
-        return NULL;
-    if (model->funcs->mgrams == NULL)
-        return NULL;
-    itor = (*model->funcs->mgrams)(model, m);
-    return itor;
-}
-
-ngram_iter_t *
-ngram_iter(ngram_model_t *model, const char *word, ...)
-{
-    va_list history;
-    const char *hword;
-    int32 *histid;
-    int32 n_hist;
-    ngram_iter_t *itor;
-
-    va_start(history, word);
-    n_hist = 0;
-    while ((hword = va_arg(history, const char *)) != NULL)
-        ++n_hist;
-    va_end(history);
-
-    histid = ckd_calloc(n_hist, sizeof(*histid));
-    va_start(history, word);
-    n_hist = 0;
-    while ((hword = va_arg(history, const char *)) != NULL) {
-        histid[n_hist] = ngram_wid(model, hword);
-        ++n_hist;
-    }
-    va_end(history);
-
-    itor = ngram_ng_iter(model, ngram_wid(model, word), histid, n_hist);
-    ckd_free(histid);
-    return itor;
-}
-
-ngram_iter_t *
-ngram_ng_iter(ngram_model_t *model, int32 wid, int32 *history, int32 n_hist)
-{
-    if (n_hist >= model->n)
-        return NULL;
-    if (model->funcs->iter == NULL)
-        return NULL;
-    return (*model->funcs->iter)(model, wid, history, n_hist);
-}
-
-ngram_iter_t *
-ngram_iter_successors(ngram_iter_t *itor)
-{
-    /* Stop when we are at the highest order N-Gram. */
-    if (itor->m == itor->model->n - 1)
-        return NULL;
-    return (*itor->model->funcs->successors)(itor);
-}
-
-int32 const *
-ngram_iter_get(ngram_iter_t *itor,
-               int32 *out_score,
-               int32 *out_bowt)
-{
-    return (*itor->model->funcs->iter_get)(itor, out_score, out_bowt);
-}
-
-ngram_iter_t *
-ngram_iter_next(ngram_iter_t *itor)
-{
-    return (*itor->model->funcs->iter_next)(itor);
-}
-
-void
-ngram_iter_free(ngram_iter_t *itor)
-{
-    ckd_free(itor->wids);
-    (*itor->model->funcs->iter_free)(itor);
 }
 
 int32
