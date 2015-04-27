@@ -48,7 +48,7 @@ __inline static uint8 bit_pack_shift(uint8 bit, uint8 length)
 #endif
 }
 
-__inline static uint64 read_off(const void *base, uint64 bit_off) 
+__inline static uint64 read_off(const void *base, uint32 bit_off) 
 {
 #if defined(__arm) || defined(__arm__)
   const uint8 *base_off = (const uint8 *)(base) + (bit_off >> 3);
@@ -64,7 +64,7 @@ __inline static uint64 read_off(const void *base, uint64 bit_off)
  * The length is specified using mask:
  * Assumes mask == (1 << length) - 1 where length <= 57.   
  */
-__inline static uint64 read_int57(const void *base, uint64 bit_off, uint8 length, uint64 mask) 
+__inline static uint64 read_int57(const void *base, uint32 bit_off, uint8 length, uint64 mask) 
 {
   return (read_off(base, bit_off) >> bit_pack_shift(bit_off & 7, length)) & mask;
 }
@@ -72,7 +72,7 @@ __inline static uint64 read_int57(const void *base, uint64 bit_off, uint8 length
 /* Assumes value < (1 << length) and length <= 57.
  * Assumes the memory is zero initially. 
  */
-__inline static void write_int57(void *base, uint64 bit_off, uint8 length, uint64 value) 
+__inline static void write_int57(void *base, uint32 bit_off, uint8 length, uint64 value) 
 {
 #if defined(__arm) || defined(__arm__)
   uint8 *base_off = (uint8 *)(base) + (bit_off >> 3);
@@ -86,7 +86,7 @@ __inline static void write_int57(void *base, uint64 bit_off, uint8 length, uint6
 #endif
 }
 
-__inline static float read_nonposfloat31(const void *base, uint64 bit_off) {
+__inline static float read_nonposfloat31(const void *base, uint32 bit_off) {
     float_enc encoded;
     encoded.i = (uint32)(read_off(base, bit_off) >> bit_pack_shift(bit_off & 7, 31));
     // Sign bit set means negative.  
@@ -94,27 +94,27 @@ __inline static float read_nonposfloat31(const void *base, uint64 bit_off) {
     return encoded.f;
 }
 
-__inline static void write_nonposfloat31(void *base, uint64 bit_off, float value) {
+__inline static void write_nonposfloat31(void *base, uint32 bit_off, float value) {
     float_enc encoded;
     encoded.f = value;
     encoded.i &= ~K_SIGN_BIT;
     write_int57(base, bit_off, 31, encoded.i);
 }
 
-__inline static float read_float32(const void *base, uint64 bit_off) {
+__inline static float read_float32(const void *base, uint32 bit_off) {
     float_enc encoded;
     encoded.i = (uint32)(read_off(base, bit_off) >> bit_pack_shift(bit_off & 7, 32));
     return encoded.f;
 }
 
-__inline static void write_float32(void *base, uint64 bit_off, float value) {
+__inline static void write_float32(void *base, uint32 bit_off, float value) {
     float_enc encoded;
     encoded.f = value;
     write_int57(base, bit_off, 32, encoded.i);
 }
 
 /* Same caveats as above, but for a 25 bit limit. */
-__inline static uint32 read_int25(const void *base, uint64 bit_off, uint8 length, uint32 mask) {
+__inline static uint32 read_int25(const void *base, uint32 bit_off, uint8 length, uint32 mask) {
 #if defined(__arm) || defined(__arm__)
   const uint8 *base_off = (const uint8_t*)(base) + (bit_off >> 3);
   uint32 value32;
@@ -125,7 +125,7 @@ __inline static uint32 read_int25(const void *base, uint64 bit_off, uint8 length
 #endif
 }
 
-__inline static void write_int25(void *base, uint64 bit_off, uint8 length, uint32 value) {
+__inline static void write_int25(void *base, uint32 bit_off, uint8 length, uint32 value) {
 #if defined(__arm) || defined(__arm__)
     uint8 *base_off = (uint8 *)(base) + (bit_off >> 3);
     uint32 value32;
@@ -140,12 +140,12 @@ __inline static void write_int25(void *base, uint64 bit_off, uint8 length, uint3
 
 typedef struct bit_mask_s {
     uint8 bits;
-    uint64 mask;
+    uint32 mask;
 }bit_mask_t;
 
 typedef struct bit_adress_s {
     void *base;
-    uint64 offset;
+    uint32 offset;
 }bit_adress_t;
 
 void bit_mask_from_max(bit_mask_t *bit_mask, uint32 max_value);

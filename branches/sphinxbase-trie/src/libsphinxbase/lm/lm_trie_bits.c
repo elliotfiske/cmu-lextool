@@ -23,7 +23,7 @@ void bit_packing_sanity() {
   const float_enc neg1 = { -1.0 }, pos1 = { 1.0 };
   const uint64 test57 = 0x123456789abcdefULL;
   char mem[57+8];
-  uint64 b;
+  uint32 b;
   if ((neg1.i ^ pos1.i) != 0x80000000) {
       E_ERROR("Sign bit is not 0x80000000\n");
   }
