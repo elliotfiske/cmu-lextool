@@ -6,11 +6,11 @@
 static bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *range)
 {
     uint32 at_pointer;
-    uint32  bit_offset;
+    uint32 bit_offset;
     bit_adress_t adress;
 
     //finding BitPacked with uniform find
-    if (!lm_trie_find((void *)middle->base.base, middle->base.total_bits, middle->base.word_bits, middle->base.word_mask, range->begin - 1, (uint64)0, range->end, middle->base.max_vocab, word, &at_pointer)) {
+    if (!lm_trie_find((void *)middle->base.base, middle->base.total_bits, middle->base.word_bits, middle->base.word_mask, range->begin - 1, 0, range->end, middle->base.max_vocab, word, &at_pointer)) {
         adress.base = NULL;
         adress.offset = 0;
         return adress;
@@ -32,7 +32,7 @@ static bit_adress_t longest_find(longest_t *longest, word_idx word, node_range_t
     bit_adress_t adress;
 
     //finding BitPacked with uniform find
-    if (!lm_trie_find((void *)longest->base.base, longest->base.total_bits, longest->base.word_bits, longest->base.word_mask, range->begin - 1, (uint64)0, range->end, longest->base.max_vocab, word, &at_pointer)) {
+    if (!lm_trie_find((void *)longest->base.base, longest->base.total_bits, longest->base.word_bits, longest->base.word_mask, range->begin - 1, 0, range->end, longest->base.max_vocab, word, &at_pointer)) {
         adress.base = NULL;
         adress.offset = 0;
         return adress;
