@@ -5,8 +5,8 @@
 
 static bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *range)
 {
-    uint64 at_pointer;
-    uint64  bit_offset;
+    uint32 at_pointer;
+    uint32  bit_offset;
     bit_adress_t adress;
 
     //finding BitPacked with uniform find
@@ -19,8 +19,8 @@ static bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *r
     at_pointer += middle->base.word_bits;
     //bhiksha read next
     bit_offset = at_pointer + middle->quant_bits;
-    range->begin = (uint32)read_int57(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
-    range->end = (uint32)read_int57(middle->base.base, bit_offset + middle->base.total_bits, middle->next_mask.bits, middle->next_mask.mask);
+    range->begin = read_int25(middle->base.base, bit_offset, middle->next_mask.bits, middle->next_mask.mask);
+    range->end = read_int25(middle->base.base, bit_offset + middle->base.total_bits, middle->next_mask.bits, middle->next_mask.mask);
     adress.base = middle->base.base;
     adress.offset = at_pointer;
     return adress;
@@ -28,7 +28,7 @@ static bit_adress_t middle_find(middle_t *middle, word_idx word, node_range_t *r
 
 static bit_adress_t longest_find(longest_t *longest, word_idx word, node_range_t *range)
 {
-    uint64 at_pointer;
+    uint32 at_pointer;
     bit_adress_t adress;
 
     //finding BitPacked with uniform find

@@ -21,8 +21,8 @@ struct lm_trie_quant_s {
     size_t mem_size;
     uint8 prob_bits;
     uint8 bo_bits;
-    uint64 prob_mask;
-    uint64 bo_mask;
+    uint32 prob_mask;
+    uint32 bo_mask;
 };
 
 static void bins_create(bins_t *bins, uint8 bits, float *begin)
@@ -64,15 +64,15 @@ static float bins_decode(bins_t *bins, size_t off)
     return bins->begin[off]; 
 }
 
-static uint64 quant_apply_size(int order, int prob_bits, int bo_bits) 
+static size_t quant_apply_size(int order, int prob_bits, int bo_bits) 
 {
-      uint64 longest_table = ((uint64)(1) << (uint64)(16)) * sizeof(float);
-      uint64 middle_table = ((uint64)(1) << (uint64)(16)) * sizeof(float) + longest_table;
+      size_t longest_table = (1U << prob_bits) * sizeof(float);
+      size_t middle_table = (1U << bo_bits) * sizeof(float) + longest_table;
       // unigrams are currently not quantized so no need for a table.  
       return (order - 2) * middle_table + longest_table;
 }
 
-static uint64 quant_size(lm_trie_quant_type_t quant_type, int order)
+static size_t quant_size(lm_trie_quant_type_t quant_type, int order)
 {
     switch (quant_type) {
     case NO_QUANT:
@@ -92,7 +92,7 @@ lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, int order
     int i;
     lm_trie_quant_t *quant = (lm_trie_quant_t *)ckd_calloc(1, sizeof(*quant));
     quant->quant_type = quant_type;
-    quant->mem_size = (size_t)quant_size(quant_type, order);
+    quant->mem_size = quant_size(quant_type, order);
     quant->mem = (uint8 *)ckd_calloc(quant->mem_size, sizeof(*quant->mem));
     switch (quant_type) {
     case NO_QUANT:
@@ -100,8 +100,8 @@ lm_trie_quant_t* lm_trie_quant_create(lm_trie_quant_type_t quant_type, int order
     case QUANT_16:
         quant->prob_bits = 16;
         quant->bo_bits = 16;
-        quant->prob_mask = (1ULL << quant->prob_bits) - 1;
-        quant->bo_mask = (1ULL << quant->bo_bits) - 1;
+        quant->prob_mask = (1U << quant->prob_bits) - 1;
+        quant->bo_mask = (1U << quant->bo_bits) - 1;
         break;
     default:
         E_INFO("Unsupported quantization type\n");
@@ -293,7 +293,7 @@ float lm_trie_quant_mboread(lm_trie_quant_t *quant, bit_adress_t adress, int ord
     case NO_QUANT:
         return read_float32(adress.base, adress.offset + 31);
     case QUANT_16:
-        return bins_decode(&quant->tables[order_minus_2][1], read_int25(adress.base, adress.offset, quant->bo_bits, (uint32)quant->bo_mask));
+        return bins_decode(&quant->tables[order_minus_2][1], read_int25(adress.base, adress.offset, quant->bo_bits, quant->bo_mask));
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");
@@ -307,7 +307,7 @@ float lm_trie_quant_mpread(lm_trie_quant_t *quant, bit_adress_t adress, int orde
     case NO_QUANT:
         return read_nonposfloat31(adress.base, adress.offset);
     case QUANT_16:
-        return bins_decode(&quant->tables[order_minus_2][0], read_int25(adress.base, adress.offset + quant->bo_bits, quant->prob_bits, (uint32)quant->prob_mask));
+        return bins_decode(&quant->tables[order_minus_2][0], read_int25(adress.base, adress.offset + quant->bo_bits, quant->prob_bits, quant->prob_mask));
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");
@@ -321,7 +321,7 @@ float lm_trie_quant_lpread(lm_trie_quant_t *quant, bit_adress_t adress)
     case NO_QUANT:
         return read_nonposfloat31(adress.base, adress.offset);
     case QUANT_16:
-        return bins_decode(quant->longest, read_int25(adress.base, adress.offset, quant->prob_bits, (uint32)quant->prob_mask));
+        return bins_decode(quant->longest, read_int25(adress.base, adress.offset, quant->prob_bits, quant->prob_mask));
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");

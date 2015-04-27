@@ -22,7 +22,7 @@ static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
     uint8 total_bits = required_bits(max_vocab) + remaining_bits;
     // Extra entry for next pointer at the end.  
     // +7 then / 8 to round up bits and convert to bytes
-    // +sizeof(uint32) so that ReadInt57 etc don't go segfault.  
+    // +sizeof(uint64) so that ReadInt57 etc don't go segfault.  
     // Note that this waste is O(order), not O(number of ngrams).
     return ((1 + entries) * total_bits + 7) / 8 + sizeof(uint64);
 }
@@ -42,8 +42,8 @@ static void base_init(base_t *base, void *base_mem, uint32 max_vocab, uint8 rema
     bit_packing_sanity();
     base->word_bits = required_bits(max_vocab);
     base->word_mask = (1U << base->word_bits) - 1U;
-    if (base->word_bits > 31)
-        E_ERROR("Sorry, word indices more than %d are not implemented.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U << 31));
+    if (base->word_bits > 25)
+        E_ERROR("Sorry, word indices more than %d are not implemented.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U << 25));
     base->total_bits = base->word_bits + remaining_bits;
 
     base->base = (uint8 *)base_mem;
@@ -56,8 +56,8 @@ void middle_init(middle_t *middle, void *base_mem, uint8 quant_bits, uint32 entr
     middle->quant_bits = quant_bits;
     bit_mask_from_max(&middle->next_mask, max_next);
     middle->next_source = next_source;
-    if (entries + 1 >= (1U << 31) || (max_next >= (1U << 31)))
-        E_ERROR("Sorry, this does not support more than %d n-grams of a particular order.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U < 32));
+    if (entries + 1 >= (1U << 25) || (max_next >= (1U << 25)))
+        E_ERROR("Sorry, this does not support more than %d n-grams of a particular order.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U << 25));
     base_init(&middle->base, base_mem, max_vocab, quant_bits + middle->next_mask.bits);
 }
 
@@ -68,12 +68,12 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint32 m
 
 static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
 {
-    uint64 at_pointer;
+    uint32 at_pointer;
     uint32 next;
     bit_adress_t adress;
     assert(word <= middle->base.word_mask);
-    at_pointer = (uint64)middle->base.insert_index * middle->base.total_bits;
-    write_int57(middle->base.base, at_pointer, middle->base.word_bits, word);
+    at_pointer = middle->base.insert_index * middle->base.total_bits;
+    write_int25(middle->base.base, at_pointer, middle->base.word_bits, word);
     at_pointer += middle->base.word_bits;
     adress.base = middle->base.base;
     adress.offset = at_pointer;
@@ -84,18 +84,18 @@ static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, in
         next = ((middle_t *)middle->next_source)->base.insert_index;
     }
     //bhiksha write next
-    write_int57(middle->base.base, at_pointer, middle->next_mask.bits, next);
+    write_int25(middle->base.base, at_pointer, middle->next_mask.bits, next);
     middle->base.insert_index++;
     return adress;
 }
 
 static bit_adress_t longest_insert(longest_t *longest, word_idx index)
 {
-    uint64 at_pointer;
+    uint32 at_pointer;
     bit_adress_t adress;
     assert(index <= longest->base.word_mask);
     at_pointer = longest->base.insert_index * longest->base.total_bits;
-    write_int57(longest->base.base, at_pointer, longest->base.word_bits, index);
+    write_int25(longest->base.base, at_pointer, longest->base.word_bits, index);
     at_pointer += longest->base.word_bits;
     longest->base.insert_index++;
     adress.offset = at_pointer;
@@ -105,8 +105,8 @@ static bit_adress_t longest_insert(longest_t *longest, word_idx index)
 
 static void middle_finish_loading(middle_t *middle, uint32 next_end)
 {
-    uint64 last_next_write = (uint64)(middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
-    write_int57(middle->base.base, last_next_write, middle->next_mask.bits, next_end);
+    uint32 last_next_write = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
+    write_int25(middle->base.base, last_next_write, middle->next_mask.bits, next_end);
 }
 
 int gram_compare(void *a_raw, void *b_raw)
@@ -252,6 +252,7 @@ void lm_trie_write_bin(lm_trie_t *trie, uint32 unigram_count, FILE *fp)
 
     if (trie->quant)
         lm_trie_quant_write_bin(trie->quant, fp);
+    //uint64 to size_t convertion
     fwrite(trie->unigrams, sizeof(*trie->unigrams), (unigram_count + 1), fp);
     if (trie->ngram_mem)
         fwrite(trie->ngram_mem, 1, trie->ngram_mem_size, fp);
