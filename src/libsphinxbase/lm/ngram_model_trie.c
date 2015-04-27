@@ -768,50 +768,10 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     return (int32)weight_score(base, lweight);
 }
 
-static void lm_trie_flush(ngram_model_t *model)
-{
-}
-
-static ngram_iter_t* lm_trie_iter(ngram_model_t *model, int32 wid, int32 *hist, int32 n_hist)
-{
-    return NULL;
-}
-
-static ngram_iter_t* lm_trie_mgrams(ngram_model_t *model, int32 m)
-{
-    return NULL;
-}
-
-static ngram_iter_t* lm_trie_successors(ngram_iter_t *itor)
-{
-    return NULL;
-}
-
-static const int32* lm_trie_iter_get(ngram_iter_t *iter, int32 *out_score, int32 *out_bowt)
-{
-    return NULL;
-}
-
-static ngram_iter_t* lm_trie_iter_next(ngram_iter_t *iter)
-{
-    return NULL;
-}
-
-static void lm_trie_iter_free(ngram_iter_t *iter)
-{
-}
-
 static ngram_funcs_t ngram_model_trie_funcs = {
     ngram_model_trie_free,     /* free */
     trie_apply_weights,        /* apply_weights */
     ngram_model_trie_score,    /* score */
     ngram_model_trie_raw_score,/* raw_score */
     lm_trie_add_ug,            /* add_ug */
-    lm_trie_flush,             /* flush */
-    lm_trie_iter,              /* iter */
-    lm_trie_mgrams,            /* mgrams */
-    lm_trie_successors,        /* successors */
-    lm_trie_iter_get,          /* iter_get */
-    lm_trie_iter_next,         /* iter_next */
-    lm_trie_iter_free          /* iter_free */
 };
