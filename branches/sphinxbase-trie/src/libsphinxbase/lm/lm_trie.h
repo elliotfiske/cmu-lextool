@@ -2,8 +2,8 @@
 #define __LM_TRIE_H__
 
 #include <sphinxbase/pio.h>
+#include <sphinxbase/bitarr.h>
 
-#include "lm_trie_bits.h"
 #include "lm_trie_quant.h"
 
 typedef struct unigram_s {
@@ -28,7 +28,7 @@ typedef struct base_s {
 
 typedef struct middle_s {
     base_t base;
-    bit_mask_t next_mask; 
+    bitarr_mask_t next_mask; 
     uint8 quant_bits;
     void *next_source;
 }middle_t;

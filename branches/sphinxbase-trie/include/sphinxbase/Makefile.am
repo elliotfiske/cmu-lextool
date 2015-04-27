@@ -2,6 +2,7 @@ pkginclude_HEADERS =				\
 	ad.h					\
 	agc.h					\
 	bio.h					\
+	bitarr.h				\
 	bitvec.h				\
 	byteorder.h				\
 	case.h					\

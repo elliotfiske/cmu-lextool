@@ -158,9 +158,6 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_bits.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -174,6 +171,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\libsphinxbase\util\bitarr.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -334,9 +334,6 @@
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_bits.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -353,6 +350,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_query.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\sphinxbase\bitarr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
