@@ -19,7 +19,7 @@ typedef struct gram_s {
 
 static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
 {
-    uint8 total_bits = required_bits(max_vocab) + remaining_bits;
+    uint8 total_bits = bitarr_required_bits(max_vocab) + remaining_bits;
     // Extra entry for next pointer at the end.  
     // +7 then / 8 to round up bits and convert to bytes
     // +sizeof(uint64) so that ReadInt57 etc don't go segfault.  
@@ -29,7 +29,7 @@ static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
 
 uint32 middle_size(uint8 quant_bits, uint32 entries, uint32 max_vocab, uint32 max_ptr)
 {
-    return base_size(entries, max_vocab, quant_bits + required_bits(max_ptr));
+    return base_size(entries, max_vocab, quant_bits + bitarr_required_bits(max_ptr));
 }
 
 uint32 longest_size(uint8 quant_bits, uint32 entries, uint32 max_vocab)
@@ -39,8 +39,7 @@ uint32 longest_size(uint8 quant_bits, uint32 entries, uint32 max_vocab)
 
 static void base_init(base_t *base, void *base_mem, uint32 max_vocab, uint8 remaining_bits)
 {
-    bit_packing_sanity();
-    base->word_bits = required_bits(max_vocab);
+    base->word_bits = bitarr_required_bits(max_vocab);
     base->word_mask = (1U << base->word_bits) - 1U;
     if (base->word_bits > 25)
         E_ERROR("Sorry, word indices more than %d are not implemented.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U << 25));
@@ -54,7 +53,7 @@ static void base_init(base_t *base, void *base_mem, uint32 max_vocab, uint8 rema
 void middle_init(middle_t *middle, void *base_mem, uint8 quant_bits, uint32 entries, uint32 max_vocab, uint32 max_next, void *next_source)
 {
     middle->quant_bits = quant_bits;
-    bit_mask_from_max(&middle->next_mask, max_next);
+    bitarr_mask_from_max(&middle->next_mask, max_next);
     middle->next_source = next_source;
     if (entries + 1 >= (1U << 25) || (max_next >= (1U << 25)))
         E_ERROR("Sorry, this does not support more than %d n-grams of a particular order.  Edit util/bit_packing.hh and fix the bit packing functions\n", (1U << 25));
@@ -66,47 +65,48 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint32 m
     base_init(&longest->base, base_mem, max_vocab, quant_bits);
 }
 
-static bit_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
+static bitarr_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
 {
     uint32 at_pointer;
     uint32 next;
-    bit_adress_t adress;
+    bitarr_adress_t adress;
     assert(word <= middle->base.word_mask);
-    at_pointer = middle->base.insert_index * middle->base.total_bits;
-    write_int25(middle->base.base, at_pointer, middle->base.word_bits, word);
-    at_pointer += middle->base.word_bits;
     adress.base = middle->base.base;
-    adress.offset = at_pointer;
-    at_pointer += middle->quant_bits;
+    adress.offset = middle->base.insert_index * middle->base.total_bits;
+    bitarr_write_int25(adress, middle->base.word_bits, word);
+    adress.offset += middle->base.word_bits;
+    at_pointer = adress.offset;
+    adress.offset += middle->quant_bits;
     if (order == max_order - 1) {
         next = ((longest_t *)middle->next_source)->base.insert_index;
     } else {
         next = ((middle_t *)middle->next_source)->base.insert_index;
     }
-    //bhiksha write next
-    write_int25(middle->base.base, at_pointer, middle->next_mask.bits, next);
+
+    bitarr_write_int25(adress, middle->next_mask.bits, next);
     middle->base.insert_index++;
+    adress.offset = at_pointer;
     return adress;
 }
 
-static bit_adress_t longest_insert(longest_t *longest, word_idx index)
+static bitarr_adress_t longest_insert(longest_t *longest, word_idx index)
 {
-    uint32 at_pointer;
-    bit_adress_t adress;
+    bitarr_adress_t adress;
     assert(index <= longest->base.word_mask);
-    at_pointer = longest->base.insert_index * longest->base.total_bits;
-    write_int25(longest->base.base, at_pointer, longest->base.word_bits, index);
-    at_pointer += longest->base.word_bits;
-    longest->base.insert_index++;
-    adress.offset = at_pointer;
     adress.base = longest->base.base;
+    adress.offset = longest->base.insert_index * longest->base.total_bits;
+    bitarr_write_int25(adress, longest->base.word_bits, index);
+    adress.offset += longest->base.word_bits;
+    longest->base.insert_index++;
     return adress;
 }
 
 static void middle_finish_loading(middle_t *middle, uint32 next_end)
 {
-    uint32 last_next_write = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
-    write_int25(middle->base.base, last_next_write, middle->next_mask.bits, next_end);
+    bitarr_adress_t adress;
+    adress.base = middle->base.base;
+    adress.offset = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
+    bitarr_write_int25(adress, middle->next_mask.bits, next_end);
 }
 
 int gram_compare(void *a_raw, void *b_raw)
@@ -179,7 +179,7 @@ static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *c
                     assert(i > 0); //unigrams are not pruned without removing ngrams that contains them
                     for (j = i; j < top->order - 1; j++) {
                         middle_t *middle = &trie->middle_begin[j - 1];
-                        bit_adress_t adress = middle_insert(middle, top->instance.words[j], j + 1, order);
+                        bitarr_adress_t adress = middle_insert(middle, top->instance.words[j], j + 1, order);
                         //calculate prob for blank
                         float calc_prob = probs[j - 1] + trie->unigrams[top->instance.words[j]].bo;
                         probs[j] = calc_prob;
@@ -190,12 +190,12 @@ static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *c
             memcpy(words, top->instance.words, top->order * sizeof(*words));
             if (top->order == order) {
                 float *weights = top->instance.weights;
-                bit_adress_t adress = longest_insert(trie->longest, top->instance.words[top->order - 1]);
+                bitarr_adress_t adress = longest_insert(trie->longest, top->instance.words[top->order - 1]);
                 lm_trie_quant_lwrite(trie->quant, adress, weights[0]);
             } else {
                 float *weights = top->instance.weights;
                 middle_t *middle = &trie->middle_begin[top->order - 2];
-                bit_adress_t adress = middle_insert(middle, top->instance.words[top->order - 1], top->order, order);
+                bitarr_adress_t adress = middle_insert(middle, top->instance.words[top->order - 1], top->order, order);
                 //write prob and backoff
                 probs[top->order - 1] = weights[0];
                 lm_trie_quant_mwrite(trie->quant, adress, top->order - 2, weights[0], weights[1]);

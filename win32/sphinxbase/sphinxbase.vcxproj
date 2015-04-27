@@ -163,7 +163,6 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_scanner.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_bits.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c" />
@@ -171,6 +170,7 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_set.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_trie.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\bio.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\util\bitarr.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\bitvec.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\blas_lite.c" />
     <ClCompile Include="..\..\src\libsphinxbase\util\case.c" />
@@ -201,6 +201,7 @@
     <ClInclude Include="..\..\include\sphinxbase\ad.h" />
     <ClInclude Include="..\..\include\sphinxbase\agc.h" />
     <ClInclude Include="..\..\include\sphinxbase\bio.h" />
+    <ClInclude Include="..\..\include\sphinxbase\bitarr.h" />
     <ClInclude Include="..\..\include\sphinxbase\bitvec.h" />
     <ClInclude Include="..\..\include\sphinxbase\byteorder.h" />
     <ClInclude Include="..\..\include\sphinxbase\case.h" />
@@ -249,7 +250,6 @@
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_piecewise_linear.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_bits.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h" />

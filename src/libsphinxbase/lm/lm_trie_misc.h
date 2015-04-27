@@ -2,7 +2,6 @@
 #define __LM_TRIE_CONST_H__
 
 #define MAX_NGRAM_ORDER 5
-#define K_SIGN_BIT (0x80000000)
 #define FLOAT_INF (0x7f800000)
 
 /**

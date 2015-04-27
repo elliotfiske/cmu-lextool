@@ -1,7 +1,8 @@
 #ifndef __LM_TRIE_QUANT_H__
 #define __LM_TRIE_QUANT_H__
 
-#include "lm_trie_bits.h"
+#include <sphinxbase/bitarr.h>
+
 #include "lm_ngrams_raw.h"
 
 typedef struct lm_trie_quant_s lm_trie_quant_t;
@@ -62,26 +63,26 @@ void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, 
 /**
  * Writes specified weight for middle-order ngram. Quantize it if needed
  */
-void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bit_adress_t adress, int order_minus_2, float prob, float backoff);
+void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, int order_minus_2, float prob, float backoff);
 
 /**
  * Writes specified weight for largest-order ngram. Quantize it if needed
  */
-void lm_trie_quant_lwrite(lm_trie_quant_t *quant, bit_adress_t adress, float prob);
+void lm_trie_quant_lwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, float prob);
 
 /**
  * Reads and decodes if needed backoff for middle-order ngram
  */
-float lm_trie_quant_mboread(lm_trie_quant_t *quant, bit_adress_t adress, int order_minus_2);
+float lm_trie_quant_mboread(lm_trie_quant_t *quant, bitarr_adress_t adress, int order_minus_2);
 
 /**
  * Reads and decodes if needed prob for middle-order ngram
  */
-float lm_trie_quant_mpread(lm_trie_quant_t *quant, bit_adress_t adress, int order_minus_2);
+float lm_trie_quant_mpread(lm_trie_quant_t *quant, bitarr_adress_t adress, int order_minus_2);
 
 /**
  * Reads and decodes if needed prob for largest-order ngram
  */
-float lm_trie_quant_lpread(lm_trie_quant_t *quant, bit_adress_t adress);
+float lm_trie_quant_lpread(lm_trie_quant_t *quant, bitarr_adress_t adress);
 
 #endif /* __LM_TRIE_QUANT_H__ */
