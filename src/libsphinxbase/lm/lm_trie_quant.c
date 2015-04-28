@@ -265,7 +265,7 @@ void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, int or
         break;
     case QUANT_16:
         bitarr_write_int57(adress, quant->prob_bits + quant->bo_bits, 
-                    (bins_encode(&quant->tables[order_minus_2][0], prob) << quant->bo_bits) | bins_encode(&quant->tables[order_minus_2][1], backoff));
+                    (uint64)((bins_encode(&quant->tables[order_minus_2][0], prob) << quant->bo_bits) | bins_encode(&quant->tables[order_minus_2][1], backoff)));
         break;
     //TODO implement different quantatization stages
     default:
