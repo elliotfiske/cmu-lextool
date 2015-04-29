@@ -6,9 +6,7 @@ BUILT_SOURCES = jsgf_parser.h jsgf_parser.c
 libsphinxlm_la_SOURCES =			\
 	lm_ngrams_raw.c				\
 	lm_trie.c					\
-	lm_trie_find.c				\
 	lm_trie_quant.c				\
-	lm_trie_query.c				\
 	ngram_model.c				\
 	ngram_model_set.c			\
 	ngram_model_trie.c			\
@@ -23,11 +21,9 @@ noinst_HEADERS = ngram_model_internal.h		\
 	ngram_model_set.h			\
 	ngram_model_trie.h			\
 	lm_ngrams_raw.h				\
-	lm_trie.h					\
-	lm_trie_find.h				\
+	lm_trie.h				\
 	lm_trie_misc.h				\
 	lm_trie_quant.h				\
-	lm_trie_query.h				\
 	jsgf_internal.h				\
 	jsgf_scanner.h				\
 	jsgf_parser.h

@@ -164,13 +164,7 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\util\priority_queue.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\libsphinxbase\util\bitarr.c">
@@ -338,9 +332,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\sphinxbase\priority_queue.h">

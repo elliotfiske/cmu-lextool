@@ -70,98 +70,98 @@ typedef struct bitarr_mask_s {
 }bitarr_mask_t;
 
 /**
- * Structure that stores adress of certain value in bit array
+ * Structure that stores address of certain value in bit array
  */
-typedef struct bitarr_adress_s {
+typedef struct bitarr_address_s {
     void *base;
     uint32 offset;
-}bitarr_adress_t;
+}bitarr_address_t;
 
 /**
  * Read uint64 value from bit array. 
  * Assumes mask == (1 << length) - 1 where length <= 57
- * @param adress to read from
+ * @param address to read from
  * @param length number of bits for value
  * @param mask of read value
  * @return uint64 value that was read
  */
 SPHINXBASE_EXPORT
 uint64
-bitarr_read_int57(bitarr_adress_t adress, uint8 length, uint64 mask);
+bitarr_read_int57(bitarr_address_t address, uint8 length, uint64 mask);
 
 /**
  * Write specified value into bit array.
  * Assumes value < (1 << length) and length <= 57.
  * Assumes the memory is zero initially.
- * @param adress to write to
+ * @param address to write to
  * @param length amount of active bytes in value to write
  * @param value integer to write
  */
 SPHINXBASE_EXPORT
 void 
-bitarr_write_int57(bitarr_adress_t adress, uint8 length, uint64 value);
+bitarr_write_int57(bitarr_address_t address, uint8 length, uint64 value);
 
 /**
  * Read uint32 value from bit array. 
  * Assumes mask == (1 << length) - 1 where length <= 25
- * @param adress to read from
+ * @param address to read from
  * @param length number of bits for value
  * @param mask of read value
  * @return uint32 value that was read
  */
 SPHINXBASE_EXPORT
 uint32 
-bitarr_read_int25(bitarr_adress_t adress, uint8 length, uint32 mask);
+bitarr_read_int25(bitarr_address_t address, uint8 length, uint32 mask);
 
 /**
  * Write specified value into bit array.
  * Assumes value < (1 << length) and length <= 25.
  * Assumes the memory is zero initially.
- * @param adress in bit array ti write to
+ * @param address in bit array ti write to
  * @param length amount of active bytes in value to write
  * @param value integer to write
  */
 SPHINXBASE_EXPORT
 void 
-bitarr_write_int25(bitarr_adress_t adress, uint8 length, uint32 value);
+bitarr_write_int25(bitarr_address_t address, uint8 length, uint32 value);
 
 /**
  * Read non positive float32 from bit array.
  * Probability [0, 1) in log domain can be stored like this.
- * @param adress of value in bit array
+ * @param address of value in bit array
  * @return float value taht was read
  */
 SPHINXBASE_EXPORT
 float 
-bitarr_read_negfloat(bitarr_adress_t adress);
+bitarr_read_negfloat(bitarr_address_t address);
 
 /**
  * Writes non positive float32 to bit array.
  * Probability [0, 1) in log domain can be stored like this
- * @param adress where to write
+ * @param address where to write
  * @param value what to write
  */
 SPHINXBASE_EXPORT
 void 
-bitarr_write_negfloat(bitarr_adress_t adress, float value);
+bitarr_write_negfloat(bitarr_address_t address, float value);
 
 /**
  * Reads float32 from bit array
- * @param adress in bit array from where to read
+ * @param address in bit array from where to read
  * @return value float32 that was read
  */
 SPHINXBASE_EXPORT
 float 
-bitarr_read_float(bitarr_adress_t adress);
+bitarr_read_float(bitarr_address_t address);
 
 /**
  * Writes float32 to bit array
- * @param adress in bit array where to write
+ * @param address in bit array where to write
  * @param value float32 to write
  */
 SPHINXBASE_EXPORT
 void 
-bitarr_write_float(bitarr_adress_t adress, float value);
+bitarr_write_float(bitarr_address_t address, float value);
 
 /**
  * Fills mask for certain int range according to provided max value
