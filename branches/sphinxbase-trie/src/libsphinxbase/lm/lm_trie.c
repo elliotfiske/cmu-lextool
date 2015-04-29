@@ -10,12 +10,11 @@
 #include "lm_trie.h"
 #include "lm_trie_misc.h"
 #include "lm_trie_quant.h"
-#include "lm_trie_find.h"
 
 typedef struct gram_s {
     lm_ngram_t instance;
     int order;
-}gram_t;
+} gram_t;
 
 static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)
 {
@@ -65,48 +64,48 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint32 m
     base_init(&longest->base, base_mem, max_vocab, quant_bits);
 }
 
-static bitarr_adress_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
+static bitarr_address_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
 {
     uint32 at_pointer;
     uint32 next;
-    bitarr_adress_t adress;
+    bitarr_address_t address;
     assert(word <= middle->base.word_mask);
-    adress.base = middle->base.base;
-    adress.offset = middle->base.insert_index * middle->base.total_bits;
-    bitarr_write_int25(adress, middle->base.word_bits, word);
-    adress.offset += middle->base.word_bits;
-    at_pointer = adress.offset;
-    adress.offset += middle->quant_bits;
+    address.base = middle->base.base;
+    address.offset = middle->base.insert_index * middle->base.total_bits;
+    bitarr_write_int25(address, middle->base.word_bits, word);
+    address.offset += middle->base.word_bits;
+    at_pointer = address.offset;
+    address.offset += middle->quant_bits;
     if (order == max_order - 1) {
         next = ((longest_t *)middle->next_source)->base.insert_index;
     } else {
         next = ((middle_t *)middle->next_source)->base.insert_index;
     }
 
-    bitarr_write_int25(adress, middle->next_mask.bits, next);
+    bitarr_write_int25(address, middle->next_mask.bits, next);
     middle->base.insert_index++;
-    adress.offset = at_pointer;
-    return adress;
+    address.offset = at_pointer;
+    return address;
 }
 
-static bitarr_adress_t longest_insert(longest_t *longest, word_idx index)
+static bitarr_address_t longest_insert(longest_t *longest, word_idx index)
 {
-    bitarr_adress_t adress;
+    bitarr_address_t address;
     assert(index <= longest->base.word_mask);
-    adress.base = longest->base.base;
-    adress.offset = longest->base.insert_index * longest->base.total_bits;
-    bitarr_write_int25(adress, longest->base.word_bits, index);
-    adress.offset += longest->base.word_bits;
+    address.base = longest->base.base;
+    address.offset = longest->base.insert_index * longest->base.total_bits;
+    bitarr_write_int25(address, longest->base.word_bits, index);
+    address.offset += longest->base.word_bits;
     longest->base.insert_index++;
-    return adress;
+    return address;
 }
 
 static void middle_finish_loading(middle_t *middle, uint32 next_end)
 {
-    bitarr_adress_t adress;
-    adress.base = middle->base.base;
-    adress.offset = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
-    bitarr_write_int25(adress, middle->next_mask.bits, next_end);
+    bitarr_address_t address;
+    address.base = middle->base.base;
+    address.offset = (middle->base.insert_index + 1) * middle->base.total_bits - middle->next_mask.bits;
+    bitarr_write_int25(address, middle->next_mask.bits, next_end);
 }
 
 int gram_compare(void *a_raw, void *b_raw)
@@ -179,26 +178,26 @@ static void recursive_insert(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *c
                     assert(i > 0); //unigrams are not pruned without removing ngrams that contains them
                     for (j = i; j < top->order - 1; j++) {
                         middle_t *middle = &trie->middle_begin[j - 1];
-                        bitarr_adress_t adress = middle_insert(middle, top->instance.words[j], j + 1, order);
+                        bitarr_address_t address = middle_insert(middle, top->instance.words[j], j + 1, order);
                         //calculate prob for blank
                         float calc_prob = probs[j - 1] + trie->unigrams[top->instance.words[j]].bo;
                         probs[j] = calc_prob;
-                        lm_trie_quant_mwrite(trie->quant, adress, j - 1, calc_prob, 0.0f);
+                        lm_trie_quant_mwrite(trie->quant, address, j - 1, calc_prob, 0.0f);
                     }
                 }
             }
             memcpy(words, top->instance.words, top->order * sizeof(*words));
             if (top->order == order) {
                 float *weights = top->instance.weights;
-                bitarr_adress_t adress = longest_insert(trie->longest, top->instance.words[top->order - 1]);
-                lm_trie_quant_lwrite(trie->quant, adress, weights[0]);
+                bitarr_address_t address = longest_insert(trie->longest, top->instance.words[top->order - 1]);
+                lm_trie_quant_lwrite(trie->quant, address, weights[0]);
             } else {
                 float *weights = top->instance.weights;
                 middle_t *middle = &trie->middle_begin[top->order - 2];
-                bitarr_adress_t adress = middle_insert(middle, top->instance.words[top->order - 1], top->order, order);
+                bitarr_address_t address = middle_insert(middle, top->instance.words[top->order - 1], top->order, order);
                 //write prob and backoff
                 probs[top->order - 1] = weights[0];
-                lm_trie_quant_mwrite(trie->quant, adress, top->order - 2, weights[0], weights[1]);
+                lm_trie_quant_mwrite(trie->quant, address, top->order - 2, weights[0], weights[1]);
             }
             raw_ngrams_ptr[top->order - 2]++;
             if (raw_ngrams_ptr[top->order - 2] < counts[top->order - 1]) {
@@ -377,5 +376,246 @@ void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int
         }
         middle_ptr = trie->middle_end - 1;
         middle_finish_loading(middle_ptr, trie->longest->base.insert_index);
+    }
+}
+
+unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next)
+{
+    unigram_t *ptr = &u[word];
+    next->begin = ptr->next;
+    next->end = (ptr+1)->next;
+    return ptr;
+}
+
+static size_t calc_pivot(uint32 off, uint32 range, uint32 width)
+{
+    return (size_t)((off * width) / (range + 1));
+}
+
+uint8 lm_trie_find(
+    void *base, uint8 total_bits, uint8 key_bits, uint32 key_mask,
+    uint32 before_it, uint32 before_v,
+    uint32 after_it, uint32 after_v,
+    uint32 key, uint32 *out)
+{
+    bitarr_address_t address;
+    address.base = base;
+    while (after_it - before_it > 1) {
+        uint32 mid;
+        uint32 pivot = before_it + (1 + calc_pivot(key - before_v, after_v - before_v, after_it - before_it - 1));
+        //access by pivot
+        address.offset = pivot * (uint32)total_bits;
+        mid = bitarr_read_int25(address, key_bits, key_mask);
+        if (mid < key) {
+            before_it = pivot;
+            before_v = mid;
+        } else if (mid > key) {
+            after_it = pivot;
+            after_v = mid;
+        } else {
+            *out = pivot;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+static bitarr_address_t middle_find(middle_t *middle, word_idx word, node_range_t *range)
+{
+    uint32 at_pointer;
+    bitarr_address_t address;
+
+    //finding BitPacked with uniform find
+    if (!lm_trie_find((void *)middle->base.base, middle->base.total_bits, middle->base.word_bits, middle->base.word_mask, range->begin - 1, 0, range->end, middle->base.max_vocab, word, &at_pointer)) {
+        address.base = NULL;
+        address.offset = 0;
+        return address;
+    }
+
+    address.base = middle->base.base;
+    at_pointer *= middle->base.total_bits;
+    at_pointer += middle->base.word_bits;
+    address.offset = at_pointer + middle->quant_bits;
+    range->begin = bitarr_read_int25(address, middle->next_mask.bits, middle->next_mask.mask);
+    address.offset += middle->base.total_bits;
+    range->end = bitarr_read_int25(address, middle->next_mask.bits, middle->next_mask.mask);
+    address.offset = at_pointer;
+
+    return address;
+}
+
+static bitarr_address_t longest_find(longest_t *longest, word_idx word, node_range_t *range)
+{
+    uint32 at_pointer;
+    bitarr_address_t address;
+
+    //finding BitPacked with uniform find
+    if (!lm_trie_find((void *)longest->base.base, longest->base.total_bits, longest->base.word_bits, longest->base.word_mask, range->begin - 1, 0, range->end, longest->base.max_vocab, word, &at_pointer)) {
+        address.base = NULL;
+        address.offset = 0;
+        return address;
+    }
+    address.base = longest->base.base;
+    address.offset = at_pointer * longest->base.total_bits + longest->base.word_bits;
+    return address;
+}
+
+static void resume_score(lm_trie_t *trie, int32* hist_iter, int max_order, int32* hist_end, node_range_t *node, float* prob, int32 *n_used)
+{
+    bitarr_address_t address;
+    int order_minus_2 = 0;
+    uint8 independent_left = (node->begin == node->end);
+
+    for (;;order_minus_2++, hist_iter++) {
+        if (hist_iter == hist_end) return;
+        if (independent_left) return;
+        if (order_minus_2 == max_order - 2) break;
+
+        address = middle_find(&trie->middle_begin[order_minus_2], *hist_iter, node);
+        independent_left = (address.base == NULL) || (node->begin == node->end);
+
+        //didn't find entry
+        if (address.base == NULL) return;
+        *prob =  lm_trie_quant_mpread(trie->quant, address, order_minus_2);
+        *n_used = order_minus_2 + 2;
+    }
+
+    address = longest_find(trie->longest, *hist_iter, node);
+    if (address.base != NULL) {
+        *prob = lm_trie_quant_lpread(trie->quant, address);
+        *n_used = max_order;
+    }
+}
+
+static float score_except_backoff(lm_trie_t *trie, int32 wid, int32 *hist, int max_order, int32 n_hist, int32 *n_used)
+{
+    float prob;
+    node_range_t node;
+    *n_used = 1;
+    prob = unigram_find(trie->unigrams, wid, &node)->prob;
+    if (n_hist == 0) {
+        return prob;
+    }
+    //find ngrams of higher order if any
+    resume_score(trie, hist, max_order, hist + n_hist, &node, &prob, n_used);
+    return prob;
+}
+
+static uint8 fast_make_node(lm_trie_t *trie, int32 *begin, int32 *end, node_range_t *node) {
+    int32 *it;
+    assert(begin != end);
+    unigram_find(trie->unigrams, *begin, node);
+    if (node->begin == node->end) {
+        return FALSE;
+    }
+
+    for (it = begin + 1; it < end; ++it) {
+        bitarr_address_t address = middle_find(&trie->middle_begin[it - begin - 1], *it, node);
+        if (node->begin == node->end || address.base == NULL) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static float score_backoff(lm_trie_t *trie, int32 start, int32 *hist, int32 n_hist)
+{
+    float backoff = 0.0f;
+    int order_minus_2;
+    int32 *hist_iter;
+    node_range_t node;
+    if (start <= 1) {
+        backoff += unigram_find(trie->unigrams, hist[0], &node)->bo;
+        start = 2;
+    } else if (!fast_make_node(trie, hist, hist + start - 1, &node)) {
+        return backoff;
+    }
+    order_minus_2 = start - 2;
+    for (hist_iter = hist + start - 1; hist_iter < hist + n_hist; hist_iter++, order_minus_2++) {
+        bitarr_address_t address = middle_find(&trie->middle_begin[order_minus_2], *hist_iter, &node);
+        if (address.base == NULL) break;
+        backoff += lm_trie_quant_mboread(trie->quant, address, order_minus_2);
+    }
+    return backoff;
+}
+
+static float lm_trie_nobo_score(lm_trie_t *trie, int32 wid, int32 *hist, int max_order, int32 n_hist, int32 *n_used)
+{
+    float prob = score_except_backoff(trie, wid, hist, max_order, n_hist, n_used);
+    if (n_hist < *n_used) return prob;
+    return prob + score_backoff(trie, *n_used, hist, n_hist);
+}
+
+static float lm_trie_hist_score(lm_trie_t *trie, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
+{
+    float prob;
+    int i, j;
+    node_range_t node;
+    bitarr_address_t address;
+
+    *n_used = 1;
+    prob = unigram_find(trie->unigrams, wid, &node)->prob;
+    if (n_hist == 0)
+        return prob;
+    for (i = 0; i < n_hist - 1; i++) {
+        address = middle_find(&trie->middle_begin[i], hist[i], &node);
+        if (address.base == NULL) {
+            for (j = i; j < n_hist; j++) {
+                prob += trie->backoff[j];
+            }
+            return prob;
+        } else {
+            (*n_used)++;
+            prob = lm_trie_quant_mpread(trie->quant, address, i);
+        }
+    }
+    address = longest_find(trie->longest, hist[n_hist - 1], &node);
+    if (address.base == NULL) {
+        return prob + trie->backoff[n_hist - 1];
+    } else {
+        (*n_used)++;
+        return lm_trie_quant_lpread(trie->quant, address);
+    }
+}
+
+static uint8 history_matches(int32* hist, int32* prev_hist, int32 n_hist)
+{
+    int i;
+    for (i = 0; i < n_hist; i++) {
+        if (hist[i] != prev_hist[i]) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static void update_backoff(lm_trie_t *trie, int32 *hist, int32 n_hist)
+{
+    int i;
+    node_range_t node;
+    bitarr_address_t address;
+
+    memset(trie->backoff, 0, sizeof(trie->backoff));
+    trie->backoff[0] = unigram_find(trie->unigrams, hist[0], &node)->bo;
+    for (i = 1; i < n_hist; i++) {
+        address = middle_find(&trie->middle_begin[i - 1], hist[i], &node);
+        if (address.base == NULL) {
+            break;
+        }
+        trie->backoff[i] = lm_trie_quant_mboread(trie->quant, address, i - 1);
+    }
+    memcpy(trie->prev_hist, hist, n_hist * sizeof(*hist));
+}
+
+float lm_trie_score(lm_trie_t *trie, int order, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
+{
+    if (n_hist < order - 1) {
+        return lm_trie_nobo_score(trie, wid, hist, order, n_hist, n_used);
+    } else {
+        assert(n_hist == order - 1);
+        if (!history_matches(hist, (int32 *)trie->prev_hist, n_hist)) {
+            update_backoff(trie, hist, n_hist);
+        }
+        return lm_trie_hist_score(trie, wid, hist, n_hist, n_used);
     }
 }

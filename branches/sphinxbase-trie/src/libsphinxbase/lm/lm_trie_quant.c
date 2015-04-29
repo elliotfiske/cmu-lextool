@@ -255,16 +255,16 @@ void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, 
     ckd_free(probs);
 }
 
-void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, int order_minus_2, float prob, float backoff)
+void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bitarr_address_t address, int order_minus_2, float prob, float backoff)
 {
     switch (quant->quant_type) {
     case NO_QUANT:
-        bitarr_write_negfloat(adress, prob);
-        adress.offset += 31;
-        bitarr_write_float(adress, backoff);
+        bitarr_write_negfloat(address, prob);
+        address.offset += 31;
+        bitarr_write_float(address, backoff);
         break;
     case QUANT_16:
-        bitarr_write_int57(adress, quant->prob_bits + quant->bo_bits, 
+        bitarr_write_int57(address, quant->prob_bits + quant->bo_bits, 
                     (uint64)((bins_encode(&quant->tables[order_minus_2][0], prob) << quant->bo_bits) | bins_encode(&quant->tables[order_minus_2][1], backoff)));
         break;
     //TODO implement different quantatization stages
@@ -273,14 +273,14 @@ void lm_trie_quant_mwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, int or
     }
 }
 
-void lm_trie_quant_lwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, float prob)
+void lm_trie_quant_lwrite(lm_trie_quant_t *quant, bitarr_address_t address, float prob)
 {
     switch (quant->quant_type) {
     case NO_QUANT:
-        bitarr_write_negfloat(adress, prob);
+        bitarr_write_negfloat(address, prob);
         break;
     case QUANT_16:
-        bitarr_write_int25(adress, quant->prob_bits, (uint32)bins_encode(quant->longest, prob));
+        bitarr_write_int25(address, quant->prob_bits, (uint32)bins_encode(quant->longest, prob));
         break;
     //TODO implement different quantatization stages
     default:
@@ -288,14 +288,14 @@ void lm_trie_quant_lwrite(lm_trie_quant_t *quant, bitarr_adress_t adress, float 
     }
 }
 
-float lm_trie_quant_mboread(lm_trie_quant_t *quant, bitarr_adress_t adress, int order_minus_2)
+float lm_trie_quant_mboread(lm_trie_quant_t *quant, bitarr_address_t address, int order_minus_2)
 {
     switch (quant->quant_type) {
     case NO_QUANT:
-        adress.offset += 31;
-        return bitarr_read_float(adress);
+        address.offset += 31;
+        return bitarr_read_float(address);
     case QUANT_16:
-        return bins_decode(&quant->tables[order_minus_2][1], bitarr_read_int25(adress, quant->bo_bits, quant->bo_mask));
+        return bins_decode(&quant->tables[order_minus_2][1], bitarr_read_int25(address, quant->bo_bits, quant->bo_mask));
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");
@@ -303,14 +303,14 @@ float lm_trie_quant_mboread(lm_trie_quant_t *quant, bitarr_adress_t adress, int 
     }
 }
 
-float lm_trie_quant_mpread(lm_trie_quant_t *quant, bitarr_adress_t adress, int order_minus_2)
+float lm_trie_quant_mpread(lm_trie_quant_t *quant, bitarr_address_t address, int order_minus_2)
 {
     switch (quant->quant_type) {
     case NO_QUANT:
-        return bitarr_read_negfloat(adress);
+        return bitarr_read_negfloat(address);
     case QUANT_16:
-        adress.offset += quant->bo_bits;
-        return bins_decode(&quant->tables[order_minus_2][0], bitarr_read_int25(adress, quant->prob_bits, quant->prob_mask));
+        address.offset += quant->bo_bits;
+        return bins_decode(&quant->tables[order_minus_2][0], bitarr_read_int25(address, quant->prob_bits, quant->prob_mask));
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");
@@ -318,13 +318,13 @@ float lm_trie_quant_mpread(lm_trie_quant_t *quant, bitarr_adress_t adress, int o
     }
 }
 
-float lm_trie_quant_lpread(lm_trie_quant_t *quant, bitarr_adress_t adress)
+float lm_trie_quant_lpread(lm_trie_quant_t *quant, bitarr_address_t address)
 {
     switch (quant->quant_type) {
     case NO_QUANT:
-        return bitarr_read_negfloat(adress);
+        return bitarr_read_negfloat(address);
     case QUANT_16:
-        return bins_decode(quant->longest, bitarr_read_int25(adress, quant->prob_bits, quant->prob_mask));
+        return bins_decode(quant->longest, bitarr_read_int25(address, quant->prob_bits, quant->prob_mask));
     //TODO implement different quantatization stages
     default:
         E_INFO("Unsupported quantatization type\n");

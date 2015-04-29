@@ -163,9 +163,7 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_scanner.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_find.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_query.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_set.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model_trie.c" />
@@ -251,9 +249,7 @@
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_find.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_query.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_internal.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_set.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\ngram_model_trie.h" />

@@ -68,4 +68,14 @@ void lm_trie_alloc_ngram(lm_trie_t *trie, uint32 *counts, int order);
 
 void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int order);
 
+unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next);
+
+uint8 lm_trie_find(
+    void *base, uint8 total_bits, uint8 key_bits, uint32 key_mask,
+    uint32 before_it, uint32 before_v,
+    uint32 after_it, uint32 after_v,
+    uint32 key, uint32 *out);
+
+float lm_trie_score(lm_trie_t *trie, int order, int32 wid, int32 *hist, int32 n_hist, int32 *n_used);
+
 #endif /* __LM_TRIE_H__ */
