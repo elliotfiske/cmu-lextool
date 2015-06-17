@@ -769,10 +769,20 @@ static int32 lm_trie_add_ug(ngram_model_t *base, int32 wid, int32 lweight)
     return (int32)weight_score(base, lweight);
 }
 
+static void lm_trie_flush(ngram_model_t *base)
+{
+    ngram_model_trie_t *model = (ngram_model_trie_t *)base;
+    lm_trie_t *trie = model->trie;
+    memset(trie->prev_hist, -1, sizeof(trie->prev_hist)); //prepare request history
+    memset(trie->backoff, 0, sizeof(trie->backoff));
+    return;
+}
+
 static ngram_funcs_t ngram_model_trie_funcs = {
     ngram_model_trie_free,     /* free */
     trie_apply_weights,        /* apply_weights */
     ngram_model_trie_score,    /* score */
     ngram_model_trie_raw_score,/* raw_score */
     lm_trie_add_ug,            /* add_ug */
+    lm_trie_flush              /* flush */
 };
