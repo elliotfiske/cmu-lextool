@@ -131,7 +131,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     lineiter_t *li;
     ngram_model_trie_t *model;
     ngram_model_t *base;
-    lm_ngram_t **raw_ngrams;
+    ngram_raw_t **raw_ngrams;
     int32 is_pipe;
     uint32 counts[MAX_NGRAM_ORDER];
     uint32 fixed_counts[MAX_NGRAM_ORDER];
@@ -166,8 +166,8 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     model->trie = lm_trie_create(counts[0], QUANT_16, order);
     read_1grams_arpa(&li, counts[0], base, model->trie->unigrams, (order > 1) ? TRUE : FALSE);
     if (order > 1) {
-        raw_ngrams = lm_ngrams_raw_read(&li, base->wid, base->lmath, counts, order);
-        lm_trie_fix_counts(raw_ngrams, counts, fixed_counts, order);
+        raw_ngrams = ngrams_raw_read_arpa(&li, base->wid, base->lmath, counts, order);
+        ngrams_raw_fix_counts(raw_ngrams, counts, fixed_counts, order);
     }
     for (i = 0; i < order; i++) {
         base->n_counts[i] = fixed_counts[i];
@@ -175,7 +175,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     if (order > 1) {
         lm_trie_alloc_ngram(model->trie, fixed_counts, order);
         lm_trie_build(model->trie, raw_ngrams, counts, order);
-        lm_ngrams_raw_free(raw_ngrams, counts, order);
+        ngrams_raw_free(raw_ngrams, counts, order);
     }
 
     lineiter_free(li);
@@ -184,7 +184,7 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     return base;
 }
 
-static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ngrams, uint32 *raw_ngram_idx, uint32 *counts, node_range_t range, word_idx *hist, int n_hist, int order, int max_order) 
+static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, ngram_raw_t *raw_ngrams, uint32 *raw_ngram_idx, uint32 *counts, node_range_t range, word_idx *hist, int n_hist, int order, int max_order) 
 {
     if (n_hist > 0 && range.begin == range.end) {
         return;
@@ -221,7 +221,7 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, lm_ngram_t *raw_ng
         int i;
         assert(n_hist == order - 1);
         for (ptr = range.begin; ptr < range.end; ptr++) {
-            lm_ngram_t *raw_ngram = &raw_ngrams[*raw_ngram_idx];
+            ngram_raw_t *raw_ngram = &raw_ngrams[*raw_ngram_idx];
             raw_ngram->weights = (float *)ckd_calloc(order == max_order ? 1 : 2, sizeof(*raw_ngram->weights));
             if (order == max_order) {
                 longest_t *longest = trie->longest; //access
@@ -280,7 +280,7 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
     /* Write ngrams */
     if (base->n > 1) {
         for (i = 2; i <= base->n; ++i) {
-            lm_ngram_t *raw_ngrams = (lm_ngram_t *)ckd_calloc((size_t)base->n_counts[i - 1], sizeof(*raw_ngrams));
+            ngram_raw_t *raw_ngrams = (ngram_raw_t *)ckd_calloc((size_t)base->n_counts[i - 1], sizeof(*raw_ngrams));
             uint32 raw_ngram_idx;
             uint32 j;
             word_idx hist[MAX_NGRAM_ORDER];
@@ -291,7 +291,7 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
             fill_raw_ngram(model->trie, base->lmath, raw_ngrams, &raw_ngram_idx, base->n_counts, range, hist, 0, i, base->n);
             assert(raw_ngram_idx == base->n_counts[i - 1]);
             ngram_comparator(NULL, &i); //setting up order in comparator
-            qsort(raw_ngrams, (size_t)base->n_counts[i - 1], sizeof(lm_ngram_t), &ngram_comparator);
+            qsort(raw_ngrams, (size_t)base->n_counts[i - 1], sizeof(ngram_raw_t), &ngram_comparator);
             //now we write sorted ngrams to file
             fprintf(fp, "\n\\%d-grams:\n", i);
             for (j = 0; j < base->n_counts[i - 1];  j++) {
@@ -435,7 +435,7 @@ typedef union {
     int32 l;
 } dmp_weight_t;
 
-static void read_dmp_weight_array(FILE *fp, logmath_t *lmath, uint8 do_swap, int32 counts, lm_ngram_t *raw_ngrams, int weight_idx)
+static void read_dmp_weight_array(FILE *fp, logmath_t *lmath, uint8 do_swap, int32 counts, ngram_raw_t *raw_ngrams, int weight_idx)
 {
     int32 i, k;
     dmp_weight_t *tmp_weight_arr;
@@ -477,7 +477,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     FILE *fp;
     ngram_model_trie_t *model;
     ngram_model_t *base;
-    lm_ngram_t **raw_ngrams;
+    ngram_raw_t **raw_ngrams;
 
     E_INFO("Trying to read LM in DMP format\n");
     if ((fp = fopen_comp(file_name, "rb", &is_pipe)) == NULL) {
@@ -587,15 +587,15 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
     }
 
     if (order > 1) {
-        raw_ngrams = (lm_ngram_t **)ckd_calloc(order - 1, sizeof(*raw_ngrams));
+        raw_ngrams = (ngram_raw_t **)ckd_calloc(order - 1, sizeof(*raw_ngrams));
         //read bigrams
 
-        raw_ngrams[0] = (lm_ngram_t *)ckd_calloc((size_t)(counts[1] + 1), sizeof(*raw_ngrams[0]));
+        raw_ngrams[0] = (ngram_raw_t *)ckd_calloc((size_t)(counts[1] + 1), sizeof(*raw_ngrams[0]));
         bigrams_next = (uint16 *)ckd_calloc((size_t)(counts[1] + 1), sizeof(*bigrams_next));
         ngram_idx = 1;
         for (j = 0; j <= (int32)counts[1]; j++) {
             uint16 wid, prob_idx, bo_idx;
-            lm_ngram_t *raw_ngram = &raw_ngrams[0][j];
+            ngram_raw_t *raw_ngram = &raw_ngrams[0][j];
 
             fread(&wid, sizeof(wid), 1, fp);
             if (do_swap) SWAP_INT16(&wid);
@@ -619,10 +619,10 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         
         //read trigrams
         if (order > 2) {
-            raw_ngrams[1] = (lm_ngram_t *)ckd_calloc((size_t)counts[2], sizeof(*raw_ngrams[1]));
+            raw_ngrams[1] = (ngram_raw_t *)ckd_calloc((size_t)counts[2], sizeof(*raw_ngrams[1]));
             for (j = 0; j < (int32)counts[2]; j++) {
                 uint16 wid, prob_idx;
-                lm_ngram_t *raw_ngram = &raw_ngrams[1][j];
+                ngram_raw_t *raw_ngram = &raw_ngrams[1][j];
 
                 fread(&wid, sizeof(wid), 1, fp);
                 if (do_swap) SWAP_INT16(&wid);
@@ -677,7 +677,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
             i = 3; //set order
             ngram_comparator(NULL, &i);
             qsort(raw_ngrams[1], (size_t)counts[2], sizeof(*raw_ngrams[1]), &ngram_comparator);
-            lm_trie_fix_counts(raw_ngrams, counts, fixed_counts, 3);
+            ngrams_raw_fix_counts(raw_ngrams, counts, fixed_counts, 3);
             for (i = 0; i < order; i++) {
                 base->n_counts[i] = fixed_counts[i];
             }
@@ -689,7 +689,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
 
         //free raw ngrams
         counts[1]++;
-        lm_ngrams_raw_free(raw_ngrams, counts, order);
+        ngrams_raw_free(raw_ngrams, counts, order);
     } /* order > 1 */
     /* read ascii word strings */
     read_word_str(base, fp);

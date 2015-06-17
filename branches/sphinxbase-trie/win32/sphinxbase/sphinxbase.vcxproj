@@ -161,7 +161,7 @@
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_parser.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\jsgf_scanner.c" />
-    <ClCompile Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.c" />
+    <ClCompile Include="..\..\src\libsphinxbase\lm\ngrams_raw.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\lm_trie_quant.c" />
     <ClCompile Include="..\..\src\libsphinxbase\lm\ngram_model.c" />
@@ -246,7 +246,7 @@
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_affine.h" />
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_inverse_linear.h" />
     <ClInclude Include="..\..\src\libsphinxbase\fe\fe_warp_piecewise_linear.h" />
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_ngrams_raw.h" />
+    <ClInclude Include="..\..\src\libsphinxbase\lm\ngrams_raw.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h" />
     <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_quant.h" />

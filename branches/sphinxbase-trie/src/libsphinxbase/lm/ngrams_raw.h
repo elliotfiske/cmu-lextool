@@ -1,5 +1,5 @@
-#ifndef __LM_NGRAMS_RAW_H__
-#define __LM_NGRAMS_RAW_H__
+#ifndef __NGRAMS_RAW_H__
+#define __NGRAMS_RAW_H__
 
 #include <sphinxbase/hash_table.h>
 #include <sphinxbase/logmath.h>
@@ -9,10 +9,15 @@
 
 #include "lm_trie_misc.h"
 
-typedef struct lm_ngram_s {
+typedef struct ngram_raw_s {
     word_idx *words; /* array of word indexes, length corresponds to ngram order */
     float *weights;  /* prob and backoff or just prob for longest order */
-}lm_ngram_t;
+}ngram_raw_t;
+
+typedef struct ngram_raw_ord_s {
+    ngram_raw_t instance;
+    int order;
+} ngram_raw_ord_t;
 
 /**
  * Raw ngrams comparator. Usage:
@@ -21,8 +26,15 @@ typedef struct lm_ngram_s {
  */
 int ngram_comparator(const void *first_void, const void *second_void);
 
-lm_ngram_t** lm_ngrams_raw_read(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint32 *counts, int order);
+/**
+ * Raw ordered ngrams comparator
+ */
+int ngram_ord_comparator(void *a_raw, void *b_raw);
 
-void lm_ngrams_raw_free(lm_ngram_t **raw_ngrams, uint32 *counts, int order);
+ngram_raw_t** ngrams_raw_read_arpa(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint32 *counts, int order);
+
+void ngrams_raw_fix_counts(ngram_raw_t **raw_ngrams, uint32 *counts, uint32 *fixed_counts, int order);
+
+void ngrams_raw_free(ngram_raw_t **raw_ngrams, uint32 *counts, int order);
 
 #endif /* __LM_NGRAMS_RAW_H__ */
