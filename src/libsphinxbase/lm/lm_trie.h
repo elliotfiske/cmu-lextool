@@ -62,11 +62,9 @@ void lm_trie_write_bin(lm_trie_t *trie, uint32 unigram_count, FILE *fp);
 
 void lm_trie_free(lm_trie_t *trie);
 
-void lm_trie_fix_counts(lm_ngram_t **raw_ngrams, uint32 *counts, uint32 *fixed_counts, int order);
-
 void lm_trie_alloc_ngram(lm_trie_t *trie, uint32 *counts, int order);
 
-void lm_trie_build(lm_trie_t *trie, lm_ngram_t **raw_ngrams, uint32 *counts, int order);
+void lm_trie_build(lm_trie_t *trie, ngram_raw_t **raw_ngrams, uint32 *counts, int order);
 
 unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next);
 

@@ -210,14 +210,14 @@ static void make_bins(float *values, uint32 values_num, float *centers, uint32 b
     }
 }
 
-void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, lm_ngram_t* raw_ngrams)
+void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, ngram_raw_t* raw_ngrams)
 {
     float *probs;
     float *backoffs;
     float *centers;
     uint32 backoff_num;
     uint32 prob_num;
-    lm_ngram_t *raw_ngrams_end;
+    ngram_raw_t *raw_ngrams_end;
 
     probs = (float *)ckd_calloc(counts, sizeof(*probs));
     backoffs = (float *)ckd_calloc(counts, sizeof(*backoffs));
@@ -237,11 +237,11 @@ void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, lm_ng
     ckd_free(backoffs);
 }
 
-void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, lm_ngram_t* raw_ngrams)
+void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, ngram_raw_t* raw_ngrams)
 {
     float *probs;
     uint32 prob_num;
-    lm_ngram_t *raw_ngrams_end;
+    ngram_raw_t *raw_ngrams_end;
 
     probs = (float *)ckd_calloc(counts, sizeof(*probs));
     raw_ngrams_end = raw_ngrams + counts;

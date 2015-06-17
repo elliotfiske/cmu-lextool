@@ -3,7 +3,7 @@
 
 #include <sphinxbase/bitarr.h>
 
-#include "lm_ngrams_raw.h"
+#include "ngrams_raw.h"
 
 typedef struct lm_trie_quant_s lm_trie_quant_t;
 
@@ -53,12 +53,12 @@ uint8 lm_trie_quant_to_train(lm_trie_quant_t *quant);
 /**
  * Trains prob and backoff quantizer for specified ngram order on provided raw ngram list
  */
-void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, lm_ngram_t* raw_ngrams);
+void lm_trie_quant_train(lm_trie_quant_t *quant, int order, uint32 counts, ngram_raw_t* raw_ngrams);
 
 /**
  * Trains only prob quantizer for specified ngram order on provided raw ngram list
  */
-void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, lm_ngram_t* raw_ngrams);
+void lm_trie_quant_train_prob(lm_trie_quant_t *quant, int order, uint32 counts, ngram_raw_t* raw_ngrams);
 
 /**
  * Writes specified weight for middle-order ngram. Quantize it if needed

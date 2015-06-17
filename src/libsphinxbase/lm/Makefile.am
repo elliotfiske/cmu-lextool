@@ -4,7 +4,7 @@ AM_YFLAGS = -d
 BUILT_SOURCES = jsgf_parser.h jsgf_parser.c
 
 libsphinxlm_la_SOURCES =			\
-	lm_ngrams_raw.c				\
+	ngrams_raw.c				\
 	lm_trie.c					\
 	lm_trie_quant.c				\
 	ngram_model.c				\
@@ -20,7 +20,7 @@ libsphinxlm_la_LIBADD = $(LIBICONV)
 noinst_HEADERS = ngram_model_internal.h		\
 	ngram_model_set.h			\
 	ngram_model_trie.h			\
-	lm_ngrams_raw.h				\
+	ngrams_raw.h				\
 	lm_trie.h				\
 	lm_trie_misc.h				\
 	lm_trie_quant.h				\
