@@ -146,6 +146,11 @@ typedef struct ngram_funcs_s {
      */
     int32 (*add_ug)(ngram_model_t *model,
                     int32 wid, int32 lweight);
+
+    /**
+     * Implementation-specific function for purging N-Gram cache
+     */
+    void (*flush)(ngram_model_t *model);
 } ngram_funcs_t;
 
 /**

@@ -689,6 +689,12 @@ int32 ngram_model_set_current_wid(ngram_model_t *set,
 SPHINXBASE_EXPORT
 int32 ngram_model_set_known_wid(ngram_model_t *set, int32 set_wid);
 
+/**
+ * Flush any cached N-Gram information
+ */
+SPHINXBASE_EXPORT
+void ngram_model_flush(ngram_model_t *lm);
+
 #ifdef __cplusplus
 }
 #endif
