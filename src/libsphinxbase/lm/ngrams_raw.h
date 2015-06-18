@@ -10,7 +10,7 @@
 #include "lm_trie_misc.h"
 
 typedef struct ngram_raw_s {
-    word_idx *words; /* array of word indexes, length corresponds to ngram order */
+    uint32 *words; /* array of word indexes, length corresponds to ngram order */
     float *weights;  /* prob and backoff or just prob for longest order */
 }ngram_raw_t;
 

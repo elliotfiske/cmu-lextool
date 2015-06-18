@@ -8,6 +8,8 @@
 #include "lm_trie_quant.h"
 #include "lm_trie_misc.h"
 
+#define FLOAT_INF (0x7f800000)
+
 typedef struct bins_s {
     float *begin;
     const float *end;

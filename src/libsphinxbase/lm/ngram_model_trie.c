@@ -184,13 +184,13 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     return base;
 }
 
-static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, ngram_raw_t *raw_ngrams, uint32 *raw_ngram_idx, uint32 *counts, node_range_t range, word_idx *hist, int n_hist, int order, int max_order) 
+static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, ngram_raw_t *raw_ngrams, uint32 *raw_ngram_idx, uint32 *counts, node_range_t range, uint32 *hist, int n_hist, int order, int max_order) 
 {
     if (n_hist > 0 && range.begin == range.end) {
         return;
     }
     if (n_hist == 0) {
-        word_idx i;
+        uint32 i;
         for (i = 0; i < counts[0]; i++) {
             node_range_t node;
             unigram_find(trie->unigrams, i, &node);
@@ -201,7 +201,7 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, ngram_raw_t *raw_n
         uint32 ptr;
         node_range_t node;
         bitarr_address_t address;
-        word_idx new_word;
+        uint32 new_word;
         middle_t *middle = &trie->middle_begin[n_hist - 1];
         for (ptr = range.begin; ptr < range.end; ptr++) {
             address.base = middle->base.base;
@@ -241,7 +241,7 @@ static void fill_raw_ngram(lm_trie_t *trie, logmath_t *lmath, ngram_raw_t *raw_n
                 raw_ngram->weights[1] = (float)logmath_log_float_to_log10(lmath, backoff);
             }
             raw_ngram->weights[0] = (float)logmath_log_float_to_log10(lmath, prob);
-            raw_ngram->words = (word_idx *)ckd_calloc(order, sizeof(*raw_ngram->words));
+            raw_ngram->words = (uint32 *)ckd_calloc(order, sizeof(*raw_ngram->words));
             for (i = 0; i <= n_hist; i++) {
                 raw_ngram->words[i] = hist[n_hist - i];
             }
@@ -283,7 +283,7 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
             ngram_raw_t *raw_ngrams = (ngram_raw_t *)ckd_calloc((size_t)base->n_counts[i - 1], sizeof(*raw_ngrams));
             uint32 raw_ngram_idx;
             uint32 j;
-            word_idx hist[MAX_NGRAM_ORDER];
+            uint32 hist[MAX_NGRAM_ORDER];
             node_range_t range;
             raw_ngram_idx = 0;
             range.begin = range.end = 0; //initialize to disable warning

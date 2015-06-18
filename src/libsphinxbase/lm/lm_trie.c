@@ -59,7 +59,7 @@ void longest_init(longest_t *longest, void *base_mem, uint8 quant_bits, uint32 m
     base_init(&longest->base, base_mem, max_vocab, quant_bits);
 }
 
-static bitarr_address_t middle_insert(middle_t *middle, word_idx word, int order, int max_order)
+static bitarr_address_t middle_insert(middle_t *middle, uint32 word, int order, int max_order)
 {
     uint32 at_pointer;
     uint32 next;
@@ -83,7 +83,7 @@ static bitarr_address_t middle_insert(middle_t *middle, word_idx word, int order
     return address;
 }
 
-static bitarr_address_t longest_insert(longest_t *longest, word_idx index)
+static bitarr_address_t longest_insert(longest_t *longest, uint32 index)
 {
     bitarr_address_t address;
     assert(index <= longest->base.word_mask);
@@ -110,16 +110,16 @@ static uint32 unigram_next(lm_trie_t *trie, int order)
 
 static void recursive_insert(lm_trie_t *trie, ngram_raw_t **raw_ngrams, uint32 *counts, int order)
 {
-    word_idx unigram_idx = 0;
-    word_idx *words;
+    uint32 unigram_idx = 0;
+    uint32 *words;
     float *probs;
-    const word_idx unigram_count = (word_idx)counts[0];
+    const uint32 unigram_count = (uint32)counts[0];
     priority_queue_t *ngrams = priority_queue_create(order, &ngram_ord_comparator);
     ngram_raw_ord_t *ngram;
     uint32 *raw_ngrams_ptr;
     int i;
 
-    words = (word_idx *)ckd_calloc(order, sizeof(*words)); //for blanks catching
+    words = (uint32 *)ckd_calloc(order, sizeof(*words)); //for blanks catching
     probs = (float *)ckd_calloc(order - 1, sizeof(*probs));    //for blanks prob generating
     ngram = (ngram_raw_ord_t *)ckd_calloc(1, sizeof(*ngram));
     ngram->order = 1;
@@ -300,7 +300,7 @@ void lm_trie_build(lm_trie_t *trie, ngram_raw_t **raw_ngrams, uint32 *counts, in
     }
 }
 
-unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next)
+unigram_t* unigram_find(unigram_t *u, uint32 word, node_range_t *next)
 {
     unigram_t *ptr = &u[word];
     next->begin = ptr->next;
@@ -341,7 +341,7 @@ uint8 lm_trie_find(
     return FALSE;
 }
 
-static bitarr_address_t middle_find(middle_t *middle, word_idx word, node_range_t *range)
+static bitarr_address_t middle_find(middle_t *middle, uint32 word, node_range_t *range)
 {
     uint32 at_pointer;
     bitarr_address_t address;
@@ -365,7 +365,7 @@ static bitarr_address_t middle_find(middle_t *middle, word_idx word, node_range_
     return address;
 }
 
-static bitarr_address_t longest_find(longest_t *longest, word_idx word, node_range_t *range)
+static bitarr_address_t longest_find(longest_t *longest, uint32 word, node_range_t *range)
 {
     uint32 at_pointer;
     bitarr_address_t address;
