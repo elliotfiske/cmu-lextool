@@ -4,6 +4,7 @@
 #include <sphinxbase/pio.h>
 #include <sphinxbase/bitarr.h>
 
+#include "ngram_model_internal.h"
 #include "lm_trie_quant.h"
 
 typedef struct unigram_s {
@@ -47,8 +48,8 @@ typedef struct lm_trie_s {
     longest_t *longest;
     lm_trie_quant_t *quant;
 
-    float backoff[MAX_NGRAM_ORDER];
-    uint32 prev_hist[MAX_NGRAM_ORDER - 1];
+    float backoff[NGRAM_MAX_ORDER];
+    uint32 prev_hist[NGRAM_MAX_ORDER - 1];
 }lm_trie_t;
 
 /**

@@ -9,6 +9,7 @@
 #include <sphinxbase/priority_queue.h>
 #include <sphinxbase/byteorder.h>
 
+#include "ngram_model_internal.h"
 #include "ngrams_raw.h"
 
 int ngram_comparator(const void *first_void, const void *second_void)
@@ -60,7 +61,7 @@ static void read_ngram_instance(lineiter_t **li, hash_table_t *wid, logmath_t *l
     int n;
     int words_expected;
     int i;
-    char *wptr[MAX_NGRAM_ORDER + 1];
+    char *wptr[NGRAM_MAX_ORDER + 1];
     uint32 *word_out;
 
     *li = lineiter_next(*li);
@@ -70,7 +71,7 @@ static void read_ngram_instance(lineiter_t **li, hash_table_t *wid, logmath_t *l
     }
     string_trim((*li)->buf, STRING_BOTH);
     words_expected = order == order_max ? order + 1 : order + 2;
-    if ((n = str2words((*li)->buf, wptr, MAX_NGRAM_ORDER + 1)) < words_expected) {
+    if ((n = str2words((*li)->buf, wptr, NGRAM_MAX_ORDER + 1)) < words_expected) {
         if ((*li)->buf[0] != '\0') {
             E_WARN("Format error; %d-gram ignored: %s\n", order, (*li)->buf);
         }
@@ -275,8 +276,8 @@ ngram_raw_t** ngrams_raw_read_dmp(FILE *fp, logmath_t *lmath, uint32 *counts, in
 void ngrams_raw_fix_counts(ngram_raw_t **raw_ngrams, uint32 *counts, uint32 *fixed_counts, int order)
 {
     priority_queue_t *ngrams = priority_queue_create(order - 1, &ngram_ord_comparator);
-    uint32 raw_ngram_ptrs[MAX_NGRAM_ORDER - 1];
-    uint32 words[MAX_NGRAM_ORDER];
+    uint32 raw_ngram_ptrs[NGRAM_MAX_ORDER - 1];
+    uint32 words[NGRAM_MAX_ORDER];
     int i;
 
     memset(words, -1, sizeof(words)); //since we have unsigned word idx that will give us unreachable maximum word index

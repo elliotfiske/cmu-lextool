@@ -5,8 +5,8 @@
 #include <sphinxbase/ckd_alloc.h>
 #include <sphinxbase/err.h>
 
+#include "ngram_model_internal.h"
 #include "lm_trie_quant.h"
-#include "lm_trie_misc.h"
 
 #define FLOAT_INF (0x7f800000)
 
@@ -17,7 +17,7 @@ typedef struct bins_s {
 
 struct lm_trie_quant_s {
     lm_trie_quant_type_t quant_type;
-    bins_t tables[MAX_NGRAM_ORDER - 1][2];
+    bins_t tables[NGRAM_MAX_ORDER - 1][2];
     bins_t *longest;
     uint8 *mem;
     size_t mem_size;

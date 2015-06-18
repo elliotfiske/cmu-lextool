@@ -133,8 +133,8 @@ ngram_model_t* ngram_model_trie_read_arpa(cmd_ln_t *config,
     ngram_model_t *base;
     ngram_raw_t **raw_ngrams;
     int32 is_pipe;
-    uint32 counts[MAX_NGRAM_ORDER];
-    uint32 fixed_counts[MAX_NGRAM_ORDER];
+    uint32 counts[NGRAM_MAX_ORDER];
+    uint32 fixed_counts[NGRAM_MAX_ORDER];
     int order;
     int i;
 
@@ -283,7 +283,7 @@ int ngram_model_trie_write_arpa(ngram_model_t *base,
             ngram_raw_t *raw_ngrams = (ngram_raw_t *)ckd_calloc((size_t)base->n_counts[i - 1], sizeof(*raw_ngrams));
             uint32 raw_ngram_idx;
             uint32 j;
-            uint32 hist[MAX_NGRAM_ORDER];
+            uint32 hist[NGRAM_MAX_ORDER];
             node_range_t range;
             raw_ngram_idx = 0;
             range.begin = range.end = 0; //initialize to disable warning
@@ -356,7 +356,7 @@ ngram_model_t* ngram_model_trie_read_bin(cmd_ln_t *config,
     char *hdr;
     int cmp_res;
     uint8 i, order;
-    uint32 counts[MAX_NGRAM_ORDER];
+    uint32 counts[NGRAM_MAX_ORDER];
     ngram_model_trie_t *model;
     ngram_model_t *base;
 
