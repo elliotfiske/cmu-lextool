@@ -8,7 +8,6 @@
 #include <sphinxbase/priority_queue.h>
 
 #include "lm_trie.h"
-#include "lm_trie_misc.h"
 #include "lm_trie_quant.h"
 
 static uint32 base_size(uint32 entries, uint32 max_vocab, uint8 remaining_bits)

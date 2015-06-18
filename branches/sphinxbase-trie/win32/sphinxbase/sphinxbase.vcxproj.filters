@@ -334,9 +334,6 @@
     <ClInclude Include="..\..\include\sphinxbase\priority_queue.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\libsphinxbase\lm\lm_trie_misc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\sphinxbase\bitarr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
