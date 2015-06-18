@@ -48,7 +48,7 @@ typedef struct lm_trie_s {
     lm_trie_quant_t *quant;
 
     float backoff[MAX_NGRAM_ORDER];
-    word_idx prev_hist[MAX_NGRAM_ORDER - 1];
+    uint32 prev_hist[MAX_NGRAM_ORDER - 1];
 }lm_trie_t;
 
 /**
@@ -66,7 +66,7 @@ void lm_trie_alloc_ngram(lm_trie_t *trie, uint32 *counts, int order);
 
 void lm_trie_build(lm_trie_t *trie, ngram_raw_t **raw_ngrams, uint32 *counts, int order);
 
-unigram_t* unigram_find(unigram_t *u, word_idx word, node_range_t *next);
+unigram_t* unigram_find(unigram_t *u, uint32 word, node_range_t *next);
 
 uint8 lm_trie_find(
     void *base, uint8 total_bits, uint8 key_bits, uint32 key_mask,

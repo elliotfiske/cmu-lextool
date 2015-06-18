@@ -14,7 +14,7 @@
 int ngram_comparator(const void *first_void, const void *second_void)
 {
     static int order = -1;
-    word_idx *first, *second, *end;
+    uint32 *first, *second, *end;
 
     if (first_void == NULL) {
         //technical usage, setuping order
@@ -61,7 +61,7 @@ static void read_ngram_instance(lineiter_t **li, hash_table_t *wid, logmath_t *l
     int words_expected;
     int i;
     char *wptr[MAX_NGRAM_ORDER + 1];
-    word_idx *word_out;
+    uint32 *word_out;
 
     *li = lineiter_next(*li);
     if (*li == NULL) {
@@ -95,7 +95,7 @@ static void read_ngram_instance(lineiter_t **li, hash_table_t *wid, logmath_t *l
             raw_ngram->weights[1] = logmath_log10_to_log_float(lmath, raw_ngram->weights[1]);
             //TODO classify float with fpclassify and warn if bad value occurred
         }
-        raw_ngram->words = (word_idx *)ckd_calloc(order, sizeof(*raw_ngram->words));
+        raw_ngram->words = (uint32 *)ckd_calloc(order, sizeof(*raw_ngram->words));
         for (word_out = raw_ngram->words + order - 1, i = 1; word_out >= raw_ngram->words; --word_out, i++) {
             hash_table_lookup_int32(wid, wptr[i], (int32 *)word_out);
         }
@@ -190,12 +190,12 @@ ngram_raw_t** ngrams_raw_read_dmp(FILE *fp, logmath_t *lmath, uint32 *counts, in
 
         fread(&wid, sizeof(wid), 1, fp);
         if (do_swap) SWAP_INT16(&wid);
-        raw_ngram->words = (word_idx *)ckd_calloc(2, sizeof(*raw_ngram->words));
-        raw_ngram->words[0] = (word_idx)wid;
+        raw_ngram->words = (uint32 *)ckd_calloc(2, sizeof(*raw_ngram->words));
+        raw_ngram->words[0] = (uint32)wid;
         while (ngram_idx < counts[0] && j == unigram_next[ngram_idx]) {
             ngram_idx++;
         }
-        raw_ngram->words[1] = (word_idx)ngram_idx - 1;
+        raw_ngram->words[1] = (uint32)ngram_idx - 1;
         raw_ngram->weights = (float *)ckd_calloc(2, sizeof(*raw_ngram->weights));
         fread(&prob_idx, sizeof(prob_idx), 1, fp);
         if (do_swap) SWAP_INT16(&prob_idx);
@@ -218,8 +218,8 @@ ngram_raw_t** ngrams_raw_read_dmp(FILE *fp, logmath_t *lmath, uint32 *counts, in
 
             fread(&wid, sizeof(wid), 1, fp);
             if (do_swap) SWAP_INT16(&wid);
-            raw_ngram->words = (word_idx *)ckd_calloc(3, sizeof(*raw_ngram->words));
-            raw_ngram->words[0] = (word_idx)wid;
+            raw_ngram->words = (uint32 *)ckd_calloc(3, sizeof(*raw_ngram->words));
+            raw_ngram->words[0] = (uint32)wid;
             raw_ngram->weights = (float *)ckd_calloc(1, sizeof(*raw_ngram->weights));
             fread(&prob_idx, sizeof(prob_idx), 1, fp);
             if (do_swap) SWAP_INT16(&prob_idx);
@@ -276,10 +276,10 @@ void ngrams_raw_fix_counts(ngram_raw_t **raw_ngrams, uint32 *counts, uint32 *fix
 {
     priority_queue_t *ngrams = priority_queue_create(order - 1, &ngram_ord_comparator);
     uint32 raw_ngram_ptrs[MAX_NGRAM_ORDER - 1];
-    word_idx words[MAX_NGRAM_ORDER];
+    uint32 words[MAX_NGRAM_ORDER];
     int i;
 
-    memset(words, -1, sizeof(words)); //since we have unsigned word idx that will give us unreachable MAX_WORD_IDX
+    memset(words, -1, sizeof(words)); //since we have unsigned word idx that will give us unreachable maximum word index
     memcpy(fixed_counts, counts, order * sizeof(*fixed_counts));
     for (i = 2; i <= order; ++i) {
         ngram_raw_ord_t *tmp_ngram = (ngram_raw_ord_t *)ckd_calloc(1, sizeof(*tmp_ngram));
