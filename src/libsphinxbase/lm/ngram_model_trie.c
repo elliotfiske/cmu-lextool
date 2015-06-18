@@ -565,15 +565,15 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         for (i = 0; i < order; i++) {
             base->n_counts[i] = fixed_counts[i];
         }
+
+        //build reversed trie
+        lm_trie_alloc_ngram(model->trie, order > 2 ? fixed_counts : counts, order);
+        lm_trie_build(model->trie, raw_ngrams, counts, order);
+        counts[1]++;
+
+        //free raw ngrams
+        ngrams_raw_free(raw_ngrams, counts, order);
     }
-
-    //build reversed trie
-    lm_trie_alloc_ngram(model->trie, order > 2 ? fixed_counts : counts, order);
-    lm_trie_build(model->trie, raw_ngrams, counts, order);
-    counts[1]++;
-
-    //free raw ngrams
-    ngrams_raw_free(raw_ngrams, counts, order);
 
     /* read ascii word strings */
     read_word_str(base, fp);
