@@ -313,7 +313,7 @@ static size_t calc_pivot(uint32 off, uint32 range, uint32 width)
     return (size_t)((off * width) / (range + 1));
 }
 
-uint8 lm_trie_find(
+static uint8 uniform_find(
     void *base, uint8 total_bits, uint8 key_bits, uint32 key_mask,
     uint32 before_it, uint32 before_v,
     uint32 after_it, uint32 after_v,
@@ -347,7 +347,7 @@ static bitarr_address_t middle_find(middle_t *middle, uint32 word, node_range_t 
     bitarr_address_t address;
 
     //finding BitPacked with uniform find
-    if (!lm_trie_find((void *)middle->base.base, middle->base.total_bits, middle->base.word_bits, middle->base.word_mask, range->begin - 1, 0, range->end, middle->base.max_vocab, word, &at_pointer)) {
+    if (!uniform_find((void *)middle->base.base, middle->base.total_bits, middle->base.word_bits, middle->base.word_mask, range->begin - 1, 0, range->end, middle->base.max_vocab, word, &at_pointer)) {
         address.base = NULL;
         address.offset = 0;
         return address;
@@ -371,7 +371,7 @@ static bitarr_address_t longest_find(longest_t *longest, uint32 word, node_range
     bitarr_address_t address;
 
     //finding BitPacked with uniform find
-    if (!lm_trie_find((void *)longest->base.base, longest->base.total_bits, longest->base.word_bits, longest->base.word_mask, range->begin - 1, 0, range->end, longest->base.max_vocab, word, &at_pointer)) {
+    if (!uniform_find((void *)longest->base.base, longest->base.total_bits, longest->base.word_bits, longest->base.word_mask, range->begin - 1, 0, range->end, longest->base.max_vocab, word, &at_pointer)) {
         address.base = NULL;
         address.offset = 0;
         return address;
