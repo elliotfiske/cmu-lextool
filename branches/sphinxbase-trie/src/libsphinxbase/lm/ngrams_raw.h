@@ -19,6 +19,11 @@ typedef struct ngram_raw_ord_s {
     int order;
 } ngram_raw_ord_t;
 
+typedef union {
+    float32 f;
+    int32 l;
+} dmp_weight_t;
+
 /**
  * Raw ngrams comparator. Usage:
  * > ngram_comparator(NULL, &order); - to set order of ngrams
@@ -31,7 +36,29 @@ int ngram_comparator(const void *first_void, const void *second_void);
  */
 int ngram_ord_comparator(void *a_raw, void *b_raw);
 
-ngram_raw_t** ngrams_raw_read_arpa(lineiter_t **li, hash_table_t *wid, logmath_t *lmath, uint32 *counts, int order);
+/**
+ * Read ngrams of order > 1 from ARPA file
+ * @param li     [in] sphinxbase file line iterator that point to bigram description in ARPA file
+ * @param wid    [in] hashtable that maps string word representation to id
+ * @param lmath  [in] log math used for log convertions
+ * @param counts [in] amount of ngrams for each order
+ * @param order  [in] maximum order of ngrams
+ * @return            raw ngrams of order bigger than 1
+ */
+ngram_raw_t** ngrams_raw_read_arpa(lineiter_t **li, logmath_t *lmath, uint32 *counts, int order, hash_table_t *wid);
+
+/**
+ * Reads ngrams of order > 1 from DMP file.
+ * @param fp           [in] file to read from. Position in file corresponds to start of bigram description
+ * @param lmath        [in] log math used for log convertions
+ * @param counts       [in] amount of ngrams for each order
+ * @param order        [in] maximum order of ngrams
+ * @param unigram_next [in] array of next word pointers for unigrams. Needed to define forst word of bigrams.
+                            Will be freed inside the function right after usage
+ * @param do_swap      [in] wether to do swap of bits
+ * @return                  raw ngrams of order bigger than 1
+ */
+ngram_raw_t** ngrams_raw_read_dmp(FILE *fp, logmath_t *lmath, uint32 *counts, int order, uint32 *unigram_next, uint8 do_swap);
 
 void ngrams_raw_fix_counts(ngram_raw_t **raw_ngrams, uint32 *counts, uint32 *fixed_counts, int order);
 
