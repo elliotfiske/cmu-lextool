@@ -191,15 +191,13 @@ static int weights_comparator(const void *a, const void *b)
 
 static void make_bins(float *values, uint32 values_num, float *centers, uint32 bins)
 {
-    float shift;
     float *finish, *start;
     uint32 i;
 
     qsort(values, values_num, sizeof(*values), &weights_comparator);
     start = values;
-    shift = values_num / (float)bins;
     for (i = 0; i < bins; i++, centers++, start = finish) {
-        finish = values + (size_t)(shift * (i + 1));
+        finish = values + (size_t)((uint64)values_num * (i + 1) / bins);
         if (finish == start) {
             // zero length bucket.
             *centers = i ? *(centers - 1) : -FLOAT_INF;
