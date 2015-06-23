@@ -191,14 +191,6 @@
     <property name="unitManager" value="unitManager"/>
   </component>
 
-  <component name="trieNgramModel"
-    type="edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrie">
-    <property name="location" value=""/>
-    <property name="dictionary" value="dictionary"/>
-    <property name="maxDepth" value="3"/>
-    <property name="unigramWeight" value=".7"/>
-  </component>
-
   <component name="simpleNGramModel"
     type="edu.cmu.sphinx.linguist.language.ngram.SimpleNGramModel">
     <property name="location" value=""/>
