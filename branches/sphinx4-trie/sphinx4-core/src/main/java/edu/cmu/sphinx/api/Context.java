@@ -42,7 +42,7 @@ public class Context {
     public Context(Configuration config)
         throws IOException, MalformedURLException
     {
-        this("file:///F://AlphaCephei//trie//sphinx4//sphinx4-core//src//main//resources//edu//cmu//sphinx//api//default.config.xml", config);
+        this("resource:/edu/cmu/sphinx/api/default.config.xml", config);
     }
 
     /**
@@ -150,10 +150,6 @@ public class Context {
             setLocalProperty("largeTrigramModel->location", path);
             setLocalProperty(
                 "lexTreeLinguist->languageModel", "largeTrigramModel");
-        } else if (path.endsWith(".bin")){
-            setLocalProperty("trieNgramModel->location", path);
-            setLocalProperty(
-                "lexTreeLinguist->languageModel", "trieNgramModel");
         } else {
             throw new IllegalArgumentException(
                 "Unknown format extension: " + path);
