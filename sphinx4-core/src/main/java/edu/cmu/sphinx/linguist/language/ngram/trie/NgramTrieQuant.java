@@ -11,6 +11,8 @@ public class NgramTrieQuant {
     private int backoffMask;
     private float[][] tables;
 
+    private QuantType quantType;
+
     public NgramTrieQuant(int order, QuantType quantType) {
         switch (quantType) {
         case NO_QUANT:
@@ -22,9 +24,10 @@ public class NgramTrieQuant {
             backoffMask = (1 << backoffBits) - 1;
             break;
         default:
-            throw new Error("Unsupported quantation type: " + quantType);
+            throw new Error("Unsupported quantization type: " + quantType);
         }
         tables = new float[(order - 1) * 2 - 1][];
+        this.quantType = quantType;
     }
     
     public void setTable(float[] table, int order, boolean isProb) {
@@ -40,4 +43,61 @@ public class NgramTrieQuant {
     public int getBackoffTableLen() {
         return 1 << backoffBits;
     }
+
+    public int getProbBoSize() {
+        switch (quantType) {
+        case NO_QUANT:
+            return 63;
+        case QUANT_16:
+            return 32; //16 bits for prob + 16 bits for bo
+        //TODO implement different quantization stages
+        default:
+            throw new Error("Unsupported quantization type: " + quantType);
+        }
+    }
+
+    public int getProbSize() {
+        switch (quantType) {
+        case NO_QUANT:
+            return 31;
+        case QUANT_16:
+            return 16; //16 bits for probs
+        //TODO implement different quantization stages
+        default:
+            throw new Error("Unsupported quantization type: " + quantType);
+        }
+    }
+
+    private float binsDecode(int orderMinusTwo, int encodedVal, boolean isProb) {
+        int index = orderMinusTwo * 2;
+        if (!isProb) index++;
+        return tables[index][encodedVal];
+    }
+
+    public float readProb(NgramTrieBitarr bitArr, int memPtr, int bitOffset, int orderMinusTwo) {
+        switch (quantType) {
+        case NO_QUANT:
+            return bitArr.readNegativeFloat(memPtr, bitOffset);
+        case QUANT_16:
+            return binsDecode(orderMinusTwo, bitArr.readInt(memPtr, bitOffset, backoffMask), false);
+        //TODO implement different quantization stages
+        default:
+            throw new Error("Unsupported quantization type: " + quantType);
+        }
+    }
+
+    public float readBackoff(NgramTrieBitarr bitArr, int memPtr, int bitOffset, int orderMinusTwo) {
+        switch (quantType) {
+        case NO_QUANT:
+            bitOffset += 31;
+            return bitArr.readFloat(memPtr, bitOffset);
+        case QUANT_16:
+            bitOffset += backoffBits;
+            return binsDecode(orderMinusTwo, bitArr.readInt(memPtr, bitOffset, probMask), true);
+        //TODO implement different quantization stages
+        default:
+            throw new Error("Unsupported quantization type: " + quantType);
+        }
+    }
+
 }

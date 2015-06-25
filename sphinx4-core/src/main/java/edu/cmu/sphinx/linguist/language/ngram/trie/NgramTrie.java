@@ -1,185 +1,199 @@
 package edu.cmu.sphinx.linguist.language.ngram.trie;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.util.Set;
-import java.util.logging.Logger;
+import edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrieModel.TrieRange;
 
-import edu.cmu.sphinx.linguist.WordSequence;
-import edu.cmu.sphinx.linguist.dictionary.Dictionary;
-import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
-import edu.cmu.sphinx.linguist.language.ngram.trie.BinaryLoader;
-import edu.cmu.sphinx.util.LogMath;
-import edu.cmu.sphinx.util.TimerPool;
-import edu.cmu.sphinx.util.props.ConfigurationManagerUtils;
-import edu.cmu.sphinx.util.props.PropertyException;
-import edu.cmu.sphinx.util.props.PropertySheet;
-import edu.cmu.sphinx.util.props.S4Boolean;
-import edu.cmu.sphinx.util.props.S4Double;
-import edu.cmu.sphinx.util.props.S4String;
+//import edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrie.Range;
 
-public class NgramTrie implements LanguageModel {
+public class NgramTrie {
 
-    /**
-     * The property for the name of the file that logs all the queried N-grams.
-     * If this property is set to null, it means that the queried N-grams are
-     * not logged.
-     */
-    @S4String(mandatory = false)
-    public static final String PROP_QUERY_LOG_FILE = "queryLogFile";
+    private MiddleNgram[] middles;
+    private LongestNgram longest;
+    private NgramTrieBitarr bitArr;
+    private int ordersNum;
+    private int quantProbBoLen;
+    private int quantProbLen;
 
-    /** The property that defines the language weight for the search */
-    @S4Double(defaultValue = 1.0f)
-    public final static String PROP_LANGUAGE_WEIGHT = "languageWeight";
-
-    /**
-     * The property that controls whether or not the language model will apply
-     * the language weight and word insertion probability
-     */
-    @S4Boolean(defaultValue = false)
-    public final static String PROP_APPLY_LANGUAGE_WEIGHT_AND_WIP = "applyLanguageWeightAndWip";
-
-    /** Word insertion probability property */
-    @S4Double(defaultValue = 1.0f)
-    public final static String PROP_WORD_INSERTION_PROBABILITY = "wordInsertionProbability";
-
-    // ------------------------------
-    // Configuration data
-    // ------------------------------
-    URL location;
-    protected Logger logger;
-    protected LogMath logMath;
-    protected int maxDepth;
-    protected int[] counts;
-
-    protected Dictionary dictionary;
-    protected String format;
-    protected boolean applyLanguageWeightAndWip;
-    protected float languageWeight;
-    protected float unigramWeight;
-    protected double wip;
-
-    // -------------------------------
-    // Statistics
-    // -------------------------------
-    protected String ngramLogFile;
-
-    // -------------------------------
-    // subcomponents
-    // --------------------------------
-    //private BinaryLoader loader;
-    private PrintWriter logFile;
-
-    //-----------------------------
-    // Trie structure
-    //-----------------------------
-    protected TrieUnigram[] unigrams;
-    protected NgramTrieQuant quant;    
-    
-    public NgramTrie(String format, URL location, String ngramLogFile,
-            int maxDepth, Dictionary dictionary,
-            boolean applyLanguageWeightAndWip, float languageWeight,
-            double wip, float unigramWeight) {
-        logger = Logger.getLogger(getClass().getName());
-        this.format = format;
-        this.location = location;
-        this.ngramLogFile = ngramLogFile;
-        this.maxDepth = maxDepth;
-        logMath = LogMath.getLogMath();
-        this.dictionary = dictionary;
-        this.applyLanguageWeightAndWip = applyLanguageWeightAndWip;
-        this.languageWeight = languageWeight;
-        this.wip = wip;
-        this.unigramWeight = unigramWeight;
-    }
-
-    public NgramTrie() {
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.
-     * util.props.PropertySheet)
-     */
-    @Override
-    public void newProperties(PropertySheet ps) throws PropertyException {
-        logger = ps.getLogger();
-        location = ConfigurationManagerUtils.getResource(PROP_LOCATION, ps);
-        ngramLogFile = ps.getString(PROP_QUERY_LOG_FILE);
-        maxDepth = ps.getInt(LanguageModel.PROP_MAX_DEPTH);
-        dictionary = (Dictionary) ps.getComponent(PROP_DICTIONARY);
-        applyLanguageWeightAndWip = ps
-                .getBoolean(PROP_APPLY_LANGUAGE_WEIGHT_AND_WIP);
-        languageWeight = ps.getFloat(PROP_LANGUAGE_WEIGHT);
-        wip = ps.getDouble(PROP_WORD_INSERTION_PROBABILITY);
-        unigramWeight = ps.getFloat(PROP_UNIGRAM_WEIGHT);
-    }
-
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see edu.cmu.sphinx.linguist.language.ngram.LanguageModel#allocate()
-     */
-    //@SuppressWarnings("unchecked")
-    public void allocate() throws IOException {
-        TimerPool.getTimer(this, "Load LM").start();
-
-        logger.info("Loading n-gram language model from: " + location);
-
-        // create the log file if specified
-        if (ngramLogFile != null)
-            logFile = new PrintWriter(new FileOutputStream(ngramLogFile));
-        BinaryLoader loader;
-        try {
-            loader = new BinaryLoader(new File(location.toURI()));
-        } catch (Exception ex) {
-        	loader = new BinaryLoader(new File(location.getPath()));
+    public NgramTrie(int[] counts, int quantProbBoLen, int quantProbLen) {
+        int memLen = 0;
+        int[] ngramMemSize = new int[counts.length - 1];
+        for (int i = 1; i <= counts.length - 1; i++) {
+            int entryLen = requiredBits(counts[0]);
+            if (i == counts.length - 1) {
+                //longest ngram
+                entryLen += quantProbLen;
+            } else {
+                //middle ngram
+                entryLen += requiredBits(counts[i + 1]);
+                entryLen += quantProbBoLen;
+            }
+            // Extra entry for next pointer at the end.  
+            // +7 then / 8 to round up bits and convert to bytes
+            // +8 (or +sizeof(uint64))so that reading bit array doesn't exceed bounds 
+            // Note that this waste is O(order), not O(number of ngrams).
+            int tmpLen = ((1 + counts[i]) * entryLen + 7) / 8 + 8; 
+            ngramMemSize[i - 1] = tmpLen;
+            memLen += tmpLen;
         }
-        loader.verifyHeader();
-        counts = loader.readCounts();
-        if (maxDepth <= 0 || maxDepth > counts.length)
-            maxDepth = counts.length;
-        if (maxDepth > 1) {
-            quant = loader.readQuant(maxDepth);
+        bitArr = new NgramTrieBitarr(memLen);
+        this.quantProbLen = quantProbLen;
+        this.quantProbBoLen = quantProbBoLen;
+        middles = new MiddleNgram[counts.length - 2];
+        int[] startPtrs = new int[counts.length - 2];
+        int startPtr = 0;
+        for (int i = 0; i < counts.length - 2; i++) {
+            startPtrs[i] = startPtr;
+            startPtr += ngramMemSize[i];
         }
-        unigrams = loader.readUnigrams(counts[0]);
-        
-        TimerPool.getTimer(this, "Load LM").stop();
+        // Crazy backwards thing so we initialize using pointers to ones that have already been initialized
+        for (int i = counts.length - 1; i >= 2; --i) {
+            middles[i - 2] = new MiddleNgram(startPtrs[i - 2], quantProbBoLen, counts[i-1], counts[0], counts[i]);
+        }
+        longest = new LongestNgram(startPtr, quantProbLen, counts[0]);
+        ordersNum = middles.length + 1;
     }
 
-	@Override
-	public void deallocate() throws IOException {
-	}
+    public byte[] getMem() {
+        return bitArr.getArr();
+    }
 
-	@Override
-	public float getProbability(WordSequence wordSequence) {
-		return 0;
-	}
+    private int findNgram(Ngram ngramSet, int wordId, TrieRange range) {
+        int ptr;
+        range.begin--;
+        if ((ptr = uniformFind(ngramSet, range, wordId)) < 0) {
+            range.setInvalid();
+            return -1;
+        }
+        //read next order ngrams for future searches
+        if (ngramSet instanceof MiddleNgram)
+            ((MiddleNgram)ngramSet).readNextRange(ptr, range);
+        return ptr;
+    }
 
-	@Override
-	public float getSmear(WordSequence wordSequence) {
-		return 0;
-	}
+    public float readNgramBackoff(int wordId, int orderMinusTwo, TrieRange range, NgramTrieQuant quant) {
+        int ptr;
+        Ngram ngram = getNgram(orderMinusTwo);
+        if ((ptr = findNgram(ngram, wordId, range)) < 0)
+            return 0.0f;
+        return quant.readBackoff(bitArr, ngram.memPtr, ngram.getNgramWeightsOffset(ptr), orderMinusTwo);
+    }
 
-	@Override
-	public Set<String> getVocabulary() {
-		return null;
-	}
+    public float readNgramProb(int wordId, int orderMinusTwo, TrieRange range, NgramTrieQuant quant) {
+        int ptr;
+        Ngram ngram = getNgram(orderMinusTwo);
+        if ((ptr = findNgram(ngram, wordId, range)) < 0)
+            return 0.0f;
+        return quant.readProb(bitArr, ngram.memPtr, ngram.getNgramWeightsOffset(ptr), orderMinusTwo);
+    }
 
-	@Override
-	public int getMaxDepth() {
-		return 0;
-	}
-	
-    public static class TrieUnigram {
-        public float prob;
-        public float backoff;
-        public int next;
+    private int calculatePivot(int offset, int range, int width) {
+    	return (offset * width) / (range + 1);
+    }
+
+    private int uniformFind(Ngram ngram, TrieRange range, int wordId) {
+    	TrieRange vocabRange = new TrieRange(0, ngram.maxVocab);
+        while (range.width() > 1) {
+            int pivot = range.begin + 1 + calculatePivot(wordId - vocabRange.begin, vocabRange.width(), range.width() - 1);
+            int mid = ngram.readNgramWord(pivot);
+            if (mid < wordId) {
+                range.begin = pivot;
+                vocabRange.begin = mid;
+            } else if (mid > wordId){
+                range.end = pivot;
+                vocabRange.end = mid;
+            } else {
+                return pivot;
+            }
+        }
+        return -1;
+    }
+
+    private Ngram getNgram(int orderMinusTwo) {
+        if (orderMinusTwo == ordersNum - 1)
+            return longest;
+        return middles[orderMinusTwo];
+    }
+
+    private int requiredBits(int maxValue) {
+        if (maxValue == 0) return 0;
+        int res = 1;
+        while ((maxValue >>= 1) != 0) res++;
+        return res;
+    }
+
+    class BitMask {
+        int bits;
+        int mask;
+        BitMask(int maxValue) {
+            bits = requiredBits(maxValue);
+            mask = (1 << bits) - 1;
+        }
+    }
+
+    abstract class Ngram {
+        int memPtr;
+        int wordBits;
+        int wordMask;
+        int totalBits;
+        int insertIdx;
+        int maxVocab;
+        Ngram(int memPtr, int maxVocab, int remainingBits) {
+            this.maxVocab = maxVocab;
+            this.memPtr = memPtr;
+            wordBits = requiredBits(maxVocab);
+            if (wordBits > 25)
+                throw new Error("Sorry, word indices more than" + (1 << 25) + " are not implemented");
+            totalBits = wordBits + remainingBits;
+            wordMask = (1 << wordBits) - 1;
+            insertIdx = 0;
+        }
+
+        int readNgramWord(int ngramIdx) {
+            int offset = ngramIdx * totalBits;
+            return bitArr.readInt(memPtr, offset, wordMask);
+        }
+
+        int getNgramWeightsOffset(int ngramIdx) {
+            return ngramIdx * totalBits + wordBits;
+        }
+
+        abstract int getQuantBits();
+
+    }
+
+    class MiddleNgram extends Ngram {
+        BitMask nextMask;
+        int nextOrderMemPtr;
+        MiddleNgram(int memPtr, int quantBits, int entries, int maxVocab, int maxNext) {
+            super(memPtr, maxVocab, quantBits + requiredBits(maxNext));
+            nextMask = new BitMask(maxNext);
+            if (entries + 1 >= (1 << 25) || (maxNext >= (1 << 25)))
+                throw new Error("Sorry, current implementation doesn't support more than " + (1 << 25) + " n-grams of particular order");
+        }
+
+        void readNextRange(int ngramIdx, TrieRange range) {
+            int offset = ngramIdx * totalBits;
+            offset += wordBits;
+            offset += getQuantBits();
+            range.begin = bitArr.readInt(memPtr, offset, nextMask.mask);
+            offset += totalBits;
+            range.end = bitArr.readInt(memPtr, offset, nextMask.mask);
+        }
+
+        @Override
+        int getQuantBits() {
+            return quantProbBoLen;
+        }
+    }
+
+    class LongestNgram extends Ngram {
+        LongestNgram(int memPtr, int quantBits, int maxVocab) {
+            super(memPtr, maxVocab, quantBits);
+        }
+
+        @Override
+        int getQuantBits() {
+            return quantProbLen;
+        }
     }
 
 }
