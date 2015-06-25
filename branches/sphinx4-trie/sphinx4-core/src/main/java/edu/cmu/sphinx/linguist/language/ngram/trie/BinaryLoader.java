@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrie.TrieUnigram;
+import edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrieModel.TrieUnigram;
 import edu.cmu.sphinx.util.Utilities;
 
 public class BinaryLoader {
@@ -52,12 +52,44 @@ public class BinaryLoader {
     public TrieUnigram[] readUnigrams(int count) throws IOException {
         TrieUnigram[] unigrams = new TrieUnigram[count + 1];
         for (int i = 0; i < count + 1; i++) {
-            TrieUnigram unigram = new TrieUnigram();
-            unigram.prob = Utilities.readLittleEndianFloat(inStream);
-            unigram.backoff = Utilities.readLittleEndianFloat(inStream);
-            unigram.next = Utilities.readLittleEndianInt(inStream);
+            unigrams[i] = new TrieUnigram();
+            unigrams[i].prob = Utilities.readLittleEndianFloat(inStream);
+            unigrams[i].backoff = Utilities.readLittleEndianFloat(inStream);
+            unigrams[i].next = Utilities.readLittleEndianInt(inStream);
         }
         return unigrams;
+    }
+
+    public void readByteArr(byte[] arr) throws IOException {
+        inStream.read(arr);
+    }
+
+    public String[] readWords(int unigramNum) throws IOException {
+        int len = Utilities.readLittleEndianInt(inStream);
+        if (len <= 0) {
+            throw new Error("Bad word string size: " + len);
+        }
+        String[] words = new String[unigramNum];
+        byte[] bytes = new byte[len];
+        inStream.read(bytes);
+
+        int s = 0;
+        int wordStart = 0;
+        for (int i = 0; i < len; i++) {
+            char c = (char) (bytes[i] & 0xFF);
+            if (c == '\0') {
+                // if its the end of a string, add it to the 'words' array
+                words[s] = new String(bytes, wordStart, i - wordStart);
+                wordStart = i + 1;
+                s++;
+            }
+        }
+        assert (s == unigramNum);
+        return words;
+    }
+
+    public void close() throws IOException {
+        inStream.close();
     }
 
     private int readOrder() throws IOException {
