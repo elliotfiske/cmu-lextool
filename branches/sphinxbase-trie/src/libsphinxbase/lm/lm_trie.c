@@ -380,75 +380,58 @@ static bitarr_address_t longest_find(longest_t *longest, uint32 word, node_range
     return address;
 }
 
-static void resume_score(lm_trie_t *trie, int32* hist_iter, int max_order, int32* hist_end, node_range_t *node, float* prob, int32 *n_used)
-{
-    bitarr_address_t address;
-    int order_minus_2 = 0;
-    uint8 independent_left = (node->begin == node->end);
-
-    for (;;order_minus_2++, hist_iter++) {
-        if (hist_iter == hist_end) return;
-        if (independent_left) return;
-        if (order_minus_2 == max_order - 2) break;
-
-        address = middle_find(&trie->middle_begin[order_minus_2], *hist_iter, node);
-        independent_left = (address.base == NULL) || (node->begin == node->end);
-
-        //didn't find entry
-        if (address.base == NULL) return;
-        *prob =  lm_trie_quant_mpread(trie->quant, address, order_minus_2);
-        *n_used = order_minus_2 + 2;
-    }
-
-    address = longest_find(trie->longest, *hist_iter, node);
-    if (address.base != NULL) {
-        *prob = lm_trie_quant_lpread(trie->quant, address);
-        *n_used = max_order;
-    }
-}
-
-static float score_except_backoff(lm_trie_t *trie, int32 wid, int32 *hist, int max_order, int32 n_hist, int32 *n_used)
+static float get_available_prob(lm_trie_t *trie, int32 wid, int32 *hist, int max_order, int32 n_hist, int32 *n_used)
 {
     float prob;
     node_range_t node;
+    bitarr_address_t address;
+    int order_minus_2;
+    uint8 independent_left;
+    int32 *hist_iter, *hist_end;
+
     *n_used = 1;
     prob = unigram_find(trie->unigrams, wid, &node)->prob;
     if (n_hist == 0) {
         return prob;
     }
+
     //find ngrams of higher order if any
-    resume_score(trie, hist, max_order, hist + n_hist, &node, &prob, n_used);
+    order_minus_2 = 0;
+    independent_left = (node.begin == node.end);
+    hist_iter = hist;
+    hist_end = hist + n_hist;
+    for (;;order_minus_2++, hist_iter++) {
+        if (hist_iter == hist_end) return prob;
+        if (independent_left) return prob;
+        if (order_minus_2 == max_order - 2) break;
+
+        address = middle_find(&trie->middle_begin[order_minus_2], *hist_iter, &node);
+        independent_left = (address.base == NULL) || (node.begin == node.end);
+
+        //didn't find entry
+        if (address.base == NULL) return prob;
+        prob =  lm_trie_quant_mpread(trie->quant, address, order_minus_2);
+        *n_used = order_minus_2 + 2;
+    }
+
+    address = longest_find(trie->longest, *hist_iter, &node);
+    if (address.base != NULL) {
+        prob = lm_trie_quant_lpread(trie->quant, address);
+        *n_used = max_order;
+    }
     return prob;
 }
 
-static uint8 fast_make_node(lm_trie_t *trie, int32 *begin, int32 *end, node_range_t *node) {
-    int32 *it;
-    assert(begin != end);
-    unigram_find(trie->unigrams, *begin, node);
-    if (node->begin == node->end) {
-        return FALSE;
-    }
-
-    for (it = begin + 1; it < end; ++it) {
-        bitarr_address_t address = middle_find(&trie->middle_begin[it - begin - 1], *it, node);
-        if (node->begin == node->end || address.base == NULL) {
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
-
-static float score_backoff(lm_trie_t *trie, int32 start, int32 *hist, int32 n_hist)
+static float get_available_backoff(lm_trie_t *trie, int32 start, int32 *hist, int32 n_hist)
 {
     float backoff = 0.0f;
     int order_minus_2;
     int32 *hist_iter;
     node_range_t node;
+    unigram_t *first_hist = unigram_find(trie->unigrams, hist[0], &node);
     if (start <= 1) {
-        backoff += unigram_find(trie->unigrams, hist[0], &node)->bo;
+        backoff += first_hist->bo;
         start = 2;
-    } else if (!fast_make_node(trie, hist, hist + start - 1, &node)) {
-        return backoff;
     }
     order_minus_2 = start - 2;
     for (hist_iter = hist + start - 1; hist_iter < hist + n_hist; hist_iter++, order_minus_2++) {
@@ -461,9 +444,9 @@ static float score_backoff(lm_trie_t *trie, int32 start, int32 *hist, int32 n_hi
 
 static float lm_trie_nobo_score(lm_trie_t *trie, int32 wid, int32 *hist, int max_order, int32 n_hist, int32 *n_used)
 {
-    float prob = score_except_backoff(trie, wid, hist, max_order, n_hist, n_used);
+    float prob = get_available_prob(trie, wid, hist, max_order, n_hist, n_used);
     if (n_hist < *n_used) return prob;
-    return prob + score_backoff(trie, *n_used, hist, n_hist);
+    return prob + get_available_backoff(trie, *n_used, hist, n_hist);
 }
 
 static float lm_trie_hist_score(lm_trie_t *trie, int32 wid, int32 *hist, int32 n_hist, int32 *n_used)
