@@ -70,7 +70,7 @@ public class NgramTrieModel implements LanguageModel {
     protected boolean applyLanguageWeightAndWip;
     protected float languageWeight;
     protected float unigramWeight;
-    protected double wip;
+    protected float logWip;
 
     // -------------------------------
     // Statistics
@@ -104,7 +104,7 @@ public class NgramTrieModel implements LanguageModel {
         this.dictionary = dictionary;
         this.applyLanguageWeightAndWip = applyLanguageWeightAndWip;
         this.languageWeight = languageWeight;
-        this.wip = wip;
+        this.logWip = logMath.linearToLog(wip);
         this.unigramWeight = unigramWeight;
     }
 
@@ -120,6 +120,7 @@ public class NgramTrieModel implements LanguageModel {
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         logger = ps.getLogger();
+        logMath = LogMath.getLogMath();
         location = ConfigurationManagerUtils.getResource(PROP_LOCATION, ps);
         ngramLogFile = ps.getString(PROP_QUERY_LOG_FILE);
         maxDepth = ps.getInt(LanguageModel.PROP_MAX_DEPTH);
@@ -127,7 +128,7 @@ public class NgramTrieModel implements LanguageModel {
         applyLanguageWeightAndWip = ps
                 .getBoolean(PROP_APPLY_LANGUAGE_WEIGHT_AND_WIP);
         languageWeight = ps.getFloat(PROP_LANGUAGE_WEIGHT);
-        wip = ps.getDouble(PROP_WORD_INSERTION_PROBABILITY);
+        logWip = logMath.linearToLog(ps.getDouble(PROP_WORD_INSERTION_PROBABILITY));
         unigramWeight = ps.getFloat(PROP_UNIGRAM_WEIGHT);
     }
 
@@ -259,8 +260,14 @@ public class NgramTrieModel implements LanguageModel {
         return prob;
     }
 
-    @Override
-    public float getProbability(WordSequence wordSequence) {
+    private float applyWeights(float score) {
+        //TODO ignores unigram weight. Apply or remove from properties
+        if (applyLanguageWeightAndWip)
+            return score * languageWeight + logWip;
+        return score;
+    }
+
+    private float getProbabilityRaw(WordSequence wordSequence) {
         int numberWords = wordSequence.size();
 
         if (numberWords > maxDepth) {
@@ -269,6 +276,11 @@ public class NgramTrieModel implements LanguageModel {
 
         //cap
         return getContextlessProbability(wordSequence);
+    }
+
+    @Override
+    public float getProbability(WordSequence wordSequence) {
+        return applyWeights(getProbabilityRaw(wordSequence));
     }
 
     @Override
