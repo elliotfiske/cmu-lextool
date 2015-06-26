@@ -68,10 +68,8 @@ public class NgramTrieQuant {
         }
     }
 
-    private float binsDecode(int orderMinusTwo, int encodedVal, boolean isProb) {
-        int index = orderMinusTwo * 2;
-        if (!isProb) index++;
-        return tables[index][encodedVal];
+    private float binsDecode(int tableIdx, int encodedVal) {
+        return tables[tableIdx][encodedVal];
     }
 
     public float readProb(NgramTrieBitarr bitArr, int memPtr, int bitOffset, int orderMinusTwo) {
@@ -79,7 +77,10 @@ public class NgramTrieQuant {
         case NO_QUANT:
             return bitArr.readNegativeFloat(memPtr, bitOffset);
         case QUANT_16:
-            return binsDecode(orderMinusTwo, bitArr.readInt(memPtr, bitOffset, backoffMask), false);
+            int tableIdx = orderMinusTwo * 2;
+            if (tableIdx < tables.length - 1)
+                bitOffset += backoffBits;
+            return binsDecode(tableIdx, bitArr.readInt(memPtr, bitOffset, backoffMask));
         //TODO implement different quantization stages
         default:
             throw new Error("Unsupported quantization type: " + quantType);
@@ -92,8 +93,8 @@ public class NgramTrieQuant {
             bitOffset += 31;
             return bitArr.readFloat(memPtr, bitOffset);
         case QUANT_16:
-            bitOffset += backoffBits;
-            return binsDecode(orderMinusTwo, bitArr.readInt(memPtr, bitOffset, probMask), true);
+            int tableIdx = orderMinusTwo * 2 + 1;
+            return binsDecode(tableIdx, bitArr.readInt(memPtr, bitOffset, probMask));
         //TODO implement different quantization stages
         default:
             throw new Error("Unsupported quantization type: " + quantType);
