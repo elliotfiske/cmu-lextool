@@ -197,7 +197,6 @@ public class NgramTrieModel implements LanguageModel {
         buildUnigramIDMap(dictionary, words);
         loader.close();
         TimerPool.getTimer(this, "Load LM").stop();
-        
     }
 
     @Override
@@ -205,7 +204,7 @@ public class NgramTrieModel implements LanguageModel {
     }
 
     private float getAvailableProb(WordSequence wordSequence, TrieRange range, float prob) {
-        if (range.isValid()) return prob;
+        if (!range.isValid()) return prob;
         for (int reverseOrderMinusTwo = wordSequence.size() - 2; reverseOrderMinusTwo >= 0; reverseOrderMinusTwo--) {
             int orderMinusTwo = wordSequence.size() - 2 - reverseOrderMinusTwo;
             if (orderMinusTwo + 1 == maxDepth) break;
@@ -226,14 +225,13 @@ public class NgramTrieModel implements LanguageModel {
         if (curDepth == 1) {
             backoff += unigrams[wordId].backoff;
             curDepth = 2;
-        } else {
-            int sequenceIdx, orderMinusTwo;
-            for (sequenceIdx = wordsNum - curDepth - 1, orderMinusTwo = 0; sequenceIdx >= 0; sequenceIdx++, orderMinusTwo++) {
-                int tmpWordId = unigramIDMap.get(wordSequence.getWord(sequenceIdx));
-                float tmpBackoff = trie.readNgramProb(tmpWordId, orderMinusTwo, range, quant);
-                if (!range.isValid()) break;
-                backoff += tmpBackoff;
-            }
+        }
+        int sequenceIdx, orderMinusTwo;
+        for (sequenceIdx = wordsNum - curDepth - 1, orderMinusTwo = 0; sequenceIdx >= 0; sequenceIdx--, orderMinusTwo++) {
+            int tmpWordId = unigramIDMap.get(wordSequence.getWord(sequenceIdx));
+            float tmpBackoff = trie.readNgramBackoff(tmpWordId, orderMinusTwo, range, quant);
+            if (!range.isValid()) break;
+            backoff += tmpBackoff;
         }
         return backoff;
     }
