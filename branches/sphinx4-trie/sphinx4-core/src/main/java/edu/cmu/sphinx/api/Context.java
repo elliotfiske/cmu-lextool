@@ -42,7 +42,9 @@ public class Context {
     public Context(Configuration config)
         throws IOException, MalformedURLException
     {
-        this("resource:/edu/cmu/sphinx/api/default.config.xml", config);
+//        this("resource:/edu/cmu/sphinx/api/default.config.xml", config);
+        this("file:///F://AlphaCephei//trie//sphinx4//sphinx4-core//src//main//resources//edu//cmu//sphinx//api//default.config.xml", config);
+        
     }
 
     /**

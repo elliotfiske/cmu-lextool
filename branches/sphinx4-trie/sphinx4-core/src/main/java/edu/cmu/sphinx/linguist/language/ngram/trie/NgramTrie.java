@@ -91,8 +91,8 @@ public class NgramTrie {
 
     private int uniformFind(Ngram ngram, TrieRange range, int wordId) {
     	TrieRange vocabRange = new TrieRange(0, ngram.maxVocab);
-        while (range.width() > 1) {
-            int pivot = range.begin + 1 + calculatePivot(wordId - vocabRange.begin, vocabRange.width(), range.width() - 1);
+        while (range.getWidth() > 1) {
+            int pivot = range.begin + 1 + calculatePivot(wordId - vocabRange.begin, vocabRange.getWidth(), range.getWidth() - 1);
             int mid = ngram.readNgramWord(pivot);
             if (mid < wordId) {
                 range.begin = pivot;
