@@ -5,12 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -20,7 +17,6 @@ import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
-import edu.cmu.sphinx.linguist.language.ngram.trie.BinaryLoader;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.TimerPool;
 import edu.cmu.sphinx.util.props.ConfigurationManagerUtils;
@@ -80,7 +76,6 @@ public class NgramTrieModel implements LanguageModel {
     // -------------------------------
     // subcomponents
     // --------------------------------
-    //private BinaryLoader loader;
     private PrintWriter logFile;
 
     //-----------------------------
@@ -179,7 +174,7 @@ public class NgramTrieModel implements LanguageModel {
         try {
             loader = new BinaryLoader(new File(location.toURI()));
         } catch (Exception ex) {
-        	loader = new BinaryLoader(new File(location.getPath()));
+            loader = new BinaryLoader(new File(location.getPath()));
         }
         loader.verifyHeader();
         counts = loader.readCounts();
@@ -202,6 +197,9 @@ public class NgramTrieModel implements LanguageModel {
 
     @Override
     public void deallocate() throws IOException {
+        if (logFile != null) {
+            logFile.flush();
+        }
     }
 
     private float getAvailableProb(WordSequence wordSequence, TrieRange range, float prob) {
@@ -280,7 +278,11 @@ public class NgramTrieModel implements LanguageModel {
 
     @Override
     public float getProbability(WordSequence wordSequence) {
-        return applyWeights(getProbabilityRaw(wordSequence));
+        float probability = applyWeights(getProbabilityRaw(wordSequence));
+        if (logFile != null)
+            logFile.println(wordSequence.toString().replace("][", " ") + " : "
+                    + Float.toString(probability));
+        return probability;
     }
 
     @Override
