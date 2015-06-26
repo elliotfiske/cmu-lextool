@@ -17,6 +17,7 @@ import edu.cmu.sphinx.linguist.WordSequence;
 import edu.cmu.sphinx.linguist.dictionary.Dictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 import edu.cmu.sphinx.linguist.language.ngram.LanguageModel;
+import edu.cmu.sphinx.linguist.util.LRUCache;
 import edu.cmu.sphinx.util.LogMath;
 import edu.cmu.sphinx.util.TimerPool;
 import edu.cmu.sphinx.util.props.ConfigurationManagerUtils;
@@ -24,6 +25,7 @@ import edu.cmu.sphinx.util.props.PropertyException;
 import edu.cmu.sphinx.util.props.PropertySheet;
 import edu.cmu.sphinx.util.props.S4Boolean;
 import edu.cmu.sphinx.util.props.S4Double;
+import edu.cmu.sphinx.util.props.S4Integer;
 import edu.cmu.sphinx.util.props.S4String;
 
 public class NgramTrieModel implements LanguageModel {
@@ -35,6 +37,17 @@ public class NgramTrieModel implements LanguageModel {
      */
     @S4String(mandatory = false)
     public static final String PROP_QUERY_LOG_FILE = "queryLogFile";
+
+    /** The property that defines that maximum number of ngrams to be cached */
+    @S4Integer(defaultValue = 100000)
+    public static final String PROP_NGRAM_CACHE_SIZE = "ngramCacheSize";
+
+    /**
+     * The property that controls whether the ngram caches are cleared after
+     * every utterance
+     */
+    @S4Boolean(defaultValue = false)
+    public static final String PROP_CLEAR_CACHES_AFTER_UTTERANCE = "clearCachesAfterUtterance";
 
     /** The property that defines the language weight for the search */
     @S4Double(defaultValue = 1.0f)
@@ -61,6 +74,9 @@ public class NgramTrieModel implements LanguageModel {
     protected int curDepth;
     protected int[] counts;
 
+    protected int ngramCacheSize;
+    protected boolean clearCacheAfterUtterance;
+
     protected Dictionary dictionary;
     protected String format;
     protected boolean applyLanguageWeightAndWip;
@@ -72,6 +88,8 @@ public class NgramTrieModel implements LanguageModel {
     // Statistics
     // -------------------------------
     protected String ngramLogFile;
+    private int ngramMisses;
+    private int ngramHits;
 
     // -------------------------------
     // subcomponents
@@ -82,11 +100,17 @@ public class NgramTrieModel implements LanguageModel {
     // Trie structure
     //-----------------------------
     protected TrieUnigram[] unigrams;
-    protected Map<Word, Integer> unigramIDMap;
     protected NgramTrieQuant quant;
     protected NgramTrie trie;
+
+    //-----------------------------
+    // Working data
+    //-----------------------------
+    protected Map<Word, Integer> unigramIDMap;
+    private LRUCache<WordSequence, Float> ngramProbCache;
     
     public NgramTrieModel(String format, URL location, String ngramLogFile,
+            int maxNGramCacheSize, boolean clearCacheAfterUtterance,
             int maxDepth, Dictionary dictionary,
             boolean applyLanguageWeightAndWip, float languageWeight,
             double wip, float unigramWeight) {
@@ -94,6 +118,8 @@ public class NgramTrieModel implements LanguageModel {
         this.format = format;
         this.location = location;
         this.ngramLogFile = ngramLogFile;
+        this.ngramCacheSize = maxNGramCacheSize;
+        this.clearCacheAfterUtterance = clearCacheAfterUtterance;
         this.maxDepth = maxDepth;
         logMath = LogMath.getLogMath();
         this.dictionary = dictionary;
@@ -119,6 +145,9 @@ public class NgramTrieModel implements LanguageModel {
         location = ConfigurationManagerUtils.getResource(PROP_LOCATION, ps);
         ngramLogFile = ps.getString(PROP_QUERY_LOG_FILE);
         maxDepth = ps.getInt(LanguageModel.PROP_MAX_DEPTH);
+        ngramCacheSize = ps.getInt(PROP_NGRAM_CACHE_SIZE);
+        clearCacheAfterUtterance = ps
+                .getBoolean(PROP_CLEAR_CACHES_AFTER_UTTERANCE);
         dictionary = (Dictionary) ps.getComponent(PROP_DICTIONARY);
         applyLanguageWeightAndWip = ps
                 .getBoolean(PROP_APPLY_LANGUAGE_WEIGHT_AND_WIP);
@@ -191,6 +220,7 @@ public class NgramTrieModel implements LanguageModel {
         //string words can be read here
         String[] words = loader.readWords(counts[0]);
         buildUnigramIDMap(dictionary, words);
+        ngramProbCache = new LRUCache<WordSequence, Float>(ngramCacheSize);
         loader.close();
         TimerPool.getTimer(this, "Load LM").stop();
     }
@@ -236,12 +266,12 @@ public class NgramTrieModel implements LanguageModel {
     }
 
     /**
-     * extracts word sequence probability without using caching, 
+     * extracts raw word sequence probability without using caching, 
      * making fresh LM trie traversing
      * @param wordSequence - sequence of words to get probability for
      * @return probability of specialized sequence of words
      */
-    private float getContextlessProbability(WordSequence wordSequence) {
+    private float getProbabilityRaw(WordSequence wordSequence) {
         int wordsNum = wordSequence.size();
         int wordId = unigramIDMap.get(wordSequence.getWord(wordsNum - 1));
         TrieRange range = new TrieRange(unigrams[wordId].next, unigrams[wordId + 1].next);
@@ -265,20 +295,25 @@ public class NgramTrieModel implements LanguageModel {
         return score;
     }
 
-    private float getProbabilityRaw(WordSequence wordSequence) {
+    @Override
+    public float getProbability(WordSequence wordSequence) {
         int numberWords = wordSequence.size();
-
         if (numberWords > maxDepth) {
             throw new Error("Unsupported NGram: " + wordSequence.size());
         }
 
-        //cap
-        return getContextlessProbability(wordSequence);
-    }
+        if (numberWords == maxDepth) {
+            Float probability = ngramProbCache.get(wordSequence);
 
-    @Override
-    public float getProbability(WordSequence wordSequence) {
+            if (probability != null) {
+                ngramHits++;
+                return probability;
+            }
+            ngramMisses++;
+        }
         float probability = applyWeights(getProbabilityRaw(wordSequence));
+        if (numberWords == maxDepth)
+            ngramProbCache.put(wordSequence, probability);
         if (logFile != null)
             logFile.println(wordSequence.toString().replace("][", " ") + " : "
                     + Float.toString(probability));
@@ -304,6 +339,25 @@ public class NgramTrieModel implements LanguageModel {
     public int getMaxDepth() {
         return maxDepth;
     }
+
+    /** Called after a recognition */
+    public void onUtteranceEnd() {
+        clearCache();
+
+        if (logFile != null) {
+            logFile.println("<END_UTT>");
+            logFile.flush();
+        }
+    }    
+
+    /** Clears the various N-gram caches. */
+    private void clearCache() {
+        logger.info("LM Cache Size: " + ngramProbCache.size() + " Hits: "
+                + ngramHits + " Misses: " + ngramMisses);
+        if (clearCacheAfterUtterance) {
+            ngramProbCache = new LRUCache<WordSequence, Float>(ngramCacheSize);
+        }
+    }    
 
     public static class TrieUnigram {
         public float prob;
