@@ -51,8 +51,7 @@ ngram_raw_t** ngrams_raw_read_arpa(lineiter_t **li, logmath_t *lmath, uint32 *co
  * @param lmath        [in] log math used for log convertions
  * @param counts       [in] amount of ngrams for each order
  * @param order        [in] maximum order of ngrams
- * @param unigram_next [in] array of next word pointers for unigrams. Needed to define forst word of bigrams.
-                            Will be freed inside the function right after usage
+ * @param unigram_next [in] array of next word pointers for unigrams. Needed to define forst word of bigrams
  * @param do_swap      [in] wether to do swap of bits
  * @return                  raw ngrams of order bigger than 1
  */

@@ -207,9 +207,8 @@ ngram_raw_t** ngrams_raw_read_dmp(FILE *fp, logmath_t *lmath, uint32 *counts, in
         fread(&bigrams_next[j], sizeof(bigrams_next[j]), 1, fp);
         if (do_swap) SWAP_INT16(&bigrams_next[j]);
     }
-    ckd_free(unigram_next);
     assert(ngram_idx == counts[0]);
-        
+
     //read trigrams
     if (order > 2) {
         raw_ngrams[1] = (ngram_raw_t *)ckd_calloc((size_t)counts[2], sizeof(*raw_ngrams[1]));
