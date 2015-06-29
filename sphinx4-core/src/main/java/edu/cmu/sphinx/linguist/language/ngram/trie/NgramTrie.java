@@ -76,7 +76,7 @@ public class NgramTrie {
         int ptr;
         range.begin--;
         if ((ptr = uniformFind(ngramSet, range, wordId)) < 0) {
-            range.setInvalid();
+            range.setFound(false);
             return -1;
         }
         //read next order ngrams for future searches
