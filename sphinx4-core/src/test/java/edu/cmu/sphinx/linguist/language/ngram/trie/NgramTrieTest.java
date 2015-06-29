@@ -6,7 +6,7 @@
  * usage and redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  */
-package edu.cmu.sphinx.linguist.language.ngram.large;
+package edu.cmu.sphinx.linguist.language.ngram.trie;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
@@ -24,7 +24,7 @@ import edu.cmu.sphinx.linguist.dictionary.TextDictionary;
 import edu.cmu.sphinx.linguist.dictionary.Word;
 
 
-public class LargeNgramTest {
+public class NgramTrieTest {
 
     @Test
     public void testNgram() throws IOException {
@@ -39,19 +39,17 @@ public class LargeNgramTest {
                                                    new UnitManager());
 
         URL lm = getClass().getResource("100.arpa.bin");
-        LargeTrigramModel model = new LargeTrigramModel("",
-                                                        lm,
-                                                        null,
-                                                        100,
-                                                        100,
-                                                        false,
-                                                        3,
-                                                        dictionary,
-                                                        false,
-                                                        1.0f,
-                                                        1.0f,
-                                                        1.0f,
-                                                        false);
+        NgramTrieModel model = new NgramTrieModel("",
+                                                  lm,
+                                                  null,
+                                                  100,
+                                                  false,
+                                                  3,
+                                                  dictionary,
+                                                  false,
+                                                  1.0f,
+                                                  1.0f,
+                                                  1.0f);
         dictionary.allocate();
         model.allocate();
         assertThat(model.getMaxDepth(), equalTo(3));
@@ -60,13 +58,13 @@ public class LargeNgramTest {
             new Word("huggins", null, false),
             new Word("daines", null, false)};
         assertThat((double) model.getProbability(new WordSequence(words)),
-                   closeTo(-830.862, .001));
+                   closeTo(-831, .001));
 
         Word[] words1 = {
             new Word("huggins", null, false),
             new Word("daines", null, false),
             new Word("david", null, false)};
         assertThat((double) model.getProbability(new WordSequence(words1)),
-                   closeTo(-67625.77, .01));
+                   closeTo(-67637, .01));
     }
 }
