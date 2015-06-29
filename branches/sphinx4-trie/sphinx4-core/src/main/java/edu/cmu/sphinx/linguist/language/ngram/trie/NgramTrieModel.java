@@ -251,15 +251,16 @@ public class NgramTrieModel implements LanguageModel {
      * @return probability of of highest order ngram available
      */
     private float getAvailableProb(WordSequence wordSequence, TrieRange range, float prob) {
-        if (!range.isValid()) return prob;
+        if (!range.isSearchable()) return prob;
         for (int reverseOrderMinusTwo = wordSequence.size() - 2; reverseOrderMinusTwo >= 0; reverseOrderMinusTwo--) {
             int orderMinusTwo = wordSequence.size() - 2 - reverseOrderMinusTwo;
             if (orderMinusTwo + 1 == maxDepth) break;
             int wordId = unigramIDMap.get(wordSequence.getWord(reverseOrderMinusTwo));
             float updatedProb = trie.readNgramProb(wordId, orderMinusTwo, range, quant);
-            if (!range.isValid()) break;
+            if (!range.getFound()) break;
             prob = updatedProb;
             curDepth++;
+            if (!range.isSearchable()) break;
         }
         return prob;
     }
@@ -274,18 +275,18 @@ public class NgramTrieModel implements LanguageModel {
     private float getAvailableBackoff(WordSequence wordSequence) {
         float backoff = 0.0f;
         int wordsNum = wordSequence.size();
-        int wordId = unigramIDMap.get(wordSequence.getWord(wordsNum - 1 - curDepth));
+        int wordId = unigramIDMap.get(wordSequence.getWord(wordsNum - 2));
         TrieRange range = new TrieRange(unigrams[wordId].next, unigrams[wordId + 1].next);
         if (curDepth == 1) {
             backoff += unigrams[wordId].backoff;
-            curDepth = 2;
         }
         int sequenceIdx, orderMinusTwo;
-        for (sequenceIdx = wordsNum - curDepth - 1, orderMinusTwo = 0; sequenceIdx >= 0; sequenceIdx--, orderMinusTwo++) {
+        for (sequenceIdx = wordsNum - 3, orderMinusTwo = 0; sequenceIdx >= 0; sequenceIdx--, orderMinusTwo++) {
             int tmpWordId = unigramIDMap.get(wordSequence.getWord(sequenceIdx));
             float tmpBackoff = trie.readNgramBackoff(tmpWordId, orderMinusTwo, range, quant);
-            if (!range.isValid()) break;
+            if (!range.getFound()) break;
             backoff += tmpBackoff;
+            if (!range.isSearchable()) break;
         }
         return backoff;
     }
@@ -453,23 +454,27 @@ public class NgramTrieModel implements LanguageModel {
     public static class TrieRange {
         int begin;
         int end;
-        boolean isValid;
+        boolean found;
         TrieRange(int begin, int end) {
             this.begin = begin;
             this.end = end;
-            isValid = true;
+            found = true;
         }
 
         int getWidth() {
             return end - begin;
         }
 
-        void setInvalid() {
-            isValid = false;
+        void setFound(boolean found) {
+            this.found = found;
         }
 
-        boolean isValid() {
-            return isValid && begin != end;
+        boolean getFound() {
+            return found;
+        }
+        
+        boolean isSearchable() {
+            return getWidth() > 0;
         }
     }
 
