@@ -537,7 +537,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
 
     model->trie = lm_trie_create(counts[0], QUANT_16, order);
     //read unigrams. no tricks here
-    unigram_next = (uint32 *)ckd_calloc((int32)counts[0], sizeof(unigram_next));
+    unigram_next = (uint32 *)ckd_calloc((int32)counts[0] + 1, sizeof(unigram_next));
     for (j = 0; j <= (int32)counts[0]; j++) {
         int32 bigrams;
         dmp_weight_t weight;
@@ -574,6 +574,7 @@ ngram_model_t* ngram_model_trie_read_dmp(cmd_ln_t *config,
         //free raw ngrams
         ngrams_raw_free(raw_ngrams, counts, order);
     }
+    ckd_free(unigram_next);
 
     /* read ascii word strings */
     read_word_str(base, fp);
