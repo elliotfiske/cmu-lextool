@@ -1,5 +1,13 @@
 package edu.cmu.sphinx.linguist.language.ngram.trie;
 
+/**
+ * Class for ngram weights quantation.
+ * Stores quantation tables for each ngram order for probabilities and backoffs,
+ * while ngrams store pointers to this tables. 
+ * Size of table is specified by quantation parameter, for default QUANT_16 each 
+ * weight has 65k entries table.
+ */
+
 public class NgramTrieQuant {
 
     public static enum QuantType {NO_QUANT, QUANT_16};
@@ -29,21 +37,39 @@ public class NgramTrieQuant {
         tables = new float[(order - 1) * 2 - 1][];
         this.quantType = quantType;
     }
-    
+
+    /**
+     * Setter that is used during quantation reading
+     * @param table - array of weights to be used as quantation table
+     * @param order - ngrams order which quantation table corresponds to
+     * @param isProb - specifies if provided table is for probability (backoffs otherwise)
+     */
     public void setTable(float[] table, int order, boolean isProb) {
         int index = (order - 2) * 2;
         if (!isProb) index++;
         tables[index] = table;
     }
 
+    /**
+     * Getter for length of probability quantation table.
+     * @return length of quantation table.
+     */
     public int getProbTableLen() {
         return 1 << probBits;
     }
 
+    /**
+     * Getter for length of backoffs quantation table.
+     * @return length of quantation table
+     */
     public int getBackoffTableLen() {
         return 1 << backoffBits;
     }
 
+    /**
+     * Getter for size of quantaized weights in ngram trie.
+     * @return amount of bits required to store quantized probability and backoff
+     */
     public int getProbBoSize() {
         switch (quantType) {
         case NO_QUANT:
@@ -56,6 +82,10 @@ public class NgramTrieQuant {
         }
     }
 
+    /**
+     * Getter for size of quantaized weight in ngram trie
+     * @return amount of bits required to store quantized probability
+     */
     public int getProbSize() {
         switch (quantType) {
         case NO_QUANT:
@@ -68,10 +98,25 @@ public class NgramTrieQuant {
         }
     }
 
+    /**
+     * Returns actual weight value for specified table and encoded weight from trie
+     * @param tableIdx - index of table to look in. Is calculated
+     * @param encodedVal - encoded weight from trie
+     * @return actual weight
+     */
     private float binsDecode(int tableIdx, int encodedVal) {
         return tables[tableIdx][encodedVal];
     }
 
+    /**
+     * Reads encoded probability from provided trie bit array and decodes it into actual value
+     * for specific ngram
+     * @param bitArr - trie bit array 
+     * @param memPtr - memory pointer for specific ngram order
+     * @param bitOffset - offset from memPtr that is calculated according to ngram index
+     * @param orderMinusTwo - order of ngram minus two
+     * @return probability of ngram
+     */
     public float readProb(NgramTrieBitarr bitArr, int memPtr, int bitOffset, int orderMinusTwo) {
         switch (quantType) {
         case NO_QUANT:
@@ -87,6 +132,15 @@ public class NgramTrieQuant {
         }
     }
 
+    /**
+     * Reads encoded backoff from provided trie bit array and decodes it into actual value
+     * for specific ngram
+     * @param bitArr - trie bit array 
+     * @param memPtr - memory pointer for specific ngram order
+     * @param bitOffset - offset from memPtr that is calculated according to ngram index
+     * @param orderMinusTwo - order of ngram minus two
+     * @return backoffs of ngram
+     */
     public float readBackoff(NgramTrieBitarr bitArr, int memPtr, int bitOffset, int orderMinusTwo) {
         switch (quantType) {
         case NO_QUANT:

@@ -8,6 +8,20 @@ import java.io.IOException;
 import edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrieModel.TrieUnigram;
 import edu.cmu.sphinx.util.Utilities;
 
+/**
+ * Class that provides utils to load NgramTrieModel
+ * from binary file created with sphinx_lm_convert.
+ * Routines should be called in certain order according to format:
+ * <ul>
+ *     <li>verifyHeader</li>
+ *     <li>readCounts</li>
+ *     <li>readQuant</li>
+ *     <li>readUnigrams</li>
+ *     <li>readTrieByteArr</li>
+ *     <li>readWords</li>
+ * </ul>
+ */
+
 public class BinaryLoader {
 
     private static final String TRIE_HEADER = "Trie Language Model";
@@ -18,6 +32,10 @@ public class BinaryLoader {
         inStream = new DataInputStream(new FileInputStream(location));
     }
 
+    /**
+     * Reads header from stream and checks if it matches trie header
+     * @throws IOException if reading from stream failed
+     */
     public void verifyHeader() throws IOException {
         String readHeader = readString(inStream, TRIE_HEADER.length());
         if (!readHeader.equals(TRIE_HEADER)) {
@@ -25,6 +43,11 @@ public class BinaryLoader {
         }
     }
 
+    /**
+     * Reads language model order and ngram counts
+     * @return array of counts where ordinal number is ngram order
+     * @throws IOException if reading from stream failed
+     */
     public int[] readCounts() throws IOException {
         int order = readOrder();
         int[] counts = new int[order];
@@ -34,6 +57,12 @@ public class BinaryLoader {
         return counts;
     }
 
+    /**
+     * Reads weights quantation object from stream
+     * @param order - max order of ngrams for this model
+     * @return quantation object, see {@link NgramTrieQuant} 
+     * @throws IOException if reading from stream failed
+     */
     public NgramTrieQuant readQuant(int order) throws IOException {
         int quantTypeInt = Utilities.readLittleEndianInt(inStream);
         if (quantTypeInt < 0 || quantTypeInt >= NgramTrieQuant.QuantType.values().length)
@@ -49,6 +78,12 @@ public class BinaryLoader {
         return quant;
     }
 
+    /**
+     * Reads array of language model unigrams 
+     * @param count - amount of unigrams according to counts previously read
+     * @return array of language model unigrams, see {@link NgramTrieModel.TrieUnigram}
+     * @throws IOException if reading from stream failed
+     */
     public TrieUnigram[] readUnigrams(int count) throws IOException {
         TrieUnigram[] unigrams = new TrieUnigram[count + 1];
         for (int i = 0; i < count + 1; i++) {
@@ -60,10 +95,23 @@ public class BinaryLoader {
         return unigrams;
     }
 
-    public void readByteArr(byte[] arr) throws IOException {
+    /**
+     * Reads trie in form of byte array into provided array. 
+     * Size of byte array is computed from previously read language model specifications,
+     * see {@link NgramTrie}
+     * @param arr - byte array to read trie to
+     * @throws IOException if reading from stream failed
+     */
+    public void readTrieByteArr(byte[] arr) throws IOException {
         inStream.read(arr);
     }
 
+    /**
+     * Reads vocabulary of language model. Ordinal number of word stays for wordId.
+     * @param unigramNum - amount of unigrams
+     * @return array of strings - vocabulary of language model
+     * @throws IOException of reading from stream failed
+     */
     public String[] readWords(int unigramNum) throws IOException {
         int len = Utilities.readLittleEndianInt(inStream);
         if (len <= 0) {
@@ -88,14 +136,32 @@ public class BinaryLoader {
         return words;
     }
 
+    /**
+     * Should be called when model reading finished
+     * @throws IOException if stream was corrupted
+     */
     public void close() throws IOException {
         inStream.close();
     }
 
+    /**
+     * Reads language model max depth. 
+     * Order is stored in uint8 or in byte
+     * @return order of language model
+     * @throws IOException if reading from stream failed
+     */
     private int readOrder() throws IOException {
         return (int)inStream.readByte();
     }
 
+    /**
+     * Reads float array of specified length. 
+     * Quantation tables are stored in form of float arrays,
+     * see {@link readQuant}
+     * @param len - length of array to read
+     * @return array of floats that was read from stream
+     * @throws IOException if reading from stream failed
+     */
     private float[] readFloatArr(int len) throws IOException {
         float[] arr = new float[len];
         for (int i = 0; i < len; i++)
