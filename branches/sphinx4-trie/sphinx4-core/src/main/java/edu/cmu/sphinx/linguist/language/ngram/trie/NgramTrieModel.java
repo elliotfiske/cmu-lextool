@@ -220,7 +220,7 @@ public class NgramTrieModel implements LanguageModel {
         unigrams = loader.readUnigrams(counts[0]);
         if (maxDepth > 1) {
             trie = new NgramTrie(counts, quant.getProbBoSize(), quant.getProbSize());
-            loader.readByteArr(trie.getMem());
+            loader.readTrieByteArr(trie.getMem());
         }
         //string words can be read here
         String[] words = loader.readWords(counts[0]);
