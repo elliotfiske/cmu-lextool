@@ -205,10 +205,15 @@ public class NgramTrieModel implements LanguageModel {
         if (ngramLogFile != null)
             logFile = new PrintWriter(new FileOutputStream(ngramLogFile));
         BinaryLoader loader;
-        try {
-            loader = new BinaryLoader(new File(location.toURI()));
-        } catch (Exception ex) {
-            loader = new BinaryLoader(new File(location.getPath()));
+        if (location.getProtocol() == null
+                || location.getProtocol().equals("file")) {
+            try {
+                loader = new BinaryLoader(new File(location.toURI()));
+            } catch (Exception ex) {
+                loader = new BinaryLoader(new File(location.getPath()));
+            }
+        } else {
+            loader = new BinaryLoader(location);
         }
         loader.verifyHeader();
         counts = loader.readCounts();
