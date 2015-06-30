@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URL;
 
 import edu.cmu.sphinx.linguist.language.ngram.trie.NgramTrieModel.TrieUnigram;
 import edu.cmu.sphinx.util.Utilities;
@@ -30,6 +31,10 @@ public class BinaryLoader {
 
     public BinaryLoader(File location) throws IOException {
         inStream = new DataInputStream(new FileInputStream(location));
+    }
+
+    public BinaryLoader(URL location) throws IOException {
+        inStream = new DataInputStream(location.openStream());
     }
 
     /**
